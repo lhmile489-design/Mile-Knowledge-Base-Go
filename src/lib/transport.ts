@@ -80,6 +80,7 @@ export const settingsApi = {
   appConfigPatchAliases: (vaultId: string, patches: Record<string, string | null>) =>
     guard(async () => unwrap(await SettingsService.appConfigPatchAliases(vaultId, patches))),
   providers: (vaultId: string) => guard(async () => unwrap(await SettingsService.providers(vaultId))),
+  skillCatalog: (vaultId: string) => guard(async () => unwrap(await SettingsService.skillCatalog(vaultId))),
   saveProviders: (vaultId: string, providers: ProviderDraft[]) =>
     guard(async () => unwrap(await SettingsService.saveProviders(vaultId, providers))),
   setKey: (envName: string, value: string): Promise<ProvidersResult> =>

@@ -5,6 +5,8 @@ import { settingsApi, TransportError } from "../../lib/transport";
 import { useAppStore } from "../../stores/appStore";
 import { TitleBar } from "../TitleBar";
 import { ModelServiceSection } from "./ModelServiceSection";
+import { AgentsSection } from "./AgentsSection";
+import { useSettingsStore } from "../../stores/settingsStore";
 
 /** Settings overlay (T17/T18). Only the AI sections exist in M2; the other
  * settings groups arrive with their own milestones. */
@@ -14,6 +16,9 @@ export function SettingsPage() {
   const vaults = useAppStore((state) => state.vaults);
   const vault = vaults.find((item) => item.id === vaultId);
   const [section, setSection] = useState<"model" | "agents">("model");
+  const requestLeave = useSettingsStore((state) => state.requestLeave);
+  const resolveLeave = useSettingsStore((state) => state.resolveLeave);
+  const leaveTarget = useSettingsStore((state) => state.leaveTarget);
   const [data, setData] = useState<ProvidersResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,13 +37,22 @@ export function SettingsPage() {
     void reload();
   }, [reload]);
 
+  const guardedClose = (): void => {
+    if (requestLeave("close")) closeSettings();
+  };
+  const openModel = (): void => {
+    if (requestLeave("model")) setSection("model");
+  };
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") closeSettings();
+      if (event.key === "Escape") {
+        if (requestLeave("close")) closeSettings();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [closeSettings]);
+  }, [closeSettings, requestLeave]);
 
   const unconfigured = (data?.providers.length ?? 0) === 0;
 
@@ -57,7 +71,7 @@ export function SettingsPage() {
             className="settings-nav-item"
             data-active={section === "model" ? "true" : "false"}
             aria-current={section === "model" ? "page" : undefined}
-            onClick={() => setSection("model")}
+            onClick={openModel}
             data-testid="settings-nav-model"
           >
             <Faders size={14} aria-hidden />
@@ -72,9 +86,9 @@ export function SettingsPage() {
             type="button"
             className="settings-nav-item"
             data-active={section === "agents" ? "true" : "false"}
-            disabled
-            aria-disabled="true"
-            title="Agents"
+            aria-current={section === "agents" ? "page" : undefined}
+            onClick={() => setSection("agents")}
+            data-testid="settings-nav-agents"
           >
             <UsersThree size={14} aria-hidden />
             Agents
@@ -88,10 +102,38 @@ export function SettingsPage() {
 
         <section className="workbench-panel" data-panel="settings-content" aria-label="设置内容">
           {section === "model" ? (
-            <ModelServiceSection vaultId={vaultId} data={data} error={error} reload={reload} onClose={closeSettings} />
-          ) : null}
+            <ModelServiceSection vaultId={vaultId} data={data} error={error} reload={reload} onClose={guardedClose} />
+          ) : (
+            <AgentsSection vaultId={vaultId} onClose={guardedClose} />
+          )}
         </section>
       </div>
+      {leaveTarget ? (
+        <div className="settings-dialog-backdrop" role="presentation">
+          <div className="settings-dialog settings-dialog-narrow" role="alertdialog" aria-label="未保存的 Steering 改动" data-testid="steering-leave-dialog">
+            <div className="settings-dialog-head">
+              <strong>有未保存的 Steering 改动</strong>
+            </div>
+            <p className="field-hint">离开后这些草稿会丢失。</p>
+            <div className="settings-dialog-actions">
+              <button type="button" className="btn-quiet" onClick={() => resolveLeave(false)}>
+                继续编辑
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  const target = resolveLeave(true);
+                  if (target === "close") closeSettings();
+                  else if (target === "model") setSection("model");
+                }}
+              >
+                放弃并离开
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
