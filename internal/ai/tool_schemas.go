@@ -1,0 +1,17 @@
+package ai
+
+import "encoding/json"
+
+// ToolSchemas is the OpenAI function-calling payload for the eight
+// knowledge-base tools, copied field for field from the agnes-engine skill
+// (kb-tool-schemas.json) and engine/kbTools.ts:86-234.
+var ToolSchemas = []json.RawMessage{
+	json.RawMessage(`{"type":"function","function":{"name":"search_notes","description":"在知识库里全文检索笔记。返回路径、标题、命中字段与正文片段。","parameters":{"type":"object","properties":{"query":{"type":"string","description":"检索词"},"limit":{"type":"integer","description":"最多返回几条，默认 8"}},"required":["query"]}}}`),
+	json.RawMessage(`{"type":"function","function":{"name":"read_note","description":"读取一篇笔记。path 是知识库内的相对路径。单次最多返回 20000 个字符；笔记更长时结果开头会写明总字符数与下一段的 offset，据此继续读取，直到不再提示还有更多。","parameters":{"type":"object","properties":{"path":{"type":"string","description":"相对路径，如 raws/a.md"},"offset":{"type":"integer","description":"从第几个字符开始读，默认 0"},"limit":{"type":"integer","description":"本次最多读多少字符，默认且最大 20000"}},"required":["path"]}}}`),
+	json.RawMessage(`{"type":"function","function":{"name":"list_dir","description":"列出知识库某个目录下的条目。根目录传空字符串。","parameters":{"type":"object","properties":{"path":{"type":"string","description":"相对路径，根目录为空串"}},"required":["path"]}}}`),
+	json.RawMessage(`{"type":"function","function":{"name":"write_note","description":"新建或覆盖一篇笔记，父目录不存在时会自动创建。只能写知识库内容区，系统配置目录不可写；手动/自动模式下会征得用户同意，被拒绝时如实告诉用户。","parameters":{"type":"object","properties":{"path":{"type":"string","description":"相对路径"},"content":{"type":"string","description":"完整的新内容（UTF-8 文本）"}},"required":["path","content"]}}}`),
+	json.RawMessage(`{"type":"function","function":{"name":"edit_note","description":"对已有笔记做局部精确替换：把 old_text 换成 new_text。old_text 必须在笔记中恰好出现一次（零处或多处都会报错，多处时请带上更多上下文）。只改一小段时优先用它，不要用 write_note 整篇覆盖。与 write_note 一样只能改知识库内容区，手动/自动模式下会征得用户同意；被拒绝时如实告诉用户。","parameters":{"type":"object","properties":{"path":{"type":"string","description":"相对路径，笔记必须已存在"},"old_text":{"type":"string","description":"要被替换的原文，需与笔记中的文字完全一致"},"new_text":{"type":"string","description":"替换后的文字，可以为空串以删除 old_text"}},"required":["path","old_text","new_text"]}}}`),
+	json.RawMessage(`{"type":"function","function":{"name":"mutate_notes","description":"对知识库内容区做结构变更。kind 可选 createDirectory / move / copy / archive / trash / permanentDelete。createDirectory/copy/move 需要 target，move/copy/archive/trash/permanentDelete 需要 source；路径必须是库内相对路径。永久删除不可恢复，只在用户明确要求时使用。","parameters":{"type":"object","properties":{"kind":{"type":"string","enum":["createDirectory","move","copy","archive","trash","permanentDelete"]},"source":{"type":"string","description":"源相对路径"},"target":{"type":"string","description":"目标相对路径"}},"required":["kind"]}}}`),
+	json.RawMessage(`{"type":"function","function":{"name":"handoff_task","description":"把一项任务交给另一个 Agent（curator / scout / distiller / general）。不能交给自己。","parameters":{"type":"object","properties":{"owner":{"type":"string","description":"接收任务的 Agent"},"goal":{"type":"string","description":"任务目标，一句话写清要做成什么"},"inputs":{"type":"array","items":{"type":"string"},"description":"相关的笔记路径或材料"},"constraints":{"type":"array","items":{"type":"string"},"description":"约束条件"}},"required":["owner","goal"]}}}`),
+	json.RawMessage(`{"type":"function","function":{"name":"set_aliases","description":"批量设置侧栏目录的显示别名。key 是目录的相对路径，value 是别名；value 为 null 表示删除该别名。","parameters":{"type":"object","properties":{"aliases":{"type":"object","additionalProperties":{"type":["string","null"]},"description":"如 {\"skills/vue\": \"Vue 技能\"}"}},"required":["aliases"]}}}`),
+}

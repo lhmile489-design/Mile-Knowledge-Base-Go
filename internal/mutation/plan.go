@@ -9,6 +9,7 @@ import (
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/policy"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 )
 
@@ -27,9 +28,8 @@ type Builder struct {
 // (API.md M29). Nothing is written: every check is a read.
 func (b Builder) Plan(req contract.PlanRequest) (contract.MutationPlan, *contract.Failure) {
 	plan := contract.MutationPlan{VaultID: req.VaultID, Origin: req.Origin}
-	if req.Origin != "user" {
-		// Agents arrive with M2, together with their permission gate.
-		return plan, contract.Fail(contract.CodeInvalidInput, "本期只接受用户发起的计划")
+	if req.Origin != "user" && !policy.IsAgent(req.Origin) {
+		return plan, contract.Fail(contract.CodeInvalidInput, "计划来源不合法")
 	}
 	if len(req.Actions) == 0 {
 		return plan, contract.Fail(contract.CodeInvalidInput, "计划不能为空")
@@ -40,6 +40,14 @@ func (b Builder) Plan(req contract.PlanRequest) (contract.MutationPlan, *contrac
 
 	actions := make([]contract.MutationAction, 0, len(req.Actions))
 	for index, raw := range req.Actions {
+		// The permission gate runs before any filesystem check, so an agent gets
+		// "no permission" for a system path instead of learning whether it
+		// exists. The executor runs the same gate again on the final plan.
+		if policy.IsAgent(req.Origin) && isMutationKind(raw.Kind) {
+			if decision := policy.CanMutate(req.Origin, raw.Kind, raw.Source, raw.Target); !decision.Allowed {
+				return plan, contract.Fail(contract.CodePermissionDenied, decision.Reason)
+			}
+		}
 		action, f := b.validateAction(index, raw)
 		if f != nil {
 			return plan, f

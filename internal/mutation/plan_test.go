@@ -121,9 +121,9 @@ func TestAssessRisk(t *testing.T) {
 func TestPlanValidations(t *testing.T) {
 	b, _ := builderFor(t)
 
-	if _, f := b.Plan(contract.PlanRequest{VaultID: "v", Origin: "curator",
+	if _, f := b.Plan(contract.PlanRequest{VaultID: "v", Origin: "nobody",
 		Actions: []contract.MutationAction{{ID: "a", Kind: contract.MutCreate, Target: "raws/新.md"}}}); f == nil {
-		t.Error("non-user origin accepted")
+		t.Error("unknown origin accepted")
 	}
 	if _, f := b.Plan(contract.PlanRequest{VaultID: "v", Origin: "user"}); f == nil {
 		t.Error("empty plan accepted")

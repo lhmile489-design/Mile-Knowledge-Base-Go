@@ -60,10 +60,16 @@ func TestMutationServiceBuildsPlans(t *testing.T) {
 		t.Fatalf("plan move: %+v %+v", move.Plan, move.Failure)
 	}
 
+	// M2 accepts agent origins, but only through the permission gate.
 	agent := svc.Plan(ctx, contract.PlanRequest{VaultID: vaultID, Origin: "curator",
 		Actions: []contract.MutationAction{{ID: "a", Kind: contract.MutCreate, Target: "raws/x.md"}}})
-	if agent.Failure == nil {
-		t.Error("agent origin accepted in M1")
+	if agent.Failure != nil || agent.Plan == nil {
+		t.Errorf("agent origin should be accepted in M2: %+v", agent)
+	}
+	denied := svc.Plan(ctx, contract.PlanRequest{VaultID: vaultID, Origin: "curator",
+		Actions: []contract.MutationAction{{ID: "a", Kind: contract.MutCreate, Target: ".mile-kb/settings/x.md"}}})
+	if denied.Failure == nil || denied.Failure.Code != contract.CodePermissionDenied {
+		t.Errorf("agent writing settings: %+v", denied)
 	}
 }
 

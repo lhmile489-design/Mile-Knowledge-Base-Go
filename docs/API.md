@@ -397,7 +397,7 @@ type LoadResult struct {
 
 #### M29 `plan(request)` — 生成变更计划
 
-- M1 只接受 `origin='user'`；`curator/scout/distiller/general` 随 M2 的 Agent 权限门一起接入。
+- `origin` 接受 `user` 与 4 个 Agent id；Agent 计划在生成时与执行时各过一次 `internal/policy` 权限门（系统区与点号目录一律 `permission-denied`，`permanentDelete` 另需新鲜批准），用户计划不受该门约束。
 - 入参 `PlanRequest{vaultId, origin, actions: MutationAction[]}`；`MutationAction{id, kind, source?, target?, expectedSourceRevision?, expectedTargetRevision?, text?, reason}`（mutation.ts:34-44）。`kind ∈ create|createDirectory|edit|move|copy|archive|trash|permanentDelete`；`origin ∈ user|curator|scout|distiller|general`。
 - Go 侧校验（validate.ts:202-276）：`actions` 非空 ≤500（mutation.ts:116）；每条 `id` ≤128、`reason` ≤500、source/target 过路径校验、expectedRevision ≥0 整数；`risk` 由 Go 用 `assessRisk` 计算**不采信前端传的等级**（含 permanentDelete 或 >20 项 → high；含破坏性 → medium）。
 - 出参 `PlanResult{plan?: MutationPlan, failure?}`；目标已存在一律拒绝（唯一例外：只改大小写的重命名，`name-conflict`）（FR-MUT）。

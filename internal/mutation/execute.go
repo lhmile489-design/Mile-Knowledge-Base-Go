@@ -11,6 +11,7 @@ import (
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/policy"
 )
 
 // Executor applies a confirmed plan (API.md M30). Every write goes through the
@@ -42,6 +43,15 @@ func (e Executor) Execute(plan contract.MutationPlan) contract.MutationReport {
 	report := contract.MutationReport{
 		PlanID: plan.ID, Completed: []contract.ActionRecord{}, Failed: []contract.ActionRecord{},
 		Remaining: []contract.ActionRecord{}, TouchedDirectories: []string{},
+	}
+	if policy.IsAgent(plan.Origin) {
+		for _, action := range plan.Actions {
+			if decision := policy.CanMutate(plan.Origin, action.Kind, action.Source, action.Target); !decision.Allowed {
+				report.Status = "failed"
+				report.Failure = contract.Fail(contract.CodePermissionDenied, decision.Reason)
+				return report
+			}
+		}
 	}
 	if len(plan.Actions) == 0 {
 		report.Status = "failed"
