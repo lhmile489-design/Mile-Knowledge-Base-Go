@@ -369,6 +369,11 @@ FR-WIN、FR-THEME、FR-VLT、FR-AREA（读取侧）、FR-TREE（浏览，不含�
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-18 | 计划草案完成 | docs/PLAN-M0.md v0.1 | 自查见第 10 节 | B-05 | T00 |
 | 2026-11-18 | 应用户要求在第 3 节补粗粒度路线图（M1–M3 未审批）；设置页「模型服务」「Agents」两节从 M3 提到 M2 | docs/PLAN-M0.md v0.3 | 73 个绑定方法已核对全部归入 M0–M3 | B-05 | T00 |
+| 2026-11-18 | T00 完成 | .gitignore/.gitattributes + 463 文件首提 | 提交前检查通过（无密钥、无大文件、截图 00 重截为中性路径） | — | T01 |
+| 2026-11-18 | T01 完成 | mygo 模板 + package/tsconfig/vite + 最小窗口 | doctor 必需项全绿；tsc 通过；vite build 通过；dev 启动 75s 正常 | — | T02 |
+| 2026-11-18 | T02 完成 | internal/testkit、cmd/genvault、vitest 配置 | 门禁负向对照：4 个门禁在故意破坏时均失败，移除后恢复通过 | — | T03 |
+| 2026-11-18 | T03 完成 | src/styles/tokens.css（4913 行原样移植）、theme-init.js、compare-tokens | 80 个令牌声明零差异 | 未按 DESIGN §3 拆分文件，M0 保持单文件，拆分留到 M3 | T05 |
+| 2026-11-18 | T05/T06/T07a/T07b/T08/T09 后端部分完成 | pathguard、settings、vault（registry/tree/textfile）、render、watch、service 绑定、kbimg、关窗决策 | go test 全绿（pathguard 13、settings 6、vault 8、render 78、watch 18、testkit 2）；golden 94 一致 / 12 有意差异；tsc 通过 | 各任务的界面部分未做 | T04 |
 | 2026-11-18 | 独立审查（子代理，只读）发现阻断 2 项、需修改 3 项、建议 4 项，已修订为 v0.2：T00 提交前清单、V-SET-2、T07 拆为 T07a / T07b、T09 判定口径、启动顺序约束。审查同时核实 14 个待移植的旧版测试文件，以及计划引用的全部接口和截图编号都存在 | docs/PLAN-M0.md v0.2 | 审查报告 | B-05 | T00 |
 
 ## 10. 自查
