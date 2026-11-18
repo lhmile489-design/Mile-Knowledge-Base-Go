@@ -161,3 +161,30 @@
   font-size: var(--text-caption);
   white-space: pre-wrap;
 }
+
+/* Reading mode and split view share the scroll container. */
+.editor-scroll {
+  height: 100%;
+  overflow: auto;
+}
+
+.editor-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.editor-split-left {
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--raw-line);
+}
+
+.editor-split-right {
+  min-width: 0;
+}
+
+.editor-scroll .reader {
+  padding: 16px 20px 40px;
+}

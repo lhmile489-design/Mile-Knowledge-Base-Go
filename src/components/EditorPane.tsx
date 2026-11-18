@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
-import { FloppyDisk, Warning } from "@phosphor-icons/react";
+import { FloppyDisk } from "@phosphor-icons/react";
 import { TabStrip } from "./TabStrip";
 import { SourceEditor } from "./SourceEditor";
+import { ReaderView } from "./ReaderView";
 import { ConflictCard } from "./ConflictCard";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore, isDirty, tabTitle, useDirtyReporter } from "../stores/docStore";
 import { formatBytes } from "../lib/bytes";
 
-/** Document panel: tabs, toolbar, source editor and the cards around saving
- * (PRD FR-DOC). Reading mode and split view arrive with T09. */
+type Mode = "read" | "source" | "split";
+
+const MODE_LABEL: Record<Mode, string> = { read: "阅读", source: "源码", split: "分栏" };
+
+/** Document panel: tabs, toolbar, reading/source/split modes and the cards
+ * around saving (PRD FR-DOC). Reading mode is the default, like the legacy app. */
 export function EditorPane() {
   const vaultId = useAppStore((state) => state.activeVaultId);
   const tabs = useDocStore((state) => state.tabs);
@@ -19,27 +24,32 @@ export function EditorPane() {
   const close = useDocStore((state) => state.close);
   const keepMine = useDocStore((state) => state.resolveConflictKeepMine);
   const takeDisk = useDocStore((state) => state.resolveConflictTakeDisk);
-  const reloadFromDisk = useDocStore((state) => state.reloadFromDisk);
   const dismissConflict = useDocStore((state) => state.dismissConflict);
-  const setActive = useDocStore((state) => state.setActive);
+  const reloadFromDisk = useDocStore((state) => state.reloadFromDisk);
 
   const [pendingClose, setPendingClose] = useState<string | null>(null);
+  const [modes, setModes] = useState<Record<string, Mode>>({});
   useDirtyReporter();
 
   const doc = activePath ? docs[activePath] : undefined;
   const dirty = isDirty(doc);
+  const degraded = doc?.degraded ?? "";
+  const readDisabled = degraded !== "";
+  const mode: Mode = modes[activePath] ?? "read";
+  const effectiveMode: Mode = readDisabled && mode !== "source" ? "source" : mode;
+  const editing = effectiveMode !== "read";
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
-        if (!activePath) return;
+        if (!activePath || !editing) return;
         event.preventDefault();
         void save(vaultId, activePath);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activePath, save, vaultId]);
+  }, [activePath, editing, save, vaultId]);
 
   if (tabs.length === 0) {
     return (
@@ -59,6 +69,20 @@ export function EditorPane() {
     void close(vaultId, path);
   };
 
+  const editor = doc ? (
+    <SourceEditor
+      path={activePath}
+      value={doc.text}
+      readOnly={degraded === "large-read-only"}
+      onChange={(text) => setText(activePath, text)}
+      onSave={() => void save(vaultId, activePath)}
+    />
+  ) : null;
+
+  const reader = doc ? (
+    <ReaderView vaultId={vaultId} path={activePath} revision={doc.revision} hash={doc.hash} />
+  ) : null;
+
   return (
     <div className="editor-pane">
       <TabStrip onCloseRequest={requestClose} />
@@ -68,18 +92,36 @@ export function EditorPane() {
           <span className="editor-path" title={activePath}>
             {activePath}
           </span>
+          <div className="segmented" role="tablist" aria-label="文档模式">
+            {(["read", "source", "split"] as Mode[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                role="tab"
+                aria-selected={effectiveMode === option}
+                className="segmented-item"
+                disabled={readDisabled && option !== "source"}
+                title={readDisabled && option !== "source" ? "文件过大，阅读模式不可用" : undefined}
+                onClick={() => setModes((current) => ({ ...current, [activePath]: option }))}
+              >
+                {MODE_LABEL[option]}
+              </button>
+            ))}
+          </div>
           <span className="editor-meta">
             {dirty ? "未保存" : "已保存"} · rev {doc.revision} · {doc.eol.toUpperCase()}
             {doc.bom ? " · BOM" : ""} · {formatBytes(doc.size)}
           </span>
-          <button
-            type="button"
-            className="btn btn-quiet"
-            onClick={() => void save(vaultId, activePath)}
-            disabled={doc.loading || doc.degraded === "large-read-only"}
-          >
-            <FloppyDisk size={14} aria-hidden /> 保存
-          </button>
+          {editing ? (
+            <button
+              type="button"
+              className="btn btn-quiet"
+              onClick={() => void save(vaultId, activePath)}
+              disabled={doc.loading || degraded === "large-read-only"}
+            >
+              <FloppyDisk size={14} aria-hidden /> 保存
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -128,11 +170,10 @@ export function EditorPane() {
         </div>
       ) : null}
 
-      {doc?.degraded ? (
+      {degraded ? (
         <div className="surface-card" data-tone="info" role="status">
           <div className="status-card-head">
-            <Warning size={14} aria-hidden />{" "}
-            {doc.degraded === "large-read-only"
+            {degraded === "large-read-only"
               ? "文件超过 2 MiB，只能只读预览"
               : "文件超过 1 MiB，阅读模式不可用"}
           </div>
@@ -149,14 +190,15 @@ export function EditorPane() {
         <div className="editor-body">
           {doc.loading ? (
             <p className="muted editor-loading">正在读取文件…</p>
+          ) : effectiveMode === "read" ? (
+            <div className="editor-scroll">{reader}</div>
+          ) : effectiveMode === "source" ? (
+            editor
           ) : (
-            <SourceEditor
-              path={activePath}
-              value={doc.text}
-              readOnly={doc.degraded === "large-read-only"}
-              onChange={(text) => setText(activePath, text)}
-              onSave={() => void save(vaultId, activePath)}
-            />
+            <div className="editor-split">
+              <div className="editor-split-left">{editor}</div>
+              <div className="editor-split-right editor-scroll">{reader}</div>
+            </div>
           )}
         </div>
       ) : null}
