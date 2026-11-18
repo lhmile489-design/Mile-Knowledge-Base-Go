@@ -204,16 +204,19 @@ func (b Builder) validateCreate(action contract.MutationAction, directory bool) 
 	return action, nil
 }
 
+// validateEdit checks an in-place text write. Like the legacy service, edit
+// carries the file in target (source is ignored) and writes through the same
+// revision-checked path as a normal save.
 func (b Builder) validateEdit(action contract.MutationAction) (contract.MutationAction, *contract.Failure) {
-	if action.Source == "" || action.Text == nil {
-		return action, contract.Fail(contract.CodeInvalidInput, "编辑需要源路径与正文")
+	if action.Target == "" || action.Text == nil {
+		return action, contract.Fail(contract.CodeInvalidInput, "编辑需要目标路径与正文")
 	}
-	info, f := b.lstat(action.Source)
+	info, f := b.lstat(action.Target)
 	if f != nil {
 		return action, f
 	}
 	if info.IsDir() {
-		return action, contract.Fail(contract.CodeNotAFile, "源不是文件")
+		return action, contract.Fail(contract.CodeNotAFile, "目标不是文件")
 	}
 	return action, nil
 }

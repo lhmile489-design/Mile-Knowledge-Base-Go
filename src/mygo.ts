@@ -4,6 +4,26 @@ import { bind, event } from "mygo-runtime";
 
 // ---- Types ----
 
+/** ActionRecord is one executed (or skipped) action (API.md M30/M31). */
+export interface ActionRecord {
+  id: string;
+  planId: string;
+  vaultId: string;
+  origin: string;
+  kind: string;
+  source?: string;
+  target?: string;
+  beforeHash?: string;
+  afterHash?: string;
+  /** planned | approved | completed | failed | reverted | conflicted | skipped */
+  status: string;
+  transactionId?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
 /** AppNoticeEvent is a non-blocking notice (import fallback, watcher limits). */
 export interface AppNoticeEvent {
   text: string;
@@ -154,6 +174,22 @@ export interface MutationPlan {
   /** low | medium | high */
   risk: string;
   freshApproval?: boolean;
+}
+
+/**
+ * MutationReport is the M30 response: completed, failed and skipped separately
+ * so the UI can show what is left (PRD 8.3).
+ */
+export interface MutationReport {
+  planId: string;
+  /** completed | partial | failed */
+  status: string;
+  completed: ActionRecord[];
+  failed: ActionRecord[];
+  remaining: ActionRecord[];
+  transactionId?: string;
+  touchedDirectories: string[];
+  failure?: Failure;
 }
 
 /** OrphanItem is a document with neither incoming nor outgoing links. */
@@ -465,6 +501,11 @@ export const MutationService = {
   createDir: bind<[string, string, string], PlanResult>("MutationService.CreateDir", (vaultID: string, dirPath: string, name: string) => [vaultID, dirPath, name]),
   /** CreateFile plans a new file inside dirPath (M21). */
   createFile: bind<[string, string, string], PlanResult>("MutationService.CreateFile", (vaultID: string, dirPath: string, name: string) => [vaultID, dirPath, name]),
+  /**
+   * Execute applies a confirmed plan (M30). Edits go through the same
+   * revision-checked writer as a normal save; trash uses the system recycle bin.
+   */
+  execute: bind<[MutationPlan], MutationReport>("MutationService.Execute", (plan: MutationPlan) => [plan]),
   /** Plan validates a change plan (M29). */
   plan: bind<[PlanRequest], PlanResult>("MutationService.Plan", (req: PlanRequest) => [req]),
   /** PlanMove plans moving several entries into targetDir (M23). */

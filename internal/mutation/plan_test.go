@@ -145,12 +145,12 @@ func TestPlanValidations(t *testing.T) {
 		t.Error("escaping source accepted")
 	}
 	negative := int64(-1)
-	if _, f := plan(t, b, contract.MutationAction{ID: "a", Kind: contract.MutEdit, Source: "raws/首页.md",
+	if _, f := plan(t, b, contract.MutationAction{ID: "a", Kind: contract.MutEdit, Target: "raws/首页.md",
 		Text: ptr("x"), ExpectedSourceRevision: &negative}); f == nil {
 		t.Error("negative revision accepted")
 	}
 	big := strings.Repeat("大", MaxWriteBytes/3+10)
-	if _, f := plan(t, b, contract.MutationAction{ID: "a", Kind: contract.MutEdit, Source: "raws/首页.md", Text: &big}); f == nil {
+	if _, f := plan(t, b, contract.MutationAction{ID: "a", Kind: contract.MutEdit, Target: "raws/首页.md", Text: &big}); f == nil {
 		t.Error("oversize edit accepted")
 	}
 }

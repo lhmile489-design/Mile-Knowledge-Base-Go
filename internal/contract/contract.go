@@ -275,6 +275,38 @@ type LinkGraphResult struct {
 	Failure   *Failure       `json:"failure,omitempty"`
 }
 
+// ActionRecord is one executed (or skipped) action (API.md M30/M31).
+type ActionRecord struct {
+	ID            string `json:"id"`
+	PlanID        string `json:"planId"`
+	VaultID       string `json:"vaultId"`
+	Origin        string `json:"origin"`
+	Kind          string `json:"kind"`
+	Source        string `json:"source,omitempty"`
+	Target        string `json:"target,omitempty"`
+	BeforeHash    string `json:"beforeHash,omitempty"`
+	AfterHash     string `json:"afterHash,omitempty"`
+	Status        string `json:"status"` // planned | approved | completed | failed | reverted | conflicted | skipped
+	TransactionID string `json:"transactionId,omitempty"`
+	ErrorCode     string `json:"errorCode,omitempty"`
+	ErrorMessage  string `json:"errorMessage,omitempty"`
+	CreatedAt     string `json:"createdAt"`
+	CompletedAt   string `json:"completedAt,omitempty"`
+}
+
+// MutationReport is the M30 response: completed, failed and skipped separately
+// so the UI can show what is left (PRD 8.3).
+type MutationReport struct {
+	PlanID             string         `json:"planId"`
+	Status             string         `json:"status"` // completed | partial | failed
+	Completed          []ActionRecord `json:"completed"`
+	Failed             []ActionRecord `json:"failed"`
+	Remaining          []ActionRecord `json:"remaining"`
+	TransactionID      string         `json:"transactionId,omitempty"`
+	TouchedDirectories []string       `json:"touchedDirectories"`
+	Failure            *Failure       `json:"failure,omitempty"`
+}
+
 // Mutation kinds (shared/mutation.ts MUTATION_KINDS).
 const (
 	MutCreate          = "create"

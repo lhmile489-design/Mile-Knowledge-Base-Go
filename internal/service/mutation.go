@@ -5,8 +5,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/egoist/mygo"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/mutation"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 )
 
 // MutationService turns user actions into confirmed change plans (API.md M20–
@@ -15,6 +17,42 @@ type MutationService struct{ app *App }
 
 // NewMutationService binds one app.
 func NewMutationService(app *App) *MutationService { return &MutationService{app: app} }
+
+// Execute applies a confirmed plan (M30). Edits go through the same
+// revision-checked writer as a normal save; trash uses the system recycle bin.
+func (s *MutationService) Execute(ctx context.Context, plan contract.MutationPlan) contract.MutationReport {
+	report := contract.MutationReport{PlanID: plan.ID, Status: "failed",
+		Completed: []contract.ActionRecord{}, Failed: []contract.ActionRecord{},
+		Remaining: []contract.ActionRecord{}, TouchedDirectories: []string{}}
+	if f := validateID(plan.VaultID); f != nil {
+		report.Failure = f
+		return report
+	}
+	root, f := s.app.Vaults.Root(plan.VaultID)
+	if f != nil {
+		report.Failure = f
+		return report
+	}
+	executor := mutation.Executor{
+		Root:    root,
+		VaultID: plan.VaultID,
+		Manager: mutation.TxManager{Root: root},
+		Trash: func(abs string) error {
+			return mygo.Shell.TrashItem(abs)
+		},
+		WriteText: func(rel string, expectedRevision int64, text string) (string, *contract.Failure) {
+			outcome, wf := vault.Write(root, rel, expectedRevision, text)
+			if wf != nil {
+				return "", wf
+			}
+			if outcome.Status == "conflict" {
+				return "", contract.Fail(contract.CodeRevisionMismatch, "目标已被外部修改")
+			}
+			return outcome.Hash, nil
+		},
+	}
+	return executor.Execute(plan)
+}
 
 // Plan validates a change plan (M29).
 func (s *MutationService) Plan(ctx context.Context, req contract.PlanRequest) contract.PlanResult {
