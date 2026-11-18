@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 import { docApi, TransportError, windowApi } from "../lib/transport";
+import { affectedBy } from "../lib/docUtils";
 import { useAppStore } from "./appStore";
 import { useTreeStore } from "./treeStore";
 
@@ -17,6 +18,7 @@ export type DocState = {
   loading: boolean;
   error: string | null;
   conflict?: { diskText: string; diskRevision: number; diskHash: string; baseRevision: number };
+  externalRevision?: number;
 };
 
 type Tab = { path: string; pinned: boolean };
@@ -36,6 +38,8 @@ type DocStore = {
   togglePin: (path: string) => void;
   setActive: (path: string) => void;
   reset: () => void;
+  applyExternalChange: (vaultId: string, dirs: string[]) => Promise<void>;
+  reloadFromDisk: (vaultId: string, path: string) => Promise<void>;
 };
 
 function pathTitle(path: string): string {
@@ -269,6 +273,42 @@ export const useDocStore = create<DocStore>((set, get) => ({
   setActive: (path) => set({ activePath: path }),
 
   reset: () => set({ tabs: [], docs: {}, activePath: "" }),
+
+  applyExternalChange: async (vaultId, dirs) => {
+    const { docs } = get();
+    for (const path of Object.keys(docs)) {
+      if (!affectedBy(dirs, path)) continue;
+      const doc = docs[path];
+      if (!doc) continue;
+      try {
+        const result = await docApi.read(vaultId, path);
+        const fresh = result.doc;
+        if (!fresh) continue;
+        if (fresh.revision === doc.revision && fresh.text === doc.savedText) continue;
+        if (!isDirty(doc)) {
+          get().adoptDisk(path, fresh.text, fresh.revision, fresh.hash, fresh.size);
+        } else if (fresh.revision !== doc.revision) {
+          set((state) => ({
+            docs: { ...state.docs, [path]: { ...state.docs[path]!, externalRevision: fresh.revision } },
+          }));
+        }
+      } catch {
+        // The file may have been deleted: leave the tab as it is; saving will
+        // surface a conflict or an error.
+      }
+    }
+  },
+
+  reloadFromDisk: async (vaultId, path) => {
+    try {
+      const result = await docApi.read(vaultId, path);
+      const fresh = result.doc;
+      if (!fresh) return;
+      get().adoptDisk(path, fresh.text, fresh.revision, fresh.hash, fresh.size);
+    } catch {
+      // ignore: the card stays and saving keeps working
+    }
+  },
 }));
 
 export function isDirty(doc: DocState | undefined): boolean {

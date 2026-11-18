@@ -19,6 +19,7 @@ export function EditorPane() {
   const close = useDocStore((state) => state.close);
   const keepMine = useDocStore((state) => state.resolveConflictKeepMine);
   const takeDisk = useDocStore((state) => state.resolveConflictTakeDisk);
+  const reloadFromDisk = useDocStore((state) => state.reloadFromDisk);
   const setActive = useDocStore((state) => state.setActive);
 
   const [pendingClose, setPendingClose] = useState<string | null>(null);
@@ -110,6 +111,20 @@ export function EditorPane() {
           onTakeDisk={() => takeDisk(activePath)}
           onDismiss={() => setActive(activePath)}
         />
+      ) : null}
+
+      {doc?.externalRevision !== undefined && dirty ? (
+        <div className="surface-card" data-tone="info" role="status">
+          <div className="status-card-head">磁盘上有更新的版本</div>
+          <div className="status-card-body">
+            你有未保存的修改，所以没有自动替换。保存时会提示冲突；也可以放弃本地修改，直接采用磁盘版本。
+          </div>
+          <div className="status-card-actions">
+            <button type="button" className="btn-quiet" onClick={() => void reloadFromDisk(vaultId, activePath)}>
+              采用磁盘版本
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {doc?.degraded ? (

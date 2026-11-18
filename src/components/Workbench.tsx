@@ -4,6 +4,7 @@ import { TitleBar } from "./TitleBar";
 import { VaultSidebar } from "./VaultSidebar";
 import { EditorPane } from "./EditorPane";
 import { useDocStore } from "../stores/docStore";
+import { events } from "../lib/transport";
 import { useAppStore } from "../stores/appStore";
 
 const SIDEBAR_MIN = 192;
@@ -98,6 +99,19 @@ export function Workbench() {
   useEffect(() => {
     resetDocs();
   }, [vaultId, resetDocs]);
+
+  // External changes: the tree refreshes itself; open documents re-read here.
+  useEffect(() => {
+    if (!vaultId) return;
+    const off = events.vaultChanged.on((event) => {
+      if (event.vaultId === vaultId) {
+        void useDocStore.getState().applyExternalChange(vaultId, event.directories);
+      }
+    });
+    return () => {
+      off();
+    };
+  }, [vaultId]);
 
   const [draftSidebar, setDraftSidebar] = useState<number | null>(null);
   const [draftDoc, setDraftDoc] = useState<number | null>(null);

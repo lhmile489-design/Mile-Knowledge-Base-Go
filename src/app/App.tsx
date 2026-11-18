@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Workbench } from "../components/Workbench";
 import { WelcomeView } from "../components/WelcomeView";
+import { NoticeStack } from "../components/NoticeStack";
 import { useAppStore } from "../stores/appStore";
 
 export function App() {
@@ -28,5 +29,10 @@ export function App() {
   }
   // D-006: with every registered vault unavailable there is no active vault,
   // so the welcome page (with fault cards) shows instead of an empty shell.
-  return activeVaultId ? <Workbench /> : <WelcomeView />;
+  return (
+    <>
+      {activeVaultId ? <Workbench /> : <WelcomeView />}
+      <NoticeStack />
+    </>
+  );
 }

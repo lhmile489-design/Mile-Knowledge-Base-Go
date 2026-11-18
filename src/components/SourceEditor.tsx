@@ -4,6 +4,7 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } f
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { markdown } from "@codemirror/lang-markdown";
+import { minimalChange } from "../lib/docUtils";
 
 type Props = {
   path: string;
@@ -80,24 +81,4 @@ export function SourceEditor({ path, value, readOnly, onChange, onSave }: Props)
   }, [value]);
 
   return <div className="source-editor-host" ref={hostRef} data-path={path} />;
-}
-
-/** Common prefix/suffix diff: enough to keep the cursor and history sane when
- * the app itself replaces the document. */
-export function minimalChange(current: string, next: string): { from: number; to: number; insert: string } {
-  const max = Math.min(current.length, next.length);
-  let prefix = 0;
-  while (prefix < max && current.charCodeAt(prefix) === next.charCodeAt(prefix)) prefix += 1;
-  let suffix = 0;
-  while (
-    suffix < max - prefix &&
-    current.charCodeAt(current.length - 1 - suffix) === next.charCodeAt(next.length - 1 - suffix)
-  ) {
-    suffix += 1;
-  }
-  return {
-    from: prefix,
-    to: current.length - suffix,
-    insert: next.slice(prefix, next.length - suffix),
-  };
 }
