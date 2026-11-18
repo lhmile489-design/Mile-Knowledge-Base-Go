@@ -210,6 +210,13 @@ func (s *Store) RecentVaults() []contract.Vault {
 	return out
 }
 
+// LastVaultID returns the vault that was open when the app last ran.
+func (s *Store) LastVaultID() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.settings.LastVaultID
+}
+
 // Get returns a copy of the current settings.
 func (s *Store) Get() contract.AppSettings {
 	s.mu.Lock()

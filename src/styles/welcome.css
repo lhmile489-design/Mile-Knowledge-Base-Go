@@ -1,0 +1,139 @@
+/* Welcome page (PRD FR-VLT, DESIGN.md §4): bento grid with container queries,
+   the hero card is the only accent action in the view. */
+.welcome-shell {
+  overflow: auto;
+  padding: 24px var(--gap-panel) var(--gap-panel);
+  container-type: inline-size;
+  background: var(--raw-canvas);
+}
+
+.welcome-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 150px;
+  gap: var(--gap-tile);
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.welcome-hero {
+  grid-column: span 2;
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome-title {
+  margin: 4px 0 0;
+  font-size: var(--text-title);
+  font-weight: 600;
+  color: var(--raw-text);
+}
+
+.welcome-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.welcome-alert {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-control);
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.welcome-alert[data-tone="fault"] {
+  border: 1px solid var(--signal-fault);
+}
+
+.welcome-alert[data-tone="warn"] {
+  border: 1px solid var(--signal-warn);
+}
+
+.welcome-tile-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.welcome-vault {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.welcome-vault-name {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--raw-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.welcome-vault-path {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.welcome-unavailable {
+  border-color: var(--signal-fault);
+}
+
+.welcome-unavailable-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.welcome-footnote {
+  max-width: 1120px;
+  margin: 12px auto 0;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.onboarding {
+  max-width: 640px;
+  margin: 24px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+}
+
+@container (max-width: 720px) {
+  .welcome-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .welcome-hero {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+}
+
+@container (max-width: 480px) {
+  .welcome-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .welcome-hero {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}

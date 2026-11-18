@@ -20,6 +20,7 @@ import (
 // Prefs persists the registered vault list (implemented by settings.Store).
 type Prefs interface {
 	RecentVaults() []contract.Vault
+	LastVaultID() string
 	SaveVaults(vaults []contract.Vault, activeID string) *contract.Failure
 }
 
@@ -93,6 +94,15 @@ func (r *Registry) Load() {
 		}
 		r.vaults = append(r.vaults, v)
 		r.roots[id] = canon
+	}
+	// Reopen the vault that was active last time, if it is still usable.
+	if r.prefs != nil {
+		last := r.prefs.LastVaultID()
+		if last != "" {
+			if _, ok := r.roots[last]; ok {
+				r.active = last
+			}
+		}
 	}
 	if r.active != "" && r.roots[r.active] == "" {
 		r.active = ""

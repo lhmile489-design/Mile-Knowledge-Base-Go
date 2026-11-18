@@ -26,6 +26,7 @@ type AppState = {
   setCloseBehavior: (mode: "ask" | "tray" | "quit") => Promise<void>;
   setLayout: (patch: Partial<AppSettings["layout"]>) => Promise<void>;
   openVault: (id: string) => Promise<void>;
+  chooseVault: () => Promise<void>;
   forgetVault: (id: string) => Promise<void>;
   retryVault: (id: string) => Promise<void>;
   pushNotice: (text: string, level?: string) => void;
@@ -102,6 +103,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   openVault: async (id) => {
     const list = await vaultApi.open(id);
+    set({ vaults: list.vaults, unavailable: list.unavailable, activeVaultId: list.activeVaultId });
+  },
+
+  chooseVault: async () => {
+    const result = await vaultApi.choose();
+    if (result.cancelled) return;
+    const list = await vaultApi.list();
     set({ vaults: list.vaults, unavailable: list.unavailable, activeVaultId: list.activeVaultId });
   },
 
