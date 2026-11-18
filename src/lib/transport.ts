@@ -10,6 +10,7 @@ import {
   VaultService,
   WindowService,
   events,
+  type AgentPatch,
   type AppSettings,
   type IndexStatus,
   type KbHealthReport,
@@ -72,6 +73,8 @@ async function guard<T>(work: () => Promise<T>): Promise<T> {
 export const settingsApi = {
   get: () => guard(async () => unwrap(await SettingsService.get())),
   appConfigGet: (vaultId: string) => guard(async () => unwrap(await SettingsService.appConfigGet(vaultId))),
+  appConfigPatchAgent: (vaultId: string, agent: string, patch: AgentPatch) =>
+    guard(async () => unwrap(await SettingsService.appConfigPatchAgent(vaultId, agent, patch))),
   appConfigPatchAliases: (vaultId: string, patches: Record<string, string | null>) =>
     guard(async () => unwrap(await SettingsService.appConfigPatchAliases(vaultId, patches))),
   patch: (patch: Parameters<typeof SettingsService.patch>[0]) =>

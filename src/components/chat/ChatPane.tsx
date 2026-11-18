@@ -3,7 +3,7 @@ import { useAppStore } from "../../stores/appStore";
 import { useAgentStore } from "../../stores/agentStore";
 import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
-import { ChatComposer } from "./ChatComposer";
+import { Composer } from "./Composer";
 
 /** The Agnes chat panel: header, message list, composer (T11 skeleton). */
 export function ChatPane() {
@@ -18,7 +18,7 @@ export function ChatPane() {
     <div className="chat-pane" data-testid="chat-pane">
       <ChatHeader />
       <MessageList />
-      <ChatComposer />
+      <Composer />
     </div>
   );
 }
