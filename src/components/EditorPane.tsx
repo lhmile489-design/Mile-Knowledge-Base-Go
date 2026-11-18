@@ -11,7 +11,7 @@ import { MutationReportCard } from "./MutationReportCard";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore, isDirty, tabTitle, useDirtyReporter } from "../stores/docStore";
 import { useMutationStore } from "../stores/mutationStore";
-import { docApi, mutationApi, TransportError } from "../lib/transport";
+import { docApi, mutationApi, renderApi, TransportError } from "../lib/transport";
 import { newNotePath, newNoteText } from "../lib/wikilink";
 import { formatBytes } from "../lib/bytes";
 
@@ -41,6 +41,24 @@ export function EditorPane() {
   const followRef = useRef<(target: string) => Promise<void>>(async () => {});
   const followWikiLink = async (target: string) => {
     if (!vaultId || !activePath) return;
+    // The renderer already classifies every link, including the title layer
+    // (M36). Ask it first: a title hit must open, not create a duplicate.
+    try {
+      const revision = useDocStore.getState().docs[activePath]?.revision ?? 0;
+      const rendered = await renderApi.document(vaultId, activePath, revision);
+      const hit = (rendered.links ?? []).find((link) => link.target === target);
+      if (hit?.path) {
+        await useDocStore.getState().open(vaultId, hit.path);
+        void useAppStore.getState().setLayout({ docCollapsed: false });
+        return;
+      }
+      if (hit && hit.candidates > 1) {
+        useAppStore.getState().pushNotice(`有 ${hit.candidates} 个同名目标，请用完整路径`, "warn");
+        return;
+      }
+    } catch {
+      // Fall back to the path probe below.
+    }
     const notePath = newNotePath(target, activePath);
     if (!notePath) return;
     // Probe first: docStore.open turns a read failure into a tab with an error

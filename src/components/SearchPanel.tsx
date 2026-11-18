@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 import { useSearchStore, type SortMode } from "../stores/searchStore";
 import { useDocStore } from "../stores/docStore";
@@ -86,6 +87,13 @@ export function SearchPanel() {
   const openDoc = useDocStore((state) => state.open);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: hits.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 86,
+    overscan: 8,
+  });
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -218,7 +226,7 @@ export function SearchPanel() {
         ) : null}
       </div>
 
-      <div className="search-body" role="listbox" aria-label="搜索结果">
+      <div className="search-body" role="listbox" aria-label="搜索结果" ref={listRef}>
         {error ? (
           <p className="search-status" role="alert">
             {error}
@@ -230,9 +238,17 @@ export function SearchPanel() {
         ) : hits.length === 0 ? (
           <p className="search-status muted">没有匹配的文档。</p>
         ) : (
-          hits.map((hit, index) => (
+          <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+            {virtualizer.getVirtualItems().map((item) => {
+              const hit = hits[item.index];
+              if (!hit) return null;
+              const index = item.index;
+              return (
             <button
               key={hit.path}
+              ref={virtualizer.measureElement}
+              data-index={index}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, transform: `translateY(${item.start}px)` }}
               type="button"
               role="option"
               aria-selected={index === selectedIndex}
@@ -257,7 +273,9 @@ export function SearchPanel() {
                 {hit.ignored ? " · 系统区" : ""}
               </span>
             </button>
-          ))
+              );
+            })}
+          </div>
         )}
       </div>
 

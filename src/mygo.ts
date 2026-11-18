@@ -299,6 +299,7 @@ export interface RenderResult {
   html?: string;
   revision?: number;
   hasImages?: boolean;
+  links?: ResolvedLink[];
   failure?: Failure;
 }
 

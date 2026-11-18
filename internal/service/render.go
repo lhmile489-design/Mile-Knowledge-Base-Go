@@ -26,10 +26,11 @@ func NewRenderService(app *App) *RenderService { return &RenderService{app: app}
 
 // RenderResult is the reader payload (API.md M36).
 type RenderResult struct {
-	HTML      string            `json:"html,omitempty"`
-	Revision  int64             `json:"revision,omitempty"`
-	HasImages bool              `json:"hasImages,omitempty"`
-	Failure   *contract.Failure `json:"failure,omitempty"`
+	HTML      string                  `json:"html,omitempty"`
+	Revision  int64                   `json:"revision,omitempty"`
+	HasImages bool                    `json:"hasImages,omitempty"`
+	Links     []contract.ResolvedLink `json:"links,omitempty"`
+	Failure   *contract.Failure       `json:"failure,omitempty"`
 }
 
 // RenderDocument renders one document for reading mode. The result is not
@@ -61,7 +62,32 @@ func (s *RenderService) RenderDocument(ctx context.Context, vaultID, rel string,
 	if err != nil {
 		return RenderResult{Failure: contract.Fail(contract.CodeUnsupported, "渲染失败")}
 	}
-	return RenderResult{HTML: result.HTML, Revision: snap.Revision, HasImages: result.HasImages}
+	out := RenderResult{HTML: result.HTML, Revision: snap.Revision, HasImages: result.HasImages}
+	// The reader's event delegation needs the classification too; M36 already
+	// promises it. Titles resolve here as well, so Ctrl+click can open a
+	// document whose title differs from its file name.
+	if resolver, ok := resolver.(*indexedLinkResolver); ok {
+		seen := map[string]bool{}
+		for _, link := range index.ExtractLinks(snap.Text) {
+			if link.Kind != index.LinkWiki && link.Kind != index.LinkInternal {
+				continue
+			}
+			if seen[link.Target] {
+				continue
+			}
+			seen[link.Target] = true
+			path, candidates := resolver.index.Resolve(link.Target)
+			resolved := contract.ResolvedLink{
+				Target: link.Target, Text: link.Text, Kind: link.Kind, Candidates: candidates,
+			}
+			if candidates == 1 {
+				p := path
+				resolved.Path = &p
+			}
+			out.Links = append(out.Links, resolved)
+		}
+	}
+	return out
 }
 
 func escapeURLPath(p string) string {

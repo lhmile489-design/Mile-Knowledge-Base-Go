@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowCounterClockwise, X } from "@phosphor-icons/react";
 import {
   events,
@@ -47,6 +48,13 @@ export function AuditPanel() {
 
   const [data, setData] = useState<AuditListResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: data?.records?.length ?? 0,
+    getScrollElement: () => bodyRef.current,
+    estimateSize: () => 30,
+    overscan: 8,
+  });
 
   const load = useCallback(async () => {
     if (!vaultId) return;
@@ -82,7 +90,7 @@ export function AuditPanel() {
           <X size={13} aria-hidden />
         </button>
       </div>
-      <div className="audit-body">
+      <div className="audit-body" ref={bodyRef}>
         {error ? (
           <p className="audit-empty" role="alert">
             {error}
@@ -90,13 +98,22 @@ export function AuditPanel() {
         ) : !data || data.records.length === 0 ? (
           <p className="audit-empty muted">还没有记录</p>
         ) : (
-          data.records.map((record) => {
-            // Same rule as the legacy panel: a completed record with a
-            // transaction can be restored even if the rest of the plan was
-            // partial.
-            const canRestore = Boolean(record.transactionId) && record.status === "completed";
-            return (
-              <div key={record.id} className="audit-row">
+          <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+            {virtualizer.getVirtualItems().map((item) => {
+              const record = data.records[item.index];
+              if (!record) return null;
+              // Same rule as the legacy panel: a completed record with a
+              // transaction can be restored even if the rest of the plan was
+              // partial.
+              const canRestore = Boolean(record.transactionId) && record.status === "completed";
+              return (
+              <div
+                key={record.id}
+                ref={virtualizer.measureElement}
+                data-index={item.index}
+                style={{ position: "absolute", top: 0, left: 0, right: 0, transform: `translateY(${item.start}px)` }}
+                className="audit-row"
+              >
                 <span className="audit-status" data-status={record.status}>
                   {STATUS_LABEL[record.status] ?? record.status}
                 </span>
@@ -119,8 +136,9 @@ export function AuditPanel() {
                   </button>
                 ) : null}
               </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
     </section>

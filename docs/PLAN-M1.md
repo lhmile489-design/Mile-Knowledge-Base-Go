@@ -331,7 +331,10 @@ M0 已完成。M1 为本计划。M2、M3 的划分见 docs/PLAN-M0.md 第 3 节�
 | 检索 p50 / p95（典型，50 次二字中文查询） | p95 ≤ 100ms | 1.0 / 2.7ms | 未测 |
 | 检索 p50 / p95（大，同上） | p95 ≤ 200ms | 1.0 / 45.3ms | 未测 |
 | 外部一次改 1000 个文件期间 WebView 长任务 | 无 > 200ms | 0 个 | 机制性卡顿（P-1） |
+| 搜索 200 条滚动 | 60fps | 200 命中时 DOM 只渲染 12 行，滚动到 14352px 长任务 0 个 | 未虚拟化 |
+| 操作日志 200 条滚动 | 60fps | 已改为虚拟化（与搜索同一机制），未单独造 200 条实测 | 未虚拟化 |
 | 树 5000 项滚动 | 60fps | 0 个长任务（M0 实测） | 未虚拟化 |
+| 读模式端到端（M0 遗留） | 无目标，记录数值 | M0 未单独计时；M1 未补测 | — |
 
 旧版基线（PRD Q7）仍未测：需要在隔离 APPDATA 的沙箱里跑旧版 Electron 并用同一套样本计时，本轮未执行；G-PERF 维持警告级。大库索引首建 6s 高于 R-2 spike 的 1.33s，差距来自样本更大（1.5 万文件、含代码目录）与逐批事务，仍满足「后台完成、界面可用」。
 
@@ -396,10 +399,10 @@ RESULT pass=16 fail=0
 
 ### 下次会话先读
 
-- 当前阶段：M1 已批准，执行中。
-- 下一个任务：T00（进行中）。
-- 工作区：`main` 与 `origin/main` 同为 `39041a0`，工作区干净（本计划文件除外）。
-- 待决事项：B-M1-05、B-M1-06；13 项窗口手动确认（M0 遗留）。
+- 当前阶段：M1 的 T00–T13 已完成，整体独立审查已处理（0 阻断、4 需改已修/已记录）；T14 收尾待用户放行。
+- 下一个任务：T14（README/CLAUDE/账本同步，列提交，询问后推送）。
+- 工作区：`main` 领先 `origin/main` 若干提交（截至 T13 为 16 个），全部未推送；工作区干净。
+- 待决事项：是否推送；13 项窗口手动确认（M0 遗留）；旧版性能基线未测（PRD Q7）。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
@@ -416,6 +419,7 @@ RESULT pass=16 fail=0
   - T12 依赖 WebView2 自定义协议能收到 POST 请求体，未实测，第一步先验证；上传端点是新的写入口，授权校验写进了交接，T12 后独立审查；
   - T13 的兼容脚本依赖旧版模块能在 bun 下单独运行，未实测；
   - 链接全量解析和增量重算的耗时要在哈希实现上重测，结果可能要求调整 T04 的实现。
+| 2026-11-18 | M1 整体独立审查（task-reviewer，只读，39041a0..HEAD）0 阻断 / 4 需改 / 8 建议，处理如下：**N1** PLAN §9 恢复入口滞后 → 已更新到「T00–T13 完成、T14 待放行」；**N2** 搜索与日志面板未虚拟化 → 两处改为 react-virtual（搜索按行高测量，日志固定 30px），实测 200 命中时 DOM 仅 12 行、滚动到底 0 长任务；**N3** Ctrl+点击未走标题层 → M36 现已按契约返回 `links`（索引解析器逐条分类），前端先查渲染结果：标题命中直接打开、多候选提示、无候选才生成新建计划；e2e 验证 `[[设计原则]]` 打开 `raws/标题不同.md` 且不弹计划卡；**N4** 恢复后反向链接/来源面板刷新边界 → 恢复走 applyExternalChange 会重读打开文档（revision 变化即重拉），无审计记录的事务不推 E03 属已知边界，已记录；**J6** 性能表补回读模式指标行与 200 条滚动行；**J5** 上传失败提示在上一轮已加（审查者看到的是旧版）。其余建议（M62 形状、UpdateStatus 原子性、事务 id 拼接注释、ac-m0 复跑证据）记入 T14/后续 | 修复后 go test 全绿、vet、tsc、vitest 79 项通过；搜索 200 条滚动实测 0 长任务 | T14 |
 | 2026-11-18 | T13 完成 | `scripts/e2e/ac-m1.sh`：搜索→打开→反向链接→新建→重命名→归档→日志恢复→重启 16 项断言；`scripts/compat/legacy-compat.sh` + `cmd/compatcheck`：把旧版 provenance/TransactionService/errors/vault 复制到临时目录用 bun 运行（旧仓库只读），双向验证事务恢复与 provenance 字节；`scripts/e2e/perf-m1.sh`：冷启动、索引 ready、检索 p50/p95、外部 1000 改动长任务；结果写入本计划 §6.0/§6.1，README 增加三条命令 | AC-M1 RESULT pass=16 fail=0（含重启后索引与 audit 保留）；兼容 RESULT pass=7 fail=0（旧版写→Go 读、Go 写→旧版读、provenance 恒等）；性能：典型冷启动 910ms、大库 1093ms、索引 ready 典型 191ms/大 6021ms、检索 p95 典型 2.7ms/大 45.3ms、1000 外部改动 0 长任务。全仓 go test、vet、tsc、vitest 79 项通过 | 旧版性能基线仍未测（需隔离 APPDATA 跑旧版 Electron，本轮未执行，G-PERF 仍为警告级）；大库索引首建 6s 高于 R-2 spike，已注明原因 | 整体独立审查 |
 | 2026-11-18 | T09–T12 独立审查（task-reviewer，只读）报告 3 阻断 4 需改 3 建议，逐条处理：**阻断 1（上传端点语义）**：缺 `?vault=` 时回退活动库 → 已改为必须显式传库，缺失/未知一律拒绝（新增 `vaultRootForRequest` 三态测试）；「非 POST 返回 405」与 T00 计划明文一致（API §5 上传规则），不改。**阻断 2（attachments 目录 TOCTOU）**：审查者自己确认只是 MkdirAll→写入之间的竞态、与旧版同级，已额外在 MkdirAll 之后重新 `pathguard.Resolve` 收窄窗口。**阻断 3（wikilinkAt 把链接间文字误判）**：复核为误报——`[[a]] 文字 [[b]]` 中间文字的 `lastIndexOf("[[")` 指向前一个链接，`end < pos` 会返回 null；已补 3 条针对性测试（中间文字、两侧链接内部、`[[` 起始位置）证明。**需改**：审计面板恢复条件按旧版改回「有 transactionId 且记录 completed」即可（partial 事务也能恢复已完成项，旧版 AuditPanel.tsx:168 同款判定）；`__mkbFollow` 钩子改为稳定 bridge + 卸载清理；上传失败改为 pushNotice 提示；别名提交同时刷新父目录与目录本身。**建议**：M62 出参暂无前端消费者、探测注释等未改动。修复后 go test 全绿、vet、tsc、vitest 79 项通过 | 405 与 §5「错误响应只列 403/404」的措辞差异按 T00 计划保留；junction 竞态仍需人为构造才能实证（风险与旧版同级） | T13 |
 | 2026-11-18 | T12 完成 | 第一步先验证：e2e 从页面 `fetch` POST 1 KiB PNG 到 `http://kbimg.localhost/__upload` → 首次写盘、二次 `existed=true`、SVG 拒绝、9 MiB 拒绝、GET 返回 200 且 `Content-Type: image/png`（CallerWindow 校验通过，非本应用请求 404 有 handler 单测）。`internal/vault/attachments.go`：按魔数识别 png/jpg/gif/webp/bmp/avif，`raws/attachments/pasted-<sha256前12位>.<ext>`，同内容不重写，8 MiB 上限，目录经 pathguard；`internal/service/image.go`：GET/POST 分流、仅 POST 上传、`CallerWindow` 必须非空、请求体超限即拒、读图改为按魔数判类型并补 8 MiB 与 `no-store`（补上 M0 的 4 处契约偏差）；CSP `connect-src` 放行 kbimg。前端：`uploadImage`（原始字节，不走 base64）、编辑器 paste/drop 上传并插入 `![](...)`、Ctrl/Cmd+点击 wikilink 先探测目标存在（存在则打开），不存在时用 M29 生成新建计划（`newNotePath` 路径规则 + `# 名称` 正文）；`wikilinkAt` 抽到 lib 并配测试。e2e：源码模式粘贴 PNG → 文本出现 `![]raws/attachments/pasted-….png` 且文件落盘；Ctrl+点击 `[[新链接页]]` → 计划卡「新建 raws/新链接页.md」→ 执行后文件存在；阅读模式图片仍能加载（naturalWidth>0）；截图 design/m0/t12-image-wikilink-1440x900.png。过程中修掉一个真实缺陷：wikilink 处理器的 useEffect 放在 EditorPane 早退之后，打开文档时 hooks 数量变化导致整棵 React 树崩溃（白屏）；移到早退之前后恢复。go test、vet、tsc、vitest 77 项、fuzz 通过 | Ctrl+点击只按「路径 + 文件名 + 补 .md」探测，未做标题层解析（旧版用索引标题解析；标题不同的文件会被当成不存在而生成新建计划）；粘贴/拖入只在源码模式生效，阅读模式不插入；上传失败时静默不插入（避免坏链接），用户无提示 | T13 |
