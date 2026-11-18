@@ -135,6 +135,24 @@ func TestApprovalYoloSkipsCard(t *testing.T) {
 	}
 }
 
+func TestWriteApprovalDoesNotGrantFreshMutation(t *testing.T) {
+	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
+	done := make(chan error, 1)
+	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil) }()
+	pending := h.waitPending(t)
+	if f := h.manager.Approve(pending.RequestID, "allow_once"); f != nil {
+		t.Fatal(f)
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	// D-012: an approved write card never stands in for the mutation card a
+	// permanent delete needs.
+	if err := h.manager.ConsumeFreshMutation(context.Background(), "s1", "raws/a.md"); err == nil {
+		t.Fatal("a write approval satisfied a fresh mutation")
+	}
+}
+
 func TestFreshMutationGrant(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
 	done := make(chan error, 1)

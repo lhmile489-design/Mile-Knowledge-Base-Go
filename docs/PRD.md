@@ -1,6 +1,6 @@
 # 产品需求文档：Go 重构版（功能对齐 + 性能）
 
-> 状态：已确认 v1.7（v1.0 于 2026-11-18 审核通过；v1.1–v1.7 同日修订，见文末修订记录）。
+> 状态：已确认 v1.8（v1.0 于 2026-11-18 审核通过；v1.1–v1.8 修订，见文末修订记录）。
 > 迭代名称：R1 重构对齐版；负责人：用户；确认日期：2026-11-18。
 > 产品总览见 [PRODUCT.md](../PRODUCT.md)，本文件只定义本次重写的范围与规则。
 > 需求来源：旧版 `E:\WebApp\Mile-Project\Mile-Knowledge-Base-master` v2.7.0 源码（以代码为准，文档与代码冲突时取代码），2026-11-18 盘点；用户本轮说明。
@@ -483,7 +483,7 @@
 | list_dir | path | 空字符串表示根目录；不列出系统区 |
 | write_note | path, content | 新建或覆盖，自动创建父目录；只能写内容区 |
 | edit_note | path, old_text, new_text | old_text 必须恰好出现 1 次，出现 0 次或多次都报错；带 revision 冲突检测 |
-| mutate_notes | kind, source?, target? | kind 取值：createDirectory、move、copy、archive、trash、permanentDelete；走变更事务；permanentDelete 要求 60 秒内、目标一致、且发卡时不是全自动模式的那次批准，用过即作废 |
+| mutate_notes | kind, source?, target? | kind 取值：createDirectory、move、copy、archive、trash、permanentDelete；走变更事务；permanentDelete 要求 60 秒内、目标一致、且发卡时不是全自动模式的那次批准（只认变更审批卡，D-012），用过即作废 |
 | handoff_task | owner, goal, inputs?, constraints? | 不能交给自己；goal ≤4000 字符；inputs、constraints 各最多 50 条，每条 ≤4000 |
 | set_aliases | aliases | 最多 2000 条 |
 
@@ -521,7 +521,7 @@
   - 所有点号目录；
   - 草稿区 `.mile-kb/drafts/`：旧版 `agentPolicy.ts:43-44` 明确「草稿暂存区仍属应用系统区，任何 Agent 都不能直接写它」。
 - 判定分两道：先按路径拼写判断，再按真实路径判断，防止短名、目录联接等绕过。
-- 批准一次写入后，60 秒内对同一会话、同一路径有效，用过即作废。
+- 批准只覆盖引发它的那次操作：写入类审批随本次写入执行而作废，不产生可复用的写授权。结构变更的批准在 60 秒内对同一会话、同一路径有效、用过即作废；永久删除的新鲜批准只认专门的变更审批卡，普通的写入审批不顶替（比旧版更严，decisions.md D-012）。
 - 两步确认防误触（删除历史、清空、删除供应商等）：第二次点击必须距第一次至少 600ms，且不能是双击；确认状态 4 秒后自动复位。
 - 新增约束：审批卡的状态以 Go 侧为准。界面先发出回应、收到确认后再移除卡片，避免回合永远停在「进行中」（旧版曾出现过）。
 
@@ -840,3 +840,4 @@
 | v1.5 | 2026-11-18 | 设计交接检查修订：FR-AI-PROV 供应商上限改为「保存 32 / 读取保留 50」；FR-AI-HIST 搜索改用 SQLite FTS5；§7 引擎状态枚举统一为 starting/ready/offline；§12 新增 AC-OVW-1（待审批计数磁贴）与 AC-AI-6（共享上下文 2400 字符上限与省略标注） | 用户确认，decisions.md D-008 |
 | v1.6 | 2026-11-18 | FR-PROV 增加「从来源同步」的完整规则与 AC-PROV-2（新行为）；FR-DOC 的图片传输改为 `kbimg` 协议上传；FR-AREA 注明「进检索」开关旧版未实现、M1 不生效 | 用户 2026-11-18 选择，decisions.md D-009 |
 | v1.7 | 2026-11-18 | M2 计划复审（D-010）：FR-AI-PROV 默认配置注明旧版运行差异与裸名落盘规则；FR-AI-ENG 代理改为 SOCKS5 可用、环境变量优先，与技术设计 2.1 一致 | 用户确认按 PRD 现写法 |
+| v1.8 | 2026-11-19 | FR-AI-PERM 批准语义按实现写清：写入审批只覆盖本次写入、不产生可复用写授权；结构变更批准 60 秒内同会话同路径有效、用过即作废；永久删除的新鲜批准只认变更审批卡，写卡不顶替（比旧版更严） | T05+T06 专项审查，用户 2026-11-19 选择「保持更严」，decisions.md D-012 |

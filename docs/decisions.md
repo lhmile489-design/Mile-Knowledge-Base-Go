@@ -163,6 +163,18 @@
 - 受影响：docs/API.md（M67、M69、M70）、docs/数据库设计.md 3.6、docs/PLAN-M2.md T01 账本、internal/contract（ProviderDraft/ProvidersResult/FetchModelsResult）、internal/ai（providers/models/keys）、internal/service/providers.go。
 - 正文同步情况：已回写上述文档。
 
+## D-012：永久删除的新鲜批准只认变更审批卡（比旧版更严）
+
+- 日期与状态：2026-11-19，已确认（用户选择「保持更严」）。
+- 背景：T05+T06 权限门专项审查发现，旧版 `EngineHost.grantIfAllowed`（`EngineHost.ts:717-729`）在用户允许**任何**审批卡（含 write_note / edit_note 的写卡）时，都会同时登记 `mutationApprovals`（60 秒、路径一致、发卡时非 yolo）；新实现只有 `kind=mutation` 的卡登记 grant。审查请用户确认保持新实现还是对齐旧版。
+- 旧版行为：写卡批准后 60 秒内，对同一路径发起 permanentDelete 可以不再弹卡，直接消费那条批准。
+- 备选：①保持新实现，只认变更审批卡；②对齐旧版，任意批准卡都登记。
+- 结论：**保持更严**。永久删除只能由专门的变更审批卡（目标一致、发卡时非全自动）在 60 秒内一次性放行；普通写入卡不顶替。
+- 原因：与 D-005 和 PRD「永久删除需要本次单独确认」的意图一致——写卡批准的是内容写入，不是删除授权；旧版把两者混在同一张表里是实现疏忽，其行为是降低门槛。
+- 代价与风险：与旧版存在一处用户可见差异：先批准一次写入、再在同一路径发起永久删除时，新版仍会弹卡。删除路径比旧版多一次确认，方向更安全。
+- 受影响：docs/PRD.md（FR-AI-PERM，v1.8 与 `mutate_notes` 行）、docs/PLAN-M2.md 账本、internal/ai/approval.go（现实现无需改动，`kind == "mutation"` 才登记 grant）。
+- 正文同步情况：已回写 PRD 与 PLAN。
+
 ## 单条模板
 
 ### 待编号：决策标题
