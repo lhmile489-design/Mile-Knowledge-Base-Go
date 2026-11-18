@@ -11,6 +11,7 @@ import {
 } from "../../stores/composerStore";
 import { RouteLine } from "./RouteLine";
 import { RunParams } from "./RunParams";
+import { UsageReceipt } from "./UsageReceipt";
 
 /** The composer (T13): Enter sends, Shift+Enter inserts a newline, the height
  * drags (or ↑/↓ by 16px) and persists, and prompts over 32 000 characters are
@@ -85,6 +86,7 @@ export function Composer() {
   return (
     <footer className="chat-footer">
       <div className="chat-footer-inner">
+        <UsageReceipt />
         <RunParams />
         <button
           type="button"

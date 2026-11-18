@@ -8,7 +8,7 @@ import type { AgentId } from "../../lib/agentMeta";
 import { AgentMessage } from "./AgentMessage";
 import { UserMessage } from "./UserMessage";
 import { ThinkingIndicator } from "./ThinkingIndicator";
-import { PermissionRow } from "./PermissionRow";
+import { PermissionCard } from "./PermissionCard";
 
 /** Virtualized message list (P-3/P-5). Streaming only mutates the last turn,
  * so finished turns keep their identity and never re-render. */
@@ -98,7 +98,9 @@ export function MessageList() {
           </div>
         ) : null}
 
-        <PermissionRow />
+        {bucket.pendingPermissions.map((permission) => (
+          <PermissionCard key={permission.requestId} agent={agent} permission={permission} />
+        ))}
 
         {bucket.busy ? (
           <ThinkingIndicator

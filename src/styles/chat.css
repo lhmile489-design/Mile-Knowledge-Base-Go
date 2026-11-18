@@ -388,3 +388,134 @@
 .chat-counter[data-over="true"] {
   color: var(--fault);
 }
+
+/* ---- approval card (T14) ---- */
+
+.permission-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.perm-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  color: var(--raw-strong);
+}
+
+.perm-detail {
+  margin: 0;
+  font-size: var(--text-meta-lg);
+  color: var(--raw-muted);
+  overflow-wrap: anywhere;
+}
+
+.perm-preview-summary {
+  margin: 0 0 4px;
+  font-size: var(--text-meta-lg);
+  color: var(--raw-muted);
+}
+
+.perm-preview-lines {
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-control);
+  background: var(--panel-sunken, var(--raw-card));
+}
+
+.perm-preview-line {
+  display: flex;
+  min-width: 0;
+  padding-left: 8px;
+  color: var(--raw-text);
+}
+
+.perm-preview-line[data-kind="same"] {
+  padding-left: 10px;
+  color: var(--raw-muted);
+}
+
+.perm-preview-line[data-kind="added"],
+.perm-preview-line[data-kind="removed"] {
+  border-left: 2px solid var(--raw-line);
+}
+
+.perm-preview-sign {
+  flex: none;
+  font-family: var(--font-mono);
+  white-space: pre;
+  user-select: none;
+}
+
+.perm-preview-text {
+  min-width: 0;
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.perm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* ---- usage receipt (T14) ---- */
+
+.usage-receipt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--raw-line);
+  font-size: var(--text-meta);
+}
+
+.usage-model {
+  overflow: hidden;
+  font-size: var(--text-caption-lg);
+  color: var(--raw-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.usage-label {
+  flex: none;
+  font-size: var(--text-caption);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--raw-faint);
+}
+
+.usage-tokens {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-sep {
+  color: var(--raw-faint);
+}
+
+.usage-mono {
+  flex: none;
+  font-family: var(--font-mono);
+}
