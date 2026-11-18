@@ -3,6 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { CaretRight } from "@phosphor-icons/react";
 import { useTreeStore } from "../stores/treeStore";
 import { useAppStore } from "../stores/appStore";
+import { useDocStore } from "../stores/docStore";
 import { events } from "../lib/transport";
 import type { FileEntry } from "../mygo";
 import { iconFor } from "./treeIcons";
@@ -78,6 +79,8 @@ export function VaultSidebar() {
   const toggle = useTreeStore((state) => state.toggle);
   const select = useTreeStore((state) => state.select);
   const invalidate = useTreeStore((state) => state.invalidate);
+  const openDoc = useDocStore((state) => state.open);
+  const setLayout = useAppStore((state) => state.setLayout);
 
   useEffect(() => {
     if (vaultId) void reset(vaultId);
@@ -108,6 +111,10 @@ export function VaultSidebar() {
       void toggle(row.entry.path);
     } else {
       select(row.entry.path);
+      if (vaultId) {
+        void openDoc(vaultId, row.entry.path);
+        void setLayout({ docCollapsed: false });
+      }
     }
   };
 

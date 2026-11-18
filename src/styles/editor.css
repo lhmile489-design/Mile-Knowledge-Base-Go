@@ -1,0 +1,163 @@
+/* Document panel: tabs, toolbar and the CodeMirror host (DESIGN.md §5.8). */
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.tab-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 30px;
+  padding: 0 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-bottom: 1px solid var(--raw-line);
+  scrollbar-width: thin;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  padding: 0 6px 0 10px;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  font-size: var(--text-body-sm);
+  color: var(--raw-muted);
+  cursor: pointer;
+  flex: none;
+}
+
+.tab-item:hover {
+  background: var(--raw-raised);
+}
+
+.tab-item[aria-selected="true"] {
+  color: var(--raw-text);
+  background: var(--raw-card);
+}
+
+.tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-dirty {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--raw-accent);
+  flex: none;
+}
+
+.tab-close {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--raw-faint);
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--raw-line);
+  min-width: 0;
+}
+
+.editor-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+}
+
+.editor-meta {
+  margin-left: auto;
+  flex: none;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.editor-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-loading {
+  padding: 12px;
+}
+
+.source-editor-host {
+  height: 100%;
+  min-height: 0;
+}
+
+.source-editor-host .cm-editor {
+  height: 100%;
+  background: var(--raw-card);
+  color: var(--raw-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-body-md);
+  line-height: 1.65;
+}
+
+.source-editor-host .cm-scroller {
+  overflow: auto;
+}
+
+.source-editor-host .cm-gutters {
+  background: var(--raw-card);
+  border-right: 1px solid var(--raw-line);
+  color: var(--raw-faint);
+}
+
+.source-editor-host .cm-activeLine,
+.source-editor-host .cm-activeLineGutter {
+  background: var(--raw-raised);
+}
+
+.source-editor-host .cm-selectionBackground,
+.source-editor-host .cm-content ::selection {
+  background: var(--raw-accent-soft) !important;
+}
+
+.conflict-card,
+.editor-pane > .surface-card {
+  margin: 10px;
+}
+
+.conflict-compare {
+  margin-top: 8px;
+}
+
+.conflict-compare-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.conflict-compare-body pre {
+  max-height: 180px;
+  overflow: auto;
+  margin: 4px 0 0;
+  padding: 8px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-control);
+  background: var(--raw-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  white-space: pre-wrap;
+}

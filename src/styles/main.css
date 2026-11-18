@@ -2,6 +2,7 @@
 @import "./tokens.css";
 @import "./welcome.css";
 @import "./sidebar.css";
+@import "./editor.css";
 
 html,
 body,

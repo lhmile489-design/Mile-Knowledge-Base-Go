@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SidebarSimple } from "@phosphor-icons/react";
 import { TitleBar } from "./TitleBar";
 import { VaultSidebar } from "./VaultSidebar";
-import { useTreeStore } from "../stores/treeStore";
+import { EditorPane } from "./EditorPane";
+import { useDocStore } from "../stores/docStore";
 import { useAppStore } from "../stores/appStore";
 
 const SIDEBAR_MIN = 192;
@@ -75,7 +76,8 @@ function Resizer({ label, value, bounds, direction, onChange, onCommit }: Resize
 export function Workbench() {
   const layout = useAppStore((state) => state.settings?.layout);
   const setLayout = useAppStore((state) => state.setLayout);
-  const selected = useTreeStore((state) => state.selected);
+  const resetDocs = useDocStore((state) => state.reset);
+  const vaultId = useAppStore((state) => state.activeVaultId);
 
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
   useEffect(() => {
@@ -92,6 +94,10 @@ export function Workbench() {
   const docRoom = viewportWidth - sidebarWidth - CONVERSATION_MIN_WIDTH - GUTTERS;
   const effectiveDocWidth = Math.max(DOC_MIN, Math.min(docWidth, docRoom));
   const rightWidth = docCollapsed ? DOC_RAIL_WIDTH : effectiveDocWidth;
+
+  useEffect(() => {
+    resetDocs();
+  }, [vaultId, resetDocs]);
 
   const [draftSidebar, setDraftSidebar] = useState<number | null>(null);
   const [draftDoc, setDraftDoc] = useState<number | null>(null);
@@ -167,17 +173,7 @@ export function Workbench() {
           </aside>
         ) : (
           <section className="workbench-panel" data-panel="editor" aria-label="文档">
-            <div className="panel-placeholder">
-              <span className="eyebrow">{selected ? "已选择" : "未打开文件"}</span>
-              {selected ? (
-                <p className="muted">{selected}（标签页与编辑器在 T07b 接入）</p>
-              ) : (
-                <p className="muted">从左侧目录树、搜索或对话里的引用打开一个文件，它会显示在这里。</p>
-              )}
-              <button type="button" className="btn btn-quiet" onClick={() => void setLayout({ docCollapsed: true })}>
-                收起面板
-              </button>
-            </div>
+            <EditorPane />
           </section>
         )}
       </div>

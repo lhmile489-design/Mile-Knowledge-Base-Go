@@ -146,3 +146,8 @@ export function applyTheme(mode: ThemeMode) {
   root.style.colorScheme = resolved;
   window.setTimeout(() => root.classList.remove("theme-switching"), 32);
 }
+
+// E2E hook: the same store the UI uses.
+if (typeof window !== "undefined") {
+  (window as unknown as { __mkbApp?: unknown }).__mkbApp = useAppStore;
+}
