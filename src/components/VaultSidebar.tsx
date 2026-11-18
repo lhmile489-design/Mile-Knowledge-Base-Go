@@ -1,12 +1,23 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { CaretRight, ClockCounterClockwise, MagnifyingGlass } from "@phosphor-icons/react";
+import {
+  Archive,
+  CaretRight,
+  ClockCounterClockwise,
+  FilePlus,
+  FolderPlus,
+  MagnifyingGlass,
+  PencilSimple,
+  Tag,
+  Trash,
+} from "@phosphor-icons/react";
 import { useTreeStore } from "../stores/treeStore";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore } from "../stores/docStore";
 import { useSearchStore } from "../stores/searchStore";
-import { events } from "../lib/transport";
-import type { FileEntry } from "../mygo";
+import { useMutationStore } from "../stores/mutationStore";
+import { events, mutationApi, settingsApi } from "../lib/transport";
+import type { FileEntry, PlanResult } from "../mygo";
 import { iconFor } from "./treeIcons";
 
 const AREA_LABEL: Record<string, { cn: string; latin: string }> = {
@@ -23,15 +34,37 @@ const AREA_LABEL: Record<string, { cn: string; latin: string }> = {
 
 const AREA_ORDER = ["skills", "raws", "projects", "tools", "wiki", "constraints", "archives", "other", "system"];
 const ROW_HEIGHT = 28;
+const DRAG_MIME = "application/x-mile-path";
 
 type Row =
   | { kind: "area"; key: string; area: string; count: number }
-  | { kind: "entry"; key: string; entry: FileEntry; depth: number };
+  | { kind: "entry"; key: string; entry: FileEntry; depth: number }
+  | { kind: "create"; key: string; parent: string; depth: number; directory: boolean };
 
-function flatten(nodes: Record<string, FileEntry[]>, expanded: Record<string, boolean>): Row[] {
+type Editing =
+  | { mode: "rename"; path: string; initial: string }
+  | { mode: "alias"; path: string; initial: string }
+  | { mode: "createFile"; parent: string }
+  | { mode: "createDir"; parent: string }
+  | null;
+
+function flatten(nodes: Record<string, FileEntry[]>, expanded: Record<string, boolean>, editing: Editing): Row[] {
   const out: Row[] = [];
 
+  const maybeCreate = (parent: string, depth: number) => {
+    if (!editing || (editing.mode !== "createFile" && editing.mode !== "createDir")) return;
+    if (editing.parent !== parent) return;
+    out.push({
+      kind: "create",
+      key: `create:${parent}`,
+      parent,
+      depth,
+      directory: editing.mode === "createDir",
+    });
+  };
+
   const walk = (path: string, depth: number): void => {
+    maybeCreate(path, depth);
     const entries = nodes[path];
     if (!entries) return;
     for (const entry of entries) {
@@ -61,12 +94,13 @@ function flatten(nodes: Record<string, FileEntry[]>, expanded: Record<string, bo
       }
     }
   }
+  maybeCreate("", 1);
   return out;
 }
 
-/** The vault tree: lazy per-directory loading, area sections at the root,
- * semantic icons, aliases, and a virtualised row list so a 10k-entry
- * directory scrolls at 60fps (PRD FR-TREE, NFR-PERF). */
+/** The vault tree: lazy loading, area sections at the root, semantic icons,
+ * aliases, hover actions, inline rename/create/alias, drag-to-move and a
+ * virtualised list so a 10k-entry directory scrolls at 60fps (PRD FR-TREE). */
 export function VaultSidebar() {
   const auditOpen = useAppStore((state) => state.auditOpen);
   const toggleAudit = useAppStore((state) => state.toggleAudit);
@@ -85,6 +119,9 @@ export function VaultSidebar() {
   const openDoc = useDocStore((state) => state.open);
   const setLayout = useAppStore((state) => state.setLayout);
 
+  const [editing, setEditing] = useState<Editing>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+
   useEffect(() => {
     if (vaultId) void reset(vaultId);
   }, [vaultId, reset]);
@@ -98,7 +135,7 @@ export function VaultSidebar() {
     };
   }, [vaultId, invalidate]);
 
-  const rows = useMemo(() => flatten(nodes, expanded), [nodes, expanded]);
+  const rows = useMemo(() => flatten(nodes, expanded, editing), [nodes, expanded, editing]);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const virtualizer = useVirtualizer({
@@ -107,6 +144,21 @@ export function VaultSidebar() {
     estimateSize: () => ROW_HEIGHT,
     overscan: 12,
   });
+
+  const notify = (message: string) => useAppStore.getState().pushNotice(message, "warn");
+
+  const proposePlan = async (pending: Promise<PlanResult>, title: string) => {
+    try {
+      const result = await pending;
+      if (result.plan) {
+        useMutationStore.getState().propose(result.plan, title);
+      } else if (result.failure) {
+        notify(result.failure.message);
+      }
+    } catch (err) {
+      notify(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   const onRowActivate = (row: Row) => {
     if (row.kind !== "entry") return;
@@ -119,6 +171,70 @@ export function VaultSidebar() {
         void setLayout({ docCollapsed: false });
       }
     }
+  };
+
+  /** New entries go into the selected directory, or the selected file's
+   * parent, or the vault root. */
+  const creationParent = (): string => {
+    if (!selected) return "";
+    for (const entries of Object.values(nodes)) {
+      const hit = entries.find((entry) => entry.path === selected);
+      if (!hit) continue;
+      if (hit.kind === "directory") return hit.path;
+      const at = hit.path.lastIndexOf("/");
+      return at >= 0 ? hit.path.slice(0, at) : "";
+    }
+    return "";
+  };
+
+  const commitRename = (path: string, next: string) => {
+    setEditing(null);
+    if (!vaultId) return;
+    void proposePlan(mutationApi.rename(vaultId, path, next), `重命名为 ${next}`);
+  };
+
+  const commitAlias = async (path: string, next: string) => {
+    setEditing(null);
+    if (!vaultId) return;
+    try {
+      await settingsApi.appConfigPatchAliases(vaultId, { [path]: next.trim() === "" ? null : next.trim() });
+      await invalidate([parentOf(path)]);
+    } catch (err) {
+      notify(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const commitCreate = (parent: string, directory: boolean, name: string) => {
+    setEditing(null);
+    if (!vaultId) return;
+    const pending = directory
+      ? mutationApi.createDir(vaultId, parent, name)
+      : mutationApi.createFile(vaultId, parent, name);
+    void proposePlan(pending, directory ? `新建目录 ${name}` : `新建文件 ${name}`);
+  };
+
+  const archive = (path: string) => {
+    if (!vaultId) return;
+    void proposePlan(
+      mutationApi.plan({
+        vaultId,
+        origin: "user",
+        actions: [{ id: "archive", kind: "archive", source: path, reason: "用户归档" }],
+      }),
+      `归档 ${path}`,
+    );
+  };
+
+  const remove = (path: string) => {
+    if (!vaultId) return;
+    void proposePlan(
+      mutationApi.plan({
+        vaultId,
+        origin: "user",
+        actions: [{ id: "trash", kind: "trash", source: path, reason: "用户删除" }],
+      }),
+      `移入回收站：${path}`,
+    );
   };
 
   return (
@@ -139,6 +255,26 @@ export function VaultSidebar() {
           <span>搜索</span>
           <kbd>Ctrl P</kbd>
         </button>
+        <div className="vault-sidebar-new">
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="新建文件"
+            title="新建文件"
+            onClick={() => setEditing({ mode: "createFile", parent: creationParent() })}
+          >
+            <FilePlus size={14} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="新建目录"
+            title="新建目录"
+            onClick={() => setEditing({ mode: "createDir", parent: creationParent() })}
+          >
+            <FolderPlus size={14} aria-hidden />
+          </button>
+        </div>
       </div>
 
       <div ref={scrollRef} className="tree-scroll" role="tree" aria-label="知识库目录">
@@ -167,13 +303,42 @@ export function VaultSidebar() {
                     <span className="tree-area-latin">{AREA_LABEL[row.area]?.latin ?? ""}</span>
                     <span className="tree-area-count">{row.area === "skills" && skillCategories > 0 ? skillCategories : row.count}</span>
                   </div>
+                ) : row.kind === "create" ? (
+                  <div className="tree-row tree-row-editing" style={{ paddingLeft: 8 + row.depth * 14 }}>
+                    <InlineInput
+                      placeholder={row.directory ? "目录名" : "文件名"}
+                      onCommit={(value) => commitCreate(row.parent, row.directory, value)}
+                      onCancel={() => setEditing(null)}
+                    />
+                  </div>
                 ) : (
                   <TreeRow
                     entry={row.entry}
                     depth={row.depth}
                     open={!!expanded[row.entry.path]}
                     active={selected === row.entry.path}
+                    dropTarget={dropTarget === row.entry.path}
+                    editing={editing && "path" in editing && editing.path === row.entry.path ? editing : null}
                     onActivate={() => onRowActivate(row)}
+                    onRename={(name) => commitRename(row.entry.path, name)}
+                    onAlias={(name) => void commitAlias(row.entry.path, name)}
+                    onCancelEdit={() => setEditing(null)}
+                    onStartRename={() => setEditing({ mode: "rename", path: row.entry.path, initial: row.entry.name })}
+                    onStartAlias={() => setEditing({ mode: "alias", path: row.entry.path, initial: row.entry.alias ?? "" })}
+                    onArchive={() => archive(row.entry.path)}
+                    onDelete={() => remove(row.entry.path)}
+                    onDropInto={async (source) => {
+                      setDropTarget(null);
+                      if (!vaultId || row.entry.kind !== "directory" || source === row.entry.path) return;
+                      await proposePlan(
+                        mutationApi.planMove(vaultId, [source], row.entry.path),
+                        `移动 ${source} → ${row.entry.path}`,
+                      );
+                    }}
+                    onDragOverRow={() => {
+                      if (row.entry.kind === "directory") setDropTarget(row.entry.path);
+                    }}
+                    onDragLeaveRow={() => setDropTarget((current) => (current === row.entry.path ? null : current))}
                   />
                 )}
               </div>
@@ -197,28 +362,115 @@ export function VaultSidebar() {
   );
 }
 
+function parentOf(path: string): string {
+  const at = path.lastIndexOf("/");
+  return at >= 0 ? path.slice(0, at) : "";
+}
+
+type InlineInputProps = {
+  initial?: string;
+  placeholder?: string;
+  selectStem?: boolean;
+  onCommit: (value: string) => void;
+  onCancel: () => void;
+};
+
+function InlineInput({ initial = "", placeholder, selectStem, onCommit, onCancel }: InlineInputProps) {
+  const ref = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    const input = ref.current;
+    if (!input) return;
+    input.focus();
+    if (selectStem) {
+      // Renaming preselects the stem, not the extension (PRD FR-TREE).
+      const dot = initial.lastIndexOf(".");
+      input.setSelectionRange(0, dot > 0 ? dot : initial.length);
+    } else {
+      input.select();
+    }
+  }, [initial, selectStem]);
+
+  return (
+    <input
+      ref={ref}
+      className="tree-inline-input"
+      defaultValue={initial}
+      placeholder={placeholder}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          const value = event.currentTarget.value.trim();
+          if (value === "") onCancel();
+          else onCommit(value);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+      }}
+      onBlur={(event) => {
+        const value = event.currentTarget.value.trim();
+        if (value === initial) onCancel();
+        else if (value === "") onCancel();
+        else onCommit(value);
+      }}
+    />
+  );
+}
+
 type TreeRowProps = {
   entry: FileEntry;
   depth: number;
   open: boolean;
   active: boolean;
+  dropTarget: boolean;
+  editing: { mode: "rename" | "alias"; initial: string } | null;
   onActivate: () => void;
+  onRename: (name: string) => void;
+  onAlias: (name: string) => void;
+  onCancelEdit: () => void;
+  onStartRename: () => void;
+  onStartAlias: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
+  onDropInto: (source: string) => Promise<void>;
+  onDragOverRow: () => void;
+  onDragLeaveRow: () => void;
 };
 
-function TreeRow({ entry, depth, open, active, onActivate }: TreeRowProps) {
+function TreeRow(props: TreeRowProps) {
+  const { entry, depth, open, active, dropTarget, editing } = props;
   const isDir = entry.kind === "directory";
   const Icon = iconFor(entry.icon ?? (isDir ? "folder" : "file"));
   return (
-    <button
-      type="button"
+    <div
       role="treeitem"
       aria-level={depth + 1}
       aria-selected={active}
       aria-expanded={isDir ? open : undefined}
       className="tree-row"
+      data-drop={dropTarget || undefined}
       style={{ paddingLeft: 8 + depth * 14 }}
-      onClick={onActivate}
-      onDoubleClick={onActivate}
+      draggable={!editing}
+      onDragStart={(event) => {
+        event.dataTransfer.setData(DRAG_MIME, entry.path);
+        event.dataTransfer.setData("text/plain", entry.path);
+        event.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(event) => {
+        if (!isDir) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        props.onDragOverRow();
+      }}
+      onDragLeave={() => props.onDragLeaveRow()}
+      onDrop={(event) => {
+        if (!isDir) return;
+        event.preventDefault();
+        const source = event.dataTransfer.getData(DRAG_MIME) || event.dataTransfer.getData("text/plain");
+        if (source) void props.onDropInto(source);
+      }}
+      onClick={props.onActivate}
       title={entry.path}
     >
       <span className="tree-caret" data-open={open} aria-hidden>
@@ -227,9 +479,77 @@ function TreeRow({ entry, depth, open, active, onActivate }: TreeRowProps) {
       <span className="tree-icon" aria-hidden>
         <Icon size={14} weight={active ? "fill" : "regular"} />
       </span>
-      <span className="tree-label">{entry.alias || entry.name}</span>
-      {entry.ignored ? <span className="tree-badge">未索引</span> : null}
-      {isDir && entry.childCount !== undefined ? <span className="tree-count">{entry.childCount}</span> : null}
-    </button>
+      {editing?.mode === "rename" ? (
+        <InlineInput
+          initial={editing.initial}
+          selectStem
+          onCommit={props.onRename}
+          onCancel={props.onCancelEdit}
+        />
+      ) : editing?.mode === "alias" ? (
+        <InlineInput
+          initial={editing.initial}
+          placeholder="别名（留空清除）"
+          onCommit={props.onAlias}
+          onCancel={props.onCancelEdit}
+        />
+      ) : (
+        <span className="tree-label">{entry.alias || entry.name}</span>
+      )}
+      {!editing ? (
+        <span className="tree-actions">
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="重命名"
+            title="重命名"
+            onClick={(event) => {
+              event.stopPropagation();
+              props.onStartRename();
+            }}
+          >
+            <PencilSimple size={12} aria-hidden />
+          </button>
+          {isDir ? (
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="编辑别名"
+              title="编辑别名"
+              onClick={(event) => {
+                event.stopPropagation();
+                props.onStartAlias();
+              }}
+            >
+              <Tag size={12} aria-hidden />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="归档"
+            title="归档"
+            onClick={(event) => {
+              event.stopPropagation();
+              props.onArchive();
+            }}
+          >
+            <Archive size={12} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="删除"
+            title="移入回收站"
+            onClick={(event) => {
+              event.stopPropagation();
+              props.onDelete();
+            }}
+          >
+            <Trash size={12} aria-hidden />
+          </button>
+        </span>
+      ) : null}
+    </div>
   );
 }

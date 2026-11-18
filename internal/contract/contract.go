@@ -5,6 +5,8 @@
 // Field names follow docs/API.md; JSON tags are the wire contract.
 package contract
 
+import "encoding/json"
+
 // Failure is the predictable-failure arm of a result union. Go methods return
 // these instead of Go errors for anything the UI can act on (API.md §1.2).
 type Failure struct {
@@ -273,6 +275,14 @@ type LinkGraphResult struct {
 	Outgoing  []ResolvedLink `json:"outgoing"`
 	Backlinks []string       `json:"backlinks"`
 	Failure   *Failure       `json:"failure,omitempty"`
+}
+
+// AppConfigResult is the M62/M66 response: vault-level settings the UI reads.
+type AppConfigResult struct {
+	VaultID    string            `json:"vaultId,omitempty"`
+	Aliases    map[string]string `json:"aliases"`
+	Categories json.RawMessage   `json:"categories,omitempty"`
+	Failure    *Failure          `json:"failure,omitempty"`
 }
 
 // ProvenanceRecordShape is one copy -> source relationship (API.md M34).

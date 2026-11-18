@@ -107,7 +107,7 @@ func ListDir(root, rel string, aliases map[string]string) (contract.TreeResult, 
 				entry.ChildCount = &count
 			}
 			entry.Icon = IconFor(name, area)
-			entry.Alias = aliasFor(top, name, aliases)
+			entry.Alias = aliases[entry.Path]
 		} else {
 			entry.Kind = "file"
 			entry.Size = info.Size()
@@ -138,13 +138,6 @@ func ListDir(root, rel string, aliases map[string]string) (contract.TreeResult, 
 		result.SkillCategoryCount = countSkillCategories(abs)
 	}
 	return result, nil
-}
-
-func aliasFor(top bool, name string, aliases map[string]string) string {
-	if !top || len(aliases) == 0 {
-		return ""
-	}
-	return aliases[name]
 }
 
 func countChildren(dir string) (int, error) {

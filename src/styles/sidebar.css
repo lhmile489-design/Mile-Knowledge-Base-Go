@@ -113,3 +113,56 @@
   font-size: var(--text-caption);
   color: var(--raw-faint);
 }
+
+/* Hover actions, inline editing and drag targets (PRD FR-TREE). */
+.tree-row {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border-radius: var(--radius-control);
+}
+
+.tree-row:hover {
+  background: var(--raw-raised);
+}
+
+.tree-row[data-drop] {
+  outline: 1px dashed var(--raw-accent);
+  outline-offset: -1px;
+}
+
+.tree-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex: none;
+}
+
+.tree-row:hover .tree-actions,
+.tree-row:focus-within .tree-actions {
+  display: flex;
+}
+
+.tree-inline-input {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--raw-accent);
+  border-radius: var(--radius-control);
+  background: var(--raw-card);
+  color: var(--raw-text);
+  font-size: var(--text-body-sm);
+  outline: none;
+}
+
+.tree-row-editing {
+  padding-right: 6px;
+}
+
+.vault-sidebar-new {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}

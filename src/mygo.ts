@@ -24,6 +24,14 @@ export interface ActionRecord {
   completedAt?: string;
 }
 
+/** AppConfigResult is the M62/M66 response: vault-level settings the UI reads. */
+export interface AppConfigResult {
+  vaultId?: string;
+  aliases: Record<string, string>;
+  categories?: unknown;
+  failure?: Failure;
+}
+
 /** AppNoticeEvent is a non-blocking notice (import fallback, watcher limits). */
 export interface AppNoticeEvent {
   text: string;
@@ -496,6 +504,16 @@ export const VaultService = {
 
 /** SettingsService binds the application settings. */
 export const SettingsService = {
+  /**
+   * AppConfigGet returns the vault-level settings the UI reads (M62): display
+   * aliases and the raw categories file (the settings page consumes it in M3).
+   */
+  appConfigGet: bind<[string], AppConfigResult>("SettingsService.AppConfigGet", (vaultID: string) => [vaultID]),
+  /**
+   * AppConfigPatchAliases applies alias edits (M66). A nil or empty value deletes
+   * the entry; the file keeps byte compatibility with the legacy writer.
+   */
+  appConfigPatchAliases: bind<[string, Record<string, string | null>], AppConfigResult>("SettingsService.AppConfigPatchAliases", (vaultID: string, patches: Record<string, string | null>) => [vaultID, patches]),
   /** Get returns the current settings. */
   get: bind<[], SettingsResult>("SettingsService.Get", () => []),
   /** Patch applies a partial update and broadcasts the result. */

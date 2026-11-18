@@ -71,6 +71,9 @@ async function guard<T>(work: () => Promise<T>): Promise<T> {
 
 export const settingsApi = {
   get: () => guard(async () => unwrap(await SettingsService.get())),
+  appConfigGet: (vaultId: string) => guard(async () => unwrap(await SettingsService.appConfigGet(vaultId))),
+  appConfigPatchAliases: (vaultId: string, patches: Record<string, string | null>) =>
+    guard(async () => unwrap(await SettingsService.appConfigPatchAliases(vaultId, patches))),
   patch: (patch: Parameters<typeof SettingsService.patch>[0]) =>
     guard(async () => unwrap(await SettingsService.patch(patch))),
 };
