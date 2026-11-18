@@ -277,6 +277,24 @@ type LinkGraphResult struct {
 	Failure   *Failure       `json:"failure,omitempty"`
 }
 
+// Usage is one usage group (turn or cumulative). Fields follow the legacy
+// shared/usage.ts:22-50; unknown cost/ratio stay nil and render as an em dash.
+type Usage struct {
+	TotalTokens      int64    `json:"totalTokens"`
+	PromptTokens     int64    `json:"promptTokens"`
+	CompletionTokens int64    `json:"completionTokens"`
+	ReasoningTokens  int64    `json:"reasoningTokens"`
+	CacheHitTokens   int64    `json:"cacheHitTokens"`
+	CacheMissTokens  int64    `json:"cacheMissTokens"`
+	Estimated        bool     `json:"estimated,omitempty"`
+	CacheHitRatio    *float64 `json:"cacheHitRatio,omitempty"`
+	EstimatedCost    *float64 `json:"estimatedCost,omitempty"`
+	Currency         string   `json:"currency,omitempty"`
+	CostComplete     *bool    `json:"costComplete,omitempty"`
+	DisplayStatus    string   `json:"displayStatus,omitempty"`
+	UsageSource      string   `json:"usageSource,omitempty"`
+}
+
 // ProviderDraft is one providers.json entry as the settings page sees it
 // (API M67/M68). The key value is never part of it.
 type ProviderDraft struct {
