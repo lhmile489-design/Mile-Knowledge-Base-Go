@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Workbench } from "../components/Workbench";
+import { SettingsPage } from "../components/settings/SettingsPage";
 import { WelcomeView } from "../components/WelcomeView";
 import { NoticeStack } from "../components/NoticeStack";
 import { useAppStore } from "../stores/appStore";
@@ -8,6 +9,7 @@ export function App() {
   const booted = useAppStore((state) => state.booted);
   const bootError = useAppStore((state) => state.bootError);
   const activeVaultId = useAppStore((state) => state.activeVaultId);
+  const settingsOpen = useAppStore((state) => state.settingsOpen);
   const boot = useAppStore((state) => state.boot);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export function App() {
   // so the welcome page (with fault cards) shows instead of an empty shell.
   return (
     <>
-      {activeVaultId ? <Workbench /> : <WelcomeView />}
+      {settingsOpen ? <SettingsPage /> : activeVaultId ? <Workbench /> : <WelcomeView />}
       <NoticeStack />
     </>
   );

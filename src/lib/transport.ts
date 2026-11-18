@@ -11,6 +11,8 @@ import {
   WindowService,
   events,
   type AgentPatch,
+  type ProviderDraft,
+  type ProvidersResult,
   type AppSettings,
   type IndexStatus,
   type KbHealthReport,
@@ -78,6 +80,12 @@ export const settingsApi = {
   appConfigPatchAliases: (vaultId: string, patches: Record<string, string | null>) =>
     guard(async () => unwrap(await SettingsService.appConfigPatchAliases(vaultId, patches))),
   providers: (vaultId: string) => guard(async () => unwrap(await SettingsService.providers(vaultId))),
+  saveProviders: (vaultId: string, providers: ProviderDraft[]) =>
+    guard(async () => unwrap(await SettingsService.saveProviders(vaultId, providers))),
+  setKey: (envName: string, value: string): Promise<ProvidersResult> =>
+    guard(async () => SettingsService.setKey(envName, value)),
+  fetchModels: (kind: string, baseUrl: string, apiKeyEnv: string, apiKey: string) =>
+    guard(async () => SettingsService.fetchModels(kind, baseUrl, apiKeyEnv, apiKey)),
   patch: (patch: Parameters<typeof SettingsService.patch>[0]) =>
     guard(async () => unwrap(await SettingsService.patch(patch))),
 };

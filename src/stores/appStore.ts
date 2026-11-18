@@ -21,6 +21,7 @@ type AppState = {
   bootError: string | null;
   healthOpen: boolean;
   auditOpen: boolean;
+  settingsOpen: boolean;
 
   boot: () => Promise<void>;
   refreshVaults: () => Promise<void>;
@@ -31,6 +32,8 @@ type AppState = {
   chooseVault: () => Promise<void>;
   forgetVault: (id: string) => Promise<void>;
   retryVault: (id: string) => Promise<void>;
+  openSettings: () => void;
+  closeSettings: () => void;
   openHealth: () => void;
   toggleAudit: () => void;
   closeHealth: () => void;
@@ -53,6 +56,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   notices: [],
   healthOpen: false,
   auditOpen: false,
+  settingsOpen: false,
   bootError: null,
 
   boot: async () => {
@@ -130,6 +134,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ vaults: list.vaults, unavailable: list.unavailable, activeVaultId: list.activeVaultId });
   },
 
+  openSettings: () => set({ settingsOpen: true }),
+  closeSettings: () => set({ settingsOpen: false }),
   openHealth: () => set({ healthOpen: true }),
   toggleAudit: () => set((state) => ({ auditOpen: !state.auditOpen })),
   closeHealth: () => set({ healthOpen: false }),

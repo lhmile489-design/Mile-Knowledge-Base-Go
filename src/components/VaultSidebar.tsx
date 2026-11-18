@@ -6,6 +6,7 @@ import {
   ClockCounterClockwise,
   FilePlus,
   FolderPlus,
+  GearSix,
   MagnifyingGlass,
   PencilSimple,
   Tag,
@@ -273,6 +274,16 @@ export function VaultSidebar() {
             onClick={() => setEditing({ mode: "createDir", parent: creationParent() })}
           >
             <FolderPlus size={14} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="设置"
+            title="设置"
+            onClick={() => useAppStore.getState().openSettings()}
+            data-testid="open-settings"
+          >
+            <GearSix size={14} aria-hidden />
           </button>
         </div>
       </div>

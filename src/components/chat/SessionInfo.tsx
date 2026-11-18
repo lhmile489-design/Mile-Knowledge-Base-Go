@@ -12,6 +12,7 @@ import {
 import { agentApi } from "../../lib/agentApi";
 import { settingsApi } from "../../lib/transport";
 import { useComposerStore } from "../../stores/composerStore";
+import { useAppStore } from "../../stores/appStore";
 import { EngineBadge } from "./EngineBadge";
 
 const TASK_STATUS_LABEL: Record<string, string> = {
@@ -213,7 +214,14 @@ export function SessionInfo({
       </section>
 
       <footer className="info-footer">
-        <button type="button" className="btn line" disabled title="设置">
+        <button
+          type="button"
+          className="btn line"
+          onClick={() => {
+            useAppStore.getState().openSettings();
+            onClose();
+          }}
+        >
           <Gear size={13} aria-hidden />
           设置
         </button>
