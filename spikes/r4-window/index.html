@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>R4 Spike</title>
+    <link rel="stylesheet" href="./src/style.css" />
+    <script>
+      // first-paint theme, before any CSS-driven paint (FR-THEME)
+      document.documentElement.dataset.theme =
+        matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.style.colorScheme =
+        document.documentElement.dataset.theme;
+      window.__bootT0 = performance.now();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

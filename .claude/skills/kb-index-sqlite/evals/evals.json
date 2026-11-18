@@ -1,0 +1,23 @@
+{
+  "skill_name": "kb-index-sqlite",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "检索中文『知识库』时我直接把查询字符串传给 FTS5 MATCH，unicode61 分词器会处理好吧？",
+      "expected_output": "不行。FTS5 unicode61 对 CJK 是整段当一个 token（不拆字不拆词），中文二字词完全无法命中（R-2 实测）。必须在 Go 侧用移植的 tokenize 把正文切成二元组（知识→知识 识库 库管 管理）后用空格拼接写入 FTS 列；查询侧同一函数切词后再拼成 MATCH 表达式。bm25 列权重 12/8/6/4/1。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "改了一个文件的标题，我把整个链接图重新投影一遍就行了吧？旧版就是这么做的。",
+      "expected_output": "不行。PRD FR-LINK 新增约束（P-1）要求只重算受影响边：按 links 表反查引用方的 from_path，只对这些文档重跑 resolveLink 更新 to_path/candidates，不全库 reprojectAllLinks。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "索引库放知识库里 `.mile-kb/index.db` 比较好吧，跟库走。",
+      "expected_output": "不行。PRD v1.1 规定 SQLite 索引放应用数据目录、每个知识库一个库文件、属于可删除重建的派生数据。`.mile-kb/` 是系统区且 Agent 禁写；索引也不随库进 Git。旧版 index-*.json 不读不迁移。",
+      "files": []
+    }
+  ]
+}

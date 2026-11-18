@@ -1,0 +1,744 @@
+[
+  {
+    "bytes": 62,
+    "id": "cm-para",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 62,
+    "id": "cm-para",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 120,
+    "id": "cm-headings",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 120,
+    "id": "cm-headings",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 68,
+    "id": "cm-setext",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 143,
+    "id": "cm-heading-cn",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 143,
+    "id": "cm-heading-cn",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 134,
+    "id": "cm-heading-cn-anchor",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 142,
+    "id": "cm-em-strong",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 142,
+    "id": "cm-em-strong",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 93,
+    "id": "cm-inline-code",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 129,
+    "id": "cm-inline-code",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 74,
+    "id": "cm-code-fence-lang",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 289,
+    "id": "cm-code-fence-lang",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 36,
+    "id": "cm-code-fence-nolang",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 203,
+    "id": "cm-code-fence-nolang",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 51,
+    "id": "cm-code-indent",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 103,
+    "id": "cm-blockquote",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 103,
+    "id": "cm-blockquote",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 43,
+    "id": "cm-hr",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 43,
+    "id": "cm-hr",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 94,
+    "id": "cm-ul",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 94,
+    "id": "cm-ul",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 69,
+    "id": "cm-ol",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 69,
+    "id": "cm-ol",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 117,
+    "id": "cm-list-nested",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 31,
+    "id": "cm-hardbreak",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 52,
+    "id": "cm-escape",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 165,
+    "id": "gfm-table",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 590,
+    "id": "gfm-table",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 144,
+    "id": "gfm-table-align",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 471,
+    "id": "gfm-table-wide",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 204,
+    "id": "gfm-task",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 204,
+    "id": "gfm-task",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 45,
+    "id": "gfm-strike",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 45,
+    "id": "gfm-strike",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 247,
+    "id": "gfm-autolink",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 247,
+    "id": "gfm-autolink",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 34,
+    "id": "html-block-div",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 34,
+    "id": "html-block-div",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 34,
+    "id": "html-block-script",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 34,
+    "id": "html-block-script",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 42,
+    "id": "html-inline",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 42,
+    "id": "html-inline",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 19,
+    "id": "html-comment",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 25,
+    "id": "html-img-tag",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 105,
+    "id": "fm-basic",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 105,
+    "id": "fm-basic",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 75,
+    "id": "fm-title-dash",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 144,
+    "id": "wiki-plain",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 185,
+    "id": "wiki-plain",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 143,
+    "id": "wiki-alias",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 184,
+    "id": "wiki-alias",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 210,
+    "id": "wiki-missing",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 239,
+    "id": "wiki-missing",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 208,
+    "id": "wiki-ambiguous",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 223,
+    "id": "wiki-ambiguous",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 84,
+    "id": "wiki-in-code",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 273,
+    "id": "wiki-in-code",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 39,
+    "id": "wiki-unclosed",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 33,
+    "id": "wiki-empty",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 109,
+    "id": "link-https",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 109,
+    "id": "link-https",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 100,
+    "id": "link-http",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 94,
+    "id": "link-anchor",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 94,
+    "id": "link-anchor",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 140,
+    "id": "link-internal",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 140,
+    "id": "link-internal",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 124,
+    "id": "link-internal-dot",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 118,
+    "id": "link-internal-frag",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 136,
+    "id": "link-internal-encoded",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 53,
+    "id": "link-dotdot",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 53,
+    "id": "link-dotdot",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 53,
+    "id": "link-absolute",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 53,
+    "id": "link-absolute",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 53,
+    "id": "link-drive",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 53,
+    "id": "link-drive",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 53,
+    "id": "link-unc",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 53,
+    "id": "link-unc",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 53,
+    "id": "link-javascript",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 53,
+    "id": "link-javascript",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 53,
+    "id": "link-file",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 53,
+    "id": "link-mailto",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 53,
+    "id": "link-mailto",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 53,
+    "id": "link-protocol-relative",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 86,
+    "id": "img-vault",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 226,
+    "id": "img-vault-chat",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 136,
+    "id": "img-data",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 114,
+    "id": "img-data-chat",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 401,
+    "id": "img-https",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 114,
+    "id": "img-https-chat",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 238,
+    "id": "img-http",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 206,
+    "id": "img-dotdot",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 206,
+    "id": "img-badext",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 78,
+    "id": "img-svg",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "reader"
+  },
+  {
+    "bytes": 530,
+    "id": "chat-ref-path",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 257,
+    "id": "chat-ref-code",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 183,
+    "id": "chat-ref-wiki",
+    "pendingKind": "",
+    "streaming": false,
+    "variant": "chat"
+  },
+  {
+    "bytes": 104,
+    "id": "stream-table-header",
+    "pendingKind": "table",
+    "streaming": true,
+    "variant": "chat"
+  },
+  {
+    "bytes": 104,
+    "id": "stream-table-rows",
+    "pendingKind": "table",
+    "streaming": true,
+    "variant": "chat"
+  },
+  {
+    "bytes": 166,
+    "id": "stream-table-done",
+    "pendingKind": "",
+    "streaming": true,
+    "variant": "chat"
+  },
+  {
+    "bytes": 203,
+    "id": "stream-table-partial",
+    "pendingKind": "table",
+    "streaming": true,
+    "variant": "chat"
+  },
+  {
+    "bytes": 110,
+    "id": "stream-link-open",
+    "pendingKind": "link",
+    "streaming": true,
+    "variant": "chat"
+  },
+  {
+    "bytes": 104,
+    "id": "stream-link-empty",
+    "pendingKind": "link",
+    "streaming": true,
+    "variant": "chat"
+  },
+  {
+    "bytes": 272,
+    "id": "stream-fence-open",
+    "pendingKind": "",
+    "streaming": true,
+    "variant": "chat"
+  },
+  {
+    "bytes": 201,
+    "id": "stream-table-in-fence",
+    "pendingKind": "",
+    "streaming": true,
+    "variant": "chat"
+  }
+]

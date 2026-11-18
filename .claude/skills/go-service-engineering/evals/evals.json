@@ -1,0 +1,23 @@
+{
+  "skill_name": "go-service-engineering",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Agent 提交了一个写路径 `MILE-K~1/settings/x.json`，拼写层校验通过（没有 `..`、不是点号开头），要不要放行？",
+      "expected_output": "不能放行。8.3 短名 `MILE-K~1` 实际指向 `.mile-kb`，拼写层挡不住。必须走真实路径层：realpath 最深现存祖先后算 canonical，用 canonical 判定系统区禁写。这是两道判定的核心动机，canonical 才是权限依据。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "保存文档时直接把新内容写进原文件就行了吧？反正都是同目录。",
+      "expected_output": "不行。必须原子写入：同目录写临时文件、chmod 保留原权限、rename 覆盖。还要先校验 revision 指纹（大小+mtime+sha256），不符就返回冲突不写盘；并还原原文件的 BOM 与主导换行风格。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "索引落盘我把每篇文档的 index 结果直接 upsert 进 userData 的 JSON 里，每改一个文件就重写一次索引文件，简单可靠。",
+      "expected_output": "不行，这正是旧版 P-2 根因：逐文件整份重写。索引用 SQLite（kb-index-sqlite），单写协程 + 按目录合并变更 + 一个事务批量写入；索引库放应用数据目录、每库一文件、可删除重建。",
+      "files": []
+    }
+  ]
+}

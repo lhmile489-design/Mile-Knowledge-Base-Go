@@ -1,0 +1,23 @@
+{
+  "skill_name": "mygo-app-scaffold",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "阶段 10 开始了，在 Mile-Knowledge-Base-Go 仓库根目录用 mygo v0.10.0 建工程，加上 React。仓库里已经有 docs、.claude 和 CLAUDE.md。",
+      "expected_output": "先确认已授权进入阶段 10；检查 go/bun 版本；因目录非空，在临时目录 `go run .../cmd/mygo@v0.10.0 init` 后逐个复制、不覆盖已有文件、合并 .gitignore；init 取最新版要钉回：go get mygo@v0.10.0，package.json 的 mygo-runtime/mygo-cli 写精确 0.10.0；叠加 React 与技术设计 2.2/2.3 的依赖（phosphor 不是 lucide，无 react-markdown/DOMPurify）；go mod tidy -> bun install -> generate -> dev；identifier 与端口用阶段 10 定稿值。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "跑 bun run generate 报错：main.go:8:2: no required module provides package github.com/egoist/mygo。",
+      "expected_output": "go.mod 缺 require，先 go mod tidy 再 generate。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "mygo dev 打开后窗口白屏，终端显示 Vite 跑在 5175 而不是配置里的端口。",
+      "expected_output": "配置端口被占用后 Vite 换了端口，devUrl 仍指旧端口；设 strictPort: true，换一个固定端口并同时改 vite.config.ts 与 mygo.config.ts 的 devUrl；建议 host 用 127.0.0.1；不结束别人的进程。",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+# 依赖与构建产物
+node_modules/
+dist/
+build/
+.mygo/
+mygo_windows_*.syso
+*.exe
+
+# 环境与本地配置
+.env
+.env.*
+!/.env.example
+
+# 数据库与临时文件
+*.db
+*.db-wal
+*.db-shm
+*.tmp
+*.log
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# spikes：只忽略依赖与产物，源码与 RESULT.md 入库
+spikes/**/node_modules/
+spikes/**/build/
+spikes/**/*.exe

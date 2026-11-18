@@ -1,0 +1,23 @@
+{
+  "skill_name": "design-tokens",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "侧栏树行的「未索引」标注我想调浅一点，直接在 TreeNode 的样式里写 color:#9a9ea8 行吗？",
+      "expected_output": "不能在组件里写色值；#9a9ea8 是深色主题的 --raw-faint，浅色主题对应是 #5c616b。标注类辅助文字应用 var(--raw-faint)（语义层 --color-text-faint），它作文字也须满足 4.5:1；若确需新层级，先改根 DESIGN.md 两套值、跑对比度脚本，再同步 tokens.css，不在组件里临时写。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我把主题切成深色后，设置页里那张浅色主题缩略图也跟着变深了，看不清浅色长什么样。",
+      "expected_output": "主题缩略图必须按自己那套令牌上色，不随当前主题变。缩略图容器用 [data-preview='light'] / [data-preview='dark']（tokens.css:27,181 已把这两套选择器并进 :root 与 [data-theme='dark']），组件内只引用 var(--raw-*)，不写死色；切的是缩略图自己的 data-preview，不是全局 data-theme。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "冷启动深色模式时窗口先白一帧再变深；我打算在 main.go 里把窗口底色固定成 #0B0F14，行吗？",
+      "expected_output": "#0B0F14 是旧版 ThemeService.ts 里的值，不是令牌；窗口 BackgroundColor 必须与 --raw-canvas 一致（PRD Q6：浅 #eceef1 / 深 #0e0f11）。完整防白闪：Go 建窗前 Theme.SetSource + WindowOptions.BackgroundColor=当前主题 --raw-canvas；index.html 引独立 theme-init.js（CSP 禁内联）按 prefers-color-scheme 先写 data-theme 与 color-scheme；切换帧给 <html> 加 .theme-switching 一帧。",
+      "files": []
+    }
+  ]
+}

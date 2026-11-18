@@ -1,0 +1,23 @@
+{
+  "skill_name": "mygo-web-app",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Mile Knowledge Base 里，用户点标题栏关闭按钮，设置是「每次询问」，且有一个未保存的文档。写出关窗流程的 Go 侧实现要点。",
+      "expected_output": "win.OnClose 里 quitting 标志放行真退出，否则 e.PreventDefault() 并起 goroutine 处理；先 Dialog.Message 问「继续编辑/丢弃并关闭」，选继续则中止；再按关窗行为 ask 时 Dialog.Message 带 CheckboxLabel「记住我的选择」，勾选写回设置，取消按挂到托盘；trayOK=false 时「挂到托盘」降级为退出；quit 时置 quitting 后 App.Quit()。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "托盘图标要做到「单击显示主窗口，右键出菜单（显示主窗口/退出）」。mygo v0.10.0 在 Windows 上该怎么接？",
+      "expected_output": "tray.SetMenu 设置菜单（含显示主窗口/退出，退出置 quitting 后 App.Quit）；tray.OnClick(showMain) 处理单击——internal/windows/tray.go 显示左键 wmLButtonUp 总会触发 Clicked() 与是否有菜单无关，右键 wmRButtonUp 自动 PopUpMenu；不需要手动 OnRightClick；NewTray 必须在 WhenReady 之后；托盘失败时 trayOK=false 影响关窗降级。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "阅读模式下 Markdown 里的 ![](docs/a.png)（库内相对路径）和 ![](https://x.com/b.png) 怎么加载？旧版是 base64 IPC。",
+      "expected_output": "不再用 base64：库内相对图经 pathguard 校验后由渲染管线改写成自定义协议 kbimg://localhost/<token>，Windows 实际 http://kbimg.localhost/<token>；Protocol.Handle 建窗前注册，handler 内 CallerWindow(r.Context()) 定位窗口、按 token 映射授权路径重新 Lstat 校验，只服务 png/jpg/gif/webp/bmp/avif 上限 8MiB，SVG/ICO 拒；https 远程图默认占位点击才加载，http 拦截；CSP img-src 放行协议地址。",
+      "files": []
+    }
+  ]
+}

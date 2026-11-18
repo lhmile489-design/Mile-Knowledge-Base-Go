@@ -1,0 +1,754 @@
+[
+  {
+    "id": "00",
+    "file": "shots/00-welcome-light-1440x900.png",
+    "title": "欢迎页（选择目录主卡 + 已断开最近知识库卡）",
+    "prdRefs": [
+      "FR-VLT"
+    ],
+    "phase": "welcome",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "待像素校验"
+  },
+  {
+    "id": "01",
+    "file": "shots/01-onboarding-step1-light-1440x900.png",
+    "title": "新手引导 第1步（选择知识库目录）",
+    "prdRefs": [
+      "FR-VLT"
+    ],
+    "phase": "welcome",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "待像素校验"
+  },
+  {
+    "id": "02",
+    "file": "shots/02-onboarding-step2-nonempty-light-1440x900.png",
+    "title": "新手引导 第2步（非空目录需勾选确认）",
+    "prdRefs": [
+      "FR-VLT"
+    ],
+    "phase": "welcome",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "待像素校验"
+  },
+  {
+    "id": "03",
+    "file": "shots/03-welcome-dark-1440x900.png",
+    "title": "欢迎页（深色）",
+    "prdRefs": [
+      "FR-VLT",
+      "FR-THEME"
+    ],
+    "phase": "welcome",
+    "theme": "dark",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "待像素校验"
+  },
+  {
+    "id": "10",
+    "file": "shots/10-overview-light-1440x900.png",
+    "title": "工作台总览（对话空状态）",
+    "prdRefs": [
+      "FR-OVW",
+      "FR-WIN"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1090 色"
+  },
+  {
+    "id": "11",
+    "file": "shots/11-overview-dark-1440x900.png",
+    "title": "工作台总览（深色）",
+    "prdRefs": [
+      "FR-OVW",
+      "FR-THEME"
+    ],
+    "phase": "workbench",
+    "theme": "dark",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1406 色"
+  },
+  {
+    "id": "12",
+    "file": "shots/12-overview-doc-collapsed-light-1440x900.png",
+    "title": "总览（文档面板折叠为竖轨）",
+    "prdRefs": [
+      "FR-OVW",
+      "FR-DOC"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1112 色"
+  },
+  {
+    "id": "13",
+    "file": "shots/13-tree-expanded-light-1440x900.png",
+    "title": "文件树：展开多个功能区",
+    "prdRefs": [
+      "FR-TREE",
+      "FR-AREA"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1066 色"
+  },
+  {
+    "id": "14",
+    "file": "shots/14-tree-row-hover-light-1440x900.png",
+    "title": "文件树：目录行悬停显示操作按钮",
+    "prdRefs": [
+      "FR-TREE"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1077 色"
+  },
+  {
+    "id": "15",
+    "file": "shots/15-tree-inline-rename-light-1440x900.png",
+    "title": "文件树：内联重命名",
+    "prdRefs": [
+      "FR-TREE"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1154 色"
+  },
+  {
+    "id": "15b",
+    "file": "shots/15b-tree-inline-create-light-1440x900.png",
+    "title": "文件树：内联新建",
+    "prdRefs": [
+      "FR-TREE"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1031 色"
+  },
+  {
+    "id": "16",
+    "file": "shots/16-doc-read-light-1440x900.png",
+    "title": "文档阅读模式（表格/任务/代码/图片/wikilink三态）",
+    "prdRefs": [
+      "FR-DOC",
+      "FR-LINK"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1510 色；库内图片路径 attachments/img-red.png 相对库根解析失败，实际呈现的是「图片文件不存在」占位"
+  },
+  {
+    "id": "17",
+    "file": "shots/17-doc-read-dark-1440x900.png",
+    "title": "文档阅读模式（深色）",
+    "prdRefs": [
+      "FR-DOC",
+      "FR-THEME"
+    ],
+    "phase": "workbench",
+    "theme": "dark",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1970 色"
+  },
+  {
+    "id": "18",
+    "file": "shots/18-doc-source-light-1440x900.png",
+    "title": "文档源码模式（等宽+行号）",
+    "prdRefs": [
+      "FR-DOC"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1354 色"
+  },
+  {
+    "id": "19",
+    "file": "shots/19-doc-split-light-1440x900.png",
+    "title": "文档分栏模式（左源码右阅读）",
+    "prdRefs": [
+      "FR-DOC"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1542 色"
+  },
+  {
+    "id": "20",
+    "file": "shots/20-doc-backlinks-light-1440x900.png",
+    "title": "反向链接与未解析链接面板",
+    "prdRefs": [
+      "FR-LINK"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1272 色"
+  },
+  {
+    "id": "21",
+    "file": "shots/21-doc-provenance-light-1440x900.png",
+    "title": "来源追踪面板（两边都改了，无同步按钮）",
+    "prdRefs": [
+      "FR-PROV"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1302 色"
+  },
+  {
+    "id": "22",
+    "file": "shots/22-doc-tabs-dirty-light-1440x900.png",
+    "title": "多标签 + 未保存脏标记",
+    "prdRefs": [
+      "FR-DOC"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1204 色"
+  },
+  {
+    "id": "23",
+    "file": "shots/23-doc-conflict-card-light-1440x900.png",
+    "title": "外部修改冲突卡（保留当前/采用磁盘/合并）",
+    "prdRefs": [
+      "FR-DOC"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1432 色"
+  },
+  {
+    "id": "24",
+    "file": "shots/24-doc-big-1m-light-1440x900.png",
+    "title": "大文件 >1 MiB（阅读降级提示）",
+    "prdRefs": [
+      "FR-DOC"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1436 色"
+  },
+  {
+    "id": "25",
+    "file": "shots/25-doc-huge-2m-light-1440x900.png",
+    "title": "大文件 >2 MiB（只读预览）",
+    "prdRefs": [
+      "FR-DOC"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1502 色"
+  },
+  {
+    "id": "26",
+    "file": "shots/26-search-results-light-1440x900.png",
+    "title": "搜索面板：中文查询有结果（高亮+匹配字段）",
+    "prdRefs": [
+      "FR-SRCH"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1568 色"
+  },
+  {
+    "id": "27",
+    "file": "shots/27-search-empty-light-1440x900.png",
+    "title": "搜索面板：无结果空状态",
+    "prdRefs": [
+      "FR-SRCH"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1410 色"
+  },
+  {
+    "id": "28",
+    "file": "shots/28-search-filtered-light-1440x900.png",
+    "title": "搜索面板：已选筛选条件",
+    "prdRefs": [
+      "FR-SRCH"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1546 色"
+  },
+  {
+    "id": "29",
+    "file": "shots/29-mutation-plan-card-light-1440x900.png",
+    "title": "变更计划卡（归档，含风险等级与恢复方式）",
+    "prdRefs": [
+      "FR-MUT"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1518 色"
+  },
+  {
+    "id": "30",
+    "file": "shots/30-mutation-report-light-1440x900.png",
+    "title": "变更执行报告卡",
+    "prdRefs": [
+      "FR-MUT"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1504 色"
+  },
+  {
+    "id": "31",
+    "file": "shots/31-mutation-plan-destructive-light-1440x900.png",
+    "title": "永久删除计划卡（高风险+我了解风险预确认）",
+    "prdRefs": [
+      "FR-MUT",
+      "FR-AI-PERM"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1549 色"
+  },
+  {
+    "id": "32",
+    "file": "shots/32-audit-panel-light-1440x900.png",
+    "title": "操作日志面板",
+    "prdRefs": [
+      "FR-MUT"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1501 色"
+  },
+  {
+    "id": "33",
+    "file": "shots/33-health-panel-light-1440x900.png",
+    "title": "知识库健康面板（断链/孤立/同名/缺标题）",
+    "prdRefs": [
+      "FR-HLTH"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1425 色"
+  },
+  {
+    "id": "34",
+    "file": "shots/34-chat-route-preview-light-1440x900.png",
+    "title": "对话：路由预览「发给 整理归档」",
+    "prdRefs": [
+      "FR-AI-ROUTE"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1552 色"
+  },
+  {
+    "id": "35",
+    "file": "shots/35-chat-route-picker-light-1440x900.png",
+    "title": "对话：改派菜单展开（自动+4 Agent）",
+    "prdRefs": [
+      "FR-AI-ROUTE"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1198 色"
+  },
+  {
+    "id": "36",
+    "file": "shots/36-chat-runtime-controls-light-1440x900.png",
+    "title": "对话：运行参数条展开（模型/强度/执行模式）",
+    "prdRefs": [
+      "FR-AI-CHAT",
+      "FR-AI-PERM"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1552 色"
+  },
+  {
+    "id": "37",
+    "file": "shots/37-chat-streaming-light-1440x900.png",
+    "title": "对话：流式输出进行中（思考+正文+呼吸动画）",
+    "prdRefs": [
+      "FR-AI-CHAT"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1507 色"
+  },
+  {
+    "id": "38",
+    "file": "shots/38-chat-answer-light-1440x900.png",
+    "title": "对话：回答完成（思考+Markdown+表格）",
+    "prdRefs": [
+      "FR-AI-CHAT"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1507 色"
+  },
+  {
+    "id": "39",
+    "file": "shots/39-chat-answer-dark-1440x900.png",
+    "title": "对话：回答完成（深色）",
+    "prdRefs": [
+      "FR-AI-CHAT",
+      "FR-THEME"
+    ],
+    "phase": "workbench",
+    "theme": "dark",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1936 色"
+  },
+  {
+    "id": "40",
+    "file": "shots/40-chat-no-provider-light-1440x900.png",
+    "title": "对话区：未配置模型服务的不可用状态",
+    "prdRefs": [
+      "FR-AI-PROV",
+      "FR-AI-ENG"
+    ],
+    "phase": "noprovider",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1091 色"
+  },
+  {
+    "id": "41",
+    "file": "shots/41-settings-model-empty-light-1440x900.png",
+    "title": "设置：模型服务（无供应商大空状态）",
+    "prdRefs": [
+      "FR-SET",
+      "FR-AI-PROV"
+    ],
+    "phase": "noprovider",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 736 色"
+  },
+  {
+    "id": "42",
+    "file": "shots/42-chat-permission-card-light-1440x900.png",
+    "title": "对话：写操作审批卡（允许/拒绝）",
+    "prdRefs": [
+      "FR-AI-PERM"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1579 色"
+  },
+  {
+    "id": "43",
+    "file": "shots/43-chat-usage-light-1440x900.png",
+    "title": "对话：用量收据（token+缓存命中+费用）",
+    "prdRefs": [
+      "FR-AI-USAGE"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1405 色"
+  },
+  {
+    "id": "44",
+    "file": "shots/44-chat-session-info-light-1440x900.png",
+    "title": "会话信息浮层（引擎/权限/共享上下文/设置入口）",
+    "prdRefs": [
+      "FR-AI-CTX",
+      "FR-SET"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1099 色"
+  },
+  {
+    "id": "45",
+    "file": "shots/45-history-panel-light-1440x900.png",
+    "title": "对话历史栏（置顶/今天分组）",
+    "prdRefs": [
+      "FR-AI-HIST"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1538 色"
+  },
+  {
+    "id": "46",
+    "file": "shots/46-history-search-light-1440x900.png",
+    "title": "对话历史搜索",
+    "prdRefs": [
+      "FR-AI-HIST"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1523 色"
+  },
+  {
+    "id": "47",
+    "file": "shots/47-settings-appearance-light-1440x900.png",
+    "title": "设置：常规（主题三档+关窗+面板宽度）",
+    "prdRefs": [
+      "FR-SET",
+      "FR-THEME"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 948 色"
+  },
+  {
+    "id": "48",
+    "file": "shots/48-settings-appearance-dark-1440x900.png",
+    "title": "设置：常规（深色）",
+    "prdRefs": [
+      "FR-SET",
+      "FR-THEME"
+    ],
+    "phase": "workbench",
+    "theme": "dark",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 999 色"
+  },
+  {
+    "id": "49",
+    "file": "shots/49-settings-model-light-1440x900.png",
+    "title": "设置：模型服务（已配置供应商）",
+    "prdRefs": [
+      "FR-SET",
+      "FR-AI-PROV"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 699 色"
+  },
+  {
+    "id": "50",
+    "file": "shots/50-settings-model-dark-1440x900.png",
+    "title": "设置：模型服务（深色）",
+    "prdRefs": [
+      "FR-SET",
+      "FR-THEME"
+    ],
+    "phase": "workbench",
+    "theme": "dark",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 769 色"
+  },
+  {
+    "id": "51",
+    "file": "shots/51-settings-agents-light-1440x900.png",
+    "title": "设置：Agents（4卡切换+模型+强度+执行模式+Steering）",
+    "prdRefs": [
+      "FR-SET",
+      "FR-AI-AGT",
+      "FR-AI-STEER"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1310 色"
+  },
+  {
+    "id": "52",
+    "file": "shots/52-settings-categories-light-1440x900.png",
+    "title": "设置：分类与检索（真实一级目录表格）",
+    "prdRefs": [
+      "FR-SET",
+      "FR-AREA",
+      "FR-SRCH"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 955 色"
+  },
+  {
+    "id": "53",
+    "file": "shots/53-settings-about-light-1440x900.png",
+    "title": "设置：关于与诊断",
+    "prdRefs": [
+      "FR-SET"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1166 色"
+  },
+  {
+    "id": "54",
+    "file": "shots/54-settings-savebar-light-1440x900.png",
+    "title": "设置：未保存草稿的保存条",
+    "prdRefs": [
+      "FR-SET",
+      "FR-AI-STEER"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 1348 色"
+  },
+  {
+    "id": "55",
+    "file": "shots/55-skill-import-step1-light-1440x900.png",
+    "title": "技能导入向导 第1步（选来源文件夹）",
+    "prdRefs": [
+      "FR-SKILL"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "captured",
+    "note": "非空校验通过: 417 色"
+  },
+  {
+    "id": "56",
+    "file": "shots/56-overview-min-light-744x640.png",
+    "title": "总览（最小尺寸 744x640）",
+    "prdRefs": [
+      "FR-OVW",
+      "FR-WIN"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "744x640",
+    "status": "captured",
+    "note": "非空校验通过: 2049 色"
+  },
+  {
+    "id": "57",
+    "file": "shots/57-doc-read-min-light-744x640.png",
+    "title": "阅读模式（最小尺寸 744x640）",
+    "prdRefs": [
+      "FR-DOC",
+      "FR-WIN"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "744x640",
+    "status": "captured",
+    "note": "非空校验通过: 2049 色"
+  },
+  {
+    "id": "58",
+    "file": "",
+    "title": "关窗询问（挂到托盘/退出）",
+    "prdRefs": [
+      "FR-WIN"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "native",
+    "note": "原生对话框，无法截取"
+  },
+  {
+    "id": "59",
+    "file": "",
+    "title": "系统选择目录对话框",
+    "prdRefs": [
+      "FR-VLT"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "native",
+    "note": "原生系统对话框，无法截取"
+  },
+  {
+    "id": "60",
+    "file": "",
+    "title": "关闭脏标签确认（原生）",
+    "prdRefs": [
+      "FR-DOC"
+    ],
+    "phase": "workbench",
+    "theme": "light",
+    "size": "1440x900",
+    "status": "failed",
+    "note": "关闭脏标签是行内确认卡（非原生对话框），可截取；本轮未驱动到该状态"
+  }
+]

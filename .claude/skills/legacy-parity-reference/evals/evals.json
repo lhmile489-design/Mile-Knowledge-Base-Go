@@ -1,0 +1,23 @@
+{
+  "skill_name": "legacy-parity-reference",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "实现检索排序时发现新版 FTS5 bm25 的结果顺序和旧版 IndexService 打分不一样，要不要按旧版公式改回去？",
+      "expected_output": "不要：D-004 已确认检索改用 SQLite FTS5、排序不要求与旧版逐条一致，这是有意差异；功能面（过滤、匹配理由、片段高亮、上限、中文可检索）仍需对齐。若怀疑功能面缺失再对照 FR-SRCH 与 IndexService。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "要确认 Agent 写系统区在旧版到底怎么判的，去哪查？",
+      "expected_output": "按顺序：先看 PRD FR-AI-PERM 与第 7 节，再读 shared/agentPolicy.ts 的 GLOBAL_WRITE_DENY_PREFIXES 与 canAgentWrite，再看 tests/unit 的 agentPolicy/permissionRouter/pathAliasBypass 断言，需要编排细节再看 main/agent/VaultFsBridge.ts 两道判定；旧版目录只读不改。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "手动和自动执行模式代码里看起来是一样的，只弹文案不同——这像 bug，新版顺手修了吧？",
+      "expected_output": "不修：这是 D-002 明确原样复刻的疑似缺陷之一（另两处是强度控件禁用、system 提示未注入），修复属 P1 需单独批准；发现 PRD 与代码不一致时记录并回报，不自行改行为。",
+      "files": []
+    }
+  ]
+}

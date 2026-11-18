@@ -1,0 +1,698 @@
+[
+  {
+    "id": "cm-para",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-para",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-headings",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "新增：Go 生成 heading id；旧版无 id",
+    "l": "<h1>H1</h1><h2>H2</h2><h3>H3</h3><h4>H4</h4><h5>H5</h5><h6>H6</h6>",
+    "g": "<h1 id=\"h1\">H1</h1><h2 id=\"h2\">H2</h2><h3 id=\"h3\">H3</h3><h4 id=\"h4\">H4</h4><h5 id=\"h5\">H5</h5><h6 id=\"h6\">H6</h6>"
+  },
+  {
+    "id": "cm-headings",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "新增：Go 生成 heading id；旧版无 id",
+    "l": "<h1>H1</h1><h2>H2</h2><h3>H3</h3><h4>H4</h4><h5>H5</h5><h6>H6</h6>",
+    "g": "<h1 id=\"h1\">H1</h1><h2 id=\"h2\">H2</h2><h3 id=\"h3\">H3</h3><h4 id=\"h4\">H4</h4><h5 id=\"h5\">H5</h5><h6 id=\"h6\">H6</h6>"
+  },
+  {
+    "id": "cm-setext",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "新增：Go 生成 heading id；旧版无 id",
+    "l": "<h1>Setext H1</h1><h2>Setext H2</h2>",
+    "g": "<h1 id=\"setext-h1\">Setext H1</h1><h2 id=\"setext-h2\">Setext H2</h2>"
+  },
+  {
+    "id": "cm-heading-cn",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "新增：Go 生成 CJK heading id 作锚点落点；旧版无 id，锚点本就不可达",
+    "l": "<h2>请求层设计</h2><p>跳到<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"%E8%AF%B7%E6%B1%82%E5%B1%82%E8%AE%BE%E8%AE%A1\">锚</a>。</p>",
+    "g": "<h2 id=\"请求层设计\">请求层设计</h2><p>跳到<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"请求层设计\">锚</a>。</p>"
+  },
+  {
+    "id": "cm-heading-cn",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "新增：Go 生成 CJK heading id 作锚点落点；旧版无 id，锚点本就不可达",
+    "l": "<h2>请求层设计</h2><p>跳到<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"%E8%AF%B7%E6%B1%82%E5%B1%82%E8%AE%BE%E8%AE%A1\">锚</a>。</p>",
+    "g": "<h2 id=\"请求层设计\">请求层设计</h2><p>跳到<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"请求层设计\">锚</a>。</p>"
+  },
+  {
+    "id": "cm-heading-cn-anchor",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "新增：Go 生成 CJK heading id",
+    "l": "<h2>部署步骤</h2><p>见<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"%E9%83%A8%E7%BD%B2%E6%AD%A5%E9%AA%A4\">部署</a>。</p>",
+    "g": "<h2 id=\"部署步骤\">部署步骤</h2><p>见<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"部署步骤\">部署</a>。</p>"
+  },
+  {
+    "id": "cm-em-strong",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-em-strong",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-inline-code",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-inline-code",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-code-fence-lang",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-code-fence-lang",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-code-fence-nolang",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-code-fence-nolang",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-code-indent",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-blockquote",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-blockquote",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-hr",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-hr",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-ul",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-ul",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-ol",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-ol",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-list-nested",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-hardbreak",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "cm-escape",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "gfm-table",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "gfm-table",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "gfm-table-align",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "旧版 style=\"text-align:X\"，goldmark 用 align=\"X\" 属性，白名单已放行 align",
+    "l": "<table><thead><tr><th align=\"left\">左</th><th align=\"center\">中</th><th align=\"right\">右</th></tr></thead><tbody><tr><td align=\"left\">1</td><td align=\"center\">2</td><td align=\"right\">3</td></tr></tbody></table>",
+    "g": "<table><thead><tr><th>左</th><th>中</th><th>右</th></tr></thead><tbody><tr><td>1</td><td>2</td><td>3</td></tr></tbody></table>"
+  },
+  {
+    "id": "gfm-table-wide",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "gfm-task",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "gfm-task",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "gfm-strike",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "gfm-strike",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "gfm-autolink",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "chat 变体 ext 图标：旧版在 ChatAnchor 挂 <svg class=\"ext\">，Go 契约交给前端按 data-kind 渲染",
+    "l": "<p>访问<a class=\"link-external\" data-kind=\"external\" data-target=\"EXT\">https://example.com/a?b=1</a>与<a class=\"link-external\" data-kind=\"external\" data-target=\"EXT\">www.example.com。</a></p>",
+    "g": "<p>访问<a class=\"link-external\" data-kind=\"external\" data-target=\"https://example.com/a?b=1\">https://example.com/a?b=1</a>与<a class=\"link-external\" data-kind=\"external\" data-target=\"http://www.example.com\">http://www.example.com</a>。</p>"
+  },
+  {
+    "id": "gfm-autolink",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "chat 变体 ext 图标：旧版在 ChatAnchor 挂 <svg class=\"ext\">，Go 契约交给前端按 data-kind 渲染",
+    "l": "<p>访问<a class=\"link-external\" data-kind=\"external\" data-target=\"EXT\">https://example.com/a?b=1</a>与<a class=\"link-external\" data-kind=\"external\" data-target=\"EXT\">www.example.com。</a></p>",
+    "g": "<p>访问<a class=\"link-external\" data-kind=\"external\" data-target=\"https://example.com/a?b=1\">https://example.com/a?b=1</a>与<a class=\"link-external\" data-kind=\"external\" data-target=\"http://www.example.com\">http://www.example.com</a>。</p>"
+  },
+  {
+    "id": "html-block-div",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "原始 HTML 处理：旧版实际转义为文本（实测），Go 丢弃；都不渲染 HTML。需用户裁决对齐口径",
+    "l": "<p>前文。</p>&lt;div class=&quot;x&quot;&gt;块内文字&lt;/div&gt;<p>后文。</p>",
+    "g": "<p>前文。</p><p>后文。</p>"
+  },
+  {
+    "id": "html-block-div",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "原始 HTML 处理：旧版实际转义为文本（实测），Go 丢弃；都不渲染 HTML。需用户裁决对齐口径",
+    "l": "<p>前文。</p>&lt;div class=&quot;x&quot;&gt;块内文字&lt;/div&gt;<p>后文。</p>",
+    "g": "<p>前文。</p><p>后文。</p>"
+  },
+  {
+    "id": "html-block-script",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "原始 HTML 处理：旧版实际转义为文本（实测），Go 丢弃；都不渲染 HTML。需用户裁决对齐口径",
+    "l": "<p>前文。</p>&lt;script&gt;alert(1)&lt;/script&gt;<p>后文。</p>",
+    "g": "<p>前文。</p><p>后文。</p>"
+  },
+  {
+    "id": "html-block-script",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "原始 HTML 处理：旧版实际转义为文本（实测），Go 丢弃；都不渲染 HTML。需用户裁决对齐口径",
+    "l": "<p>前文。</p>&lt;script&gt;alert(1)&lt;/script&gt;<p>后文。</p>",
+    "g": "<p>前文。</p><p>后文。</p>"
+  },
+  {
+    "id": "html-inline",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "原始 HTML 处理：旧版实际转义为文本（实测），Go 丢弃；都不渲染 HTML。需用户裁决对齐口径",
+    "l": "<p>这是 &lt;b&gt;粗&lt;/b&gt; 与 &lt;em&gt;斜&lt;/em&gt; 行内标签。</p>",
+    "g": "<p>这是 粗 与 斜 行内标签。</p>"
+  },
+  {
+    "id": "html-inline",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "原始 HTML 处理：旧版实际转义为文本（实测），Go 丢弃；都不渲染 HTML。需用户裁决对齐口径",
+    "l": "<p>这是 &lt;b&gt;粗&lt;/b&gt; 与 &lt;em&gt;斜&lt;/em&gt; 行内标签。</p>",
+    "g": "<p>这是 粗 与 斜 行内标签。</p>"
+  },
+  {
+    "id": "html-comment",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "原始 HTML 处理：旧版实际转义为文本（实测），Go 丢弃；都不渲染 HTML。需用户裁决对齐口径",
+    "l": "<p>前 &lt;!-- 注释 --&gt; 后。</p>",
+    "g": "<p>前  后。</p>"
+  },
+  {
+    "id": "html-img-tag",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "原始 HTML 处理：旧版实际转义为文本（实测），Go 丢弃；都不渲染 HTML。需用户裁决对齐口径",
+    "l": "<p>正文 &lt;img src=&quot;x.png&quot; onerror=&quot;alert(1)&quot;&gt; 结束。</p>",
+    "g": "<p>正文  结束。</p>"
+  },
+  {
+    "id": "fm-basic",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "Go 给 frontmatter 渲染出的 h2 生成 CJK id（旧版无 id）",
+    "l": "<hr><h2>title: 测试文档\ntags: [a, b]</h2><p>正文第一段。</p>",
+    "g": "<hr><h2 id=\"title-测试文档tags-a-b\">title: 测试文档\ntags: [a, b]</h2><p>正文第一段。</p>"
+  },
+  {
+    "id": "fm-basic",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "Go 给 frontmatter 渲染出的 h2 生成 CJK id（旧版无 id）",
+    "l": "<hr><h2>title: 测试文档\ntags: [a, b]</h2><p>正文第一段。</p>",
+    "g": "<hr><h2 id=\"title-测试文档tags-a-b\">title: 测试文档\ntags: [a, b]</h2><p>正文第一段。</p>"
+  },
+  {
+    "id": "fm-title-dash",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "Go 给 frontmatter 渲染出的 h2 生成 CJK id（旧版无 id）",
+    "l": "<hr><h2>title: 我的标题</h2><p>正文。</p>",
+    "g": "<hr><h2 id=\"title-我的标题\">title: 我的标题</h2><p>正文。</p>"
+  },
+  {
+    "id": "wiki-plain",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-plain",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-alias",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-alias",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-missing",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-missing",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-ambiguous",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-ambiguous",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-in-code",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-in-code",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-unclosed",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "wiki-empty",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-https",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "chat 变体 ext 图标：旧版在 ChatAnchor 挂 <svg class=\"ext\">，Go 契约交给前端按 data-kind 渲染",
+    "l": "<p><a class=\"link-external\" data-kind=\"external\" data-target=\"EXT\">官网</a>。</p>",
+    "g": "<p><a class=\"link-external\" data-kind=\"external\" data-target=\"https://example.com/a?b=1#c\">官网</a>。</p>"
+  },
+  {
+    "id": "link-https",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "chat 变体 ext 图标：旧版在 ChatAnchor 挂 <svg class=\"ext\">，Go 契约交给前端按 data-kind 渲染",
+    "l": "<p><a class=\"link-external\" data-kind=\"external\" data-target=\"EXT\">官网</a>。</p>",
+    "g": "<p><a class=\"link-external\" data-kind=\"external\" data-target=\"https://example.com/a?b=1#c\">官网</a>。</p>"
+  },
+  {
+    "id": "link-http",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "D-004 契约：Go 输出 data-target + 事件委托，不输出 href",
+    "l": "<p><a class=\"link-external\" data-kind=\"external\" data-target=\"EXT\">旧站</a>。</p>",
+    "g": "<p><a class=\"link-external\" data-kind=\"external\" data-target=\"http://example.com\">旧站</a>。</p>"
+  },
+  {
+    "id": "link-anchor",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "chat 变体 ext 图标：旧版在 ChatAnchor 挂 <svg class=\"ext\">，Go 契约交给前端按 data-kind 渲染",
+    "l": "<p>跳<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"%E8%AF%B7%E6%B1%82%E5%B1%82\">到顶部</a>。</p>",
+    "g": "<p>跳<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"请求层\">到顶部</a>。</p>"
+  },
+  {
+    "id": "link-anchor",
+    "variant": "chat",
+    "verdict": "有意差异",
+    "why": "chat 变体 ext 图标：旧版在 ChatAnchor 挂 <svg class=\"ext\">，Go 契约交给前端按 data-kind 渲染",
+    "l": "<p>跳<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"%E8%AF%B7%E6%B1%82%E5%B1%82\">到顶部</a>。</p>",
+    "g": "<p>跳<a class=\"link-anchor\" data-kind=\"anchor\" data-target=\"请求层\">到顶部</a>。</p>"
+  },
+  {
+    "id": "link-internal",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-internal",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-internal-dot",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "internal-path 存在性探测：两边 stub 数据源不同，结构（missing/ok）随 stub 变；真实环境由 Go ResolveLink 判定",
+    "l": "<p>打开<a class=\"wiki wiki-missing\" data-kind=\"internal\" data-status=\"missing\" data-target=\"raws/b.md\" title=\"raws/b.md\">笔记<span class=\"wiki-note\">（未创建）</span></a>。</p>",
+    "g": "<p>打开<a class=\"wiki\" data-kind=\"internal\" data-status=\"ok\" data-target=\"raws/b.md\" title=\"raws/b.md\">笔记</a>。</p>"
+  },
+  {
+    "id": "link-internal-frag",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "internal-path 存在性探测：两边 stub 数据源不同，结构（missing/ok）随 stub 变；真实环境由 Go ResolveLink 判定",
+    "l": "<p>打开<a class=\"wiki wiki-missing\" data-kind=\"internal\" data-status=\"missing\" data-target=\"a/b.md\" title=\"a/b.md\">笔记<span class=\"wiki-note\">（未创建）</span></a>。</p>",
+    "g": "<p>打开<a class=\"wiki\" data-kind=\"internal\" data-status=\"ok\" data-target=\"a/b.md\" title=\"a/b.md\">笔记</a>。</p>"
+  },
+  {
+    "id": "link-internal-encoded",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "internal-path 存在性探测：两边 stub 数据源不同，结构（missing/ok）随 stub 变；真实环境由 Go ResolveLink 判定",
+    "l": "<p>打开<a class=\"wiki wiki-missing\" data-kind=\"internal\" data-status=\"missing\" data-target=\"raws/my note.md\" title=\"raws/my note.md\">笔记<span class=\"wiki-note\">（未创建）</span></a>。</p>",
+    "g": "<p>打开<a class=\"wiki\" data-kind=\"internal\" data-status=\"ok\" data-target=\"raws/my note.md\" title=\"raws/my note.md\">笔记</a>。</p>"
+  },
+  {
+    "id": "link-dotdot",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-dotdot",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-absolute",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-absolute",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-drive",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-drive",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-unc",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-unc",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-javascript",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-javascript",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-file",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-mailto",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-mailto",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "link-protocol-relative",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-vault",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "契约：Go 输出 <img data-img-kind=\"vault\" data-vault-path>，前端经自定义协议加载；legacy 静态只能输出 loading 卡",
+    "l": "<p><span class=\"mile-preview-image-card\" data-img-kind=\"vault\" data-vault-path=\"raws/shots/a.png\"><strong>截图</strong><span>正在读取图片</span></span>。</p>",
+    "g": "<p><img alt=\"截图\" data-img-kind=\"vault\" data-vault-path=\"raws/shots/a.png\">。</p>"
+  },
+  {
+    "id": "img-vault-chat",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-data",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-data-chat",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-https",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-https-chat",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-http",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-dotdot",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-badext",
+    "variant": "reader",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "img-svg",
+    "variant": "reader",
+    "verdict": "有意差异",
+    "why": "同 img-vault：svg 在白名单扩展名内 → data-img-kind=vault",
+    "l": "<p><span class=\"mile-preview-image-card\" data-img-kind=\"vault\" data-vault-path=\"icon.svg\"><strong>图标</strong><span>正在读取图片</span></span>。</p>",
+    "g": "<p><img alt=\"图标\" data-img-kind=\"vault\" data-vault-path=\"icon.svg\">。</p>"
+  },
+  {
+    "id": "chat-ref-path",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "chat-ref-code",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "chat-ref-wiki",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "stream-table-header",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "stream-table-rows",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "stream-table-done",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "stream-table-partial",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "stream-link-open",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "stream-link-empty",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "stream-fence-open",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  },
+  {
+    "id": "stream-table-in-fence",
+    "variant": "chat",
+    "verdict": "一致",
+    "why": ""
+  }
+]

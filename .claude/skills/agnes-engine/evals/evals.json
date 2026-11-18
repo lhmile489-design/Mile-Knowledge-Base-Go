@@ -1,0 +1,23 @@
+{
+  "skill_name": "agnes-engine",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "新版用 Go 写 Agnes 引擎，供应商返回 429 然后流式回答。重试和流式组装怎么做？",
+      "expected_output": "重试只覆盖拿到响应头之前：408/429/5xx 可重试、401/403 立即报鉴权错、其余 4xx 立即失败，MAX_RETRIES=10、退避 500ms×2^(n−1) 上限 15s 加 0-250ms 抖动、Retry-After 上限 60s；流式只认 data: 行，reasoning_content 优先其次 reasoning，正文开头 <think> 过 ThinkSplitter 状态机，tool_calls 按 index 累积缺 id 补 call_N，[DONE] 或 finish_reason 才算完整，300 秒空闲中止；带 tool_calls 的 assistant 消息总带 reasoning_content。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "全自动模式下 Agent 要永久删除 .mile-kb/settings/x.json，该不该弹审批卡让通过？",
+      "expected_output": "不该弹也不该通过：.mile-kb/settings/ 在 GLOBAL_WRITE_DENY_PREFIXES，任何模式都禁写，precheckWrite 直接拒绝、把错误文字回给模型；且 yolo 下 permanentDelete 拿不到新鲜审批（60 秒消费型批准要求发卡时不是 yolo），系统区 + 永久删除两道门都过不去。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "把推理强度控件接到引擎上让用户能选档位，顺便把 4 个 Agent 的 system 提示接上，差异会更明显。",
+      "expected_output": "不能接：这两项是 D-002 明确原样复刻的旧版行为——自研引擎 availableEfforts 恒为空数组所以强度控件始终禁用，system 提示回调存在但没有接上、差异只来自 steering；修复属 P1 需单独批准。",
+      "files": []
+    }
+  ]
+}
