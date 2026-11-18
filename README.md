@@ -61,7 +61,7 @@
 | 安装依赖 | 安装前端依赖 | `bun install` | 已验证（2026-11-18） |
 | 本地启动 | 开发模式 | `bun run dev`（端口 5274，自定义协议 kbimg） | 已验证 |
 | 类型检查 | `tsc --noEmit` | `bun run typecheck` | 已验证 |
-| 前端单测 | Vitest | `bun run test:web` | 已验证（13 项） |
+| 前端单测 | Vitest | `bun run test:web` | 已验证（58 项，含与 Go 索引的跨语言分词对拍） |
 | Go 测试 | 单元测试 | `bun run test:go` / `bun run test:go-race` / `bun run lint:go` | 已验证（vault 等全绿） |
 | 模糊测试 | 路径与渲染（`FuzzValidateRel`、`FuzzRender`） | `bun run test:fuzz`（`scripts/test-fuzz.sh`，每个目标默认 60s，`FUZZ_TIME=3s` 可缩短） | 已验证（2026-11-18：正向通过；故意失败的对照返回非零） |
 | 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`；`E2E_SKIP_BUILD=1` 跳过构建） | 已验证（2026-11-18：ac-m0 15/15 且退出码 0；故意失败的对照返回非零） |

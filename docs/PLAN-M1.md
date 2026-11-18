@@ -99,7 +99,7 @@ M0 已完成。M1 为本计划。M2、M3 的划分见 docs/PLAN-M0.md 第 3 节�
 | 编号 | 目标 | 修改范围 | 依赖 | 产物 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T00 | 契约回写与门禁修复 | docs/{API.md,PRD.md,decisions.md,技术设计.md}、README、package.json、scripts/、internal/pathguard/pathguard_test.go | — | D-009 落到 API.md M19、PRD FR-PROV；`test:e2e`、`test:fuzz` 能真实运行 | 两个门禁命令各做一次「故意失败 → 非零退出，恢复 → 通过」；README 状态与实际一致 | 已验证 |
-| T01 | 分词、文档解析、片段与高亮 | `internal/index/tokenize.go`、`parse.go`、`excerpt.go`；`src/lib/tokenize.ts`、`src/lib/highlight.ts` | T00 | Go 与 TS 两份分词实现 | 移植 tokenize 21 例、searchHighlight 9 例全部通过；Go 与 TS 对同一份夹具输出的 token 序列逐项相同 | 待做 |
+| T01 | 分词、文档解析、片段与高亮 | `internal/index/{tokenize.go,tokenize_test.go,fixtures_test.go,testdata/tokens.json}`；`src/lib/{search.ts,tokenize.test.ts,search.test.ts,tokenParity.test.ts}` | T00 | Go 与 TS 两份分词实现 | 移植 tokenize 21 例、searchHighlight 9 例全部通过；Go 与 TS 对同一份夹具输出的 token 序列逐项相同 | 已验证 |
 | T02 | SQLite 索引库与增量更新 | `internal/index/{store.go,migrate.go,migrations/001_init.sql,build.go,update.go}`、`internal/service/index.go`（M25、M26、E02）、`internal/service/service.go`（接监听批次、移除知识库时删库） | T01 | `index/<vaultId>.db`；后台首建；监听批次增量写；状态事件 | V-IDX 全部通过 | 待做 |
 | T03 | 检索与搜索面板 | `internal/index/search.go`、`internal/service/index.go`（M24）、`src/components/SearchPanel.tsx`、`src/stores/searchStore.ts`、侧栏「搜索」条与 Ctrl+P | T02 | M24；搜索面板 | V-SRCH 全部通过；对照截图 26、27、28 | 待做 |
 | T04 | 链接图、三层解析与反向链接 | `internal/index/links.go`、`resolver.go`；`internal/service/render.go`（用索引解析器替换 `vaultResolver`）；`internal/service/index.go`（M27）；`src/components/BacklinksPanel.tsx` | T02 | 哈希三层解析；links 表增量维护；M27；反向链接小节 | V-LINK 全部通过；对照截图 20 | 待做 |
@@ -378,5 +378,6 @@ M0 已完成。M1 为本计划。M2、M3 的划分见 docs/PLAN-M0.md 第 3 节�
   - T12 依赖 WebView2 自定义协议能收到 POST 请求体，未实测，第一步先验证；上传端点是新的写入口，授权校验写进了交接，T12 后独立审查；
   - T13 的兼容脚本依赖旧版模块能在 bun 下单独运行，未实测；
   - 链接全量解析和增量重算的耗时要在哈希实现上重测，结果可能要求调整 T04 的实现。
+| 2026-11-18 | T01 完成 | `internal/index`：Tokenize、TokenizePath、ParseDocument、BuildExcerpt（Go）+ 27 项移植/新增测试 + 24 行跨语言夹具；`src/lib/search.ts`：tokenize、MATCH_FIELD_LABEL/describeMatchedFields、highlightRanges + 21 项 tokenize 测试、9 项高亮测试、24 行对拍测试。计划里的 `highlight.ts` 合并进 `search.ts`（同一批渲染纯函数，避免两个十行文件） | go test 全绿（index 28 项）；vitest 58 项；tsc、vet 通过；fuzz 2s×2 目标通过。用旧版 `src/shared/tokenize.ts` 实跑同一夹具对拍：24 行中 23 行逐字一致，唯一差异是 emoji 行——旧版按 UTF-16 码元切，且 CJK 类最后一档到 U+FAFF 把代理区也圈进去了，于是产出半个字符的垃圾 token；Go 按码点、TS 显式跳过代理码元，两边一致且不产生破损 token。另：旧版最后一档是 U+8C48（豈）到 U+FAFF，Go 初版误写成 U+F900，已修正 | 有意差异：emoji/代理区切分（见上）；`İ` 等全大写折叠差异未纳入夹具 | T02 |
 | 2026-11-18 | T00 完成 | D-009（6 项决定）写入 decisions.md；API.md：M19 改协议端点、方法总数 73→72、§3 映射改 change、§4.2 与 §5 重写（路径 + vault 参数、上传端点、5 条授权规则）；PRD v1.6：FR-AREA「进检索」备注、FR-PROV 同步规则、FR-DOC 图片传输、AC-PROV-2；技术设计门禁表接入状态；README 两条命令更正；`scripts/test-fuzz.sh`、`scripts/test-e2e.sh` 新增；`ac-m0.sh` 失败时返回非零 | fuzz：正向 3s×2 目标通过、负向（临时必失败目标）退出 1；e2e：正向 15/15 退出 0、负向（翻转一条断言）14/15 退出 1。fuzz 首次实跑抓到 `FuzzValidateRel` 断言过严（把「名字含 ..」当成越界，`..0` 其实是合法名）：修正断言为「任何路径段都不是 . 或 ..」，补 `..0`/`a..b.md`/`notes..txt` 三个合法用例并把 `..0` 加入 fuzz 种子；这不是产品代码缺陷，M0 的 fuzz 门禁当时从未真正跑过所以没暴露 | 无 | T01 |
 | 2026-11-18 | 计划已批准（B-M1-05、B-M1-06），开始 T00 | docs/PLAN-M1.md v1.0 | 用户回复「通过，开始 T00」 | — | T00 |
