@@ -17,7 +17,7 @@ export type DocState = {
   degraded: string;
   loading: boolean;
   error: string | null;
-  conflict?: { diskText: string; diskRevision: number; diskHash: string; baseRevision: number };
+  conflict?: { diskText: string; diskRevision: number; diskHash: string; diskSize: number; baseRevision: number };
   externalRevision?: number;
 };
 
@@ -40,6 +40,7 @@ type DocStore = {
   reset: () => void;
   applyExternalChange: (vaultId: string, dirs: string[]) => Promise<void>;
   reloadFromDisk: (vaultId: string, path: string) => Promise<void>;
+  dismissConflict: (path: string) => void;
 };
 
 function pathTitle(path: string): string {
@@ -153,6 +154,7 @@ export const useDocStore = create<DocStore>((set, get) => ({
                 diskText: outcome.diskText ?? "",
                 diskRevision: outcome.diskRevision ?? 0,
                 diskHash: outcome.diskHash ?? "",
+                diskSize: outcome.diskSize ?? 0,
                 baseRevision: outcome.baseRevision ?? 0,
               },
             },
@@ -209,6 +211,7 @@ export const useDocStore = create<DocStore>((set, get) => ({
                 diskText: outcome.diskText ?? "",
                 diskRevision: outcome.diskRevision ?? 0,
                 diskHash: outcome.diskHash ?? "",
+                diskSize: outcome.diskSize ?? 0,
                 baseRevision: outcome.baseRevision ?? 0,
               },
             },
@@ -242,7 +245,7 @@ export const useDocStore = create<DocStore>((set, get) => ({
   resolveConflictTakeDisk: (path) => {
     const doc = get().docs[path];
     if (!doc?.conflict) return;
-    get().adoptDisk(path, doc.conflict.diskText, doc.conflict.diskRevision, doc.conflict.diskHash, new TextEncoder().encode(doc.conflict.diskText).length);
+    get().adoptDisk(path, doc.conflict.diskText, doc.conflict.diskRevision, doc.conflict.diskHash, doc.conflict.diskSize);
   },
 
   adoptDisk: (path, text, revision, hash, size) => {
@@ -274,6 +277,13 @@ export const useDocStore = create<DocStore>((set, get) => ({
 
   reset: () => set({ tabs: [], docs: {}, activePath: "" }),
 
+  dismissConflict: (path) =>
+    set((state) => {
+      const doc = state.docs[path];
+      if (!doc) return state;
+      return { docs: { ...state.docs, [path]: { ...doc, conflict: undefined } } };
+    }),
+
   applyExternalChange: async (vaultId, dirs) => {
     const { docs } = get();
     for (const path of Object.keys(docs)) {
@@ -284,10 +294,16 @@ export const useDocStore = create<DocStore>((set, get) => ({
         const result = await docApi.read(vaultId, path);
         const fresh = result.doc;
         if (!fresh) continue;
-        if (fresh.revision === doc.revision && fresh.text === doc.savedText) continue;
+        if (fresh.hash === doc.hash) {
+          // Same bytes: our own save or an unrelated touch. Nothing to do.
+          if (!isDirty(doc) && fresh.revision !== doc.revision) {
+            set((state) => ({ docs: { ...state.docs, [path]: { ...state.docs[path]!, revision: fresh.revision } } }));
+          }
+          continue;
+        }
         if (!isDirty(doc)) {
           get().adoptDisk(path, fresh.text, fresh.revision, fresh.hash, fresh.size);
-        } else if (fresh.revision !== doc.revision) {
+        } else {
           set((state) => ({
             docs: { ...state.docs, [path]: { ...state.docs[path]!, externalRevision: fresh.revision } },
           }));
@@ -324,7 +340,8 @@ export function useDirtyReporter(): void {
   const vaultId = useAppStore((state) => state.activeVaultId);
   const activePath = useDocStore((state) => state.activePath);
   const doc = useDocStore((state) => (state.activePath ? state.docs[state.activePath] : undefined));
-  const dirty = isDirty(doc);
+  // The close guard must protect *any* unsaved tab, not just the visible one.
+  const dirty = useDocStore((state) => Object.values(state.docs).some((d) => isDirty(d)));
   const revision = doc?.revision ?? 0;
   useEffect(() => {
     void windowApi.reportDocument(vaultId, activePath, revision, dirty).catch(() => undefined);

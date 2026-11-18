@@ -198,6 +198,7 @@ export interface WriteOutcome {
   diskText?: string;
   diskRevision?: number;
   diskHash?: string;
+  diskSize?: number;
   baseRevision?: number;
   failure?: Failure;
 }

@@ -20,6 +20,7 @@ export function EditorPane() {
   const keepMine = useDocStore((state) => state.resolveConflictKeepMine);
   const takeDisk = useDocStore((state) => state.resolveConflictTakeDisk);
   const reloadFromDisk = useDocStore((state) => state.reloadFromDisk);
+  const dismissConflict = useDocStore((state) => state.dismissConflict);
   const setActive = useDocStore((state) => state.setActive);
 
   const [pendingClose, setPendingClose] = useState<string | null>(null);
@@ -109,7 +110,7 @@ export function EditorPane() {
           mineText={doc.text}
           onKeepMine={() => void keepMine(vaultId, activePath)}
           onTakeDisk={() => takeDisk(activePath)}
-          onDismiss={() => setActive(activePath)}
+          onDismiss={() => dismissConflict(activePath)}
         />
       ) : null}
 

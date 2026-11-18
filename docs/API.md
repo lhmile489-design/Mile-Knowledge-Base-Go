@@ -353,7 +353,7 @@ type LoadResult struct {
 - 入参：`text` 恒为 LF，Go 按目标文件原风格还原 BOM/EOL；`expectedRevision` 0 表示调用方认为目标不存在。`text` 字节上限 2 MiB，**超过拒绝不截断**（document.ts:87；validate.ts:298-304）。
 - 出参 `WriteOutcome` 判别联合（document.ts:82）：
   - `{status:'written', revision, hash, size}`；
-  - `{status:'conflict', diskText, diskRevision, diskHash, baseRevision}` —— 对应 `revision-mismatch`，磁盘未被修改，`diskText` 由 Go 回传供合并比较（FR-DOC 三选）。
+  - `{status:'conflict', diskText, diskRevision, diskHash, diskSize, baseRevision}` —— 对应 `revision-mismatch`，磁盘未被修改，`diskText` 由 Go 回传供合并比较（FR-DOC 三选）。
 - 写回是 tmp+rename 原子操作，保留原文件权限（go-service-engineering §5.3）。
 
 #### M19 `saveImage(vaultId, bytes)` — 保存粘贴/拖入图片

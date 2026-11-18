@@ -1,3 +1,6 @@
+import { useEffect, useRef, useState } from "react";
+import { advanceGate, expireGate, initialGate, type GateState } from "../lib/confirmGate";
+
 type Props = {
   diskText: string;
   mineText: string;
@@ -9,6 +12,27 @@ type Props = {
 /** Save conflict (PRD FR-DOC): the disk moved on, nothing was written. The
  * three choices mirror the legacy card; "compare" shows both texts first. */
 export function ConflictCard({ diskText, mineText, onKeepMine, onTakeDisk, onDismiss }: Props) {
+  const [gate, setGate] = useState<GateState>(initialGate);
+  const timer = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+  }, []);
+
+  const requestTakeDisk = () => {
+    const next = advanceGate(gate, Date.now());
+    setGate(next.state);
+    if (next.fire) {
+      onTakeDisk();
+      return;
+    }
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      setGate((current) => expireGate(current, Date.now()));
+      timer.current = null;
+    }, 4200);
+  };
+
   return (
     <div className="surface-card conflict-card" data-tone="warn" role="alertdialog" aria-label="保存冲突">
       <div className="status-card-head">磁盘上的版本已变化</div>
@@ -32,8 +56,8 @@ export function ConflictCard({ diskText, mineText, onKeepMine, onTakeDisk, onDis
         <button type="button" className="btn-accent" onClick={onKeepMine}>
           保留我的版本
         </button>
-        <button type="button" className="btn-quiet" onClick={onTakeDisk}>
-          采用磁盘版本
+        <button type="button" className="btn-quiet" onClick={requestTakeDisk}>
+          {gate.armedAt !== null ? "确认采用磁盘版本" : "采用磁盘版本"}
         </button>
         <button type="button" className="btn-quiet" onClick={onDismiss}>
           稍后处理

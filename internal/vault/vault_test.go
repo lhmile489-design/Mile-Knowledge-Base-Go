@@ -237,3 +237,106 @@ func TestReadDegradedThresholds(t *testing.T) {
 		t.Errorf("degraded = %q", snap.Degraded)
 	}
 }
+
+func TestConflictWhenContentChangesButSizeAndMtimeMatch(t *testing.T) {
+	root := newRoot(t)
+	full := writeFile(t, root, "same.md", "aaaa\n")
+	info, err := os.Stat(full)
+	if err != nil {
+		t.Fatal(err)
+	}
+	snap, f := Read(root, "same.md")
+	if f != nil {
+		t.Fatal(f)
+	}
+	// Same size, same mtime, different bytes: only the hash can tell.
+	if err := os.WriteFile(full, []byte("bbbb\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(full, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	out, f := Write(root, "same.md", snap.Revision, "mine\n")
+	if f != nil {
+		t.Fatal(f)
+	}
+	if out.Status != "conflict" {
+		t.Fatalf("status = %q, want conflict (hash must catch it)", out.Status)
+	}
+	if out.DiskText != "bbbb\n" {
+		t.Errorf("diskText = %q", out.DiskText)
+	}
+}
+
+func TestExpectedZeroOnExistingFileConflicts(t *testing.T) {
+	root := newRoot(t)
+	writeFile(t, root, "exists.md", "v1\n")
+	out, f := Write(root, "exists.md", 0, "v2\n")
+	if f != nil {
+		t.Fatal(f)
+	}
+	if out.Status != "conflict" {
+		t.Fatalf("status = %q, want conflict", out.Status)
+	}
+}
+
+func TestRevisionStableAcrossRereadsAndBumpedByWrites(t *testing.T) {
+	root := newRoot(t)
+	writeFile(t, root, "r.md", "one\n")
+	first, f := Read(root, "r.md")
+	if f != nil {
+		t.Fatal(f)
+	}
+	again, f := Read(root, "r.md")
+	if f != nil {
+		t.Fatal(f)
+	}
+	if again.Revision != first.Revision {
+		t.Errorf("revision changed without a write: %d → %d", first.Revision, again.Revision)
+	}
+	out, f := Write(root, "r.md", first.Revision, "two\n")
+	if f != nil {
+		t.Fatal(f)
+	}
+	if out.Revision <= first.Revision {
+		t.Errorf("write did not bump revision: %d → %d", first.Revision, out.Revision)
+	}
+}
+
+func TestNoTempFilesLeftBehind(t *testing.T) {
+	root := newRoot(t)
+	writeFile(t, root, "t.md", "v1\n")
+	snap, _ := Read(root, "t.md")
+	// Successful write.
+	if _, f := Write(root, "t.md", snap.Revision, "v2\n"); f != nil {
+		t.Fatal(f)
+	}
+	// Conflict (disk changed under us).
+	if err := os.WriteFile(filepath.Join(root, "t.md"), []byte("v3\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out, f := Write(root, "t.md", snap.Revision, "v4\n"); f != nil || out.Status != "conflict" {
+		t.Fatalf("expected conflict, got %+v %v", out, f)
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if len(e.Name()) > 5 && e.Name()[0] == '.' && filepath.Ext(e.Name()) == ".tmp" {
+			t.Errorf("temp file left behind: %s", e.Name())
+		}
+	}
+}
+
+func TestNegativeExpectedRevisionConflicts(t *testing.T) {
+	root := newRoot(t)
+	writeFile(t, root, "n.md", "v1\n")
+	out, f := Write(root, "n.md", -5, "v2\n")
+	if f != nil {
+		t.Fatal(f)
+	}
+	if out.Status != "conflict" {
+		t.Errorf("status = %q", out.Status)
+	}
+}

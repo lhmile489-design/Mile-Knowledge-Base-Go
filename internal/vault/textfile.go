@@ -59,6 +59,18 @@ func (t *revisionTracker) Observe(key string, size, mtimeMs int64, hash string) 
 	return e.revision
 }
 
+// ResetRoot forgets every tracked path under a vault root (vault forget).
+func (t *revisionTracker) ResetRoot(root string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	prefix := root + "|"
+	for key := range t.entries {
+		if strings.HasPrefix(key, prefix) {
+			delete(t.entries, key)
+		}
+	}
+}
+
 // Reset forgets a path (used when a vault is forgotten).
 func (t *revisionTracker) Reset(key string) {
 	t.mu.Lock()
@@ -126,7 +138,7 @@ func Read(root, rel string) (contract.DocumentSnapshot, *contract.Failure) {
 	text := strings.ReplaceAll(string(body), "\r\n", "\n")
 
 	hash := hashBytes(raw)
-	rev := revisions.Observe(root+"\x00"+rel, info.Size(), info.ModTime().UnixMilli(), hash)
+	rev := revisions.Observe(root+"|"+rel, info.Size(), info.ModTime().UnixMilli(), hash)
 
 	snap := contract.DocumentSnapshot{
 		Path: rel, Text: text, Revision: rev, Hash: hash, Encoding: "utf8",
@@ -163,6 +175,7 @@ func Write(root, rel string, expectedRevision int64, text string) (contract.Writ
 	bom := false
 	eol := "lf"
 	var diskText string
+	var diskRaw []byte
 	var diskHash string
 	var diskRev int64
 
@@ -191,7 +204,7 @@ func Write(root, rel string, expectedRevision int64, text string) (contract.Writ
 		}
 		diskText = strings.ReplaceAll(string(body), "\r\n", "\n")
 		diskHash = hashBytes(raw)
-		diskRev = revisions.Observe(root+"\x00"+rel, info.Size(), info.ModTime().UnixMilli(), diskHash)
+		diskRev = revisions.Observe(root+"|"+rel, info.Size(), info.ModTime().UnixMilli(), diskHash)
 	}
 
 	currentRev := int64(0)
@@ -204,6 +217,7 @@ func Write(root, rel string, expectedRevision int64, text string) (contract.Writ
 			DiskText:     diskText,
 			DiskRevision: diskRev,
 			DiskHash:     diskHash,
+			DiskSize:     int64(len(diskRaw)),
 			BaseRevision: expectedRevision,
 		}, nil
 	}
@@ -238,9 +252,8 @@ func Write(root, rel string, expectedRevision int64, text string) (contract.Writ
 		os.Remove(tmpName)
 		return contract.WriteOutcome{}, failf(contract.CodeIOFailure, "无法写入文件")
 	}
-	if existing {
-		_ = os.Chmod(tmpName, mode)
-	}
+	// The temp file is 0600; carry over the original mode, or 0644 for a new file.
+	_ = os.Chmod(tmpName, mode)
 	if err := os.Rename(tmpName, abs); err != nil {
 		os.Remove(tmpName)
 		return contract.WriteOutcome{}, failf(contract.CodeIOFailure, "无法写入文件")
@@ -251,7 +264,7 @@ func Write(root, rel string, expectedRevision int64, text string) (contract.Writ
 		return contract.WriteOutcome{}, failf(contract.CodeIOFailure, "写入后无法确认文件")
 	}
 	hash := hashBytes(out)
-	rev := revisions.Observe(root+"\x00"+rel, info.Size(), info.ModTime().UnixMilli(), hash)
+	rev := revisions.Observe(root+"|"+rel, info.Size(), info.ModTime().UnixMilli(), hash)
 	return contract.WriteOutcome{Status: "written", Revision: rev, Hash: hash, Size: info.Size()}, nil
 }
 
@@ -274,7 +287,7 @@ func StatRevision(root, rel string) (int64, string, *contract.Failure) {
 		return 0, "", failf(contract.CodeIOFailure, "无法读取文件")
 	}
 	hash := hashBytes(raw)
-	return revisions.Observe(root+"\x00"+rel, info.Size(), info.ModTime().UnixMilli(), hash), hash, nil
+	return revisions.Observe(root+"|"+rel, info.Size(), info.ModTime().UnixMilli(), hash), hash, nil
 }
 
 // Touch records a fresh timestamp for tests that need mtime granularity.
@@ -282,3 +295,6 @@ func Touch(abs string) error {
 	now := time.Now()
 	return os.Chtimes(abs, now, now)
 }
+
+// ResetRevisions drops tracked revisions for a vault root (vault forget).
+func ResetRevisions(root string) { revisions.ResetRoot(root) }

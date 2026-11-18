@@ -155,10 +155,14 @@ func (s *VaultService) Forget(vaultID string) contract.VaultListResult {
 		return contract.VaultListResult{Failure: f}
 	}
 	s.app.stopWatch(vaultID)
+	root, _ := s.app.Vaults.Root(vaultID)
 	if f := s.app.Vaults.Forget(vaultID); f != nil {
 		return contract.VaultListResult{Failure: f}
 	}
 	_ = s.app.Settings.ForgetVault(vaultID)
+	if root != "" {
+		vault.ResetRevisions(root)
+	}
 	result := s.app.Vaults.List()
 	return result
 }

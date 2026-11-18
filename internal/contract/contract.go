@@ -149,6 +149,7 @@ type WriteOutcome struct {
 	DiskText     string   `json:"diskText,omitempty"`
 	DiskRevision int64    `json:"diskRevision,omitempty"`
 	DiskHash     string   `json:"diskHash,omitempty"`
+	DiskSize     int64    `json:"diskSize,omitempty"`
 	BaseRevision int64    `json:"baseRevision,omitempty"`
 	Failure      *Failure `json:"failure,omitempty"`
 }
