@@ -1,0 +1,13 @@
+:root {
+  --font-ui: -apple-system, "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI",
+    system-ui, sans-serif;
+  --raw-canvas: #eceef1;
+  --raw-text: #24272e;
+  --raw-muted: #4b505a;
+}
+
+:root[data-theme="dark"] {
+  --raw-canvas: #0e0f11;
+  --raw-text: #e6e7ea;
+  --raw-muted: #a6aab3;
+}

@@ -1,0 +1,48 @@
+{
+  "name": "mile-knowledge-base",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "mygo dev",
+    "build": "mygo build",
+    "generate": "mygo generate",
+    "dev:web": "vite",
+    "build:web": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test:web": "vitest run",
+    "test:go": "go test ./...",
+    "test:go-race": "go test -race ./internal/...",
+    "lint:go": "go vet ./...",
+    "test:fuzz": "go test -run=^$ -fuzz=Fuzz -fuzztime=60s ./internal/...",
+    "test:e2e": "go run ./e2e",
+    "bench": "go test -run=^$ -bench=. -benchtime=1x ./internal/..."
+  },
+  "dependencies": {
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-markdown": "6.5.2",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/search": "6.7.2",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15",
+    "@phosphor-icons/react": "2.1.10",
+    "@tanstack/react-virtual": "3.14.26",
+    "mygo-runtime": "0.10.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zustand": "5.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.5",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "22.19.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "jsdom": "31.0.1",
+    "mygo-cli": "0.10.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}
