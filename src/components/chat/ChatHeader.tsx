@@ -1,5 +1,6 @@
 import { ChatCircleDots, Info, Plus } from "@phosphor-icons/react";
 import { AGENT_META } from "../../lib/agentMeta";
+import { useHistoryStore } from "../../stores/historyStore";
 import { deriveConversationTitle } from "../../lib/conversationTime";
 import { useAgentStore } from "../../stores/agentStore";
 
@@ -11,6 +12,8 @@ export function ChatHeader() {
   const bucket = useAgentStore((state) => state.buckets[state.agent]);
   const newConversation = useAgentStore((state) => state.newConversation);
   const vaultId = useAgentStore((state) => state.vaultId);
+  const historyOpen = useHistoryStore((state) => state.open);
+  const toggleRail = useHistoryStore((state) => state.toggleRail);
 
   const firstUser = bucket.transcript.lines.find((line) => line.role === "user");
   const title = deriveConversationTitle(firstUser?.text);
@@ -19,7 +22,14 @@ export function ChatHeader() {
 
   return (
     <header className="chat-header" data-testid="chat-header">
-      <button type="button" className="btn" disabled aria-disabled="true" title="历史栏">
+      <button
+        type="button"
+        className="btn"
+        aria-pressed={historyOpen}
+        title={historyOpen ? "收起历史栏" : "展开历史栏"}
+        data-testid="history-toggle"
+        onClick={toggleRail}
+      >
         <ChatCircleDots size={14} aria-hidden />
         历史
       </button>

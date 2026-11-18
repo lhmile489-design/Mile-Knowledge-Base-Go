@@ -20,3 +20,10 @@ export function deriveConversationTitle(firstUserText: string | undefined): stri
   if (!line) return "新对话";
   return line.length > 40 ? `${line.slice(0, 40)}…` : line;
 }
+
+/** "M月D日 HH:mm" for the restore note. Invalid timestamps add nothing. */
+export function formatMonthDayTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
