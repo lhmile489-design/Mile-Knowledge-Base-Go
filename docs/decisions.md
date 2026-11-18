@@ -149,6 +149,20 @@
 - 受影响：docs/PRD.md（FR-AI-PROV 默认配置、FR-AI-ENG 代理，v1.7）、docs/数据库设计.md（3.1 默认值）、docs/PLAN-M2.md（T00、T02、T04、v0.3）。
 - 正文同步情况：本决策已回写上述文档。
 
+## D-011：M2 供应商与凭据的 4 项契约收紧
+
+- 日期与状态：2026-11-18，已确认（T01 实施时按旧版与 PRD 核对后确认，随任务汇报给用户）。
+- 背景：T01 实现 M67–M70 时发现旧版与 API/数据库设计有几处不一致，需要定口径。
+- 结论：
+  1. **删除 `credentialsPath`**：旧版回出 `engine-credentials.json` 的路径；新版 key 存 Windows 凭据管理器，没有文件可报。M67 出参只保留 `providers` 与 `credentials`。
+  2. **M69 用活动知识库刷新快照**：方法签名没有 vaultId（旧版 `register.ts:773-787` 就是这样），成功后读活动库的 provider 列表；没有活动库时只回本次 envName 的凭据状态。这与图片协议必须显式传库不同：设置页的操作主体是活动库。
+  3. **M70 错误码按旧版**：401/403 `permission-denied`、404/405 `unsupported`、其余 `io-failure`、响应 >2 MiB `too-large`；不使用 §1.3 的 `provider-error`（那是回合内引擎错误的码）。API M70 行同步修正。
+  4. **重名规则按旧版非对称**：读取区分大小写、只留第一个；保存忽略大小写、整单拒绝。数据库设计 3.6 原文写「读取忽略大小写」与旧版不符，已改正。
+- 原因：第 1、2 条是删掉新版无法提供的字段/参数；第 3、4 条以旧版行为为准，且都更严格或等价。
+- 代价与风险：前端在 M67 里不再显示「凭据文件位置」；设置页「key 存哪里」改为说明「Windows 凭据管理器」。
+- 受影响：docs/API.md（M67、M69、M70）、docs/数据库设计.md 3.6、docs/PLAN-M2.md T01 账本、internal/contract（ProviderDraft/ProvidersResult/FetchModelsResult）、internal/ai（providers/models/keys）、internal/service/providers.go。
+- 正文同步情况：已回写上述文档。
+
 ## 单条模板
 
 ### 待编号：决策标题

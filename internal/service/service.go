@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/mutation"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
@@ -40,6 +41,7 @@ type App struct {
 	Settings *settings.Store
 	Vaults   *vault.Registry
 	Audit    *mutation.AuditLedger
+	Keys     *ai.KeyStore
 
 	mu        sync.Mutex
 	win       *mygo.Window
@@ -74,6 +76,7 @@ func New(dataDir, legacyDir string) (*App, error) {
 		DataDir:   dataDir,
 		Settings:  store,
 		Audit:     audit,
+		Keys:      ai.NewKeyStore(ai.NewSecretsBackend("")),
 		auditErr:  auditErrText(auditErr),
 		picks:     map[string]pickToken{},
 		watchers:  map[string]context.CancelFunc{},

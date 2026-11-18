@@ -277,6 +277,37 @@ type LinkGraphResult struct {
 	Failure   *Failure       `json:"failure,omitempty"`
 }
 
+// ProviderDraft is one providers.json entry as the settings page sees it
+// (API M67/M68). The key value is never part of it.
+type ProviderDraft struct {
+	Name          string   `json:"name"`
+	Kind          string   `json:"kind"`
+	BaseURL       string   `json:"baseUrl"`
+	Models        []string `json:"models"`
+	DefaultModel  string   `json:"defaultModel"`
+	APIKeyEnv     string   `json:"apiKeyEnv"`
+	ContextWindow *int     `json:"contextWindow,omitempty"`
+}
+
+// ProviderCredentialState says whether a key is configured, never what it is.
+type ProviderCredentialState struct {
+	EnvName string `json:"envName"`
+	IsSet   bool   `json:"isSet"`
+}
+
+// ProvidersResult is the M67/M68/M69 payload.
+type ProvidersResult struct {
+	Providers   []ProviderDraft           `json:"providers"`
+	Credentials []ProviderCredentialState `json:"credentials"`
+	Failure     *Failure                  `json:"failure,omitempty"`
+}
+
+// FetchModelsResult is the M70 payload.
+type FetchModelsResult struct {
+	Models  []string `json:"models"`
+	Failure *Failure `json:"failure,omitempty"`
+}
+
 // AppConfigResult is the M62/M66 response: vault-level settings the UI reads.
 type AppConfigResult struct {
 	VaultID    string            `json:"vaultId,omitempty"`

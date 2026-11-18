@@ -113,7 +113,7 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | 编号 | 目标 | 修改范围 | 依赖 | 产物 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T00 | 契约补齐与实测前置 | docs/API.md §6/§4.6、README、`spikes/t00-smoke/` | M1 | 帧载荷类型、M37 `BlockResult`、M45–M49 子结构；Secrets 与 netproxy 冒烟 | API 定义完整且与实现字段一一对应；Secrets 存取、netproxy 回环各有结论并记录 | 已验证 |
-| T01 | 供应商与 key（M67–M70） | `internal/ai/providers.go`、`internal/service/settings.go`（M67–M70）、`internal/ai/providers_test.go` | T00 | providers.json 读写、reasonix.toml 只读迁移、DeepSeek 预设、fetchModels、key 存取 | V-PROV 全部通过 | 待做 |
+| T01 | 供应商与 key（M67–M70） | `internal/ai/providers.go`、`internal/service/settings.go`（M67–M70）、`internal/ai/providers_test.go` | T00 | providers.json 读写、reasonix.toml 只读迁移、DeepSeek 预设、fetchModels、key 存取 | V-PROV 全部通过 | 已验证 |
 | T02 | Agent 配置与 steering（M63、M64、M71） | `internal/ai/agents.go`、`internal/service/appconfig.go`、`internal/index`（skillCatalog 只读） | T01 | agents.json 字节兼容、D-010 默认配置、steering clamp/基线、skillCatalog | V-AGT 全部通过 | 待做 |
 | T03 | 引擎骨架与 SSE 流式 | `internal/ai/{engine.go,sse.go,retry.go,usage.go}` | T01、T00 | OpenAI 兼容客户端、SSE 组装、重试/退避/Retry-After、空闲超时、出站校验、netproxy | V-ENG 全部通过（httptest 假供应商） | 待做 |
 | T04 | 回合循环、会话与上下文预算 | `internal/ai/{session.go,loop.go,model.go,budget.go,compress.go}` | T01、T02、T03 | 会话懒创建、模型选择顺序、16 步工具循环、调用与结果配对、取消回填、只写完整采样、单回合出错隔离、`reasoning_content` 回填、token 估算与压缩 | V-LOOP、V-BUDGET 全部通过 | 待做 |
@@ -390,13 +390,14 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 
 ### 下次会话先读
 
-- 当前阶段：M2 已批准（B-M2-01、02、03、05 随「批准，开始 T00」确认），T00 已完成待用户审查。
-- 下一个任务：T01（待放行）。
+- 当前阶段：T01 已完成待用户审查。
+- 下一个任务：审查通过后 T02。
 - 工作区：`main` 领先 `origin/main`，本地提交 `b5343e0`（v0.2）与本次 v0.3 均未推送。
 - 待决事项：B-M2-01、02、03、05；13 项手动确认；旧版性能基线。B-M2-04 已撤回，B-M2-06 已确认。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-18 | T01 完成 | `internal/ai/{providers,models,keys}.go`：providers.json 读写（固定键序、`SetEscapeHTML(false)`、未知字段按排序保留、读取 50/保存 32、读取坏条目跳过而保存整单失败）、reasonix.toml 托管区正则迁移（空结果不写）、DeepSeek 预设；`fetchModels` 两种 kind（openai `/models`、anthropic 去尾 `/v1` 再拼 `/v1/models` + `x-api-key` + `anthropic-version`）、10 秒超时、2 MiB、去 `models/` 前缀、去重排序 500 条、错误先替换本次 key 再脱敏；`KeyStore`（2560 字节、禁换行、内存与 OS 凭据两种后端）。`internal/service/providers.go`：M67 Providers、M68 SaveProviders、M69 SetKey（活动库刷新）、M70 FetchModels（草稿 key 优先于已保存 key）。契约：新增 `ProviderDraft`/`ProviderCredentialState`/`ProvidersResult`/`FetchModelsResult`；删除 `credentialsPath`；M70 错误码按旧版；D-011 记录 4 项收紧；数据库设计 3.6 重名规则改正。测试：15 项 ai 包用例（含真实 OS 凭据一次性服务名）+ 3 项 service 用例（33 条拒绝、重名拒绝、失败不写盘、草稿 key 优先、401 映射） | docs/API.md、docs/数据库设计.md、docs/decisions.md、internal/ai/*、internal/service/{providers.go,service.go,providers_test.go,mutation_test.go}、internal/contract/contract.go | `go test ./internal/ai ./internal/service` 通过；`go build ./...` 通过 | PAC/SOCKS 仍未实测（T00 记录）；凭据文件路径字段删除需 UI 在 T17 跟进 | T02 |
 | 2026-11-18 | T00 契约核对（Workflow：3 个只读视角 + 每条发现 1 个反驳者，10 个 agent）7 条发现、3 条确认，全为 minor，均已修：①M46 `note` 补「超长截断不拒绝」（旧版 `validate.ts:163-167` 默认 onOverflow）；②`selection` 表述改为「字段旧版已有（`context.ts:82`），新版新增的是入参」，纠正「新字段」的说法；③M49 补 `revision` 非负整数、`dirty` 严格布尔，否则 `invalid-input`（`register.ts:930-932`）。另修掉 §6「历史落盘」残留的 `sidecar`。 | docs/API.md、docs/PLAN-M2.md | Workflow `t00-contract-check`：checked=frames/context/consistency，raw=7，confirmed=3；`go build ./...` 与 `go vet ./spikes/...` 通过 | T01 待放行 | T01 |
 | 2026-11-18 | T00 开始：用户批准计划并放行 T00（B-M2-01/02/03/05 确认，B-M2-06 早前确认，B-M2-04 撤回）。已补 docs/API.md §6 的 `ToolCallFrame`、`StatusFrame`、`UsageFrame`/`Usage`、`WritePreview`/`DiffLine`、`PermissionOption`，删去 `sidecar` kind；补 M37 `BlockResult`；补 M45–M49 的 7 个子结构与 `contextReportDocument` 的可选 `selection`（PRD 要求，旧版 `ipc/register.ts:922-935` 不传）。新增 `spikes/t00-smoke`：Secrets 用一次性服务名 `mkb-spike-<随机>` 验证 Set/Get/Delete 与 2561 字节拒绝，全部通过；netproxy 对 127.0.0.1 与 localhost 直连 200。PAC/WPAD 与 SOCKS5 本机无环境，记为未实测。README 加 M2 三条命令。 | docs/API.md、docs/PLAN-M2.md、README.md、spikes/t00-smoke/main.go | `go run ./spikes/t00-smoke`：secrets.set/get ok、oversize rejected、afterDelete gone；netproxy loopback ok 200、localhost ok 200、ok=true | 契约核对 workflow 结果待回填；PAC/SOCKS 未实测 | T01 |
 | 2026-11-18 | 复审（主会话自审，用户要求）2 阻断 7 需改 4 小问题：**阻断** ①PRD 的 Agent 默认配置来自旧版死代码 `DEFAULT_AGENT_CONFIG`（`shared/agent.ts:289-297`，src 与 tests 零引用），旧版运行时 4 个都是 ask 加空模型；用户选择按 PRD 现写法，记为 D-010，PRD 升 v1.7、数据库设计 3.1 同步，模型存裸名；②旧版 NativeEngine 的回合循环没有任务负责 → T04 扩为「回合循环、会话与上下文预算」，新增 V-LOOP-1..5。**需改** `handoff_task` 依赖 ContextHub → 移到 T08，并补 actionLedger 回调；`set_aliases` 经 M66；§7 写路径表述与两条路径统一；B-M2-04 撤回（技术设计 2.1 已确认 netproxy），PRD 的 SOCKS 与环境变量口径改为与之一致；Secrets 测试隔离；每条消息的「复制 / 重新回答」进 T11；只读查看器进 T15；V-PROV-4 改写并新增 V-PROV-5、6。**小问题** WritePreview 的 lineDiff 指 M1 的 TS 版并移植为 Go；T12 依赖改为补 `BlockResult`；帧表删 `sidecar`；恢复入口与待决事项更新 | docs/PLAN-M2.md v0.3、docs/decisions.md D-010、docs/PRD.md v1.7、docs/数据库设计.md 3.1 | 旧版核对：`agent.ts:289` 全仓库只有定义；`NativeEngine.ts:189` 会话默认 ask；`appConfig.ts:330-367` 4 个 Agent 均为空模型 + auto + ask；`nativeProvider.ts:41-50` 精确匹配模型名；`ContextHub.ts:176` 无调用方；mygo `netproxy.go` 文档与 `secrets.go:58` | B-M2-01、02、03、05 | T00 |

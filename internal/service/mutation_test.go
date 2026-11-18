@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 )
@@ -23,6 +24,8 @@ func mutationTestApp(t *testing.T) (*App, string, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Tests never touch the real OS secret store.
+	app.Keys = ai.NewMemoryKeyStore()
 	v, f := app.Vaults.Register(root)
 	if f != nil {
 		t.Fatalf("register: %+v", f)
