@@ -1,28 +1,28 @@
-import { useEffect, useState } from "react";
-import { windowApi } from "../lib/transport";
+import { useEffect } from "react";
+import { Workbench } from "../components/Workbench";
+import { useAppStore } from "../stores/appStore";
 
 export function App() {
-  const [status, setStatus] = useState("正在连接 Go 后端");
+  const booted = useAppStore((state) => state.booted);
+  const bootError = useAppStore((state) => state.bootError);
+  const boot = useAppStore((state) => state.boot);
 
   useEffect(() => {
-    let alive = true;
-    windowApi
-      .ready()
-      .then(() => {
-        if (alive) setStatus("Go 后端已就绪");
-      })
-      .catch((error: unknown) => {
-        if (alive) setStatus(`Go 后端不可用: ${String(error)}`);
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
+    void boot();
+  }, [boot]);
 
-  return (
-    <div className="boot">
-      <h1>Mile Knowledge Base</h1>
-      <p className="muted">{status}</p>
-    </div>
-  );
+  if (!booted) {
+    return <div className="boot muted">正在启动…</div>;
+  }
+  if (bootError) {
+    return (
+      <div className="boot">
+        <div className="surface-card" data-tone="fault" role="alert" style={{ maxWidth: 520 }}>
+          <div className="status-card-head">启动失败</div>
+          <div className="status-card-body">{bootError}</div>
+        </div>
+      </div>
+    );
+  }
+  return <Workbench />;
 }

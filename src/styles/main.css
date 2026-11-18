@@ -25,3 +25,96 @@ body {
 .muted {
   color: var(--raw-muted);
 }
+
+/* Workbench shell: title bar above, the three panels below, gutters all round
+   (DESIGN.md §4; the legacy Workbench used the same grid). */
+.app-shell {
+  display: grid;
+  height: 100%;
+  min-width: 0;
+  background: var(--raw-canvas);
+}
+
+.workbench-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: minmax(0, 1fr);
+  padding: 0 var(--gap-panel) var(--gap-panel);
+}
+
+.workbench-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-placeholder {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 18px;
+  height: 100%;
+}
+
+.panel-placeholder p {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  line-height: 1.6;
+}
+
+.panel-rail {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  padding-top: 10px;
+}
+
+/* The 8px seam itself is the drag handle; hover shows the accent line. */
+.resizer {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+}
+
+.resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 2px;
+  height: 48px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.resizer:hover::after,
+.resizer:focus-visible::after {
+  background: var(--color-accent, var(--raw-accent));
+}
+
+.resizer:focus-visible {
+  outline: none;
+}
+
+/* Window controls sit flush in the 40px title bar. */
+.window-btn {
+  width: 46px;
+  height: var(--titlebar-h);
+  display: grid;
+  place-items: center;
+  border-radius: 0;
+  color: var(--raw-text);
+}
+
+.window-btn:hover {
+  background: var(--raw-raised);
+}
+
+.window-btn-close:hover {
+  background: var(--signal-fault-soft, #b91c1c);
+  color: #fff;
+}
