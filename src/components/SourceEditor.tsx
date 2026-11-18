@@ -5,6 +5,8 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { markdown } from "@codemirror/lang-markdown";
 import { minimalChange } from "../lib/docUtils";
+import { imageMarkdown, uploadImage } from "../lib/attachments";
+import { wikilinkAt } from "../lib/wikilink";
 
 type Props = {
   path: string;
@@ -12,12 +14,19 @@ type Props = {
   readOnly: boolean;
   onChange: (text: string) => void;
   onSave: () => void;
+  /** Ctrl/Cmd+click on a wikilink; returns the target text. */
+  onFollowWikiLink?: (target: string) => void;
+  vaultId?: string;
 };
 
 /** Source mode: monospace with line numbers, no syntax decoration beyond the
  * Markdown structure (DESIGN.md §5.8). External value changes are applied as a
  * minimal diff, never as a whole-document replace. */
-export function SourceEditor({ path, value, readOnly, onChange, onSave }: Props) {
+export function SourceEditor({ path, value, readOnly, onChange, onSave, onFollowWikiLink, vaultId }: Props) {
+  const vaultRef = useRef(vaultId);
+  vaultRef.current = vaultId;
+  const followRef = useRef(onFollowWikiLink);
+  followRef.current = onFollowWikiLink;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -58,6 +67,36 @@ export function SourceEditor({ path, value, readOnly, onChange, onSave }: Props)
           EditorView.updateListener.of((update) => {
             if (update.docChanged) onChangeRef.current(update.state.doc.toString());
           }),
+          EditorView.domEventHandlers({
+            paste: (event, view) => {
+              const files = Array.from(event.clipboardData?.files ?? []).filter((file) =>
+                file.type.startsWith("image/"),
+              );
+              if (files.length === 0 || !vaultRef.current) return false;
+              event.preventDefault();
+              void insertImages(view, vaultRef.current, files);
+              return true;
+            },
+            drop: (event, view) => {
+              const files = Array.from(event.dataTransfer?.files ?? []).filter((file) =>
+                file.type.startsWith("image/"),
+              );
+              if (files.length === 0 || !vaultRef.current) return false;
+              event.preventDefault();
+              void insertImages(view, vaultRef.current, files);
+              return true;
+            },
+            mousedown: (event, view) => {
+              if (!(event.ctrlKey || event.metaKey) || !followRef.current) return false;
+              const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+              if (pos === null) return false;
+              const target = wikilinkAt(view.state.doc.toString(), pos);
+              if (!target) return false;
+              event.preventDefault();
+              followRef.current(target);
+              return true;
+            },
+          }),
           EditorView.editable.of(!readOnly),
         ],
       }),
@@ -81,4 +120,20 @@ export function SourceEditor({ path, value, readOnly, onChange, onSave }: Props)
   }, [value]);
 
   return <div className="source-editor-host" ref={hostRef} data-path={path} />;
+}
+
+/** Uploads each image and inserts its markdown at the current selection. */
+async function insertImages(view: EditorView, vaultId: string, files: File[]): Promise<void> {
+  const snippets: string[] = [];
+  for (const file of files) {
+    try {
+      const uploaded = await uploadImage(vaultId, file);
+      snippets.push(imageMarkdown(uploaded.path));
+    } catch {
+      // A failed upload must not silently insert a broken link.
+    }
+  }
+  if (snippets.length === 0) return;
+  const at = view.state.selection.main.to;
+  view.dispatch({ changes: { from: at, insert: snippets.join("\n") } });
 }

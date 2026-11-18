@@ -6,7 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 // remote images except the kbimg protocol, no frames or objects.
 const CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
-  "img-src 'self' data: http://kbimg.localhost; font-src 'self'; connect-src 'self'; " +
+  "img-src 'self' data: http://kbimg.localhost; font-src 'self'; connect-src 'self' http://kbimg.localhost; " +
   "object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
 
 const cspPlugin = {

@@ -10,6 +10,9 @@ import { AuditPanel } from "./AuditPanel";
 import { MutationReportCard } from "./MutationReportCard";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore, isDirty, tabTitle, useDirtyReporter } from "../stores/docStore";
+import { useMutationStore } from "../stores/mutationStore";
+import { docApi, mutationApi, TransportError } from "../lib/transport";
+import { newNotePath, newNoteText } from "../lib/wikilink";
 import { formatBytes } from "../lib/bytes";
 
 type Mode = "read" | "source" | "split";
@@ -34,6 +37,56 @@ export function EditorPane() {
   const [pendingClose, setPendingClose] = useState<string | null>(null);
   const [modes, setModes] = useState<Record<string, Mode>>({});
   useDirtyReporter();
+
+  const followWikiLink = async (target: string) => {
+    if (!vaultId || !activePath) return;
+    const notePath = newNotePath(target, activePath);
+    if (!notePath) return;
+    // Probe first: docStore.open turns a read failure into a tab with an error
+    // card instead of throwing, so a failed open would never reach the create
+    // plan below.
+    try {
+      const probe = await docApi.read(vaultId, notePath);
+      if (!probe.doc) throw new TransportError("not-found", "目标不存在");
+    } catch (error) {
+      if (error instanceof TransportError && error.code === "not-found") {
+        await proposeWikiCreate(notePath);
+        return;
+      }
+      useAppStore.getState().pushNotice(error instanceof Error ? error.message : String(error), "warn");
+      return;
+    }
+    await useDocStore.getState().open(vaultId, notePath);
+    void useAppStore.getState().setLayout({ docCollapsed: false });
+  };
+
+  const proposeWikiCreate = async (notePath: string) => {
+    try {
+      const result = await mutationApi.plan({
+        vaultId,
+        origin: "user",
+        actions: [
+          {
+            id: "create",
+            kind: "create",
+            target: notePath,
+            text: newNoteText(notePath),
+            reason: "从 wikilink 新建",
+          },
+        ],
+      });
+      if (result.plan) useMutationStore.getState().propose(result.plan, `新建 ${notePath}`);
+      else if (result.failure) useAppStore.getState().pushNotice(result.failure.message, "warn");
+    } catch (error) {
+      useAppStore.getState().pushNotice(error instanceof Error ? error.message : String(error), "warn");
+    }
+  };
+
+  // E2E hook: same handler the editor's Ctrl+click uses.
+  useEffect(() => {
+    (window as unknown as { __mkbFollow?: unknown }).__mkbFollow = followWikiLink;
+  });
+
 
   const doc = activePath ? docs[activePath] : undefined;
   const dirty = isDirty(doc);
@@ -80,6 +133,8 @@ export function EditorPane() {
       readOnly={degraded === "large-read-only"}
       onChange={(text) => setText(activePath, text)}
       onSave={() => void save(vaultId, activePath)}
+      vaultId={vaultId}
+      onFollowWikiLink={(target) => void followWikiLink(target)}
     />
   ) : null;
 
