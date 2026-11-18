@@ -36,10 +36,9 @@ func ImageHandler(app *App) http.HandlerFunc {
 }
 
 func vaultRootForRequest(app *App, r *http.Request) (string, string, bool) {
+	// The vault must be explicit: falling back to the active vault would let a
+	// request that names nothing read or write another vault's files (API §5).
 	vaultID := r.URL.Query().Get("vault")
-	if vaultID == "" {
-		vaultID = app.Vaults.Active()
-	}
 	if f := validateID(vaultID); f != nil {
 		return "", "", false
 	}

@@ -45,3 +45,18 @@ describe("wikilinkAt", () => {
     expect(wikilinkAt("no links", 3)).toBeNull();
   });
 });
+
+describe("wikilinkAt between two links", () => {
+  const text = "[[甲]] 中间的普通文字 [[乙]]";
+  it("does not treat plain text between links as a link", () => {
+    const middle = text.indexOf("普通");
+    expect(wikilinkAt(text, middle)).toBeNull();
+    const gap = text.indexOf("文字") + 1;
+    expect(wikilinkAt(text, gap)).toBeNull();
+  });
+  it("finds each link from inside it and at its brackets", () => {
+    expect(wikilinkAt(text, text.indexOf("甲"))).toBe("甲");
+    expect(wikilinkAt(text, text.indexOf("[[乙"))).toBe("乙");
+    expect(wikilinkAt(text, text.indexOf("乙") + 1)).toBe("乙");
+  });
+});

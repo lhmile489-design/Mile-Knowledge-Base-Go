@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FloppyDisk } from "@phosphor-icons/react";
 import { TabStrip } from "./TabStrip";
 import { SourceEditor } from "./SourceEditor";
@@ -38,6 +38,7 @@ export function EditorPane() {
   const [modes, setModes] = useState<Record<string, Mode>>({});
   useDirtyReporter();
 
+  const followRef = useRef<(target: string) => Promise<void>>(async () => {});
   const followWikiLink = async (target: string) => {
     if (!vaultId || !activePath) return;
     const notePath = newNotePath(target, activePath);
@@ -82,10 +83,17 @@ export function EditorPane() {
     }
   };
 
-  // E2E hook: same handler the editor's Ctrl+click uses.
+  // Stable E2E bridge: the window entry never captures a stale closure and is
+  // removed when the pane unmounts.
   useEffect(() => {
-    (window as unknown as { __mkbFollow?: unknown }).__mkbFollow = followWikiLink;
-  });
+    const bridge = (target: string) => {
+      void followRef.current(target);
+    };
+    (window as unknown as { __mkbFollow?: unknown }).__mkbFollow = bridge;
+    return () => {
+      delete (window as unknown as { __mkbFollow?: unknown }).__mkbFollow;
+    };
+  }, []);
 
 
   const doc = activePath ? docs[activePath] : undefined;
@@ -116,6 +124,8 @@ export function EditorPane() {
       </div>
     );
   }
+
+  followRef.current = followWikiLink;
 
   const requestClose = (path: string) => {
     const target = docs[path];

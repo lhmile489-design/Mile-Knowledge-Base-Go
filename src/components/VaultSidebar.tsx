@@ -198,7 +198,7 @@ export function VaultSidebar() {
     if (!vaultId) return;
     try {
       await settingsApi.appConfigPatchAliases(vaultId, { [path]: next.trim() === "" ? null : next.trim() });
-      await invalidate([parentOf(path)]);
+      await invalidate([parentOf(path), path]);
     } catch (err) {
       notify(err instanceof Error ? err.message : String(err));
     }

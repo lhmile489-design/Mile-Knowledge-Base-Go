@@ -7,6 +7,7 @@ import { markdown } from "@codemirror/lang-markdown";
 import { minimalChange } from "../lib/docUtils";
 import { imageMarkdown, uploadImage } from "../lib/attachments";
 import { wikilinkAt } from "../lib/wikilink";
+import { useAppStore } from "../stores/appStore";
 
 type Props = {
   path: string;
@@ -129,8 +130,11 @@ async function insertImages(view: EditorView, vaultId: string, files: File[]): P
     try {
       const uploaded = await uploadImage(vaultId, file);
       snippets.push(imageMarkdown(uploaded.path));
-    } catch {
-      // A failed upload must not silently insert a broken link.
+    } catch (error) {
+      // No broken link is inserted, and the user hears about the failure.
+      useAppStore
+        .getState()
+        .pushNotice(`图片上传失败：${error instanceof Error ? error.message : String(error)}`, "warn");
     }
   }
   if (snippets.length === 0) return;

@@ -4,7 +4,6 @@ import {
   events,
   mutationApi,
   type AuditListResult,
-  type TransactionSummary,
 } from "../lib/transport";
 import { useAppStore } from "../stores/appStore";
 import { useMutationStore } from "../stores/mutationStore";
@@ -74,9 +73,6 @@ export function AuditPanel() {
 
   if (!open) return null;
 
-  const transactions = new Map<string, TransactionSummary>();
-  for (const summary of data?.transactions ?? []) transactions.set(summary.id, summary);
-
   return (
     <section className="audit-panel" aria-label="操作日志">
       <div className="audit-head">
@@ -95,9 +91,10 @@ export function AuditPanel() {
           <p className="audit-empty muted">还没有记录</p>
         ) : (
           data.records.map((record) => {
-            const summary = record.transactionId ? transactions.get(record.transactionId) : undefined;
-            const canRestore =
-              summary?.status === "committed" && record.status === "completed" && record.transactionId;
+            // Same rule as the legacy panel: a completed record with a
+            // transaction can be restored even if the rest of the plan was
+            // partial.
+            const canRestore = Boolean(record.transactionId) && record.status === "completed";
             return (
               <div key={record.id} className="audit-row">
                 <span className="audit-status" data-status={record.status}>

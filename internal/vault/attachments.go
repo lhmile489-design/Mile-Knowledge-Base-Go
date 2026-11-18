@@ -59,6 +59,12 @@ func SaveAttachment(root string, body []byte) (string, bool, *contract.Failure) 
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", false, contract.Fail(contract.CodeIOFailure, "无法创建附件目录")
 	}
+	// Re-resolve after creating the directory: if it appeared as a reparse
+	// point in between, this refuses instead of writing outside the vault.
+	dir, f = pathguard.Resolve(root, AttachmentDir)
+	if f != nil {
+		return "", false, f
+	}
 	sum := sha256.Sum256(body)
 	name := "pasted-" + hex.EncodeToString(sum[:])[:12] + "." + ext
 	rel := AttachmentDir + "/" + name
