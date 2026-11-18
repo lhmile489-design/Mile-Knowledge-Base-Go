@@ -51,7 +51,125 @@ func (s *MutationService) Execute(ctx context.Context, plan contract.MutationPla
 			return outcome.Hash, nil
 		},
 	}
-	return executor.Execute(plan)
+	report = executor.Execute(plan)
+	if a := s.app; a.Audit != nil {
+		records := make([]contract.ActionRecord, 0, len(report.Completed)+len(report.Failed)+len(report.Remaining))
+		records = append(records, report.Completed...)
+		records = append(records, report.Failed...)
+		records = append(records, report.Remaining...)
+		if err := a.Audit.Append(records...); err != nil {
+			_ = AppNotice.Emit(a.Window(), contract.AppNoticeEvent{Text: "操作日志写入失败：" + err.Error(), Level: "warn"})
+		} else if len(records) > 0 {
+			a.emitAudit(plan.VaultID)
+		}
+	}
+	return report
+}
+
+// AuditList returns operation records and the vault's transactions (M31).
+func (s *MutationService) AuditList(ctx context.Context, vaultID, planID string, limit int) contract.AuditListResult {
+	result := contract.AuditListResult{Records: []contract.ActionRecord{}, Transactions: []contract.TransactionSummary{}}
+	if s.app.Audit == nil {
+		result.Failure = contract.Fail(contract.CodeIOFailure, "操作日志不可用")
+		return result
+	}
+	result.Records = s.app.Audit.List(vaultID, planID, limit)
+	if vaultID != "" {
+		if root, f := s.app.Vaults.Root(vaultID); f == nil {
+			manager := mutation.TxManager{Root: root}
+			for _, manifest := range manager.ListTx() {
+				result.Transactions = append(result.Transactions, contract.TransactionSummary{
+					ID: manifest.ID, PlanID: manifest.PlanID, CreatedAt: manifest.CreatedAt,
+					Status: manifest.Status, EntryCount: len(manifest.Entries),
+				})
+			}
+		}
+	}
+	return result
+}
+
+// RewindPrepare reports which entries of a transaction can still be restored (M32).
+func (s *MutationService) RewindPrepare(ctx context.Context, vaultID, transactionID string) contract.RestorePreview {
+	result := contract.RestorePreview{TransactionID: transactionID, VaultID: vaultID, Entries: []contract.RestorePreviewEntry{}}
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		result.Failure = f
+		return result
+	}
+	manager := mutation.TxManager{Root: root}
+	entries, pf := manager.Preview(transactionID)
+	if pf != nil {
+		result.Failure = pf
+		return result
+	}
+	result.Entries = entries
+	return result
+}
+
+// RewindCommit restores the transaction and marks the matching audit records
+// (M33). Entries changed after the transaction are reported, not overwritten.
+func (s *MutationService) RewindCommit(ctx context.Context, vaultID, transactionID string) contract.RestoreResult {
+	result := contract.RestoreResult{TransactionID: transactionID, Restored: []string{},
+		Conflicted: []string{}, TouchedDirectories: []string{}}
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		result.Failure = f
+		return result
+	}
+	manager := mutation.TxManager{Root: root}
+	restored, conflicted, touched, rf := manager.Restore(transactionID)
+	if rf != nil {
+		result.Failure = rf
+		return result
+	}
+	result.Restored = restored
+	result.Conflicted = conflicted
+	result.TouchedDirectories = touched
+
+	if a := s.app; a.Audit != nil {
+		var revertedIDs, conflictedIDs []string
+		for _, record := range a.Audit.List(vaultID, "", 1000) {
+			if record.TransactionID != transactionID {
+				continue
+			}
+			switch {
+			case containsPath(conflicted, record.Target), containsPath(conflicted, record.Source):
+				conflictedIDs = append(conflictedIDs, record.ID)
+			case containsPath(restored, record.Target), containsPath(restored, record.Source):
+				revertedIDs = append(revertedIDs, record.ID)
+			}
+		}
+		_, _ = a.Audit.UpdateStatus(revertedIDs, "reverted")
+		_, _ = a.Audit.UpdateStatus(conflictedIDs, "conflicted")
+		if len(revertedIDs)+len(conflictedIDs) > 0 {
+			a.emitAudit(vaultID)
+		}
+	}
+	return result
+}
+
+func containsPath(list []string, path string) bool {
+	if path == "" {
+		return false
+	}
+	for _, item := range list {
+		if item == path {
+			return true
+		}
+	}
+	return false
+}
+
+// emitAudit pushes E03 with a monotonically increasing sequence.
+func (a *App) emitAudit(vaultID string) {
+	a.mu.Lock()
+	a.auditSeq++
+	seq := a.auditSeq
+	win := a.win
+	a.mu.Unlock()
+	if win != nil {
+		_ = AuditChanged.Emit(win, contract.AuditChangedEvent{VaultID: vaultID, Sequence: seq})
+	}
 }
 
 // Plan validates a change plan (M29).

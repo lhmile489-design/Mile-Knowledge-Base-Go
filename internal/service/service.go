@@ -17,6 +17,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/mutation"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/settings"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
@@ -30,6 +31,7 @@ var (
 	ThemeChanged    = mygo.NewEvent[map[string]string]("theme-changed")
 	WindowState     = mygo.NewEvent[contract.WindowStateEvent]("window-state")
 	AppNotice       = mygo.NewEvent[contract.AppNoticeEvent]("app-notice")
+	AuditChanged    = mygo.NewEvent[contract.AuditChangedEvent]("audit-changed")
 )
 
 // App holds the shared state of the running application.
@@ -37,6 +39,7 @@ type App struct {
 	DataDir  string
 	Settings *settings.Store
 	Vaults   *vault.Registry
+	Audit    *mutation.AuditLedger
 
 	mu        sync.Mutex
 	win       *mygo.Window
@@ -47,6 +50,7 @@ type App struct {
 	picks     map[string]pickToken
 	watchers  map[string]context.CancelFunc
 	indexes   map[string]*indexHandle
+	auditSeq  int64
 	resolvers map[string]*vaultResolver
 }
 
@@ -57,6 +61,10 @@ type pickToken struct {
 
 // New builds the app state. dataDir is the application's user-data directory.
 func New(dataDir, legacyDir string) (*App, error) {
+	audit, auditErr := mutation.OpenAudit(filepath.Join(dataDir, "audit.jsonl"))
+	if auditErr != nil {
+		audit = nil
+	}
 	store, f := settings.Open(dataDir, legacyDir)
 	if f != nil {
 		return nil, errFromFailure(*f)
@@ -64,6 +72,7 @@ func New(dataDir, legacyDir string) (*App, error) {
 	app := &App{
 		DataDir:   dataDir,
 		Settings:  store,
+		Audit:     audit,
 		picks:     map[string]pickToken{},
 		watchers:  map[string]context.CancelFunc{},
 		indexes:   map[string]*indexHandle{},

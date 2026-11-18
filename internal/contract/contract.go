@@ -275,6 +275,53 @@ type LinkGraphResult struct {
 	Failure   *Failure       `json:"failure,omitempty"`
 }
 
+// AuditChangedEvent is E03: the audit ledger gained records.
+type AuditChangedEvent struct {
+	VaultID  string `json:"vaultId,omitempty"`
+	Sequence int64  `json:"sequence"`
+}
+
+// TransactionSummary is one transaction row in the audit panel.
+type TransactionSummary struct {
+	ID         string `json:"id"`
+	PlanID     string `json:"planId"`
+	CreatedAt  string `json:"createdAt"`
+	Status     string `json:"status"`
+	EntryCount int    `json:"entryCount"`
+}
+
+// AuditListResult is the M31 response.
+type AuditListResult struct {
+	Records      []ActionRecord       `json:"records"`
+	Transactions []TransactionSummary `json:"transactions"`
+	Failure      *Failure             `json:"failure,omitempty"`
+}
+
+// RestorePreviewEntry is one row of a transaction preview.
+type RestorePreviewEntry struct {
+	Path       string `json:"path"`
+	Kind       string `json:"kind"`
+	Restorable bool   `json:"restorable"`
+	Note       string `json:"note,omitempty"`
+}
+
+// RestorePreview is the M32 response.
+type RestorePreview struct {
+	TransactionID string                `json:"transactionId"`
+	VaultID       string                `json:"vaultId"`
+	Entries       []RestorePreviewEntry `json:"entries"`
+	Failure       *Failure              `json:"failure,omitempty"`
+}
+
+// RestoreResult is the M33 response.
+type RestoreResult struct {
+	TransactionID      string   `json:"transactionId"`
+	Restored           []string `json:"restored"`
+	Conflicted         []string `json:"conflicted"`
+	TouchedDirectories []string `json:"touchedDirectories"`
+	Failure            *Failure `json:"failure,omitempty"`
+}
+
 // ActionRecord is one executed (or skipped) action (API.md M30/M31).
 type ActionRecord struct {
 	ID            string `json:"id"`

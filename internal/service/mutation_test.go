@@ -148,3 +148,82 @@ func vaultReadRevision(t *testing.T, root, rel string) (int64, *contract.Failure
 
 func ptrText(v string) *string { return &v }
 func ptrInt(v int64) *int64    { return &v }
+
+func TestMutationServiceAuditAndRewind(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	svc := NewMutationService(app)
+	ctx := context.Background()
+
+	target := filepath.Join(root, "raws", "审计.md")
+	if err := os.WriteFile(target, []byte("原始"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rev, rf := vaultReadRevision(t, root, "raws/审计.md")
+	if rf != nil {
+		t.Fatal(rf)
+	}
+	plan := svc.Plan(ctx, contract.PlanRequest{VaultID: vaultID, Origin: "user",
+		Actions: []contract.MutationAction{{
+			ID: "a1", Kind: contract.MutEdit, Target: "raws/审计.md", Text: ptrText("改过"),
+			ExpectedTargetRevision: &rev,
+		}}})
+	if plan.Failure != nil {
+		t.Fatalf("plan: %+v", plan.Failure)
+	}
+	report := svc.Execute(ctx, *plan.Plan)
+	if report.Status != "completed" {
+		t.Fatalf("report = %+v", report)
+	}
+
+	// The ledger holds the executed record and the transaction summary.
+	list := svc.AuditList(ctx, vaultID, "", 50)
+	if len(list.Records) != 1 || list.Records[0].Status != "completed" {
+		t.Fatalf("records = %+v", list.Records)
+	}
+	if len(list.Transactions) != 1 || list.Transactions[0].ID != report.TransactionID {
+		t.Fatalf("transactions = %+v", list.Transactions)
+	}
+
+	preview := svc.RewindPrepare(ctx, vaultID, report.TransactionID)
+	if preview.Failure != nil || len(preview.Entries) != 1 || !preview.Entries[0].Restorable {
+		t.Fatalf("preview = %+v %+v", preview, preview.Failure)
+	}
+	restored := svc.RewindCommit(ctx, vaultID, report.TransactionID)
+	if restored.Failure != nil || len(restored.Restored) != 1 || len(restored.Conflicted) != 0 {
+		t.Fatalf("restore = %+v", restored)
+	}
+	body, _ := os.ReadFile(target)
+	if string(body) != "原始" {
+		t.Errorf("body = %q", body)
+	}
+	list = svc.AuditList(ctx, vaultID, plan.Plan.ID, 50)
+	if len(list.Records) != 1 || list.Records[0].Status != "reverted" {
+		t.Fatalf("record status = %+v", list.Records)
+	}
+
+	// A second round: external change after commit must conflict on rewind.
+	rev, _ = vaultReadRevision(t, root, "raws/审计.md")
+	again := svc.Plan(ctx, contract.PlanRequest{VaultID: vaultID, Origin: "user",
+		Actions: []contract.MutationAction{{
+			ID: "a2", Kind: contract.MutEdit, Target: "raws/审计.md", Text: ptrText("第二次"),
+			ExpectedTargetRevision: &rev,
+		}}})
+	second := svc.Execute(ctx, *again.Plan)
+	if second.Status != "completed" {
+		t.Fatalf("second report = %+v", second)
+	}
+	if err := os.WriteFile(target, []byte("外部改"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	conflictPreview := svc.RewindPrepare(ctx, vaultID, second.TransactionID)
+	if conflictPreview.Entries[0].Restorable {
+		t.Fatalf("preview should be blocked: %+v", conflictPreview.Entries)
+	}
+	conflictResult := svc.RewindCommit(ctx, vaultID, second.TransactionID)
+	if len(conflictResult.Conflicted) != 1 || len(conflictResult.Restored) != 0 {
+		t.Fatalf("conflict result = %+v", conflictResult)
+	}
+	if body, _ := os.ReadFile(target); string(body) != "外部改" {
+		t.Errorf("conflict overwrote: %q", body)
+	}
+}

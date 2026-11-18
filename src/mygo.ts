@@ -43,6 +43,19 @@ export interface AppSettings {
   lastVaultId?: string;
 }
 
+/** AuditChangedEvent is E03: the audit ledger gained records. */
+export interface AuditChangedEvent {
+  vaultId?: string;
+  sequence: number;
+}
+
+/** AuditListResult is the M31 response. */
+export interface AuditListResult {
+  records: ActionRecord[];
+  transactions: TransactionSummary[];
+  failure?: Failure;
+}
+
 /** ChooseVaultResult is returned by choose/createVault. */
 export interface ChooseVaultResult {
   cancelled: boolean;
@@ -260,6 +273,31 @@ export interface ResolvedLink {
   candidates: number;
 }
 
+/** RestorePreview is the M32 response. */
+export interface RestorePreview {
+  transactionId: string;
+  vaultId: string;
+  entries: RestorePreviewEntry[];
+  failure?: Failure;
+}
+
+/** RestorePreviewEntry is one row of a transaction preview. */
+export interface RestorePreviewEntry {
+  path: string;
+  kind: string;
+  restorable: boolean;
+  note?: string;
+}
+
+/** RestoreResult is the M33 response. */
+export interface RestoreResult {
+  transactionId: string;
+  restored: string[];
+  conflicted: string[];
+  touchedDirectories: string[];
+  failure?: Failure;
+}
+
 /** SearchFilters narrows a search (API.md M24). */
 export interface SearchFilters {
   areas?: string[];
@@ -316,6 +354,15 @@ export interface SettingsPatch {
 export interface SettingsResult {
   settings?: AppSettings;
   failure?: Failure;
+}
+
+/** TransactionSummary is one transaction row in the audit panel. */
+export interface TransactionSummary {
+  id: string;
+  planId: string;
+  createdAt: string;
+  status: string;
+  entryCount: number;
 }
 
 /** TreeResult is one directory level. */
@@ -497,6 +544,8 @@ export const IndexService = {
  * M23, M29). Planning never writes to the vault.
  */
 export const MutationService = {
+  /** AuditList returns operation records and the vault's transactions (M31). */
+  auditList: bind<[string, string, number], AuditListResult>("MutationService.AuditList", (vaultID: string, planID: string, limit: number) => [vaultID, planID, limit]),
   /** CreateDir plans a new directory inside dirPath (M22). */
   createDir: bind<[string, string, string], PlanResult>("MutationService.CreateDir", (vaultID: string, dirPath: string, name: string) => [vaultID, dirPath, name]),
   /** CreateFile plans a new file inside dirPath (M21). */
@@ -512,6 +561,13 @@ export const MutationService = {
   planMove: bind<[string, string[], string], PlanResult>("MutationService.PlanMove", (vaultID: string, sources: string[], targetDir: string) => [vaultID, sources, targetDir]),
   /** Rename plans a move that only changes the entry name (M20). */
   rename: bind<[string, string, string], PlanResult>("MutationService.Rename", (vaultID: string, path: string, newName: string) => [vaultID, path, newName]),
+  /**
+   * RewindCommit restores the transaction and marks the matching audit records
+   * (M33). Entries changed after the transaction are reported, not overwritten.
+   */
+  rewindCommit: bind<[string, string], RestoreResult>("MutationService.RewindCommit", (vaultID: string, transactionID: string) => [vaultID, transactionID]),
+  /** RewindPrepare reports which entries of a transaction can still be restored (M32). */
+  rewindPrepare: bind<[string, string], RestorePreview>("MutationService.RewindPrepare", (vaultID: string, transactionID: string) => [vaultID, transactionID]),
 } as const;
 
 // ---- Events ----
@@ -525,4 +581,5 @@ export const events = {
   themeChanged: event<Record<string, string>>("theme-changed"),
   windowState: event<WindowStateEvent>("window-state"),
   appNotice: event<AppNoticeEvent>("app-notice"),
+  auditChanged: event<AuditChangedEvent>("audit-changed"),
 } as const;
