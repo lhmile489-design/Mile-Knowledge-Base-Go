@@ -1,10 +1,11 @@
 // R4/R5/R6/R8 spike: frameless window, tray, close-ask dialog, and a
 // streaming channel driving an incremental-render benchmark in the page.
 //
-// Run (dev):  bun run dev:web  +  MYGO_DEV_URL=http://localhost:5274 \
-//             MYGO_AUTOMATION=<sock> go run -tags e2e .
-// Run (dist): bun run build:web && MYGO_FRONTEND_DIST=dist \
-//             MYGO_AUTOMATION=<sock> go run -tags e2e .
+//	Run (dev):  bun run dev:web  +  MYGO_DEV_URL=http://localhost:5274 \
+//	            MYGO_AUTOMATION=<sock> go run -tags e2e .
+//
+//	Run (dist): bun run build:web && MYGO_FRONTEND_DIST=dist \
+//	            MYGO_AUTOMATION=<sock> go run -tags e2e .
 package main
 
 import (
@@ -118,7 +119,7 @@ func (SpikeService) WinState(ctx context.Context) map[string]any {
 // StreamFrame is one coalesced push to the page.
 type StreamFrame struct {
 	Seq   int    `json:"seq"`
-	Text  string `json:"text"`           // HTML fragment appended to the live message
+	Text  string `json:"text"` // HTML fragment appended to the live message
 	Done  bool   `json:"done,omitempty"`
 	Chars int    `json:"chars,omitempty"`
 }
@@ -273,15 +274,15 @@ func (SpikeService) QuitNow(ctx context.Context) {
 
 func askCloseDialog(w *mygo.Window) (mygo.MessageResult, error) {
 	return mygo.Dialog.Message(mygo.MessageOptions{
-		Parent:         w,
-		Type:           mygo.MessageQuestion,
-		Title:          "关闭 Mile Knowledge Base",
-		Message:        "要退出应用，还是挂到托盘继续运行？",
-		Detail:         "挂到托盘后窗口会隐藏，单击托盘图标可重新打开。",
-		Buttons:        []string{"挂到托盘", "退出应用"},
-		DefaultButton:  0,
-		CancelButton:   -1, // Esc/dismiss reports Button -1 on Windows task dialogs
-		CheckboxLabel:  "记住我的选择",
+		Parent:        w,
+		Type:          mygo.MessageQuestion,
+		Title:         "关闭 Mile Knowledge Base",
+		Message:       "要退出应用，还是挂到托盘继续运行？",
+		Detail:        "挂到托盘后窗口会隐藏，单击托盘图标可重新打开。",
+		Buttons:       []string{"挂到托盘", "退出应用"},
+		DefaultButton: 0,
+		CancelButton:  -1, // Esc/dismiss reports Button -1 on Windows task dialogs
+		CheckboxLabel: "记住我的选择",
 	})
 }
 

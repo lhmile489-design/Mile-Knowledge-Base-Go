@@ -163,12 +163,12 @@ const (
 )
 
 type imgSource struct {
-	kind    imgKind
-	path    string
-	src     string
-	host    string
-	secure  bool
-	reason  string
+	kind   imgKind
+	path   string
+	src    string
+	host   string
+	secure bool
+	reason string
 }
 
 var titleRe = regexp.MustCompile(`^(\S*)\s+(?:"[^"]*"|'[^']*'|\([^)]*\))$`)
@@ -293,12 +293,12 @@ func decodePathSegments(value string) (string, error) {
 }
 
 var rejectReasonText = map[string]string{
-	"empty":                  "图片地址为空",
-	"too-long":               "图片地址过长",
-	"unsupported-scheme":     "不支持这种地址协议",
-	"not-an-image":           "内联数据不是图片",
-	"path-escape":            "路径超出知识库范围",
-	"unsupported-extension":  "不是支持的图片格式",
+	"empty":                 "图片地址为空",
+	"too-long":              "图片地址过长",
+	"unsupported-scheme":    "不支持这种地址协议",
+	"not-an-image":          "内联数据不是图片",
+	"path-escape":           "路径超出知识库范围",
+	"unsupported-extension": "不是支持的图片格式",
 }
 
 // ---------- 自定义渲染器 ----------

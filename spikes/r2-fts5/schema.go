@@ -42,9 +42,10 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 `
 
 // ftsSchema 三种 tokenizer 配置：
-//  A = 预切词 + unicode61（推荐：Go 侧切词后空格拼接写入）
-//  B = unicode61 直接喂原文（对照组：CJK 整句被当一个 token）
-//  C = trigram（备选：SQLite 3.34+ 自带子串匹配，不用预切词）
+//
+//	A = 预切词 + unicode61（推荐：Go 侧切词后空格拼接写入）
+//	B = unicode61 直接喂原文（对照组：CJK 整句被当一个 token）
+//	C = trigram（备选：SQLite 3.34+ 自带子串匹配，不用预切词）
 func ftsSchema(tokenizer string) string {
 	return fmt.Sprintf(`
 CREATE VIRTUAL TABLE IF NOT EXISTS doc_fts USING fts5(

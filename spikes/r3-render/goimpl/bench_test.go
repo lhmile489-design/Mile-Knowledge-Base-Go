@@ -51,13 +51,13 @@ func benchRender(src []byte, variant string) time.Duration {
 
 type sw struct{ b *strings.Builder }
 
-func (s *sw) Write(p []byte) (int, error) { return s.b.Write(p) }
-func (s *sw) WriteByte(c byte) error      { return s.b.WriteByte(c) }
+func (s *sw) Write(p []byte) (int, error)       { return s.b.Write(p) }
+func (s *sw) WriteByte(c byte) error            { return s.b.WriteByte(c) }
 func (s *sw) WriteString(v string) (int, error) { return s.b.WriteString(v) }
-func (s *sw) WriteRune(r rune) (int, error) { return s.b.WriteRune(r) }
-func (s *sw) Available() int { return 0 }
-func (s *sw) Buffered() int  { return 0 }
-func (s *sw) Flush() error   { return nil }
+func (s *sw) WriteRune(r rune) (int, error)     { return s.b.WriteRune(r) }
+func (s *sw) Available() int                    { return 0 }
+func (s *sw) Buffered() int                     { return 0 }
+func (s *sw) Flush() error                      { return nil }
 
 func TestPerf(t *testing.T) {
 	for _, sz := range []int{100 * 1024, 1024 * 1024} {

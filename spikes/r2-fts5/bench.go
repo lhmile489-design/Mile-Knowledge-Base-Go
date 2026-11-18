@@ -403,7 +403,10 @@ func cmdLinks() error {
 	if err != nil {
 		return err
 	}
-	type upd struct{ from, target, to string; cands int }
+	type upd struct {
+		from, target, to string
+		cands            int
+	}
 	var ups []upd
 	for rows2.Next() {
 		var from, target string

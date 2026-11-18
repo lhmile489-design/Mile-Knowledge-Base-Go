@@ -1,0 +1,608 @@
+// Package service is the binding layer: it validates inputs, wires the domain
+// packages together and exposes the methods the React app calls.
+//
+// Only this package (and main) imports mygo.
+package service
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/egoist/mygo"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/settings"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/watch"
+)
+
+// Events pushed to the page. Event names match API.md §2.3.
+var (
+	VaultChanged    = mygo.NewEvent[contract.VaultChangedEvent]("vault-changed")
+	SettingsChanged = mygo.NewEvent[contract.AppSettings]("settings-changed")
+	ThemeChanged    = mygo.NewEvent[map[string]string]("theme-changed")
+	WindowState     = mygo.NewEvent[contract.WindowStateEvent]("window-state")
+	AppNotice       = mygo.NewEvent[contract.AppNoticeEvent]("app-notice")
+)
+
+// App holds the shared state of the running application.
+type App struct {
+	DataDir  string
+	Settings *settings.Store
+	Vaults   *vault.Registry
+
+	mu        sync.Mutex
+	win       *mygo.Window
+	tray      *mygo.Tray
+	trayOK    bool
+	quitting  bool
+	dirty     bool
+	picks     map[string]pickToken
+	watchers  map[string]context.CancelFunc
+	resolvers map[string]*vaultResolver
+}
+
+type pickToken struct {
+	path      string
+	expiresAt time.Time
+}
+
+// New builds the app state. dataDir is the application's user-data directory.
+func New(dataDir, legacyDir string) (*App, error) {
+	store, f := settings.Open(dataDir, legacyDir)
+	if f != nil {
+		return nil, errFromFailure(*f)
+	}
+	app := &App{
+		DataDir:   dataDir,
+		Settings:  store,
+		picks:     map[string]pickToken{},
+		watchers:  map[string]context.CancelFunc{},
+		resolvers: map[string]*vaultResolver{},
+	}
+	app.Vaults = vault.New(store)
+	app.Vaults.Load()
+	return app, nil
+}
+
+type errFromFailure contract.Failure
+
+func (e errFromFailure) Error() string { return e.Message }
+
+// SetWindow records the main window once it exists.
+func (a *App) SetWindow(w *mygo.Window) {
+	a.mu.Lock()
+	a.win = w
+	a.mu.Unlock()
+}
+
+// Window returns the main window.
+func (a *App) Window() *mygo.Window {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.win
+}
+
+// ---- SettingsService (API.md M60, M61) ----
+
+// SettingsService binds the application settings.
+type SettingsService struct{ app *App }
+
+// NewSettingsService binds one app.
+func NewSettingsService(app *App) *SettingsService { return &SettingsService{app: app} }
+
+// Get returns the current settings.
+func (s *SettingsService) Get() contract.SettingsResult {
+	cfg := s.app.Settings.Get()
+	return contract.SettingsResult{Settings: &cfg}
+}
+
+// Patch applies a partial update and broadcasts the result.
+func (s *SettingsService) Patch(patch contract.SettingsPatch) contract.SettingsResult {
+	cfg, f := s.app.Settings.Patch(patch)
+	if f != nil {
+		return contract.SettingsResult{Failure: f}
+	}
+	if patch.Theme != nil {
+		switch *patch.Theme {
+		case "light":
+			mygo.Theme.SetSource(mygo.ThemeLight)
+		case "dark":
+			mygo.Theme.SetSource(mygo.ThemeDark)
+		default:
+			mygo.Theme.SetSource(mygo.ThemeSystem)
+		}
+	}
+	if w := s.app.Window(); w != nil {
+		_ = SettingsChanged.Emit(w, cfg)
+	}
+	return contract.SettingsResult{Settings: &cfg}
+}
+
+// ---- VaultService (API.md M06–M13, M72, M73) ----
+
+// VaultService binds vault registration and the wizard.
+type VaultService struct{ app *App }
+
+// NewVaultService binds one app.
+func NewVaultService(app *App) *VaultService { return &VaultService{app: app} }
+
+// List returns the registered vaults.
+func (s *VaultService) List() contract.VaultListResult { return s.app.Vaults.List() }
+
+// Open makes a registered vault active.
+func (s *VaultService) Open(vaultID string) contract.VaultListResult {
+	if f := validateID(vaultID); f != nil {
+		return contract.VaultListResult{Failure: f}
+	}
+	if f := s.app.Vaults.Open(vaultID); f != nil {
+		return contract.VaultListResult{Failure: f}
+	}
+	s.app.loadAliases(vaultID)
+	return s.app.Vaults.List()
+}
+
+// Forget removes a vault and its recent documents.
+func (s *VaultService) Forget(vaultID string) contract.VaultListResult {
+	if f := validateID(vaultID); f != nil {
+		return contract.VaultListResult{Failure: f}
+	}
+	s.app.stopWatch(vaultID)
+	if f := s.app.Vaults.Forget(vaultID); f != nil {
+		return contract.VaultListResult{Failure: f}
+	}
+	_ = s.app.Settings.ForgetVault(vaultID)
+	result := s.app.Vaults.List()
+	return result
+}
+
+// Retry re-checks an unavailable vault.
+func (s *VaultService) Retry(vaultID string) contract.VaultListResult {
+	if f := validateID(vaultID); f != nil {
+		return contract.VaultListResult{Failure: f}
+	}
+	s.app.Vaults.Retry(vaultID)
+	return s.app.Vaults.List()
+}
+
+// dialogs may block; mygo runs every call on its own goroutine.
+
+// Choose opens the directory picker and registers the chosen vault.
+func (s *VaultService) Choose(ctx context.Context) contract.ChooseVaultResult {
+	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+		Parent:    mygo.CallerWindow(ctx),
+		Title:     "选择知识库目录",
+		Directory: true,
+	})
+	if err != nil || len(paths) == 0 {
+		return contract.ChooseVaultResult{Cancelled: true}
+	}
+	return s.registerChosen(paths[0])
+}
+
+// PickVaultDir is the "choose directory" button on the welcome page; it does
+// not register anything by itself (same as Choose for M0's UI).
+func (s *WindowService) PickVaultDir(ctx context.Context) contract.ChooseVaultResult {
+	return s.vaults.Choose(ctx)
+}
+
+func (s *VaultService) registerChosen(root string) contract.ChooseVaultResult {
+	v, f := s.app.Vaults.Register(root)
+	if f != nil {
+		return contract.ChooseVaultResult{Failure: f}
+	}
+	var scaffolded []string
+	if vault.NeedsScaffold(v.Root) {
+		created, err := vault.CreateScaffold(v.Root)
+		if err == nil {
+			scaffolded = created
+		}
+	}
+	s.app.loadAliases(v.ID)
+	s.app.startWatch(v.ID)
+	return contract.ChooseVaultResult{Vault: &v, ScaffoldedDir: scaffolded}
+}
+
+// PickFolder is the wizard's first step: it returns an opaque token instead of
+// the absolute path.
+func (s *VaultService) PickFolder(ctx context.Context) contract.PickFolderResult {
+	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+		Parent:    mygo.CallerWindow(ctx),
+		Title:     "选择知识库目录",
+		Directory: true,
+	})
+	if err != nil || len(paths) == 0 {
+		return contract.PickFolderResult{Cancelled: true}
+	}
+	root, err := pathguard.Canon(paths[0])
+	if err != nil {
+		return contract.PickFolderResult{Failure: contract.Fail(contract.CodeVaultUnavailable, "目录不可用")}
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return contract.PickFolderResult{Failure: contract.Fail(contract.CodeVaultUnavailable, "无法读取目录")}
+	}
+	empty := true
+	count := 0
+	for _, e := range entries {
+		name := strings.ToLower(e.Name())
+		if name == ".ds_store" || name == "thumbs.db" || name == "desktop.ini" {
+			continue
+		}
+		empty = false
+		count++
+	}
+	token := s.app.newPickToken(root)
+	willCreate := []string{}
+	if vault.NeedsScaffold(root) {
+		willCreate = append(willCreate, "raws", "_archives", "projects", "tools", "AI Knowledge base", "dev-constraints")
+	}
+	return contract.PickFolderResult{
+		Token:       token,
+		DisplayName: filepath.Base(root),
+		Empty:       empty,
+		EntryCount:  count,
+		WillCreate:  willCreate,
+	}
+}
+
+// CreateVault finishes the wizard.
+func (s *VaultService) CreateVault(token string, confirmNonEmpty bool) contract.ChooseVaultResult {
+	root, f := s.app.consumePickToken(token)
+	if f != nil {
+		return contract.ChooseVaultResult{Failure: f}
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return contract.ChooseVaultResult{Failure: contract.Fail(contract.CodeVaultUnavailable, "无法读取目录")}
+	}
+	nonEmpty := false
+	for _, e := range entries {
+		name := strings.ToLower(e.Name())
+		if name == ".ds_store" || name == "thumbs.db" || name == "desktop.ini" {
+			continue
+		}
+		nonEmpty = true
+		break
+	}
+	if nonEmpty && !confirmNonEmpty {
+		return contract.ChooseVaultResult{Failure: contract.Fail(contract.CodePermissionDenied, "目录非空，需要确认")}
+	}
+	return s.registerChosen(root)
+}
+
+func (a *App) newPickToken(path string) string {
+	raw := make([]byte, 8)
+	_, _ = rand.Read(raw)
+	token := hex.EncodeToString(raw)
+	a.mu.Lock()
+	a.picks[token] = pickToken{path: path, expiresAt: time.Now().Add(10 * time.Minute)}
+	a.mu.Unlock()
+	return token
+}
+
+func (a *App) consumePickToken(token string) (string, *contract.Failure) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	item, ok := a.picks[token]
+	if !ok {
+		return "", contract.Fail(contract.CodeInvalidInput, "选择已过期，请重新选择目录")
+	}
+	delete(a.picks, token)
+	if time.Now().After(item.expiresAt) {
+		return "", contract.Fail(contract.CodeInvalidInput, "选择已过期，请重新选择目录")
+	}
+	return item.path, nil
+}
+
+func (a *App) loadAliases(vaultID string) {
+	root, f := a.Vaults.Root(vaultID)
+	if f != nil {
+		return
+	}
+	raw, err := os.ReadFile(filepath.Join(root, ".mile-kb", "settings", "aliases.json"))
+	if err != nil {
+		a.Vaults.SetAliases(vaultID, nil)
+		return
+	}
+	var aliases map[string]string
+	if json.Unmarshal(raw, &aliases) != nil {
+		a.Vaults.SetAliases(vaultID, nil)
+		return
+	}
+	a.Vaults.SetAliases(vaultID, aliases)
+}
+
+// ---- DocService (API.md M16–M18, M72, M73) ----
+
+// DocService binds tree and document operations.
+type DocService struct{ app *App }
+
+// NewDocService binds one app.
+func NewDocService(app *App) *DocService { return &DocService{app: app} }
+
+// Tree returns one directory level.
+func (s *DocService) Tree(vaultID, path string) contract.TreeResult {
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		return contract.TreeResult{Failure: f}
+	}
+	result, f := vault.ListDir(root, path, s.app.Vaults.Aliases(vaultID))
+	if f != nil {
+		return contract.TreeResult{Failure: f}
+	}
+	result.VaultID = vaultID
+	for i := range result.Entries {
+		result.Entries[i].VaultID = vaultID
+	}
+	return result
+}
+
+// Read loads a document.
+func (s *DocService) Read(vaultID, path string) contract.ReadResult {
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		return contract.ReadResult{Failure: f}
+	}
+	snap, f := vault.Read(root, path)
+	if f != nil {
+		return contract.ReadResult{Failure: f}
+	}
+	snap.VaultID = vaultID
+	return contract.ReadResult{Doc: &snap}
+}
+
+// Write saves a document unless the disk moved on.
+func (s *DocService) Write(vaultID, path string, expectedRevision int64, text string) contract.WriteOutcome {
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		return contract.WriteOutcome{Failure: f}
+	}
+	out, f := vault.Write(root, path, expectedRevision, text)
+	if f != nil {
+		out.Failure = f
+	}
+	return out
+}
+
+// RecentDocuments lists the vault's recent documents.
+func (s *DocService) RecentDocuments(vaultID string) contract.RecentDocumentsResult {
+	docs := s.app.Settings.RecentDocuments(vaultID)
+	return contract.RecentDocumentsResult{VaultID: vaultID, Documents: docs}
+}
+
+// NoteDocumentOpened records an open for the welcome page and overview.
+func (s *DocService) NoteDocumentOpened(vaultID, path string) contract.RecentDocumentsResult {
+	if _, f := s.app.Vaults.Root(vaultID); f != nil {
+		return contract.RecentDocumentsResult{Failure: f}
+	}
+	docs, f := s.app.Settings.NoteDocumentOpened(vaultID, path, time.Now().UTC().Format(time.RFC3339))
+	if f != nil {
+		return contract.RecentDocumentsResult{Failure: f}
+	}
+	return contract.RecentDocumentsResult{VaultID: vaultID, Documents: docs}
+}
+
+// ---- WindowService (API.md M01–M06) ----
+
+// WindowService binds window chrome and the close flow.
+type WindowService struct {
+	app    *App
+	vaults *VaultService
+}
+
+// NewWindowService binds one app.
+func NewWindowService(app *App, vaults *VaultService) *WindowService {
+	return &WindowService{app: app, vaults: vaults}
+}
+
+// Minimize minimizes the calling window.
+func (s *WindowService) Minimize(ctx context.Context) error {
+	if w := mygo.CallerWindow(ctx); w != nil {
+		w.Minimize()
+	}
+	return nil
+}
+
+// ToggleMaximize toggles between maximized and restored.
+func (s *WindowService) ToggleMaximize(ctx context.Context) error {
+	if w := mygo.CallerWindow(ctx); w != nil {
+		if w.IsMaximized() {
+			w.Unmaximize()
+		} else {
+			w.Maximize()
+		}
+	}
+	return nil
+}
+
+// Close asks the window to close; the close guard decides what happens.
+func (s *WindowService) Close(ctx context.Context) error {
+	if w := mygo.CallerWindow(ctx); w != nil {
+		w.Close()
+	}
+	return nil
+}
+
+// Ready is the page's boot handshake; it is idempotent and lets queued events
+// flow.
+func (s *WindowService) Ready(ctx context.Context) error { return nil }
+
+// OpenExternal opens an http(s) link in the system browser.
+func (s *WindowService) OpenExternal(ctx context.Context, url string) contract.Failure {
+	if !strings.HasPrefix(url, "https://") && !strings.HasPrefix(url, "http://") {
+		f := contract.Fail(contract.CodeInvalidInput, "只允许 http(s) 链接")
+		return *f
+	}
+	go mygo.Shell.OpenExternal(url)
+	return contract.Failure{}
+}
+
+// ReportDocument mirrors the editor's dirty state for the close guard.
+func (s *WindowService) ReportDocument(vaultID, path string, revision int64, dirty bool) error {
+	s.app.mu.Lock()
+	s.app.dirty = dirty
+	s.app.mu.Unlock()
+	return nil
+}
+
+// ---- close guard ----
+
+// CloseAction is what the close guard decided to do.
+type CloseAction string
+
+// Possible close outcomes.
+const (
+	CloseAsk  CloseAction = "ask"
+	CloseHide CloseAction = "tray"
+	CloseQuit CloseAction = "quit"
+	CloseStay CloseAction = "stay"
+)
+
+// DecideClose implements the window-close matrix. It is pure so that it can be
+// unit tested without windows or dialogs.
+func DecideClose(behavior string, dirty bool, trayOK bool, unsavedChoice string, askResult string) CloseAction {
+	if dirty && unsavedChoice != "discard" {
+		return CloseStay
+	}
+	action := behavior
+	switch behavior {
+	case "ask":
+		switch askResult {
+		case "tray":
+			action = "tray"
+		case "quit":
+			action = "quit"
+		default:
+			action = "tray"
+		}
+	case "":
+		action = "ask"
+	}
+	if action == "tray" && !trayOK {
+		return CloseQuit
+	}
+	return CloseAction(action)
+}
+
+// MarkQuitting lets the OnClose handler permit a real close.
+func (a *App) MarkQuitting() {
+	a.mu.Lock()
+	a.quitting = true
+	a.mu.Unlock()
+}
+
+// IsQuitting reports whether the app is on its way out.
+func (a *App) IsQuitting() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.quitting
+}
+
+// IsDirty reports the editor's unsaved state.
+func (a *App) IsDirty() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.dirty
+}
+
+// SetTray records whether the tray icon was created.
+func (a *App) SetTray(t *mygo.Tray, ok bool) {
+	a.mu.Lock()
+	a.tray = t
+	a.trayOK = ok
+	a.mu.Unlock()
+}
+
+// TrayOK reports whether the tray exists.
+func (a *App) TrayOK() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.trayOK
+}
+
+// ShowWindow reveals the main window from the tray.
+func (a *App) ShowWindow() {
+	if w := a.Window(); w != nil {
+		w.Show()
+		w.Focus()
+	}
+}
+
+// ---- validation helpers ----
+
+func validateID(id string) *contract.Failure {
+	if id == "" || len(id) > 128 {
+		return contract.Fail(contract.CodeInvalidInput, "id 不合法")
+	}
+	for _, r := range id {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-') {
+			return contract.Fail(contract.CodeInvalidInput, "id 不合法")
+		}
+	}
+	return nil
+}
+
+// ---- watcher wiring (T08) ----
+
+func (a *App) startWatch(vaultID string) {
+	root, f := a.Vaults.Root(vaultID)
+	if f != nil {
+		return
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	a.mu.Lock()
+	if old, ok := a.watchers[vaultID]; ok {
+		old()
+	}
+	a.watchers[vaultID] = cancel
+	win := a.win
+	seq := int64(0)
+	a.mu.Unlock()
+
+	watcher, err := watch.New(watch.MygoBackend{}, root, func(dirs []string) {
+		if win == nil {
+			return
+		}
+		seq++
+		_ = VaultChanged.Emit(win, contract.VaultChangedEvent{VaultID: vaultID, Directories: dirs, Sequence: seq})
+	})
+	if err != nil {
+		_ = AppNotice.Emit(win, contract.AppNoticeEvent{Text: "文件监听不可用，外部修改需要手动刷新", Level: "warn"})
+		return
+	}
+	go func() {
+		if err := watcher.Run(ctx); err != nil && ctx.Err() == nil {
+			if win != nil {
+				_ = AppNotice.Emit(win, contract.AppNoticeEvent{Text: "文件监听已停止：" + err.Error(), Level: "warn"})
+			}
+		}
+	}()
+}
+
+func (a *App) stopWatch(vaultID string) {
+	a.mu.Lock()
+	cancel, ok := a.watchers[vaultID]
+	if ok {
+		delete(a.watchers, vaultID)
+	}
+	a.mu.Unlock()
+	if ok {
+		cancel()
+	}
+}
+
+// StartActiveWatch begins watching the persisted active vault, if any.
+func (a *App) StartActiveWatch() {
+	if id := a.Vaults.Active(); id != "" {
+		a.loadAliases(id)
+		a.startWatch(id)
+	}
+}

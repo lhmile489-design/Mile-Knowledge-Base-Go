@@ -1,12 +1,13 @@
 // main.go — R-2 实测入口。
 // 子命令：
-//   bench-tokenizers   对比 unicode61 / trigram / 预切词+unicode61 三种 FTS5 配置
-//   build              生成 10000 篇样本并建库（单事务批量），输出耗时/库大小/内存
-//   query              查询基准：30+ 条查询 p50/p95/p99，含 bm25 权重、过滤、limit
-//   excerpt            片段与高亮生成耗时
-//   incr               增量：改 1000 篇后的重索引耗时 + 期间并发查询延迟
-//   links              链接图：全量解析 1 万篇耗时 + 改一篇后「只重算受影响边」耗时
-//   all                依次跑 build→query→excerpt→incr→links
+//
+//	bench-tokenizers   对比 unicode61 / trigram / 预切词+unicode61 三种 FTS5 配置
+//	build              生成 10000 篇样本并建库（单事务批量），输出耗时/库大小/内存
+//	query              查询基准：30+ 条查询 p50/p95/p99，含 bm25 权重、过滤、limit
+//	excerpt            片段与高亮生成耗时
+//	incr               增量：改 1000 篇后的重索引耗时 + 期间并发查询延迟
+//	links              链接图：全量解析 1 万篇耗时 + 改一篇后「只重算受影响边」耗时
+//	all                依次跑 build→query→excerpt→incr→links
 package main
 
 import (

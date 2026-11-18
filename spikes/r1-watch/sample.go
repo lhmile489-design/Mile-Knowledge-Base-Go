@@ -22,13 +22,13 @@ import (
 // directory shape, not bytes.
 
 type sampleStats struct {
-	MDFiles       int
-	Dirs          int
-	RepoFiles     int
-	IgnoredFiles  int // files under node_modules/.git
-	TotalFiles    int
-	TotalDirs     int
-	Root          string
+	MDFiles      int
+	Dirs         int
+	RepoFiles    int
+	IgnoredFiles int // files under node_modules/.git
+	TotalFiles   int
+	TotalDirs    int
+	Root         string
 }
 
 var cnNames = []string{"笔记", "项目", "会议", "阅读", "想法", "归档", "每日", "草稿", "索引", "主题"}

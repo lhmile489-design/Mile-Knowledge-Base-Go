@@ -17,22 +17,22 @@ type Failure struct {
 
 // Error codes (API.md §1.3).
 const (
-	CodeInvalidInput         = "invalid-input"
-	CodePathEscape           = "path-escape"
-	CodeNotFound             = "not-found"
-	CodeNotAFile             = "not-a-file"
-	CodeNotADirectory        = "not-a-directory"
-	CodeTooLarge             = "too-large"
-	CodeUnsupportedEncoding  = "unsupported-encoding"
-	CodeRevisionMismatch     = "revision-mismatch"
-	CodeVaultUnavailable     = "vault-unavailable"
-	CodePermissionDenied     = "permission-denied"
-	CodeIOFailure            = "io-failure"
-	CodeUnsupported          = "unsupported"
-	CodeEngineUnavailable    = "engine-unavailable"
-	CodeProviderError        = "provider-error"
-	CodeApprovalExpired      = "approval-expired"
-	CodeSecretUnavailable    = "secret-unavailable"
+	CodeInvalidInput        = "invalid-input"
+	CodePathEscape          = "path-escape"
+	CodeNotFound            = "not-found"
+	CodeNotAFile            = "not-a-file"
+	CodeNotADirectory       = "not-a-directory"
+	CodeTooLarge            = "too-large"
+	CodeUnsupportedEncoding = "unsupported-encoding"
+	CodeRevisionMismatch    = "revision-mismatch"
+	CodeVaultUnavailable    = "vault-unavailable"
+	CodePermissionDenied    = "permission-denied"
+	CodeIOFailure           = "io-failure"
+	CodeUnsupported         = "unsupported"
+	CodeEngineUnavailable   = "engine-unavailable"
+	CodeProviderError       = "provider-error"
+	CodeApprovalExpired     = "approval-expired"
+	CodeSecretUnavailable   = "secret-unavailable"
 )
 
 // Fail builds a Failure.
@@ -107,6 +107,8 @@ type FileEntry struct {
 	Revision   int64  `json:"revision,omitempty"`
 	Ignored    bool   `json:"ignored,omitempty"`
 	ChildCount *int   `json:"childCount,omitempty"`
+	Icon       string `json:"icon,omitempty"`
+	Alias      string `json:"alias,omitempty"` // semantic icon key, mapped to a component by the UI
 }
 
 // TreeResult is one directory level.
@@ -162,31 +164,31 @@ type SaveImageResult struct {
 
 // LayoutSettings mirrors the persisted workbench geometry.
 type LayoutSettings struct {
-	SidebarWidth         int  `json:"sidebarWidth"`
-	DocWidth             int  `json:"docWidth"`
-	DocCollapsed         bool `json:"docCollapsed"`
-	SidebarCollapsed     bool `json:"sidebarCollapsed"`
+	SidebarWidth           int  `json:"sidebarWidth"`
+	DocWidth               int  `json:"docWidth"`
+	DocCollapsed           bool `json:"docCollapsed"`
+	SidebarCollapsed       bool `json:"sidebarCollapsed"`
 	AgnesControlsCollapsed bool `json:"agnesControlsCollapsed"`
-	AgnesHistoryOpen     bool `json:"agnesHistoryOpen"`
-	AgnesComposerHeight  int  `json:"agnesComposerHeight"`
+	AgnesHistoryOpen       bool `json:"agnesHistoryOpen"`
+	AgnesComposerHeight    int  `json:"agnesComposerHeight"`
 }
 
 // AppSettings is the whole persisted settings document.
 type AppSettings struct {
-	Version        int              `json:"version"`
-	Theme          string           `json:"theme"`         // light | dark | system
-	CloseBehavior  string           `json:"closeBehavior"` // ask | tray | quit
-	Layout         LayoutSettings   `json:"layout"`
-	RecentVaults   []Vault          `json:"recentVaults"`
-	LastVaultID    string           `json:"lastVaultId,omitempty"`
-	Unknown        map[string]any   `json:"-"` // fields written by other versions, preserved verbatim
+	Version       int            `json:"version"`
+	Theme         string         `json:"theme"`         // light | dark | system
+	CloseBehavior string         `json:"closeBehavior"` // ask | tray | quit
+	Layout        LayoutSettings `json:"layout"`
+	RecentVaults  []Vault        `json:"recentVaults"`
+	LastVaultID   string         `json:"lastVaultId,omitempty"`
+	Unknown       map[string]any `json:"-"` // fields written by other versions, preserved verbatim
 }
 
 // SettingsPatch is a partial update; nil fields are untouched.
 type SettingsPatch struct {
-	Theme         *string          `json:"theme,omitempty"`
-	CloseBehavior *string          `json:"closeBehavior,omitempty"`
-	Layout        *LayoutSettings  `json:"layout,omitempty"`
+	Theme         *string         `json:"theme,omitempty"`
+	CloseBehavior *string         `json:"closeBehavior,omitempty"`
+	Layout        *LayoutSettings `json:"layout,omitempty"`
 }
 
 // SettingsResult wraps the current settings.
@@ -210,11 +212,11 @@ type RecentDocumentsResult struct {
 
 // Event names (API.md §2.3).
 const (
-	EventVaultChanged = "vault-changed"
+	EventVaultChanged    = "vault-changed"
 	EventSettingsChanged = "settings-changed"
-	EventThemeChanged = "theme-changed"
-	EventWindowState = "window-state"
-	EventAppNotice = "app-notice"
+	EventThemeChanged    = "theme-changed"
+	EventWindowState     = "window-state"
+	EventAppNotice       = "app-notice"
 )
 
 // VaultChangedEvent tells the page which directory levels need a refresh.

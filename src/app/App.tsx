@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { ping } from "../lib/transport";
+import { windowApi } from "../lib/transport";
 
 export function App() {
-  const [status, setStatus] = useState("连接中");
+  const [status, setStatus] = useState("正在连接 Go 后端");
 
   useEffect(() => {
     let alive = true;
-    ping()
-      .then((value) => {
-        if (alive) setStatus(`Go 后端: ${value}`);
+    windowApi
+      .ready()
+      .then(() => {
+        if (alive) setStatus("Go 后端已就绪");
       })
       .catch((error: unknown) => {
         if (alive) setStatus(`Go 后端不可用: ${String(error)}`);
