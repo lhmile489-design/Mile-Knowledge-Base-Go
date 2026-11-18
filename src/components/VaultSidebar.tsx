@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { CaretRight } from "@phosphor-icons/react";
+import { CaretRight, MagnifyingGlass } from "@phosphor-icons/react";
 import { useTreeStore } from "../stores/treeStore";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore } from "../stores/docStore";
+import { useSearchStore } from "../stores/searchStore";
 import { events } from "../lib/transport";
 import type { FileEntry } from "../mygo";
 import { iconFor } from "./treeIcons";
@@ -124,6 +125,18 @@ export function VaultSidebar() {
         <span className="vault-sidebar-name" title={vault?.root}>
           {vault?.displayName ?? "知识库"}
         </span>
+        <button
+          type="button"
+          className="vault-sidebar-search"
+          onClick={() => {
+            void setLayout({ docCollapsed: false });
+            useSearchStore.getState().openPanel();
+          }}
+        >
+          <MagnifyingGlass size={12} aria-hidden />
+          <span>搜索</span>
+          <kbd>Ctrl P</kbd>
+        </button>
       </div>
 
       <div ref={scrollRef} className="tree-scroll" role="tree" aria-label="知识库目录">

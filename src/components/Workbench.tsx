@@ -3,9 +3,11 @@ import { SidebarSimple } from "@phosphor-icons/react";
 import { TitleBar } from "./TitleBar";
 import { VaultSidebar } from "./VaultSidebar";
 import { EditorPane } from "./EditorPane";
+import { SearchPanel } from "./SearchPanel";
 import { useDocStore } from "../stores/docStore";
 import { events } from "../lib/transport";
 import { useAppStore } from "../stores/appStore";
+import { useSearchStore } from "../stores/searchStore";
 
 const SIDEBAR_MIN = 192;
 const SIDEBAR_MAX = 320;
@@ -108,9 +110,18 @@ export function Workbench() {
         void useDocStore.getState().applyExternalChange(vaultId, event.directories);
       }
     });
+    const offIndex = events.indexStatus.on((status) => {
+      useSearchStore.getState().applyStatus(status);
+    });
     return () => {
       off();
+      offIndex();
     };
+  }, [vaultId]);
+
+  // Switching vaults closes the panel; its results belong to the old index.
+  useEffect(() => {
+    useSearchStore.getState().closePanel();
   }, [vaultId]);
 
   const [draftSidebar, setDraftSidebar] = useState<number | null>(null);
@@ -124,6 +135,16 @@ export function Workbench() {
       if (event.ctrlKey && event.key === "\\") {
         event.preventDefault();
         void setLayout({ docCollapsed: !docCollapsed });
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        const search = useSearchStore.getState();
+        if (search.open) {
+          search.closePanel();
+        } else {
+          void setLayout({ docCollapsed: false });
+          search.openPanel();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
@@ -187,6 +208,7 @@ export function Workbench() {
           </aside>
         ) : (
           <section className="workbench-panel" data-panel="editor" aria-label="文档">
+            <SearchPanel />
             <EditorPane />
           </section>
         )}

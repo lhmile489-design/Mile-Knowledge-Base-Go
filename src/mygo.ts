@@ -145,6 +145,51 @@ export interface RenderResult {
   failure?: Failure;
 }
 
+/** SearchFilters narrows a search (API.md M24). */
+export interface SearchFilters {
+  areas?: string[];
+  extensions?: string[];
+  tags?: string[];
+  /** ms since epoch */
+  updatedAfter?: number;
+  includeSystem?: boolean;
+}
+
+/** SearchHit is one result row. */
+export interface SearchHit {
+  path: string;
+  title: string;
+  area: string;
+  mtimeMs: number;
+  size: number;
+  score: number;
+  matchedFields: string[];
+  excerpt: string;
+  tags: string[];
+  ignored: boolean;
+}
+
+/** SearchQuery is the M24 request. */
+export interface SearchQuery {
+  vaultId: string;
+  text: string;
+  filters?: SearchFilters;
+  limit?: number;
+  /** relevance | updated | path */
+  sort?: string;
+}
+
+/** SearchResult is the M24 response. */
+export interface SearchResult {
+  vaultId: string;
+  query: string;
+  hits: SearchHit[];
+  total: number;
+  partial: boolean;
+  tookMs: number;
+  failure?: Failure;
+}
+
 /** SettingsPatch is a partial update; nil fields are untouched. */
 export interface SettingsPatch {
   theme?: string;
@@ -303,6 +348,11 @@ export const WindowService = {
 export const IndexService = {
   /** Rebuild drops the index file and starts a background rebuild (M26). */
   rebuild: bind<[string], IndexStatus>("IndexService.Rebuild", (vaultID: string) => [vaultID]),
+  /**
+   * Search runs a query against a vault's index (M24). While the first build is
+   * still running the result is marked partial.
+   */
+  search: bind<[SearchQuery], SearchResult>("IndexService.Search", (query: SearchQuery) => [query]),
   /** Status returns the current index state for a vault (M25). */
   status: bind<[string], IndexStatus>("IndexService.Status", (vaultID: string) => [vaultID]),
 } as const;

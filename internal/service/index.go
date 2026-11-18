@@ -28,6 +28,46 @@ func (s *IndexService) Status(ctx context.Context, vaultID string) contract.Inde
 	return s.app.indexStatus(vaultID)
 }
 
+// Search runs a query against a vault's index (M24). While the first build is
+// still running the result is marked partial.
+func (s *IndexService) Search(ctx context.Context, query contract.SearchQuery) contract.SearchResult {
+	if f := validateID(query.VaultID); f != nil {
+		return contract.SearchResult{VaultID: query.VaultID, Hits: []contract.SearchHit{},
+			Failure: contract.Fail(contract.CodeInvalidInput, "知识库 id 不合法")}
+	}
+	a := s.app
+	a.mu.Lock()
+	handle := a.indexes[query.VaultID]
+	a.mu.Unlock()
+	if handle == nil {
+		if _, f := a.Vaults.Root(query.VaultID); f != nil {
+			return contract.SearchResult{VaultID: query.VaultID, Hits: []contract.SearchHit{},
+				Failure: contract.Fail(contract.CodeVaultUnavailable, "知识库不可用")}
+		}
+		// Not opened yet: report partial instead of failing the panel.
+		return contract.SearchResult{VaultID: query.VaultID, Query: query.Text,
+			Hits: []contract.SearchHit{}, Partial: true}
+	}
+	handle.mu.Lock()
+	store := handle.store
+	phase := handle.status.Phase
+	handle.mu.Unlock()
+	if store == nil {
+		return contract.SearchResult{VaultID: query.VaultID, Query: query.Text,
+			Hits: []contract.SearchHit{}, Partial: true}
+	}
+	result, err := index.Search(ctx, store, query)
+	if err != nil {
+		return contract.SearchResult{VaultID: query.VaultID, Query: query.Text,
+			Hits: []contract.SearchHit{},
+			Failure: contract.Fail(contract.CodeIOFailure, "检索失败："+err.Error())}
+	}
+	if phase != "ready" {
+		result.Partial = true
+	}
+	return result
+}
+
 // Rebuild drops the index file and starts a background rebuild (M26).
 func (s *IndexService) Rebuild(ctx context.Context, vaultID string) contract.IndexStatus {
 	if f := validateID(vaultID); f != nil {

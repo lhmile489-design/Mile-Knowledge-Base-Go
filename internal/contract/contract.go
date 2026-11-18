@@ -220,6 +220,49 @@ const (
 	EventAppNotice       = "app-notice"
 )
 
+// SearchFilters narrows a search (API.md M24).
+type SearchFilters struct {
+	Areas         []string `json:"areas,omitempty"`
+	Extensions    []string `json:"extensions,omitempty"`
+	Tags          []string `json:"tags,omitempty"`
+	UpdatedAfter  int64    `json:"updatedAfter,omitempty"` // ms since epoch
+	IncludeSystem bool     `json:"includeSystem,omitempty"`
+}
+
+// SearchQuery is the M24 request.
+type SearchQuery struct {
+	VaultID string         `json:"vaultId"`
+	Text    string         `json:"text"`
+	Filters *SearchFilters `json:"filters,omitempty"`
+	Limit   int            `json:"limit,omitempty"`
+	Sort    string         `json:"sort,omitempty"` // relevance | updated | path
+}
+
+// SearchHit is one result row.
+type SearchHit struct {
+	Path          string   `json:"path"`
+	Title         string   `json:"title"`
+	Area          string   `json:"area"`
+	MtimeMs       int64    `json:"mtimeMs"`
+	Size          int64    `json:"size"`
+	Score         float64  `json:"score"`
+	MatchedFields []string `json:"matchedFields"`
+	Excerpt       string   `json:"excerpt"`
+	Tags          []string `json:"tags"`
+	Ignored       bool     `json:"ignored"`
+}
+
+// SearchResult is the M24 response.
+type SearchResult struct {
+	VaultID string      `json:"vaultId"`
+	Query   string      `json:"query"`
+	Hits    []SearchHit `json:"hits"`
+	Total   int         `json:"total"`
+	Partial bool        `json:"partial"`
+	TookMs  int64       `json:"tookMs"`
+	Failure *Failure    `json:"failure,omitempty"`
+}
+
 // IndexStatus is what IndexService.Status (M25) returns and what the
 // index-status event (E02) carries.
 type IndexStatus struct {

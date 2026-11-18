@@ -3,12 +3,17 @@
 import { isCallError } from "mygo-runtime";
 import {
   DocService,
+  IndexService,
   RenderService,
   SettingsService,
   VaultService,
   WindowService,
   events,
   type AppSettings,
+  type IndexStatus,
+  type SearchHit,
+  type SearchQuery,
+  type SearchResult,
   type ChooseVaultResult,
   type PickFolderResult,
   type ReadResult,
@@ -20,7 +25,7 @@ import {
   type WriteOutcome,
 } from "../mygo";
 
-export type { AppSettings, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
+export type { AppSettings, IndexStatus, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
 /** TransportError carries a stable code; unexpected failures get `unknown`. */
 export class TransportError extends Error {
@@ -81,6 +86,12 @@ export const docApi = {
 export const renderApi = {
   document: (vaultId: string, path: string, revision: number) =>
     guard(async () => unwrap(await RenderService.renderDocument(vaultId, path, revision))),
+};
+
+export const indexApi = {
+  search: (query: SearchQuery) => guard(async () => unwrap(await IndexService.search(query))),
+  status: (vaultId: string) => guard(async () => unwrap(await IndexService.status(vaultId))),
+  rebuild: (vaultId: string) => guard(async () => unwrap(await IndexService.rebuild(vaultId))),
 };
 
 export const windowApi = {
