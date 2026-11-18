@@ -186,3 +186,159 @@
   font-size: var(--text-caption);
   color: var(--raw-faint);
 }
+
+/* Report card sits at the top of the document column (screenshot 30). */
+.report-card {
+  margin: 10px;
+}
+
+.report-failures {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+}
+
+/* Plan edit preview (lineDiff). */
+.plan-diff {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plan-diff-lines {
+  max-height: 160px;
+  overflow: auto;
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-control);
+  background: var(--raw-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  white-space: pre-wrap;
+}
+
+.plan-diff-lines span[data-kind="added"] {
+  color: var(--raw-accent);
+}
+
+.plan-diff-lines span[data-kind="removed"] {
+  color: var(--raw-fault);
+  text-decoration: line-through;
+}
+
+/* Operation log at the bottom of the document column (screenshot 32). */
+.audit-panel {
+  flex: none;
+  max-height: 240px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--raw-line);
+  background: var(--raw-card);
+}
+
+.audit-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+}
+
+.audit-count {
+  font-size: var(--text-caption);
+  letter-spacing: 0.08em;
+  color: var(--raw-faint);
+}
+
+.audit-close {
+  margin-left: auto;
+}
+
+.audit-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 12px 6px;
+}
+
+.audit-empty {
+  padding: 6px 0;
+  font-size: var(--text-body-sm);
+}
+
+.audit-row {
+  display: grid;
+  grid-template-columns: 52px 64px minmax(0, 1fr) auto 22px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-top: 1px solid var(--raw-line);
+  font-size: var(--text-caption);
+}
+
+.audit-status {
+  padding: 1px 0;
+  text-align: center;
+  border: 1px solid var(--raw-line);
+  border-radius: 999px;
+  color: var(--raw-muted);
+}
+
+.audit-status[data-status="failed"],
+.audit-status[data-status="conflicted"] {
+  border-color: var(--raw-fault);
+  color: var(--raw-fault);
+}
+
+.audit-status[data-status="completed"],
+.audit-status[data-status="reverted"] {
+  border-color: var(--raw-accent);
+  color: var(--raw-accent);
+}
+
+.audit-kind {
+  color: var(--raw-muted);
+}
+
+.audit-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  color: var(--raw-text);
+}
+
+.audit-time {
+  color: var(--raw-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sidebar bottom entry. */
+.vault-sidebar-foot {
+  flex: none;
+  padding: 6px 12px 10px;
+  border-top: 1px solid var(--raw-line);
+}
+
+.vault-sidebar-foot-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--raw-muted);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.vault-sidebar-foot-btn:hover,
+.vault-sidebar-foot-btn[aria-pressed="true"] {
+  background: var(--raw-raised);
+  color: var(--raw-text);
+}

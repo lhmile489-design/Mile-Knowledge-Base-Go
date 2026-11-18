@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { Warning } from "@phosphor-icons/react";
+import { docApi } from "../lib/transport";
+import { previewDiff, type DiffLine } from "../lib/lineDiff";
+import { useAppStore } from "../stores/appStore";
 import { useMutationStore } from "../stores/mutationStore";
 
 const KIND_LABEL: Record<string, string> = {
@@ -25,10 +28,25 @@ export function MutationPlanCard() {
   const confirm = useMutationStore((state) => state.confirm);
 
   const [acknowledged, setAcknowledged] = useState(false);
+  const [diff, setDiff] = useState<DiffLine[] | "summary" | null>(null);
+  const vaultId = useAppStore((state) => state.activeVaultId);
+  const editAction = plan?.actions.find((action) => action.kind === "edit" && action.text !== undefined);
 
   useEffect(() => {
     setAcknowledged(false);
+    setDiff(null);
   }, [plan?.id]);
+
+  const showDiff = async () => {
+    if (!vaultId || !editAction?.target || editAction.text === undefined) return;
+    try {
+      const current = await docApi.read(vaultId, editAction.target);
+      const lines = previewDiff(editAction.text, current.doc?.text ?? "");
+      setDiff(lines ?? "summary");
+    } catch {
+      setDiff("summary");
+    }
+  };
 
   useEffect(() => {
     if (!plan) return;
@@ -70,6 +88,27 @@ export function MutationPlanCard() {
           ))}
           {hidden > 0 ? <li className="plan-more">另有 {hidden} 项未显示</li> : null}
         </ul>
+
+        {editAction ? (
+          <div className="plan-diff">
+            <button type="button" className="btn-quiet" onClick={() => void showDiff()} disabled={diff !== null}>
+              查看改动
+            </button>
+            {diff === "summary" ? (
+              <p className="plan-note">差异过大，确认后将直接写入，可在操作日志里恢复。</p>
+            ) : diff ? (
+              <pre className="plan-diff-lines">
+                {diff.map((line, index) => (
+                  <span key={index} data-kind={line.kind}>
+                    {line.kind === "added" ? "+ " : line.kind === "removed" ? "- " : "  "}
+                    {line.text}
+                    {"\n"}
+                  </span>
+                ))}
+              </pre>
+            ) : null}
+          </div>
+        ) : null}
 
         <p className="plan-note">
           {destructive

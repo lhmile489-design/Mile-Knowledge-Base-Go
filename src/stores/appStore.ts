@@ -20,6 +20,7 @@ type AppState = {
   notices: Notice[];
   bootError: string | null;
   healthOpen: boolean;
+  auditOpen: boolean;
 
   boot: () => Promise<void>;
   refreshVaults: () => Promise<void>;
@@ -31,6 +32,7 @@ type AppState = {
   forgetVault: (id: string) => Promise<void>;
   retryVault: (id: string) => Promise<void>;
   openHealth: () => void;
+  toggleAudit: () => void;
   closeHealth: () => void;
   pushNotice: (text: string, level?: string) => void;
   dismissNotice: (id: number) => void;
@@ -50,6 +52,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeVaultId: "",
   notices: [],
   healthOpen: false,
+  auditOpen: false,
   bootError: null,
 
   boot: async () => {
@@ -128,6 +131,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   openHealth: () => set({ healthOpen: true }),
+  toggleAudit: () => set((state) => ({ auditOpen: !state.auditOpen })),
   closeHealth: () => set({ healthOpen: false }),
 
   pushNotice: (text, level = "info") => {

@@ -18,6 +18,7 @@ import {
   type MutationReport,
   type PlanResult,
   type AuditListResult,
+  type TransactionSummary,
   type RestorePreview,
   type RestoreResult,
   type ProvenanceListResult,
@@ -37,7 +38,7 @@ import {
   type WriteOutcome,
 } from "../mygo";
 
-export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
+export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
 /** TransportError carries a stable code; unexpected failures get `unknown`. */
 export class TransportError extends Error {
@@ -143,3 +144,16 @@ export const windowApi = {
 };
 
 export { events };
+
+// E2E hook: the transport surface the probes drive (same calls the UI makes).
+if (typeof window !== "undefined") {
+  (window as unknown as { __mkbApi?: unknown }).__mkbApi = {
+    mutation: mutationApi,
+    doc: docApi,
+    index: indexApi,
+    provenance: {
+      list: (vaultId: string) => mutationApi.provenanceList(vaultId),
+      state: (vaultId: string, path: string) => mutationApi.provenanceState(vaultId, path),
+    },
+  };
+}

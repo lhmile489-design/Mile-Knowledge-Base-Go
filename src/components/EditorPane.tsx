@@ -6,6 +6,8 @@ import { ReaderView } from "./ReaderView";
 import { ConflictCard } from "./ConflictCard";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { ProvenancePanel } from "./ProvenancePanel";
+import { AuditPanel } from "./AuditPanel";
+import { MutationReportCard } from "./MutationReportCard";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore, isDirty, tabTitle, useDirtyReporter } from "../stores/docStore";
 import { formatBytes } from "../lib/bytes";
@@ -127,6 +129,8 @@ export function EditorPane() {
         </div>
       ) : null}
 
+      <MutationReportCard />
+
       {pendingClose ? (
         <div className="surface-card" data-tone="warn" role="alertdialog" aria-label="关闭未保存的标签">
           <div className="status-card-head">{tabTitle(pendingClose)} 有未保存的修改</div>
@@ -212,6 +216,8 @@ export function EditorPane() {
       {doc && !doc.loading && !doc.error ? (
         <BacklinksPanel vaultId={vaultId} path={activePath} revision={doc.revision} />
       ) : null}
+
+      <AuditPanel />
     </div>
   );
 }

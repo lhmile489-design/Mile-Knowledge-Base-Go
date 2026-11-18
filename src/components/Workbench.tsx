@@ -6,6 +6,7 @@ import { EditorPane } from "./EditorPane";
 import { SearchPanel } from "./SearchPanel";
 import { HealthPanel } from "./HealthPanel";
 import { MutationPlanCard } from "./MutationPlanCard";
+import { RestorePreviewCard } from "./RestorePreviewCard";
 import { useDocStore } from "../stores/docStore";
 import { events } from "../lib/transport";
 import { useAppStore } from "../stores/appStore";
@@ -217,6 +218,7 @@ export function Workbench() {
       </div>
       <HealthPanel />
       <MutationPlanCard />
+      <RestorePreviewCard />
     </div>
   );
 }

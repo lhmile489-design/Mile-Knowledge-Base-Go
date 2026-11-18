@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { CaretRight, MagnifyingGlass } from "@phosphor-icons/react";
+import { CaretRight, ClockCounterClockwise, MagnifyingGlass } from "@phosphor-icons/react";
 import { useTreeStore } from "../stores/treeStore";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore } from "../stores/docStore";
@@ -68,6 +68,8 @@ function flatten(nodes: Record<string, FileEntry[]>, expanded: Record<string, bo
  * semantic icons, aliases, and a virtualised row list so a 10k-entry
  * directory scrolls at 60fps (PRD FR-TREE, NFR-PERF). */
 export function VaultSidebar() {
+  const auditOpen = useAppStore((state) => state.auditOpen);
+  const toggleAudit = useAppStore((state) => state.toggleAudit);
   const vaultId = useAppStore((state) => state.activeVaultId);
   const vault = useAppStore((state) => state.vaults.find((v) => v.id === state.activeVaultId));
   const nodes = useTreeStore((state) => state.nodes);
@@ -178,6 +180,18 @@ export function VaultSidebar() {
             );
           })}
         </div>
+      </div>
+
+      <div className="vault-sidebar-foot">
+        <button
+          type="button"
+          className="vault-sidebar-foot-btn"
+          aria-pressed={auditOpen}
+          onClick={() => toggleAudit()}
+        >
+          <ClockCounterClockwise size={13} aria-hidden />
+          <span>操作日志</span>
+        </button>
       </div>
     </div>
   );
