@@ -22,6 +22,7 @@ const (
 	CodeNotFound            = "not-found"
 	CodeNotAFile            = "not-a-file"
 	CodeNotADirectory       = "not-a-directory"
+	CodeNameConflict        = "name-conflict"
 	CodeTooLarge            = "too-large"
 	CodeUnsupportedEncoding = "unsupported-encoding"
 	CodeRevisionMismatch    = "revision-mismatch"
@@ -272,6 +273,55 @@ type LinkGraphResult struct {
 	Outgoing  []ResolvedLink `json:"outgoing"`
 	Backlinks []string       `json:"backlinks"`
 	Failure   *Failure       `json:"failure,omitempty"`
+}
+
+// Mutation kinds (shared/mutation.ts MUTATION_KINDS).
+const (
+	MutCreate          = "create"
+	MutCreateDirectory = "createDirectory"
+	MutEdit            = "edit"
+	MutMove            = "move"
+	MutCopy            = "copy"
+	MutArchive         = "archive"
+	MutTrash           = "trash"
+	MutPermanentDelete = "permanentDelete"
+)
+
+// MutationAction is one step of a plan (API.md M29).
+type MutationAction struct {
+	ID                     string  `json:"id"`
+	Kind                   string  `json:"kind"`
+	Source                 string  `json:"source,omitempty"`
+	Target                 string  `json:"target,omitempty"`
+	ExpectedSourceRevision *int64  `json:"expectedSourceRevision,omitempty"`
+	ExpectedTargetRevision *int64  `json:"expectedTargetRevision,omitempty"`
+	Text                   *string `json:"text,omitempty"`
+	Reason                 string  `json:"reason"`
+}
+
+// MutationPlan is what the plan card shows and what execute receives.
+type MutationPlan struct {
+	ID            string           `json:"id"`
+	VaultID       string           `json:"vaultId"`
+	Origin        string           `json:"origin"`
+	Actions       []MutationAction `json:"actions"`
+	Risk          string           `json:"risk"` // low | medium | high
+	FreshApproval bool             `json:"freshApproval,omitempty"`
+}
+
+// PlanRequest is the M29 input.
+type PlanRequest struct {
+	VaultID       string           `json:"vaultId"`
+	Origin        string           `json:"origin"`
+	Actions       []MutationAction `json:"actions"`
+	Title         string           `json:"title,omitempty"`
+	FreshApproval bool             `json:"freshApproval,omitempty"`
+}
+
+// PlanResult is the M20–M23 and M29 response.
+type PlanResult struct {
+	Plan    *MutationPlan `json:"plan,omitempty"`
+	Failure *Failure      `json:"failure,omitempty"`
 }
 
 // SearchFilters narrows a search (API.md M24).

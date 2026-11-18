@@ -133,6 +133,29 @@ export interface LinkGraphResult {
   failure?: Failure;
 }
 
+/** MutationAction is one step of a plan (API.md M29). */
+export interface MutationAction {
+  id: string;
+  kind: string;
+  source?: string;
+  target?: string;
+  expectedSourceRevision?: number;
+  expectedTargetRevision?: number;
+  text?: string;
+  reason: string;
+}
+
+/** MutationPlan is what the plan card shows and what execute receives. */
+export interface MutationPlan {
+  id: string;
+  vaultId: string;
+  origin: string;
+  actions: MutationAction[];
+  /** low | medium | high */
+  risk: string;
+  freshApproval?: boolean;
+}
+
 /** OrphanItem is a document with neither incoming nor outgoing links. */
 export interface OrphanItem {
   path: string;
@@ -147,6 +170,21 @@ export interface PickFolderResult {
   empty: boolean;
   entryCount: number;
   willCreate: string[];
+  failure?: Failure;
+}
+
+/** PlanRequest is the M29 input. */
+export interface PlanRequest {
+  vaultId: string;
+  origin: string;
+  actions: MutationAction[];
+  title?: string;
+  freshApproval?: boolean;
+}
+
+/** PlanResult is the M20–M23 and M29 response. */
+export interface PlanResult {
+  plan?: MutationPlan;
   failure?: Failure;
 }
 
@@ -416,6 +454,23 @@ export const IndexService = {
   search: bind<[SearchQuery], SearchResult>("IndexService.Search", (query: SearchQuery) => [query]),
   /** Status returns the current index state for a vault (M25). */
   status: bind<[string], IndexStatus>("IndexService.Status", (vaultID: string) => [vaultID]),
+} as const;
+
+/**
+ * MutationService turns user actions into confirmed change plans (API.md M20–
+ * M23, M29). Planning never writes to the vault.
+ */
+export const MutationService = {
+  /** CreateDir plans a new directory inside dirPath (M22). */
+  createDir: bind<[string, string, string], PlanResult>("MutationService.CreateDir", (vaultID: string, dirPath: string, name: string) => [vaultID, dirPath, name]),
+  /** CreateFile plans a new file inside dirPath (M21). */
+  createFile: bind<[string, string, string], PlanResult>("MutationService.CreateFile", (vaultID: string, dirPath: string, name: string) => [vaultID, dirPath, name]),
+  /** Plan validates a change plan (M29). */
+  plan: bind<[PlanRequest], PlanResult>("MutationService.Plan", (req: PlanRequest) => [req]),
+  /** PlanMove plans moving several entries into targetDir (M23). */
+  planMove: bind<[string, string[], string], PlanResult>("MutationService.PlanMove", (vaultID: string, sources: string[], targetDir: string) => [vaultID, sources, targetDir]),
+  /** Rename plans a move that only changes the entry name (M20). */
+  rename: bind<[string, string, string], PlanResult>("MutationService.Rename", (vaultID: string, path: string, newName: string) => [vaultID, path, newName]),
 } as const;
 
 // ---- Events ----
