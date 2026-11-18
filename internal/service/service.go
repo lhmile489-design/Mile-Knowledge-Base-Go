@@ -21,6 +21,7 @@ import (
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/conversation"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/mutation"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/render"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/settings"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/watch"
@@ -56,6 +57,8 @@ type App struct {
 	Agents *ai.Registry
 	// AgentStream replaces the real provider stream in tests.
 	AgentStream ai.StreamOptions
+	// Blocks caches the streaming chat block HTML (M37).
+	Blocks *render.BlockCache
 	// AgentBusy reports whether a turn is running for the vault (M56 guard,
 	// wired by the turn loop in T10).
 	AgentBusy func(vaultID string) bool
@@ -100,6 +103,7 @@ func New(dataDir, legacyDir string) (*App, error) {
 		Context:        ai.NewContextHub(),
 		Conversations:  conversation.NewStore(dataDir),
 		Agents:         ai.NewRegistry(),
+		Blocks:         render.NewBlockCache(),
 		auditErr:       auditErrText(auditErr),
 		picks:          map[string]pickToken{},
 		watchers:       map[string]context.CancelFunc{},

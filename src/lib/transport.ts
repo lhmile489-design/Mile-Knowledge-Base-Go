@@ -102,6 +102,8 @@ export const docApi = {
 export const renderApi = {
   document: (vaultId: string, path: string, revision: number) =>
     guard(async () => unwrap(await RenderService.renderDocument(vaultId, path, revision))),
+  block: (text: string, kind: string) =>
+    guard(async () => unwrap(await RenderService.renderBlock(text, kind))),
 };
 
 export const indexApi = {

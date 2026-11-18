@@ -35,6 +35,14 @@
   golden 里的 stub resolver 与 spike 数据源不完全等价，`data-status` 随 stub 变。
   真实环境由 service 层 `ResolveLink` 统一判定，非渲染差异。依据：spikes/r3-render/RESULT.md §4。
 
+## chat 引用的初始状态（T12）
+
+- `chat-ref-path`、`chat-ref-code`、`gfm-table`（含 a.md/b.md 路径单元格）
+  旧版 spike 用空 vault 渲染，chat 引用一律 `data-status="missing"` 并附「找不到」；
+  新版无 vault 的块渲染（M37）不宣称存在性，初始 `data-status="unknown"`，
+  点击时由 `DocService.read` 探测后再标记找不到 / 有多个同名（PRD FR-AI-CHAT
+  「点击时才检查文件是否存在」）。依据：docs/PLAN-M2.md T12。
+
 ## 任务列表 class
 
 - `gfm-task`

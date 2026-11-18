@@ -6,6 +6,8 @@ import { flattenSegments } from "../../lib/turnProcess";
 import { buildProcess, formatThoughtMs, type ProcessSummary } from "../../lib/turnProcess";
 import type { TranscriptSegment } from "../../lib/transcriptGroups";
 import { turnStartedAt, type TurnStatus } from "../../lib/turnGroups";
+import { MarkdownBlock } from "./MarkdownBlock";
+import { EvidenceRadar } from "./EvidenceRadar";
 
 const STATUS_META: Record<TurnStatus, { readonly label: string; readonly tone: string }> = {
   running: { label: "进行中", tone: "info" },
@@ -73,17 +75,21 @@ export const AgentMessage = memo(function AgentMessage({
       <div className="agent-content">
         {process ? <ProcessSummaryView process={process} live={live} /> : null}
 
-        {answerText ? (
-          <div className="answer" data-testid="chat-answer">
-            <p className="chat-plain">{answerText}</p>
-          </div>
-        ) : null}
+        {answers.map((text, index) => (
+          <MarkdownBlock
+            key={`answer-${index}`}
+            text={text}
+            streaming={live && index === answers.length - 1}
+          />
+        ))}
 
         {notes.map((line) => (
           <p key={line.id} className="chat-note" data-testid="turn-note">
             {line.text}
           </p>
         ))}
+
+        <EvidenceRadar lines={lines} />
 
         {!live && answerText ? (
           <MsgActions text={answerText} retryText={canRetry ? answerText : null} onRetry={onRetry} />

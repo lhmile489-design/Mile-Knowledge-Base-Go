@@ -33,6 +33,39 @@ type RenderResult struct {
 	Failure   *contract.Failure       `json:"failure,omitempty"`
 }
 
+// BlockResult is the M37 reply.
+type BlockResult struct {
+	HTML    string            `json:"html"`
+	Failure *contract.Failure `json:"failure,omitempty"`
+}
+
+// maxBlockChars matches the conversation event text limit; blocks above it
+// are rejected rather than truncated mid-structure.
+const maxBlockChars = 64_000
+
+// RenderBlock renders one streaming chat message (M37). Sealed top-level
+// blocks come from the cache; only the growing tail is parsed again. The
+// trailing unfinished table or link is folded into a "still generating"
+// placeholder by the renderer.
+func (s *RenderService) RenderBlock(ctx context.Context, text, kind string) BlockResult {
+	switch kind {
+	case "message", "thought", "user":
+	default:
+		return BlockResult{Failure: contract.Fail(contract.CodeInvalidInput, "kind 不合法")}
+	}
+	if count := len([]rune(text)); count > maxBlockChars {
+		return BlockResult{Failure: contract.Fail(contract.CodeTooLarge, "块超过 64000 字符").WithLimit(int64(count), maxBlockChars)}
+	}
+	if strings.TrimSpace(text) == "" {
+		return BlockResult{HTML: ""}
+	}
+	result, err := s.app.Blocks.RenderChat(text)
+	if err != nil {
+		return BlockResult{Failure: contract.Fail(contract.CodeUnsupported, "渲染失败")}
+	}
+	return BlockResult{HTML: result.HTML}
+}
+
 // RenderDocument renders one document for reading mode. The result is not
 // cached here: the frontend caches by revision.
 func (s *RenderService) RenderDocument(ctx context.Context, vaultID, rel string, revision int64) RenderResult {

@@ -121,6 +121,10 @@ var intentionalDiffs = map[string]bool{
 	// Options.Resolver, so status follows the test stub not the files list.
 	"link-internal-dot": true, "link-internal-frag": true,
 	"link-internal-encoded": true,
+	// T12: without a vault resolver the chat refs start as data-status="unknown"
+	// and existence is decided by the click-time read (PRD FR-AI-CHAT). The
+	// legacy spike rendered with an empty vault and claimed "missing" + a note.
+	"chat-ref-path": true, "chat-ref-code": true, "gfm-table": true,
 	// task list: legacy remark-gfm adds contains-task-list/task-list-item
 	// classes; goldmark does not — handled by normalisation, kept here for
 	// visibility.

@@ -126,6 +126,12 @@ export interface AuditListResult {
   failure?: Failure;
 }
 
+/** BlockResult is the M37 reply. */
+export interface BlockResult {
+  html: string;
+  failure?: Failure;
+}
+
 /** ChooseVaultResult is returned by choose/createVault. */
 export interface ChooseVaultResult {
   cancelled: boolean;
@@ -988,6 +994,13 @@ export const DocService = {
 
 /** RenderService renders Markdown into the sanitised HTML the reader shows. */
 export const RenderService = {
+  /**
+   * RenderBlock renders one streaming chat message (M37). Sealed top-level
+   * blocks come from the cache; only the growing tail is parsed again. The
+   * trailing unfinished table or link is folded into a "still generating"
+   * placeholder by the renderer.
+   */
+  renderBlock: bind<[string, string], BlockResult>("RenderService.RenderBlock", (text: string, kind: string) => [text, kind]),
   /**
    * RenderDocument renders one document for reading mode. The result is not
    * cached here: the frontend caches by revision.

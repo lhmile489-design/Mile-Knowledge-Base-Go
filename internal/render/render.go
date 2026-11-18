@@ -62,6 +62,9 @@ const (
 	StatusOK        = "ok"
 	StatusMissing   = "missing"
 	StatusAmbiguous = "ambiguous"
+	// StatusUnknown: the chat block renderer has no vault resolver; existence
+	// is decided by the click-time read instead of claiming "missing".
+	StatusUnknown = "unknown"
 )
 
 // LinkResolver maps a Markdown target to a canonical in-vault path.
@@ -549,6 +552,22 @@ func (r *kbRenderer) renderAutoLink(w util.BufWriter, source []byte, node ast.No
 	return ast.WalkSkipChildren, nil
 }
 
+// chatRefStatus reports what the chat variant may claim without a resolver:
+// unknown until a click-time read decides.
+func (r *kbRenderer) chatRefStatus(target string) string {
+	if r.opts.Resolver == nil {
+		return StatusUnknown
+	}
+	_, kind, ok := r.opts.Resolver.ResolveLink(target)
+	if kind == StatusAmbiguous {
+		return StatusAmbiguous
+	}
+	if ok {
+		return StatusOK
+	}
+	return StatusMissing
+}
+
 func (r *kbRenderer) renderLink(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	n := node.(*ast.Link)
 	if entering {
@@ -557,12 +576,7 @@ func (r *kbRenderer) renderLink(w util.BufWriter, source []byte, node ast.Node, 
 		refTarget, _ := n.AttributeString("data-ref-target")
 		if ks, ok := refKind.(string); ok && (ks == "path" || ks == "wiki") {
 			if ts, ok2 := refTarget.(string); ok2 {
-				status := StatusMissing
-				if r.opts.Resolver != nil {
-					if _, k, ok3 := r.opts.Resolver.ResolveLink(ts); ok3 && k != StatusAmbiguous {
-						status = StatusOK
-					}
-				}
+				status := r.chatRefStatus(ts)
 				n.SetAttributeString("data-kb-ref", status)
 				fmt.Fprintf(w, `<button type="button" class="chat-ref" data-ref-kind=%q data-ref-target=%q data-status=%q title=%q aria-label="打开 %s">`, ks, ts, status, ts, htmlEscape(ts))
 				return ast.WalkContinue, nil
@@ -594,7 +608,7 @@ func (r *kbRenderer) renderLink(w util.BufWriter, source []byte, node ast.Node, 
 	}
 	// leaving
 	if s, ok := n.AttributeString("data-kb-ref"); ok {
-		if st, _ := s.(string); st != StatusOK {
+		if st, _ := s.(string); st == StatusMissing || st == StatusAmbiguous {
 			fmt.Fprint(w, `<span class="chat-ref-note">找不到</span>`)
 		}
 		fmt.Fprint(w, `</button>`)
@@ -700,10 +714,11 @@ func (r *kbRenderer) renderWikilink(w util.BufWriter, source []byte, node ast.No
 	if r.variant() == VariantChat {
 		// chat: wikilinks become chat-ref buttons (legacy ChatAnchor data-wiki).
 		fmt.Fprintf(w, `<button type="button" class="chat-ref" data-ref-kind="wiki" data-ref-target=%q data-status=%q title="[[%s]]" aria-label="打开 %s">%s`,
-			target, status, htmlEscape(target), htmlEscape(target), htmlEscape(label))
-		if status == StatusAmbiguous {
+			target, r.chatRefStatus(target), htmlEscape(target), htmlEscape(target), htmlEscape(label))
+		switch r.chatRefStatus(target) {
+		case StatusAmbiguous:
 			fmt.Fprint(w, `<span class="chat-ref-note">有多个同名</span>`)
-		} else if status == StatusMissing {
+		case StatusMissing:
 			fmt.Fprint(w, `<span class="chat-ref-note">找不到</span>`)
 		}
 		fmt.Fprint(w, `</button>`)
@@ -902,15 +917,10 @@ func (r *kbRenderer) renderCodeSpan(w util.BufWriter, source []byte, node ast.No
 	codeText := buf.String()
 	if r.variant() == VariantChat {
 		if p := asPathReference(codeText); p != "" {
-			status := StatusMissing
-			if r.opts.Resolver != nil {
-				if _, k, ok := r.opts.Resolver.ResolveLink(p); ok && k != StatusAmbiguous {
-					status = StatusOK
-				}
-			}
+			status := r.chatRefStatus(p)
 			fmt.Fprintf(w, `<button type="button" class="chat-ref" data-ref-kind="path" data-ref-target=%q data-status=%q title=%q aria-label="打开 %s">%s`,
 				p, status, p, htmlEscape(p), htmlEscape(p))
-			if status != StatusOK {
+			if status == StatusMissing {
 				fmt.Fprint(w, `<span class="chat-ref-note">找不到</span>`)
 			}
 			fmt.Fprint(w, `</button>`)

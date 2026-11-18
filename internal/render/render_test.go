@@ -201,8 +201,10 @@ func TestWikilinks(t *testing.T) {
 			[]string{`class="chat-ref"`, `data-ref-kind="wiki"`, `data-status="ok"`}},
 		{"missing reader", "见 [[不存在]]。", VariantReader, nil,
 			[]string{`wiki-missing`, `data-status="missing"`, `（未创建）`}},
-		{"missing chat", "见 [[不存在]]。", VariantChat, nil,
-			[]string{`class="chat-ref"`, `data-status="missing"`, `找不到`}},
+		{"unresolved chat", "见 [[不存在]]。", VariantChat, nil,
+			// Without a resolver the chat variant claims nothing: existence is
+			// decided by the click-time read (T12), so no 找不到 note here.
+			[]string{`class="chat-ref"`, `data-status="unknown"`}},
 		{"alias label", "见 [[note-a|别名]]。", VariantReader, resolver,
 			[]string{`>别名</a>`}},
 		{"empty target literal", "空 [[ ]] 保留。", VariantReader, resolver,
