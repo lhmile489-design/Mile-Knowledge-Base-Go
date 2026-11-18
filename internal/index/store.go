@@ -185,6 +185,32 @@ func (s *Store) bumpRevision() (int64, error) {
 }
 
 // DocumentCount reports how many documents the index holds.
+// SkillDocument is the row the skill catalog needs from the index.
+type SkillDocument struct {
+	Path  string
+	Title string
+}
+
+// SkillDocuments lists every indexed skill file. The caller applies the depth
+// and name rules (BuildSkillCatalog), so a single query is enough.
+func (s *Store) SkillDocuments(ctx context.Context) ([]SkillDocument, error) {
+	rows, err := s.read.QueryContext(ctx,
+		`SELECT path, title FROM documents WHERE area = 'skills' AND lower(path) LIKE '%/skill.md' ORDER BY path`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []SkillDocument
+	for rows.Next() {
+		var doc SkillDocument
+		if err := rows.Scan(&doc.Path, &doc.Title); err != nil {
+			return nil, err
+		}
+		out = append(out, doc)
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) DocumentCount(ctx context.Context) (int, error) {
 	var n int
 	err := s.read.QueryRowContext(ctx, `SELECT COUNT(*) FROM documents`).Scan(&n)

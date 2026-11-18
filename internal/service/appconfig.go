@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 )
@@ -23,6 +24,8 @@ func (s *SettingsService) AppConfigGet(ctx context.Context, vaultID string) cont
 	if raw, err := os.ReadFile(filepath.Join(root, ".mile-kb", "settings", "categories.json")); err == nil {
 		result.Categories = raw
 	}
+	agents, _ := ai.ReadAgents(root)
+	result.Agents = toContractAgents(agents)
 	return result
 }
 

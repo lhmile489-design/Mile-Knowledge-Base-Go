@@ -310,10 +310,43 @@ type FetchModelsResult struct {
 
 // AppConfigResult is the M62/M66 response: vault-level settings the UI reads.
 type AppConfigResult struct {
-	VaultID    string            `json:"vaultId,omitempty"`
-	Aliases    map[string]string `json:"aliases"`
-	Categories json.RawMessage   `json:"categories,omitempty"`
-	Failure    *Failure          `json:"failure,omitempty"`
+	VaultID    string                 `json:"vaultId,omitempty"`
+	Aliases    map[string]string      `json:"aliases"`
+	Categories json.RawMessage        `json:"categories,omitempty"`
+	Agents     map[string]AgentConfig `json:"agents,omitempty"`
+	Failure    *Failure               `json:"failure,omitempty"`
+}
+
+// AgentConfig is one agents.json entry as the settings page sees it (M63).
+type AgentConfig struct {
+	Model               string   `json:"model"`
+	Effort              string   `json:"effort"`
+	Approval            string   `json:"approval"`
+	SkillPaths          []string `json:"skillPaths"`
+	Steering            string   `json:"steering"`
+	SteeringBaseVersion int      `json:"steeringBaseVersion"`
+}
+
+// AgentPatch carries only the keys the caller wants to change (M63).
+type AgentPatch struct {
+	Model      *string   `json:"model,omitempty"`
+	Effort     *string   `json:"effort,omitempty"`
+	Approval   *string   `json:"approval,omitempty"`
+	SkillPaths *[]string `json:"skillPaths,omitempty"`
+	Steering   *string   `json:"steering,omitempty"`
+}
+
+// SkillEntry is one assignable skill (M71).
+type SkillEntry struct {
+	Path     string `json:"path"`
+	Category string `json:"category"`
+	Name     string `json:"name"`
+}
+
+// SkillCatalogResult is the M71 payload.
+type SkillCatalogResult struct {
+	Skills  []SkillEntry `json:"skills"`
+	Failure *Failure     `json:"failure,omitempty"`
 }
 
 // ProvenanceRecordShape is one copy -> source relationship (API.md M34).
