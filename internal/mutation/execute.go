@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 )
 
 // Executor applies a confirmed plan (API.md M30). Every write goes through the
@@ -126,8 +127,11 @@ type actionOutcome struct {
 }
 
 func (e Executor) record(plan contract.MutationPlan, action contract.MutationAction, status string, tx *Tx, outcome actionOutcome) contract.ActionRecord {
+	// A record id must be unique across plans: M20–M23 reuse "a1", and the
+	// ledger upserts by id, so planID:actionID alone would overwrite history.
+	recordID := plan.ID + ":" + action.ID + ":" + e.Manager.randomHex(6)
 	record := contract.ActionRecord{
-		ID: action.ID, PlanID: plan.ID, VaultID: plan.VaultID, Origin: plan.Origin,
+		ID: recordID, PlanID: plan.ID, VaultID: plan.VaultID, Origin: plan.Origin,
 		Kind: action.Kind, Source: action.Source, Target: action.Target, Status: status,
 		CreatedAt: e.now().UTC().Format(time.RFC3339Nano),
 	}
@@ -167,11 +171,18 @@ func (e Executor) runAction(plan contract.MutationPlan, action contract.Mutation
 	return actionOutcome{}, contractError{code: contract.CodeUnsupported, message: "不支持的操作类型"}
 }
 
+// abs resolves a plan path through pathguard, so every existing segment is
+// checked for junctions and reparse points at execution time (the plan layer's
+// check is not enough: M30 receives the plan from the renderer).
 func (e Executor) abs(rel string) (string, error) {
 	if f := assertSafeRelative(rel); f != nil {
 		return "", contractError{code: f.Code, message: f.Message}
 	}
-	return filepath.Join(e.Root, filepath.FromSlash(rel)), nil
+	abs, f := pathguard.Resolve(e.Root, rel)
+	if f != nil {
+		return "", contractError{code: f.Code, message: f.Message}
+	}
+	return abs, nil
 }
 
 func (e Executor) doCreate(action contract.MutationAction, directory bool) (actionOutcome, error) {

@@ -320,3 +320,114 @@ func TestTransactionManifestLayout(t *testing.T) {
 		t.Errorf("payload = %q", payload)
 	}
 }
+
+func TestExecuteBlocksEscapingPaths(t *testing.T) {
+	root := t.TempDir()
+	executor, _ := fixedExecutor(t, root)
+	for _, action := range []contract.MutationAction{
+		{ID: "a", Kind: contract.MutCreate, Target: "../outside.md"},
+		{ID: "b", Kind: contract.MutMove, Source: "raws/../x.md", Target: "raws/y.md"},
+		{ID: "c", Kind: contract.MutPermanentDelete, Source: "raws/../../x.md"},
+	} {
+		report := executor.Execute(planOf(action))
+		if report.Status != "failed" {
+			t.Errorf("%s %q accepted", action.Kind, action.Target+action.Source)
+		}
+	}
+}
+
+func TestExecuteRejectsJunctionEscape(t *testing.T) {
+	outside := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outside, "secret.md"), []byte("secret"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "raws"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(root, "raws", "link")
+	if err := os.Symlink(outside, link); err != nil {
+		t.Skipf("cannot create a reparse point here: %v", err)
+	}
+	executor, _ := fixedExecutor(t, root)
+	report := executor.Execute(planOf(
+		contract.MutationAction{ID: "a", Kind: contract.MutPermanentDelete, Source: "raws/link/secret.md"},
+	))
+	if report.Status != "failed" {
+		t.Fatalf("delete through a junction was allowed: %+v", report)
+	}
+	if body, err := os.ReadFile(filepath.Join(outside, "secret.md")); err != nil || string(body) != "secret" {
+		t.Fatalf("outside file damaged: %v %q", err, body)
+	}
+}
+
+func TestRestoreRejectsTamperedManifestPaths(t *testing.T) {
+	root := t.TempDir()
+	outside := filepath.Join(filepath.Dir(root), "evil.txt")
+	if err := os.WriteFile(outside, []byte("untouched"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Remove(outside) })
+
+	manager := restoreManager(t, root)
+	tx, err := manager.Begin("v", "p")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Hand-write a manifest whose entry points outside the vault, plus the
+	// payload an attacker would want written there.
+	tampered := `{
+  "id": "` + tx.ID + `",
+  "vaultId": "v",
+  "planId": "p",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "status": "committed",
+  "entries": [
+    {"path": "../evil.txt", "kind": "file", "hash": "x", "size": 1, "afterKind": "file"}
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(tx.Dir, "manifest.json"), []byte(tampered), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	restored, conflicted, _, f := manager.Restore(tx.ID)
+	if f != nil {
+		t.Fatal(f)
+	}
+	if len(restored) != 0 || len(conflicted) != 1 {
+		t.Fatalf("restored=%v conflicted=%v", restored, conflicted)
+	}
+	if body, _ := os.ReadFile(outside); string(body) != "untouched" {
+		t.Fatalf("outside file overwritten: %q", body)
+	}
+}
+
+func TestRecordIDsAreUniqueAcrossRuns(t *testing.T) {
+	root := t.TempDir()
+	executor, _ := fixedExecutor(t, root)
+	plan := planOf(contract.MutationAction{ID: "a1", Kind: contract.MutCreate, Target: "raws/x.md", Text: ptr("x")})
+	first := executor.Execute(plan)
+	plan.ID = "plan-2"
+	plan.Actions[0].Target = "raws/y.md"
+	second := executor.Execute(plan)
+	if first.Status != "completed" || second.Status != "completed" {
+		t.Fatalf("statuses: %+v %+v", first, second)
+	}
+	if first.Completed[0].ID == second.Completed[0].ID {
+		t.Fatalf("record ids collided: %s", first.Completed[0].ID)
+	}
+	if !strings.HasPrefix(first.Completed[0].ID, "plan-1:a1:") {
+		t.Errorf("record id shape = %s", first.Completed[0].ID)
+	}
+}
+
+func TestPlanEditDropsSource(t *testing.T) {
+	b, _ := builderFor(t)
+	p, f := plan(t, b, contract.MutationAction{ID: "a", Kind: contract.MutEdit,
+		Source: "raws/旧名.md", Target: "raws/首页.md", Text: ptr("新")})
+	if f != nil {
+		t.Fatal(f)
+	}
+	if p.Actions[0].Source != "" {
+		t.Errorf("edit kept source = %q", p.Actions[0].Source)
+	}
+}

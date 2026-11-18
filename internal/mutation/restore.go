@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 )
 
 // ReadTx loads one transaction manifest.
@@ -96,11 +97,17 @@ func (m TxManager) Restore(id string) (restored, conflicted, touched []string, f
 	}
 	touchedSet := map[string]bool{}
 	for _, entry := range manifest.Entries {
+		// A manifest is a file on disk and can be edited by hand: every entry
+		// goes back through pathguard before anything is written or deleted.
+		abs, pf := pathguard.Resolve(m.Root, entry.Path)
+		if pf != nil {
+			conflicted = append(conflicted, entry.Path)
+			continue
+		}
 		if ok, _ := m.checkRestorable(entry); !ok {
 			conflicted = append(conflicted, entry.Path)
 			continue
 		}
-		abs := filepath.Join(m.Root, filepath.FromSlash(entry.Path))
 		if err := m.restoreEntry(id, entry, abs); err != nil {
 			conflicted = append(conflicted, entry.Path)
 			continue

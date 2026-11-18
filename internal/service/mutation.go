@@ -63,12 +63,23 @@ func (s *MutationService) Execute(ctx context.Context, plan contract.MutationPla
 			a.emitAudit(plan.VaultID)
 		}
 	}
+	// Tell the index what changed instead of waiting for the watcher debounce
+	// (legacy register.ts updated the index right after execute).
+	if len(report.TouchedDirectories) > 0 {
+		s.app.enqueueIndex(plan.VaultID, report.TouchedDirectories)
+	}
 	return report
 }
 
 // AuditList returns operation records and the vault's transactions (M31).
 func (s *MutationService) AuditList(ctx context.Context, vaultID, planID string, limit int) contract.AuditListResult {
 	result := contract.AuditListResult{Records: []contract.ActionRecord{}, Transactions: []contract.TransactionSummary{}}
+	if vaultID != "" {
+		if f := validateID(vaultID); f != nil {
+			result.Failure = f
+			return result
+		}
+	}
 	if s.app.Audit == nil {
 		result.Failure = contract.Fail(contract.CodeIOFailure, "操作日志不可用")
 		return result
@@ -91,6 +102,10 @@ func (s *MutationService) AuditList(ctx context.Context, vaultID, planID string,
 // RewindPrepare reports which entries of a transaction can still be restored (M32).
 func (s *MutationService) RewindPrepare(ctx context.Context, vaultID, transactionID string) contract.RestorePreview {
 	result := contract.RestorePreview{TransactionID: transactionID, VaultID: vaultID, Entries: []contract.RestorePreviewEntry{}}
+	if f := validateID(vaultID); f != nil {
+		result.Failure = f
+		return result
+	}
 	root, f := s.app.Vaults.Root(vaultID)
 	if f != nil {
 		result.Failure = f
@@ -111,6 +126,10 @@ func (s *MutationService) RewindPrepare(ctx context.Context, vaultID, transactio
 func (s *MutationService) RewindCommit(ctx context.Context, vaultID, transactionID string) contract.RestoreResult {
 	result := contract.RestoreResult{TransactionID: transactionID, Restored: []string{},
 		Conflicted: []string{}, TouchedDirectories: []string{}}
+	if f := validateID(vaultID); f != nil {
+		result.Failure = f
+		return result
+	}
 	root, f := s.app.Vaults.Root(vaultID)
 	if f != nil {
 		result.Failure = f

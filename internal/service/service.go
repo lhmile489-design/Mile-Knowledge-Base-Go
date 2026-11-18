@@ -51,6 +51,7 @@ type App struct {
 	watchers  map[string]context.CancelFunc
 	indexes   map[string]*indexHandle
 	auditSeq  int64
+	auditErr  string
 	resolvers map[string]*vaultResolver
 }
 
@@ -73,6 +74,7 @@ func New(dataDir, legacyDir string) (*App, error) {
 		DataDir:   dataDir,
 		Settings:  store,
 		Audit:     audit,
+		auditErr:  auditErrText(auditErr),
 		picks:     map[string]pickToken{},
 		watchers:  map[string]context.CancelFunc{},
 		indexes:   map[string]*indexHandle{},
@@ -91,7 +93,18 @@ func (e errFromFailure) Error() string { return e.Message }
 func (a *App) SetWindow(w *mygo.Window) {
 	a.mu.Lock()
 	a.win = w
+	errText := a.auditErr
 	a.mu.Unlock()
+	if errText != "" {
+		_ = AppNotice.Emit(w, contract.AppNoticeEvent{Text: "操作日志不可用：" + errText, Level: "warn"})
+	}
+}
+
+func auditErrText(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }
 
 // Window returns the main window.

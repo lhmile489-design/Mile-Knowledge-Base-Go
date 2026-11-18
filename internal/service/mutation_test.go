@@ -227,3 +227,19 @@ func TestMutationServiceAuditAndRewind(t *testing.T) {
 		t.Errorf("conflict overwrote: %q", body)
 	}
 }
+
+func TestMutationServiceRejectsBadIDs(t *testing.T) {
+	app, _, _ := mutationTestApp(t)
+	svc := NewMutationService(app)
+	ctx := context.Background()
+
+	if got := svc.AuditList(ctx, "../bad", "", 10); got.Failure == nil || got.Failure.Code != contract.CodeInvalidInput {
+		t.Errorf("auditList bad vault accepted: %+v", got.Failure)
+	}
+	if got := svc.RewindPrepare(ctx, "../bad", "tx"); got.Failure == nil || got.Failure.Code != contract.CodeInvalidInput {
+		t.Errorf("rewindPrepare bad vault accepted: %+v", got.Failure)
+	}
+	if got := svc.RewindCommit(ctx, "../bad", "tx"); got.Failure == nil || got.Failure.Code != contract.CodeInvalidInput {
+		t.Errorf("rewindCommit bad vault accepted: %+v", got.Failure)
+	}
+}
