@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "./welcome.css";
+@import "./sidebar.css";
 
 html,
 body,

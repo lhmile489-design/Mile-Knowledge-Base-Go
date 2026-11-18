@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SidebarSimple } from "@phosphor-icons/react";
 import { TitleBar } from "./TitleBar";
+import { VaultSidebar } from "./VaultSidebar";
+import { useTreeStore } from "../stores/treeStore";
 import { useAppStore } from "../stores/appStore";
 
 const SIDEBAR_MIN = 192;
@@ -73,6 +75,7 @@ function Resizer({ label, value, bounds, direction, onChange, onCommit }: Resize
 export function Workbench() {
   const layout = useAppStore((state) => state.settings?.layout);
   const setLayout = useAppStore((state) => state.setLayout);
+  const selected = useTreeStore((state) => state.selected);
 
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
   useEffect(() => {
@@ -117,10 +120,7 @@ export function Workbench() {
         }}
       >
         <aside className="workbench-panel" data-panel="sidebar" aria-label="知识库">
-          <div className="panel-placeholder">
-            <span className="eyebrow">知识库</span>
-            <p className="muted">文件树将在 T07a 接入。</p>
-          </div>
+          <VaultSidebar />
         </aside>
 
         <Resizer
@@ -168,8 +168,12 @@ export function Workbench() {
         ) : (
           <section className="workbench-panel" data-panel="editor" aria-label="文档">
             <div className="panel-placeholder">
-              <span className="eyebrow">未打开文件</span>
-              <p className="muted">从左侧目录树、搜索或对话里的引用打开一个文件，它会显示在这里。</p>
+              <span className="eyebrow">{selected ? "已选择" : "未打开文件"}</span>
+              {selected ? (
+                <p className="muted">{selected}（标签页与编辑器在 T07b 接入）</p>
+              ) : (
+                <p className="muted">从左侧目录树、搜索或对话里的引用打开一个文件，它会显示在这里。</p>
+              )}
               <button type="button" className="btn btn-quiet" onClick={() => void setLayout({ docCollapsed: true })}>
                 收起面板
               </button>

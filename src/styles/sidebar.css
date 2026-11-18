@@ -1,0 +1,114 @@
+/* Sidebar tree (DESIGN.md §4): the panel fills the left column, the row list
+   scrolls, area headers separate the root level. */
+.vault-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.vault-sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 8px;
+  min-width: 0;
+}
+
+.vault-sidebar-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--raw-text);
+}
+
+.tree-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 6px 10px;
+}
+
+.tree-empty {
+  padding: 12px;
+  font-size: var(--text-body-sm);
+}
+
+.tree-area {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  margin-top: 6px;
+}
+
+.tree-area .eyebrow {
+  margin: 0;
+}
+
+.tree-area-latin {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--raw-faint);
+}
+
+.tree-area-count {
+  margin-left: auto;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.tree-row {
+  min-height: 28px;
+  gap: 6px;
+}
+
+.tree-caret {
+  display: inline-grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  flex: none;
+  color: var(--raw-faint);
+  transition: transform var(--dur-spring) var(--ease-spring);
+}
+
+.tree-caret[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.tree-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--raw-muted);
+}
+
+.tree-row[aria-selected="true"] .tree-icon {
+  color: var(--raw-accent);
+}
+
+.tree-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-count {
+  margin-left: auto;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.tree-badge {
+  margin-left: auto;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}

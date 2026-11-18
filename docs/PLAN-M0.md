@@ -373,6 +373,7 @@ FR-WIN、FR-THEME、FR-VLT、FR-AREA（读取侧）、FR-TREE（浏览，不含�
 | 2026-11-18 | T01 完成 | mygo 模板 + package/tsconfig/vite + 最小窗口 | doctor 必需项全绿；tsc 通过；vite build 通过；dev 启动 75s 正常 | — | T02 |
 | 2026-11-18 | T02 完成 | internal/testkit、cmd/genvault、vitest 配置 | 门禁负向对照：4 个门禁在故意破坏时均失败，移除后恢复通过 | — | T03 |
 | 2026-11-18 | T03 完成 | src/styles/tokens.css（4913 行原样移植）、theme-init.js、compare-tokens | 80 个令牌声明零差异 | 未按 DESIGN §3 拆分文件，M0 保持单文件，拆分留到 M3 | T05 |
+| 2026-11-18 | T07a 完成 | VaultSidebar（虚拟化树、功能区分节、图标、别名、子项计数、未索引标注）、treeStore（懒加载/展开/失效重载）、treeIcons、sidebar.css | e2e 实测：12 行根节点、9 个分区、展开 skills 后 16 行；截图 design/m0/t07a-sidebar-tree-1440x900.png；tsc 通过 | 单目录 1 万项的滚动帧率未实测（V-TREE-2 留 T10）；文件点击只选中，打开文档在 T07b | T07b |
 | 2026-11-18 | T06 完成（自动部分） | WelcomeView（主卡/最近卡/故障卡）、OnboardingGuide 两步、App 路由按 activeVaultId 分流、welcome.css、启动时恢复上次知识库（Prefs.LastVaultID） | 截图 design/m0/t06-welcome-recent-and-fault-1440x900.png 与 t06-onboarding-step1-1440x900.png；vault 测试 10 项通过（含恢复上次库、断开库、文件冒充目录） | 向导第 2 步依赖原生选目录框，无法自动截图；CreateVault 的非空确认只有代码路径，未做端到端 | T07a |
 | 2026-11-18 | T04 完成（自动部分） | 前端 TitleBar、Workbench 三栏网格、可拖拽/键盘分隔条、文档面板折叠轨、窗口按钮、标题栏事件；vite 补 Tailwind 插件 | e2e 构建 + automation 实测：标题栏 40px、三栏面板 3 个、文档轨 40px、分隔条拖拽与 Ctrl+\ 折叠可用；截图 design/m0/t04-workbench-shell-1440x900.png | 13 项手动确认待用户回填 | T06 |
 | 2026-11-18 | T05/T06/T07a/T07b/T08/T09 后端部分完成 | pathguard、settings、vault（registry/tree/textfile）、render、watch、service 绑定、kbimg、关窗决策 | go test 全绿（pathguard 13、settings 6、vault 8、render 78、watch 18、testkit 2）；golden 94 一致 / 12 有意差异；tsc 通过 | 各任务的界面部分未做 | T04 |
