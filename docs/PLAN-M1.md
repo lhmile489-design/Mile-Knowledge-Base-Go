@@ -111,7 +111,7 @@ M0 已完成。M1 为本计划。M2、M3 的划分见 docs/PLAN-M0.md 第 3 节�
 | T10 | 计划卡、报告卡、操作日志面板 | `src/stores/mutationStore.ts`、`src/components/{MutationPlanCard,MutationReportCard,RestorePreviewCard,AuditPanel}.tsx`、`src/lib/lineDiff.ts`、侧栏底部「操作日志」 | T08 | 前端确认与执行流程 | V-CARD 全部通过；对照截图 29、30、31、32 | 已验证 |
 | T11 | 树的变更操作 | `src/components/VaultSidebar.tsx`、`src/stores/treeStore.ts`、`internal/vault/aliases.go`、`internal/service/appconfig.go`（M62、M66） | T10 | 悬停操作、内联新建 / 重命名 / 别名、拖放 | V-TREE-M 全部通过；对照截图 14、15、15b | 已完成，待 T13 同批审查 |
 | T12 | 图片粘贴与 wikilink 新建 | `internal/service/image.go`（上传处理器）、`internal/vault/attachments.go`、`src/lib/{attachments,wikilink}.ts`、`src/components/SourceEditor.tsx`、`vite.config.ts`（CSP） | T07、T11 | 协议上传保存图片；Ctrl+点击未创建链接生成新建计划 | V-IMG 全部通过；**独立审查**（覆盖 T09–T12 的写路径与上传端点） | 已验证 |
-| T13 | 闭环验收、兼容与性能 | `scripts/e2e/ac-m1.sh`、`scripts/e2e/perf.sh`、`scripts/compat/`、本计划第 6 节记录 | T03–T12 | 端到端用例、新旧版往返兼容、性能与旧版基线 | 第 6 节验收全部有实际证据；**整体独立审查** | 待做 |
+| T13 | 闭环验收、兼容与性能 | `scripts/e2e/{ac-m1,perf-m1}.sh`、`scripts/compat/`、`cmd/compatcheck/`、本计划第 6 节记录 | T03–T12 | 端到端用例、新旧版往返兼容、性能与旧版基线 | 第 6 节验收全部有实际证据；**整体独立审查** | 已完成，整体审查进行中 |
 | T14 | 收尾 | README、CLAUDE.md、本计划 | T13 | 文档同步；推送前确认 | 用户确认后推送 | 待做 |
 
 依赖关系：T01→T02→{T03, T04→T05}；T00→T06→T07→T08→{T09, T10→T11}；T12 依赖 T07 与 T11；T13 依赖全部。按「一次一个」执行时的顺序为 T00、T01、T02、T03、T04、T05、T06、T07、T08、T09、T10、T11、T12、T13、T14。
@@ -320,6 +320,44 @@ M0 已完成。M1 为本计划。M2、M3 的划分见 docs/PLAN-M0.md 第 3 节�
 | 搜索 200 条、操作日志 200 条滚动 | 60fps | 未测 | 未虚拟化 |
 | 读模式端到端（M0 遗留） | 无目标，记录数值 | 未测 | 未测 |
 
+### 6.0 M1 性能与兼容实测（2026-11-18，`scripts/e2e/perf-m1.sh` + `scripts/compat/legacy-compat.sh`）
+
+| 指标 | 目标（PRD 10.1） | 新版实测 | 旧版基线 |
+| --- | --- | --- | --- |
+| 冷启动到树首屏（典型） | ≤ 1.5s | 910ms | 未测 |
+| 冷启动到树首屏（大：1 万 md + 5 千代码文件） | — | 1093ms | 未测 |
+| 索引首建（典型） | 后台，不阻塞 | 191ms 到 ready | 未测 |
+| 索引首建（大） | 后台，不阻塞 | 6021ms 到 ready（期间界面可用） | 未测 |
+| 检索 p50 / p95（典型，50 次二字中文查询） | p95 ≤ 100ms | 1.0 / 2.7ms | 未测 |
+| 检索 p50 / p95（大，同上） | p95 ≤ 200ms | 1.0 / 45.3ms | 未测 |
+| 外部一次改 1000 个文件期间 WebView 长任务 | 无 > 200ms | 0 个 | 机制性卡顿（P-1） |
+| 树 5000 项滚动 | 60fps | 0 个长任务（M0 实测） | 未虚拟化 |
+
+旧版基线（PRD Q7）仍未测：需要在隔离 APPDATA 的沙箱里跑旧版 Electron 并用同一套样本计时，本轮未执行；G-PERF 维持警告级。大库索引首建 6s 高于 R-2 spike 的 1.33s，差距来自样本更大（1.5 万文件、含代码目录）与逐批事务，仍满足「后台完成、界面可用」。
+
+新旧版兼容（`scripts/compat/legacy-compat.sh`，把旧版纯模块复制到临时目录用 bun 运行，旧版仓库只读）：
+
+```text
+旧版写 → Go 读：事务可恢复、pre-image 字节正确、provenance 读写往返字节不变
+Go 写 → 旧版读：manifest 字段旧版可解析、旧版能恢复 Go 的 pre-image、
+               旧版 parse+serialize 对 Go 写出的 provenance 是恒等变换（字节一致）
+RESULT pass=7 fail=0
+```
+
+### 6.1 闭环验收记录（AC-M1-1，2026-11-18）
+
+`scripts/e2e/ac-m1.sh` 在临时 APPDATA + 样本知识库上按用户路径驱动真实窗口，16 项断言全部通过：
+
+```text
+索引 ready → 搜索「知识库」有命中 → Enter 打开文档 → 共享笔记的反向链接含富文本样例
+→ 顶部新建「验收新建」→ 计划卡执行 → 文件存在
+→ 内联重命名为「验收改名」→ 计划卡执行 → 文件存在
+→ 归档 → 计划卡执行 → _archives/验收改名.md 存在
+→ 操作日志出现该归档 → 恢复预览 → 确认恢复 → 文件回到原位
+→ 重启：索引 ready、documentCount 不变、audit.jsonl 4 行不变
+RESULT pass=16 fail=0
+```
+
 ## 7. 协作、审查与执行方式
 
 - 执行者：主会话，一次一个任务（第 4 节）。需要大范围只读查找（如旧版行为核对）时可以开只读子代理，结论回到主会话后再动手。
@@ -378,6 +416,7 @@ M0 已完成。M1 为本计划。M2、M3 的划分见 docs/PLAN-M0.md 第 3 节�
   - T12 依赖 WebView2 自定义协议能收到 POST 请求体，未实测，第一步先验证；上传端点是新的写入口，授权校验写进了交接，T12 后独立审查；
   - T13 的兼容脚本依赖旧版模块能在 bun 下单独运行，未实测；
   - 链接全量解析和增量重算的耗时要在哈希实现上重测，结果可能要求调整 T04 的实现。
+| 2026-11-18 | T13 完成 | `scripts/e2e/ac-m1.sh`：搜索→打开→反向链接→新建→重命名→归档→日志恢复→重启 16 项断言；`scripts/compat/legacy-compat.sh` + `cmd/compatcheck`：把旧版 provenance/TransactionService/errors/vault 复制到临时目录用 bun 运行（旧仓库只读），双向验证事务恢复与 provenance 字节；`scripts/e2e/perf-m1.sh`：冷启动、索引 ready、检索 p50/p95、外部 1000 改动长任务；结果写入本计划 §6.0/§6.1，README 增加三条命令 | AC-M1 RESULT pass=16 fail=0（含重启后索引与 audit 保留）；兼容 RESULT pass=7 fail=0（旧版写→Go 读、Go 写→旧版读、provenance 恒等）；性能：典型冷启动 910ms、大库 1093ms、索引 ready 典型 191ms/大 6021ms、检索 p95 典型 2.7ms/大 45.3ms、1000 外部改动 0 长任务。全仓 go test、vet、tsc、vitest 79 项通过 | 旧版性能基线仍未测（需隔离 APPDATA 跑旧版 Electron，本轮未执行，G-PERF 仍为警告级）；大库索引首建 6s 高于 R-2 spike，已注明原因 | 整体独立审查 |
 | 2026-11-18 | T09–T12 独立审查（task-reviewer，只读）报告 3 阻断 4 需改 3 建议，逐条处理：**阻断 1（上传端点语义）**：缺 `?vault=` 时回退活动库 → 已改为必须显式传库，缺失/未知一律拒绝（新增 `vaultRootForRequest` 三态测试）；「非 POST 返回 405」与 T00 计划明文一致（API §5 上传规则），不改。**阻断 2（attachments 目录 TOCTOU）**：审查者自己确认只是 MkdirAll→写入之间的竞态、与旧版同级，已额外在 MkdirAll 之后重新 `pathguard.Resolve` 收窄窗口。**阻断 3（wikilinkAt 把链接间文字误判）**：复核为误报——`[[a]] 文字 [[b]]` 中间文字的 `lastIndexOf("[[")` 指向前一个链接，`end < pos` 会返回 null；已补 3 条针对性测试（中间文字、两侧链接内部、`[[` 起始位置）证明。**需改**：审计面板恢复条件按旧版改回「有 transactionId 且记录 completed」即可（partial 事务也能恢复已完成项，旧版 AuditPanel.tsx:168 同款判定）；`__mkbFollow` 钩子改为稳定 bridge + 卸载清理；上传失败改为 pushNotice 提示；别名提交同时刷新父目录与目录本身。**建议**：M62 出参暂无前端消费者、探测注释等未改动。修复后 go test 全绿、vet、tsc、vitest 79 项通过 | 405 与 §5「错误响应只列 403/404」的措辞差异按 T00 计划保留；junction 竞态仍需人为构造才能实证（风险与旧版同级） | T13 |
 | 2026-11-18 | T12 完成 | 第一步先验证：e2e 从页面 `fetch` POST 1 KiB PNG 到 `http://kbimg.localhost/__upload` → 首次写盘、二次 `existed=true`、SVG 拒绝、9 MiB 拒绝、GET 返回 200 且 `Content-Type: image/png`（CallerWindow 校验通过，非本应用请求 404 有 handler 单测）。`internal/vault/attachments.go`：按魔数识别 png/jpg/gif/webp/bmp/avif，`raws/attachments/pasted-<sha256前12位>.<ext>`，同内容不重写，8 MiB 上限，目录经 pathguard；`internal/service/image.go`：GET/POST 分流、仅 POST 上传、`CallerWindow` 必须非空、请求体超限即拒、读图改为按魔数判类型并补 8 MiB 与 `no-store`（补上 M0 的 4 处契约偏差）；CSP `connect-src` 放行 kbimg。前端：`uploadImage`（原始字节，不走 base64）、编辑器 paste/drop 上传并插入 `![](...)`、Ctrl/Cmd+点击 wikilink 先探测目标存在（存在则打开），不存在时用 M29 生成新建计划（`newNotePath` 路径规则 + `# 名称` 正文）；`wikilinkAt` 抽到 lib 并配测试。e2e：源码模式粘贴 PNG → 文本出现 `![]raws/attachments/pasted-….png` 且文件落盘；Ctrl+点击 `[[新链接页]]` → 计划卡「新建 raws/新链接页.md」→ 执行后文件存在；阅读模式图片仍能加载（naturalWidth>0）；截图 design/m0/t12-image-wikilink-1440x900.png。过程中修掉一个真实缺陷：wikilink 处理器的 useEffect 放在 EditorPane 早退之后，打开文档时 hooks 数量变化导致整棵 React 树崩溃（白屏）；移到早退之前后恢复。go test、vet、tsc、vitest 77 项、fuzz 通过 | Ctrl+点击只按「路径 + 文件名 + 补 .md」探测，未做标题层解析（旧版用索引标题解析；标题不同的文件会被当成不存在而生成新建计划）；粘贴/拖入只在源码模式生效，阅读模式不插入；上传失败时静默不插入（避免坏链接），用户无提示 | T13 |
 | 2026-11-18 | T11 完成 | `internal/vault/aliases.go`：有序对象读写（保留原键序、新增键排序、空值删除、键与值校验、2000 上限、`SetEscapeHTML(false)`、原子写），文件缺失/损坏降级为空表；`internal/service/appconfig.go`：M62 AppConfigGet（别名 + categories 原样透传）、M66 AppConfigPatchAliases（写入后刷新注册表别名）；树别名从「只认一级目录名」改为按相对路径匹配，嵌套目录也能显示别名。前端：侧栏行悬停出现重命名/别名（仅目录）/归档/删除，内联输入 Enter 提交 Esc 取消（重命名默认选中主干名，别名留空清除），归档与删除生成计划卡；顶部新建文件/新建目录按钮（目标为选中目录、选中文件的父目录或根）；行可拖拽，拖到目录生成移动计划；别名提交走 M66 并刷新树。e2e：点重命名 → 内联输入「改名.md」→ 计划卡「重命名为 改名.md」→ 执行 → 磁盘与树都改名；目录别名「暂存区」→ 树标签与 aliases.json 同步；顶部新建「新建文档」→ 计划卡 → 执行 → 文件出现在树与磁盘；截图 design/m0/t11-tree-actions-1440x900.png。service 测试：别名补丁的字节级输出（`{"raws": "暂存区", "raws/子目录": "子区"}` + 换行）、删除后保留剩余键序、嵌套目录别名进入树、categories 原样返回、非法键被拒；vault 测试：空表、原字节往返、新增/删除、校验、2000 上限 | 拖放只有代码路径，未做 pointer 级 e2e（自动化客户端没有鼠标事件）；内联输入在失焦时也会提交（旧版只有 Enter/Esc），已注明；悬停按钮本身在截图里不可见（CSS :hover），通过 e2e 点击验证 | T12 |

@@ -232,6 +232,9 @@ func sortedRawKeys(fields map[string]json.RawMessage) []string {
 	return keys
 }
 
+// Save rewrites the file from the current table (stable serialization).
+func (s *ProvenanceStore) Save() error { return s.persist() }
+
 func (s *ProvenanceStore) persist() error {
 	if err := os.MkdirAll(filepath.Dir(s.path), 0o755); err != nil {
 		return err
