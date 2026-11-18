@@ -7,6 +7,7 @@ import { SearchPanel } from "./SearchPanel";
 import { HealthPanel } from "./HealthPanel";
 import { MutationPlanCard } from "./MutationPlanCard";
 import { RestorePreviewCard } from "./RestorePreviewCard";
+import { ChatPane } from "./chat/ChatPane";
 import { useDocStore } from "../stores/docStore";
 import { events } from "../lib/transport";
 import { useAppStore } from "../stores/appStore";
@@ -180,10 +181,7 @@ export function Workbench() {
         />
 
         <section className="workbench-panel" data-panel="agnes" aria-label="对话">
-          <div className="panel-placeholder">
-            <span className="eyebrow">Agnes</span>
-            <p className="muted">对话面板将在 M2 接入。</p>
-          </div>
+          <ChatPane />
         </section>
 
         <Resizer
