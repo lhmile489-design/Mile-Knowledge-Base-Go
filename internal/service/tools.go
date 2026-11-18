@@ -529,5 +529,9 @@ func (r *AgentToolRunner) setAliases(ctx context.Context, raw string) string {
 	if result.Failure != nil {
 		return "设置别名失败：" + result.Failure.Message
 	}
+	// E08: an agent changed the app config through a tool.
+	if window := r.app.Window(); window != nil {
+		_ = AppConfigChanged.Emit(window, contract.AppConfigChangedEvent{VaultID: r.vaultID})
+	}
 	return fmt.Sprintf("已更新 %d 条别名", len(result.Aliases))
 }

@@ -5,19 +5,36 @@ import (
 	"encoding/hex"
 	"path/filepath"
 	"regexp"
+	"sync"
 	"time"
 
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 )
 
-// AgentService binds the shared context hub (API.md M45–M49). The turn-loop
-// binding (M38–M44) arrives with T10.
-type AgentService struct{ app *App }
+// AgentService binds the agent sessions (M38–M44, T10) and the shared context
+// hub (M45–M49, T08).
+type AgentService struct {
+	app *App
 
-// NewAgentService binds one app.
-func NewAgentService(app *App) *AgentService { return &AgentService{app: app} }
+	mu       sync.Mutex
+	managers map[string]*ai.ApprovalManager
+}
+
+// NewAgentService binds one app and subscribes the context hub to E09.
+func NewAgentService(app *App) *AgentService {
+	service := &AgentService{app: app, managers: map[string]*ai.ApprovalManager{}}
+	if app.Context != nil {
+		app.Context.OnChanged(func(snapshot contract.SharedContext) {
+			if window := app.Window(); window != nil {
+				_ = ContextChanged.Emit(window, snapshot)
+			}
+		})
+	}
+	return service
+}
 
 var (
 	// referenceId / taskId character sets come from validate.ts:169-184.

@@ -96,6 +96,36 @@ func (r *Registry) Reset(vaultID string) {
 	}
 }
 
+// CancelAgent aborts the running turn of every session of one agent (M40).
+func (r *Registry) CancelAgent(agent string) {
+	r.mu.Lock()
+	targets := make([]*Session, 0, 4)
+	for _, session := range r.sessions {
+		if session.Agent == agent {
+			targets = append(targets, session)
+		}
+	}
+	r.mu.Unlock()
+	for _, session := range targets {
+		session.Cancel()
+	}
+}
+
+// CancelVault aborts every running turn of one vault (M43).
+func (r *Registry) CancelVault(vaultID string) {
+	r.mu.Lock()
+	targets := make([]*Session, 0, 4)
+	for _, session := range r.sessions {
+		if session.VaultID == vaultID {
+			targets = append(targets, session)
+		}
+	}
+	r.mu.Unlock()
+	for _, session := range targets {
+		session.Cancel()
+	}
+}
+
 // Cancel aborts the running turn, if any.
 func (s *Session) Cancel() {
 	s.mu.Lock()

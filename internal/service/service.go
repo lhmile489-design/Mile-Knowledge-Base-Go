@@ -34,6 +34,11 @@ var (
 	WindowState     = mygo.NewEvent[contract.WindowStateEvent]("window-state")
 	AppNotice       = mygo.NewEvent[contract.AppNoticeEvent]("app-notice")
 	AuditChanged    = mygo.NewEvent[contract.AuditChangedEvent]("audit-changed")
+	// E07–E10 (API.md §2.3).
+	ConversationChanged = mygo.NewEvent[contract.ConversationChangedEvent]("conversation-changed")
+	AppConfigChanged    = mygo.NewEvent[contract.AppConfigChangedEvent]("app-config-changed")
+	ContextChanged      = mygo.NewEvent[contract.SharedContext]("context-changed")
+	EngineStatusEvent   = mygo.NewEvent[contract.EngineStatus]("engine-status")
 )
 
 // App holds the shared state of the running application.
@@ -47,6 +52,10 @@ type App struct {
 	Context *ai.ContextHub
 	// Conversations is the conversation history store (M50–M59, T09).
 	Conversations *conversation.Store
+	// Agents keeps one session per (agent, vault) for the turn loop (T10).
+	Agents *ai.Registry
+	// AgentStream replaces the real provider stream in tests.
+	AgentStream ai.StreamOptions
 	// AgentBusy reports whether a turn is running for the vault (M56 guard,
 	// wired by the turn loop in T10).
 	AgentBusy func(vaultID string) bool
@@ -61,6 +70,8 @@ type App struct {
 	watchers       map[string]context.CancelFunc
 	indexes        map[string]*indexHandle
 	vaultRevisions map[string]int64
+	recaps         map[string]string
+	engineStatus   map[string]string
 	auditSeq       int64
 	auditErr       string
 	resolvers      map[string]*vaultResolver
@@ -88,11 +99,14 @@ func New(dataDir, legacyDir string) (*App, error) {
 		Keys:           ai.NewKeyStore(ai.NewSecretsBackend("")),
 		Context:        ai.NewContextHub(),
 		Conversations:  conversation.NewStore(dataDir),
+		Agents:         ai.NewRegistry(),
 		auditErr:       auditErrText(auditErr),
 		picks:          map[string]pickToken{},
 		watchers:       map[string]context.CancelFunc{},
 		indexes:        map[string]*indexHandle{},
 		vaultRevisions: map[string]int64{},
+		recaps:         map[string]string{},
+		engineStatus:   map[string]string{},
 		resolvers:      map[string]*vaultResolver{},
 	}
 	app.Vaults = vault.New(store)
@@ -659,5 +673,6 @@ func (a *App) StartActiveWatch() {
 		a.startWatch(id)
 		a.startIndex(id)
 		a.syncContextVault(id)
+		a.emitEngineStatus(id)
 	}
 }

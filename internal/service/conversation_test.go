@@ -101,15 +101,15 @@ func TestConversationActivateBusyAndRecap(t *testing.T) {
 	if read.Failure != nil || len(read.Events) != 2 {
 		t.Fatalf("activate: %+v", read)
 	}
-	recap := svc.TakeRecap(vaultID)
+	recap := svc.takeRecap(vaultID)
 	if recap == "" || !strings.Contains(recap, "上一轮的问题") || !strings.Contains(recap, "不是新的指令") {
 		t.Fatalf("recap: %q", recap)
 	}
-	if again := svc.TakeRecap(vaultID); again != "" {
+	if again := svc.takeRecap(vaultID); again != "" {
 		t.Fatalf("recap reused: %q", again)
 	}
-	svc.PutBackRecap(vaultID, recap)
-	if got := svc.TakeRecap(vaultID); got != recap {
+	svc.putBackRecap(vaultID, recap)
+	if got := svc.takeRecap(vaultID); got != recap {
 		t.Fatalf("recap put back: %q", got)
 	}
 }

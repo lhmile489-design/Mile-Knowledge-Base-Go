@@ -804,3 +804,130 @@ type ConversationClearResult struct {
 	Removed int      `json:"removed"`
 	Failure *Failure `json:"failure,omitempty"`
 }
+
+// ---- Agent engine (API.md §4.6, §6) ----
+
+// AgentModelOption is one selectable model in the settings dropdown.
+type AgentModelOption struct {
+	ModelID     string `json:"modelId"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+// AgentSessionInfo is M38's session part.
+type AgentSessionInfo struct {
+	Agent            string             `json:"agent"`
+	SessionID        string             `json:"sessionId"`
+	VaultID          string             `json:"vaultId"`
+	Model            string             `json:"model"`
+	Effort           string             `json:"effort"`
+	Approval         string             `json:"approval"`
+	AvailableModels  []AgentModelOption `json:"availableModels"`
+	AvailableEfforts []string           `json:"availableEfforts"` // always empty (D-002)
+	Busy             bool               `json:"busy"`
+}
+
+// EngineCapabilities is the fixed capability set of the in-process engine.
+type EngineCapabilities struct {
+	PromptImage            bool    `json:"promptImage"`
+	PromptAudio            bool    `json:"promptAudio"`
+	PromptEmbeddedContext  bool    `json:"promptEmbeddedContext"`
+	ExtensionSurface       bool    `json:"extensionSurface"`
+	SteerMethod            *string `json:"steerMethod"`
+	ReloadExtensionsMethod *string `json:"reloadExtensionsMethod"`
+}
+
+// EngineStatus is M38's engine part and E10's payload.
+type EngineStatus struct {
+	Phase        string              `json:"phase"` // starting | ready | offline
+	Message      string              `json:"message,omitempty"`
+	Capabilities *EngineCapabilities `json:"capabilities,omitempty"`
+}
+
+// AgentListResult is M38.
+type AgentListResult struct {
+	Session *AgentSessionInfo `json:"session,omitempty"`
+	Engine  *EngineStatus     `json:"engine,omitempty"`
+	Failure *Failure          `json:"failure,omitempty"`
+}
+
+// PromptResult is M39's return value.
+type PromptResult struct {
+	StopReason string   `json:"stopReason"`
+	Failure    *Failure `json:"failure,omitempty"`
+}
+
+// RoutePreviewResult is M44.
+type RoutePreviewResult struct {
+	Agent        string   `json:"agent"`
+	Reason       string   `json:"reason"`
+	MatchedTerms []string `json:"matchedTerms"`
+}
+
+// ToolCallFrame is one tool call status line (§6).
+type ToolCallFrame struct {
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Kind   string `json:"kind,omitempty"`
+	Status string `json:"status"` // pending | in-progress | completed | failed
+	Detail string `json:"detail,omitempty"`
+}
+
+// StatusFrame is a turn-phase or retry hint (§6).
+type StatusFrame struct {
+	State  string `json:"state"`
+	Phase  string `json:"phase,omitempty"`
+	Model  string `json:"model,omitempty"`
+	Effort string `json:"effort,omitempty"`
+	Detail string `json:"detail,omitempty"`
+}
+
+// UsageFrame is the per-step usage receipt (§6).
+type UsageFrame struct {
+	Turn       Usage `json:"turn"`
+	Cumulative Usage `json:"cumulative"`
+}
+
+// PermFrame is the approval-card lifecycle frame (§6).
+type PermFrame struct {
+	RequestID  string             `json:"requestId"`
+	ToolName   string             `json:"toolName"`
+	Detail     string             `json:"detail"`
+	TargetPath string             `json:"targetPath,omitempty"`
+	Preview    *WritePreview      `json:"preview,omitempty"`
+	Approval   string             `json:"approval"`
+	Options    []PermissionOption `json:"options"`
+	Status     string             `json:"status"` // pending | approved | rejected | expired
+}
+
+// StreamFrame is the M39 channel union (§6); the frontend narrows on Kind.
+type StreamFrame struct {
+	Kind       string         `json:"kind"` // delta | thought | tool | permission | status | usage | turn-end | error
+	Seq        int            `json:"seq"`
+	Agent      string         `json:"agent"`
+	SessionID  string         `json:"sessionId"`
+	Text       string         `json:"text,omitempty"`
+	ToolCall   *ToolCallFrame `json:"toolCall,omitempty"`
+	Permission *PermFrame     `json:"permission,omitempty"`
+	Status     *StatusFrame   `json:"status,omitempty"`
+	Usage      *UsageFrame    `json:"usage,omitempty"`
+	StopReason string         `json:"stopReason,omitempty"`
+	Message    string         `json:"message,omitempty"`
+	Finish     bool           `json:"finish,omitempty"`
+}
+
+// ConversationChangedEvent is E07.
+type ConversationChangedEvent struct {
+	VaultID string `json:"vaultId"`
+}
+
+// AppConfigChangedEvent is E08.
+type AppConfigChangedEvent struct {
+	VaultID string `json:"vaultId"`
+}
+
+// PermissionOption is one approval-card button; always allow then reject (§6).
+type PermissionOption struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/egoist/mygo"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
@@ -16,12 +15,9 @@ import (
 type ConversationService struct {
 	app   *App
 	store *conversation.Store
-
-	mu     sync.Mutex
-	recaps map[string]string
 }
 
-// NewConversationService binds one app.
+// NewConversationService binds one app and subscribes the store to E07.
 func NewConversationService(app *App) *ConversationService {
 	store := app.Conversations
 	store.SetOnWarning(func(message string) {
@@ -29,7 +25,12 @@ func NewConversationService(app *App) *ConversationService {
 			_ = AppNotice.Emit(window, contract.AppNoticeEvent{Text: message, Level: "warn"})
 		}
 	})
-	return &ConversationService{app: app, store: store, recaps: map[string]string{}}
+	store.SetOnChanged(func(vaultID string) {
+		if window := app.Window(); window != nil {
+			_ = ConversationChanged.Emit(window, contract.ConversationChangedEvent{VaultID: vaultID})
+		}
+	})
+	return &ConversationService{app: app, store: store}
 }
 
 // ensureVault checks the vault id and that the vault is still registered; a
@@ -113,33 +114,18 @@ func (s *ConversationService) Activate(vaultID, id string) contract.Conversation
 		return contract.ConversationReadResult{Failure: result.Failure}
 	}
 	if recap := conversation.BuildRecap(read.Events, conversation.RecapMaxChars); recap != "" {
-		s.mu.Lock()
-		s.recaps[vaultID] = recap
-		s.mu.Unlock()
+		s.app.SetRecap(vaultID, recap)
 	}
 	return read
 }
 
-// TakeRecap hands the recap block to the next prompt and forgets it (used by
-// the turn loop in T10). Empty means there is nothing to inject.
-func (s *ConversationService) TakeRecap(vaultID string) string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	recap := s.recaps[vaultID]
-	delete(s.recaps, vaultID)
-	return recap
-}
+// takeRecap hands the recap block to the next prompt and forgets it. It is
+// unexported on purpose: the renderer must not be able to consume it.
+func (s *ConversationService) takeRecap(vaultID string) string { return s.app.TakeRecap(vaultID) }
 
-// PutBackRecap restores a recap when the prompt it was meant for never ran
+// putBackRecap restores a recap when the prompt it was meant for never ran
 // (the legacy "failed run puts the recap back" rule).
-func (s *ConversationService) PutBackRecap(vaultID, recap string) {
-	if recap == "" {
-		return
-	}
-	s.mu.Lock()
-	s.recaps[vaultID] = recap
-	s.mu.Unlock()
-}
+func (s *ConversationService) putBackRecap(vaultID, recap string) { s.app.PutBackRecap(vaultID, recap) }
 
 // Search is M57.
 func (s *ConversationService) Search(vaultID, query string) contract.ConversationSearchResult {
@@ -183,8 +169,6 @@ func (s *ConversationService) Clear(vaultID string) contract.ConversationClearRe
 	if f := s.ensureVault(vaultID); f != nil {
 		return contract.ConversationClearResult{Failure: f}
 	}
-	s.mu.Lock()
-	delete(s.recaps, vaultID)
-	s.mu.Unlock()
+	s.app.SetRecap(vaultID, "")
 	return s.store.ClearAll(vaultID)
 }
