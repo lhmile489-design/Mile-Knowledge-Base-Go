@@ -1,0 +1,188 @@
+/* Change plan card and provenance panel (PRD FR-MUT / FR-PROV). */
+.plan-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.2);
+}
+
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(520px, 92vw);
+  max-height: min(560px, 84vh);
+  padding: 12px 14px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-panel);
+  background: var(--raw-card);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.14);
+}
+
+.plan-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plan-risk {
+  padding: 1px 6px;
+  border: 1px solid var(--raw-line);
+  border-radius: 999px;
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+}
+
+.plan-risk[data-risk="high"] {
+  border-color: var(--raw-fault);
+  color: var(--raw-fault);
+}
+
+.plan-count {
+  margin-left: auto;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.plan-title {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.plan-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.plan-item {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--raw-line);
+  font-size: var(--text-body-sm);
+}
+
+.plan-kind {
+  flex: none;
+  width: 84px;
+  color: var(--raw-muted);
+}
+
+.plan-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-text);
+}
+
+.plan-more {
+  padding: 4px 0;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.plan-note {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+}
+
+.plan-ack {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption);
+  color: var(--raw-fault);
+}
+
+.plan-error {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--raw-fault);
+}
+
+.plan-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Provenance sits above the backlinks at the bottom of the document panel. */
+.provenance {
+  flex: none;
+  padding: 8px 12px;
+  border-top: 1px solid var(--raw-line);
+  border-left: 3px solid var(--raw-line);
+  background: var(--raw-card);
+}
+
+.provenance[data-state="source-changed"] {
+  border-left-color: var(--raw-accent);
+}
+
+.provenance[data-state="both-changed"],
+.provenance[data-state="copy-modified"] {
+  border-left-color: var(--raw-fault);
+}
+
+.provenance-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.provenance-state {
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.provenance-base {
+  margin-left: auto;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.provenance-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--raw-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provenance-link:hover {
+  color: var(--raw-accent);
+}
+
+.provenance-sync {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.provenance-reason {
+  margin: 4px 0 0;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}

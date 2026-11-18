@@ -5,6 +5,7 @@ import { SourceEditor } from "./SourceEditor";
 import { ReaderView } from "./ReaderView";
 import { ConflictCard } from "./ConflictCard";
 import { BacklinksPanel } from "./BacklinksPanel";
+import { ProvenancePanel } from "./ProvenancePanel";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore, isDirty, tabTitle, useDirtyReporter } from "../stores/docStore";
 import { formatBytes } from "../lib/bytes";
@@ -202,6 +203,10 @@ export function EditorPane() {
             </div>
           )}
         </div>
+      ) : null}
+
+      {doc && !doc.loading && !doc.error ? (
+        <ProvenancePanel vaultId={vaultId} path={activePath} revision={doc.revision} />
       ) : null}
 
       {doc && !doc.loading && !doc.error ? (

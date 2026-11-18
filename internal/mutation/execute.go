@@ -25,7 +25,9 @@ type Executor struct {
 	// WriteText saves text with the normal BOM/EOL rules and returns the new
 	// hash; a non-nil failure aborts the action.
 	WriteText func(rel string, expectedRevision int64, text string) (string, *contract.Failure)
-	Now       func() time.Time
+	// RecordProvenance is called after a successful copy into projects/.
+	RecordProvenance func(copyRel, sourceRel string)
+	Now              func() time.Time
 }
 
 func (e Executor) now() time.Time {
@@ -301,6 +303,10 @@ func (e Executor) doMoveOrCopy(action contract.MutationAction, tx *Tx, isMove bo
 		if err := copyFileVerified(sourceAbs, targetAbs); err != nil {
 			return actionOutcome{}, err
 		}
+	}
+	if !isMove && info.Mode().IsRegular() && ShouldTrackProvenance(action.Target) && e.RecordProvenance != nil {
+		// Only files: a directory copy has no single baseline hash.
+		e.RecordProvenance(action.Target, action.Source)
 	}
 	after, _ := hashFile(targetAbs)
 	return actionOutcome{

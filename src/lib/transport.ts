@@ -4,6 +4,7 @@ import { isCallError } from "mygo-runtime";
 import {
   DocService,
   IndexService,
+  MutationService,
   RenderService,
   SettingsService,
   VaultService,
@@ -13,6 +14,15 @@ import {
   type IndexStatus,
   type KbHealthReport,
   type LinkGraphResult,
+  type MutationPlan,
+  type MutationReport,
+  type PlanResult,
+  type AuditListResult,
+  type RestorePreview,
+  type RestoreResult,
+  type ProvenanceListResult,
+  type ProvenanceRecordShape,
+  type ProvenanceStateResult,
   type SearchHit,
   type SearchQuery,
   type SearchResult,
@@ -27,7 +37,7 @@ import {
   type WriteOutcome,
 } from "../mygo";
 
-export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
+export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
 /** TransportError carries a stable code; unexpected failures get `unknown`. */
 export class TransportError extends Error {
@@ -96,6 +106,29 @@ export const indexApi = {
   rebuild: (vaultId: string) => guard(async () => unwrap(await IndexService.rebuild(vaultId))),
   links: (vaultId: string, path: string) => guard(async () => unwrap(await IndexService.links(vaultId, path))),
   health: (vaultId: string) => guard(async () => unwrap(await IndexService.health(vaultId))),
+};
+
+export const mutationApi = {
+  plan: (request: Parameters<typeof MutationService.plan>[0]) =>
+    guard(async () => unwrap(await MutationService.plan(request))),
+  rename: (vaultId: string, path: string, newName: string) =>
+    guard(async () => unwrap(await MutationService.rename(vaultId, path, newName))),
+  createFile: (vaultId: string, dirPath: string, name: string) =>
+    guard(async () => unwrap(await MutationService.createFile(vaultId, dirPath, name))),
+  createDir: (vaultId: string, dirPath: string, name: string) =>
+    guard(async () => unwrap(await MutationService.createDir(vaultId, dirPath, name))),
+  planMove: (vaultId: string, sources: string[], targetDir: string) =>
+    guard(async () => unwrap(await MutationService.planMove(vaultId, sources, targetDir))),
+  execute: (plan: MutationPlan) => guard(async () => unwrap(await MutationService.execute(plan))),
+  auditList: (vaultId: string, planId: string, limit: number) =>
+    guard(async () => unwrap(await MutationService.auditList(vaultId, planId, limit))),
+  rewindPrepare: (vaultId: string, transactionId: string) =>
+    guard(async () => unwrap(await MutationService.rewindPrepare(vaultId, transactionId))),
+  rewindCommit: (vaultId: string, transactionId: string) =>
+    guard(async () => unwrap(await MutationService.rewindCommit(vaultId, transactionId))),
+  provenanceList: (vaultId: string) => guard(async () => unwrap(await MutationService.provenanceList(vaultId))),
+  provenanceState: (vaultId: string, path: string) =>
+    guard(async () => unwrap(await MutationService.provenanceState(vaultId, path))),
 };
 
 export const windowApi = {

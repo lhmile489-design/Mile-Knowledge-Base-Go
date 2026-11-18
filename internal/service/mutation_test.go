@@ -243,3 +243,87 @@ func TestMutationServiceRejectsBadIDs(t *testing.T) {
 		t.Errorf("rewindCommit bad vault accepted: %+v", got.Failure)
 	}
 }
+
+func TestProvenanceRecordedOnCopyAndSyncedByEdit(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	svc := NewMutationService(app)
+	ctx := context.Background()
+
+	writeServiceFile(t, root, "raws/来源.md", "第一版")
+	copyPlan := svc.Plan(ctx, contract.PlanRequest{VaultID: vaultID, Origin: "user",
+		Actions: []contract.MutationAction{{
+			ID: "a1", Kind: contract.MutCopy, Source: "raws/来源.md", Target: "projects/来源.md",
+		}}})
+	if copyPlan.Failure != nil {
+		t.Fatalf("plan: %+v", copyPlan.Failure)
+	}
+	if report := svc.Execute(ctx, *copyPlan.Plan); report.Status != "completed" {
+		t.Fatalf("copy report = %+v", report)
+	}
+
+	list := svc.ProvenanceList(ctx, vaultID)
+	if len(list.Entries) != 1 {
+		t.Fatalf("entries = %+v", list.Entries)
+	}
+	entry := list.Entries[0]
+	if entry.CopyPath != "projects/来源.md" || entry.SourcePath != "raws/来源.md" {
+		t.Errorf("entry = %+v", entry)
+	}
+	if entry.Assessment.State != "up-to-date" || entry.Assessment.CanSyncFromSource {
+		t.Errorf("initial assessment = %+v", entry.Assessment)
+	}
+
+	// Source moves on: the copy is untouched, so a sync is offered.
+	writeServiceFile(t, root, "raws/来源.md", "第二版")
+	list = svc.ProvenanceList(ctx, vaultID)
+	if list.Entries[0].Assessment.State != "source-changed" || !list.Entries[0].Assessment.CanSyncFromSource {
+		t.Fatalf("assessment = %+v", list.Entries[0].Assessment)
+	}
+
+	copyRev, rf := vaultReadRevision(t, root, "projects/来源.md")
+	if rf != nil {
+		t.Fatal(rf)
+	}
+	syncPlan := svc.Plan(ctx, contract.PlanRequest{VaultID: vaultID, Origin: "user",
+		Actions: []contract.MutationAction{{
+			ID: "a1", Kind: contract.MutEdit, Target: "projects/来源.md", Text: ptrText("第二版"),
+			ExpectedTargetRevision: &copyRev,
+		}}})
+	if syncPlan.Failure != nil {
+		t.Fatalf("sync plan: %+v", syncPlan.Failure)
+	}
+	if report := svc.Execute(ctx, *syncPlan.Plan); report.Status != "completed" {
+		t.Fatalf("sync report = %+v", report)
+	}
+	list = svc.ProvenanceList(ctx, vaultID)
+	if list.Entries[0].Assessment.State != "up-to-date" {
+		t.Fatalf("after sync = %+v", list.Entries[0].Assessment)
+	}
+	sourceSnap, _ := vault.Read(root, "raws/来源.md")
+	if list.Entries[0].BaseHash != sourceSnap.Hash || list.Entries[0].BaseRevision != sourceSnap.Revision {
+		t.Errorf("baseline not updated: %+v", list.Entries[0])
+	}
+
+	// A copy outside projects/ never gets a relationship.
+	outside := svc.Plan(ctx, contract.PlanRequest{VaultID: vaultID, Origin: "user",
+		Actions: []contract.MutationAction{{
+			ID: "a1", Kind: contract.MutCopy, Source: "raws/来源.md", Target: "raws/副本.md",
+		}}})
+	if report := svc.Execute(ctx, *outside.Plan); report.Status != "completed" {
+		t.Fatalf("plain copy = %+v", report)
+	}
+	if got := svc.ProvenanceList(ctx, vaultID); len(got.Entries) != 1 {
+		t.Errorf("plain copy created a record: %+v", got.Entries)
+	}
+}
+
+func writeServiceFile(t *testing.T, root, rel, body string) {
+	t.Helper()
+	abs := filepath.Join(root, filepath.FromSlash(rel))
+	if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(abs, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}

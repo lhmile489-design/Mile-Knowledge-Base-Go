@@ -275,6 +275,35 @@ type LinkGraphResult struct {
 	Failure   *Failure       `json:"failure,omitempty"`
 }
 
+// ProvenanceRecordShape is one copy -> source relationship (API.md M34).
+type ProvenanceRecordShape struct {
+	CopyPath     string               `json:"copyPath"`
+	SourcePath   string               `json:"sourcePath"`
+	BaseRevision int64                `json:"baseRevision"`
+	BaseHash     string               `json:"baseHash"`
+	CopiedAt     string               `json:"copiedAt"`
+	Assessment   ProvenanceAssessment `json:"assessment"`
+}
+
+// ProvenanceAssessment is the runtime state of one relationship.
+type ProvenanceAssessment struct {
+	State             string `json:"state"` // up-to-date | source-changed | copy-modified | both-changed | source-missing | copy-missing | unknown
+	CanSyncFromSource bool   `json:"canSyncFromSource"`
+	Reason            string `json:"reason"`
+}
+
+// ProvenanceListResult is the M34 response.
+type ProvenanceListResult struct {
+	Entries []ProvenanceRecordShape `json:"entries"`
+	Failure *Failure                `json:"failure,omitempty"`
+}
+
+// ProvenanceStateResult is the M35 response; Entry nil means no relationship.
+type ProvenanceStateResult struct {
+	Entry   *ProvenanceRecordShape `json:"entry"`
+	Failure *Failure               `json:"failure,omitempty"`
+}
+
 // AuditChangedEvent is E03: the audit ledger gained records.
 type AuditChangedEvent struct {
 	VaultID  string `json:"vaultId,omitempty"`

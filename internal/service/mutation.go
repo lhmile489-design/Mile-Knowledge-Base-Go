@@ -8,6 +8,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/mutation"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 )
 
@@ -40,6 +41,17 @@ func (s *MutationService) Execute(ctx context.Context, plan contract.MutationPla
 		Trash: func(abs string) error {
 			return mygo.Shell.TrashItem(abs)
 		},
+		RecordProvenance: func(copyRel, sourceRel string) {
+			snap, rf := vault.Read(root, sourceRel)
+			if rf != nil {
+				return // no baseline: a record without baseHash would be unknown forever
+			}
+			store, err := mutation.OpenProvenance(root)
+			if err != nil {
+				return
+			}
+			_ = store.Record(copyRel, sourceRel, snap.Revision, snap.Hash)
+		},
 		WriteText: func(rel string, expectedRevision int64, text string) (string, *contract.Failure) {
 			outcome, wf := vault.Write(root, rel, expectedRevision, text)
 			if wf != nil {
@@ -63,6 +75,26 @@ func (s *MutationService) Execute(ctx context.Context, plan contract.MutationPla
 			a.emitAudit(plan.VaultID)
 		}
 	}
+	// A successful edit of a copy whose new content equals its source is the
+	// provenance sync: the baseline moves to the source's current version
+	// (D-009; a manual edit that happens to match is equally "in sync").
+	if store, err := mutation.OpenProvenance(root); err == nil {
+		for _, record := range report.Completed {
+			if record.Kind != contract.MutEdit || record.Target == "" {
+				continue
+			}
+			entry, ok := store.Get(record.Target)
+			if !ok {
+				continue
+			}
+			source, sf := vault.Read(root, entry.SourcePath)
+			if sf != nil || source.Hash != record.AfterHash {
+				continue
+			}
+			_ = store.UpdateBaseline(record.Target, source.Revision, source.Hash)
+		}
+	}
+
 	// Tell the index what changed instead of waiting for the watcher debounce
 	// (legacy register.ts updated the index right after execute).
 	if len(report.TouchedDirectories) > 0 {
@@ -165,6 +197,78 @@ func (s *MutationService) RewindCommit(ctx context.Context, vaultID, transaction
 		}
 	}
 	return result
+}
+
+// ProvenanceList returns every copy -> source relationship with its current
+// state (M34).
+func (s *MutationService) ProvenanceList(ctx context.Context, vaultID string) contract.ProvenanceListResult {
+	result := contract.ProvenanceListResult{Entries: []contract.ProvenanceRecordShape{}}
+	if f := validateID(vaultID); f != nil {
+		result.Failure = f
+		return result
+	}
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		result.Failure = f
+		return result
+	}
+	store, err := mutation.OpenProvenance(root)
+	if err != nil {
+		result.Failure = contract.Fail(contract.CodeIOFailure, "读取来源记录失败")
+		return result
+	}
+	for _, record := range store.All() {
+		result.Entries = append(result.Entries, s.provenanceShape(root, record))
+	}
+	return result
+}
+
+// ProvenanceState returns the relationship for one path (M35); a nil entry
+// means the file has no recorded source.
+func (s *MutationService) ProvenanceState(ctx context.Context, vaultID, path string) contract.ProvenanceStateResult {
+	result := contract.ProvenanceStateResult{}
+	if f := validateID(vaultID); f != nil {
+		result.Failure = f
+		return result
+	}
+	norm, f := pathguard.ValidateRel(path)
+	if f != nil {
+		result.Failure = f
+		return result
+	}
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		result.Failure = f
+		return result
+	}
+	store, err := mutation.OpenProvenance(root)
+	if err != nil {
+		result.Failure = contract.Fail(contract.CodeIOFailure, "读取来源记录失败")
+		return result
+	}
+	if record, ok := store.Get(norm); ok {
+		shape := s.provenanceShape(root, record)
+		result.Entry = &shape
+	}
+	return result
+}
+
+func (s *MutationService) provenanceShape(root string, record mutation.ProvenanceRecord) contract.ProvenanceRecordShape {
+	var sourceHash, copyHash *string
+	if snap, f := vault.Read(root, record.SourcePath); f == nil {
+		hash := snap.Hash
+		sourceHash = &hash
+	}
+	if snap, f := vault.Read(root, record.CopyPath); f == nil {
+		hash := snap.Hash
+		copyHash = &hash
+	}
+	state, canSync, reason := mutation.Assess(record, sourceHash, copyHash)
+	return contract.ProvenanceRecordShape{
+		CopyPath: record.CopyPath, SourcePath: record.SourcePath,
+		BaseRevision: record.BaseRevision, BaseHash: record.BaseHash, CopiedAt: record.CopiedAt,
+		Assessment: contract.ProvenanceAssessment{State: state, CanSyncFromSource: canSync, Reason: reason},
+	}
 }
 
 func containsPath(list []string, path string) bool {

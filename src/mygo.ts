@@ -237,6 +237,36 @@ export interface PlanResult {
   failure?: Failure;
 }
 
+/** ProvenanceAssessment is the runtime state of one relationship. */
+export interface ProvenanceAssessment {
+  /** up-to-date | source-changed | copy-modified | both-changed | source-missing | copy-missing | unknown */
+  state: string;
+  canSyncFromSource: boolean;
+  reason: string;
+}
+
+/** ProvenanceListResult is the M34 response. */
+export interface ProvenanceListResult {
+  entries: ProvenanceRecordShape[];
+  failure?: Failure;
+}
+
+/** ProvenanceRecordShape is one copy -> source relationship (API.md M34). */
+export interface ProvenanceRecordShape {
+  copyPath: string;
+  sourcePath: string;
+  baseRevision: number;
+  baseHash: string;
+  copiedAt: string;
+  assessment: ProvenanceAssessment;
+}
+
+/** ProvenanceStateResult is the M35 response; Entry nil means no relationship. */
+export interface ProvenanceStateResult {
+  entry: ProvenanceRecordShape | null;
+  failure?: Failure;
+}
+
 /** ReadResult is the read outcome union. */
 export interface ReadResult {
   doc?: DocumentSnapshot;
@@ -559,6 +589,16 @@ export const MutationService = {
   plan: bind<[PlanRequest], PlanResult>("MutationService.Plan", (req: PlanRequest) => [req]),
   /** PlanMove plans moving several entries into targetDir (M23). */
   planMove: bind<[string, string[], string], PlanResult>("MutationService.PlanMove", (vaultID: string, sources: string[], targetDir: string) => [vaultID, sources, targetDir]),
+  /**
+   * ProvenanceList returns every copy -> source relationship with its current
+   * state (M34).
+   */
+  provenanceList: bind<[string], ProvenanceListResult>("MutationService.ProvenanceList", (vaultID: string) => [vaultID]),
+  /**
+   * ProvenanceState returns the relationship for one path (M35); a nil entry
+   * means the file has no recorded source.
+   */
+  provenanceState: bind<[string, string], ProvenanceStateResult>("MutationService.ProvenanceState", (vaultID: string, path: string) => [vaultID, path]),
   /** Rename plans a move that only changes the entry name (M20). */
   rename: bind<[string, string, string], PlanResult>("MutationService.Rename", (vaultID: string, path: string, newName: string) => [vaultID, path, newName]),
   /**
