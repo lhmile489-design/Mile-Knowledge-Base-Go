@@ -617,3 +617,104 @@ type AppNoticeEvent struct {
 	Text  string `json:"text"`
 	Level string `json:"level"` // info | warn | fault
 }
+
+// ---- Shared context (API.md M45–M49) ----
+
+// VaultContext mirrors shared/context.ts:85-91: the label is the display name,
+// never an absolute path.
+type VaultContext struct {
+	ID            string `json:"id"`
+	RootLabel     string `json:"rootLabel"`
+	Revision      int64  `json:"revision"`
+	IndexRevision int64  `json:"indexRevision"`
+}
+
+// ActiveDocumentContext is what the user is looking at right now.
+type ActiveDocumentContext struct {
+	Path      string `json:"path"`
+	Revision  int64  `json:"revision"`
+	Dirty     bool   `json:"dirty"`
+	Selection string `json:"selection,omitempty"` // ≤200 characters
+}
+
+// Reference is one user-pinned file. ID is opaque and never encodes the path.
+type Reference struct {
+	ID       string `json:"id"`
+	Path     string `json:"path"`
+	Revision int64  `json:"revision"`
+	Note     string `json:"note,omitempty"` // ≤500 characters
+	PinnedAt string `json:"pinnedAt"`
+}
+
+// TaskStatus values (shared/context.ts:21).
+const (
+	TaskQueued    = "queued"
+	TaskRunning   = "running"
+	TaskBlocked   = "blocked"
+	TaskDone      = "done"
+	TaskCancelled = "cancelled"
+)
+
+// TaskItem is one handoff task on the shared board.
+type TaskItem struct {
+	ID          string   `json:"id"`
+	Owner       string   `json:"owner"`
+	Status      string   `json:"status"`
+	Goal        string   `json:"goal"`
+	Inputs      []string `json:"inputs"`
+	Constraints []string `json:"constraints"`
+	Outputs     []string `json:"outputs"`
+	CreatedBy   string   `json:"createdBy"`
+	CreatedAt   string   `json:"createdAt"`
+	UpdatedAt   string   `json:"updatedAt"`
+}
+
+// Decision is one confirmed decision on the shared log.
+type Decision struct {
+	ID        string   `json:"id"`
+	Summary   string   `json:"summary"`
+	DecidedBy string   `json:"decidedBy"` // agent id or "user"
+	DecidedAt string   `json:"decidedAt"`
+	Paths     []string `json:"paths,omitempty"`
+}
+
+// ContextActionSummary is the trimmed action record injected into context.
+type ContextActionSummary struct {
+	ID     string `json:"id"`
+	Kind   string `json:"kind"`
+	Source string `json:"source,omitempty"`
+	Target string `json:"target,omitempty"`
+	Status string `json:"status"`
+	At     string `json:"at"`
+}
+
+// RetrievalItem is one retrieved snippet with its relevance and reason.
+type RetrievalItem struct {
+	ID       string  `json:"id"`
+	Path     string  `json:"path"`
+	Revision int64   `json:"revision"`
+	Excerpt  string  `json:"excerpt"`
+	Score    float64 `json:"score"`
+	Reason   string  `json:"reason"`
+	Area     string  `json:"area"`
+	Stale    bool    `json:"stale,omitempty"`
+}
+
+// SharedContext is M45's snapshot; E09 broadcasts the same shape.
+type SharedContext struct {
+	SnapshotID       string                 `json:"snapshotId"`
+	Sequence         int64                  `json:"sequence"`
+	Vault            VaultContext           `json:"vault"`
+	ActiveDocument   *ActiveDocumentContext `json:"activeDocument,omitempty"`
+	PinnedReferences []Reference            `json:"pinnedReferences"`
+	TaskBoard        []TaskItem             `json:"taskBoard"`
+	DecisionLog      []Decision             `json:"decisionLog"`
+	ActionLedger     []ContextActionSummary `json:"actionLedger"`
+	RetrievalBundle  []RetrievalItem        `json:"retrievalBundle"`
+}
+
+// SharedContextResult is the M45–M48 reply.
+type SharedContextResult struct {
+	Context *SharedContext `json:"context,omitempty"`
+	Failure *Failure       `json:"failure,omitempty"`
+}

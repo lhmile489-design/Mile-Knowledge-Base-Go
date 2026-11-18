@@ -363,6 +363,9 @@ func (a *App) updateIndexStatus(handle *indexHandle, st index.Status) {
 	}
 	handle.mu.Unlock()
 	a.emitIndexStatus(handle)
+	// Keep the shared context's index revision current; the hub skips
+	// sequence bumps when the value repeats.
+	a.syncContextVault(vaultID)
 }
 
 // enqueueIndex hands a watcher batch to the index worker without blocking.

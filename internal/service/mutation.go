@@ -100,6 +100,22 @@ func (s *MutationService) Execute(ctx context.Context, plan contract.MutationPla
 	if len(report.TouchedDirectories) > 0 {
 		s.app.enqueueIndex(plan.VaultID, report.TouchedDirectories)
 	}
+	// Action ledger: the index update is queued first, then the completed
+	// actions enter the shared context (legacy register.ts:462-475 order).
+	if s.app.Context != nil && len(report.Completed) > 0 {
+		summaries := make([]contract.ContextActionSummary, 0, len(report.Completed))
+		for _, record := range report.Completed {
+			at := record.CompletedAt
+			if at == "" {
+				at = record.CreatedAt
+			}
+			summaries = append(summaries, contract.ContextActionSummary{
+				ID: record.ID, Kind: record.Kind, Source: record.Source, Target: record.Target,
+				Status: record.Status, At: at,
+			})
+		}
+		s.app.Context.RecordActions(summaries)
+	}
 	return report
 }
 

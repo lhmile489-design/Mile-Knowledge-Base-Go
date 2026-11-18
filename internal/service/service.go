@@ -42,19 +42,22 @@ type App struct {
 	Vaults   *vault.Registry
 	Audit    *mutation.AuditLedger
 	Keys     *ai.KeyStore
+	// Context is the shared context hub (M45–M49, T08).
+	Context *ai.ContextHub
 
-	mu        sync.Mutex
-	win       *mygo.Window
-	tray      *mygo.Tray
-	trayOK    bool
-	quitting  bool
-	dirty     bool
-	picks     map[string]pickToken
-	watchers  map[string]context.CancelFunc
-	indexes   map[string]*indexHandle
-	auditSeq  int64
-	auditErr  string
-	resolvers map[string]*vaultResolver
+	mu             sync.Mutex
+	win            *mygo.Window
+	tray           *mygo.Tray
+	trayOK         bool
+	quitting       bool
+	dirty          bool
+	picks          map[string]pickToken
+	watchers       map[string]context.CancelFunc
+	indexes        map[string]*indexHandle
+	vaultRevisions map[string]int64
+	auditSeq       int64
+	auditErr       string
+	resolvers      map[string]*vaultResolver
 }
 
 type pickToken struct {
@@ -73,15 +76,17 @@ func New(dataDir, legacyDir string) (*App, error) {
 		return nil, errFromFailure(*f)
 	}
 	app := &App{
-		DataDir:   dataDir,
-		Settings:  store,
-		Audit:     audit,
-		Keys:      ai.NewKeyStore(ai.NewSecretsBackend("")),
-		auditErr:  auditErrText(auditErr),
-		picks:     map[string]pickToken{},
-		watchers:  map[string]context.CancelFunc{},
-		indexes:   map[string]*indexHandle{},
-		resolvers: map[string]*vaultResolver{},
+		DataDir:        dataDir,
+		Settings:       store,
+		Audit:          audit,
+		Keys:           ai.NewKeyStore(ai.NewSecretsBackend("")),
+		Context:        ai.NewContextHub(),
+		auditErr:       auditErrText(auditErr),
+		picks:          map[string]pickToken{},
+		watchers:       map[string]context.CancelFunc{},
+		indexes:        map[string]*indexHandle{},
+		vaultRevisions: map[string]int64{},
+		resolvers:      map[string]*vaultResolver{},
 	}
 	app.Vaults = vault.New(store)
 	app.Vaults.Load()
@@ -175,6 +180,7 @@ func (s *VaultService) Open(vaultID string) contract.VaultListResult {
 	s.app.loadAliases(vaultID)
 	s.app.startWatch(vaultID)
 	s.app.startIndex(vaultID)
+	s.app.syncContextVault(vaultID)
 	return s.app.Vaults.List()
 }
 
@@ -242,6 +248,7 @@ func (s *VaultService) registerChosen(root string) contract.ChooseVaultResult {
 	s.app.loadAliases(v.ID)
 	s.app.startWatch(v.ID)
 	s.app.startIndex(v.ID)
+	s.app.syncContextVault(v.ID)
 	return contract.ChooseVaultResult{Vault: &v, ScaffoldedDir: scaffolded}
 }
 
@@ -605,6 +612,8 @@ func (a *App) startWatch(vaultID string) {
 
 	watcher, err := watch.New(watch.MygoBackend{}, root, func(dirs []string) {
 		a.enqueueIndex(vaultID, dirs)
+		a.bumpVaultRevision(vaultID)
+		a.syncContextVault(vaultID)
 		if win == nil {
 			return
 		}
@@ -642,5 +651,6 @@ func (a *App) StartActiveWatch() {
 		a.loadAliases(id)
 		a.startWatch(id)
 		a.startIndex(id)
+		a.syncContextVault(id)
 	}
 }

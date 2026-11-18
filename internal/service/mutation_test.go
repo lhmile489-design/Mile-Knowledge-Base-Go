@@ -336,3 +336,35 @@ func writeServiceFile(t *testing.T, root, rel, body string) {
 		t.Fatal(err)
 	}
 }
+
+func TestMutationRecordsActionLedger(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	svc := NewMutationService(app)
+	ctx := context.Background()
+
+	writeServiceFile(t, root, "raws/账本.md", "旧")
+	rev, f := vaultReadRevision(t, root, "raws/账本.md")
+	if f != nil {
+		t.Fatal(f)
+	}
+	plan := svc.Plan(ctx, contract.PlanRequest{VaultID: vaultID, Origin: "user",
+		Actions: []contract.MutationAction{{
+			ID: "a1", Kind: contract.MutEdit, Target: "raws/账本.md", Text: ptrText("新"),
+			ExpectedTargetRevision: &rev,
+		}}})
+	if plan.Failure != nil {
+		t.Fatalf("plan: %+v", plan.Failure)
+	}
+	if report := svc.Execute(ctx, *plan.Plan); report.Status != "completed" {
+		t.Fatalf("report: %+v", report)
+	}
+
+	ledger := app.Context.Snapshot().ActionLedger
+	if len(ledger) != 1 {
+		t.Fatalf("ledger: %+v", ledger)
+	}
+	entry := ledger[0]
+	if entry.Kind != contract.MutEdit || entry.Target != "raws/账本.md" || entry.Status != "completed" || entry.At == "" {
+		t.Fatalf("entry: %+v", entry)
+	}
+}

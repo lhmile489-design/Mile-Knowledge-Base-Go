@@ -208,14 +208,6 @@ func TestMutatePermanentDeleteNeedsFreshApproval(t *testing.T) {
 	}
 }
 
-func TestHandoffNotReady(t *testing.T) {
-	runner, _, _ := runnerFor(t, &fakeGate{})
-	out, _ := runner.Run(context.Background(), call("handoff_task", `{"owner":"scout","goal":"x"}`))
-	if !strings.Contains(out, "尚未就绪") {
-		t.Fatalf("output: %s", out)
-	}
-}
-
 func TestSetAliases(t *testing.T) {
 	runner, root, _ := runnerFor(t, &fakeGate{})
 	out, _ := runner.Run(context.Background(), call("set_aliases", `{"aliases":{"raws":"暂存"}}`))
@@ -417,5 +409,55 @@ func TestSetAliasesRejectsTraversal(t *testing.T) {
 	out, _ := runner.Run(context.Background(), call("set_aliases", `{"aliases":{"../evil":"x"}}`))
 	if !strings.Contains(out, "设置别名失败") {
 		t.Fatalf("output: %s", out)
+	}
+}
+
+func TestHandoffCreatesTask(t *testing.T) {
+	runner, _, _ := runnerFor(t, &fakeGate{})
+	out, _ := runner.Run(context.Background(), call("handoff_task",
+		`{"owner":"scout","goal":"找出所有草稿","inputs":["raws/a.md"],"constraints":["只读"]}`))
+	if !strings.Contains(out, "已创建交接任务") || !strings.Contains(out, "接收者 scout") {
+		t.Fatalf("output: %s", out)
+	}
+	board := runner.context.Snapshot().TaskBoard
+	if len(board) != 1 {
+		t.Fatalf("board: %+v", board)
+	}
+	task := board[0]
+	if task.Owner != "scout" || task.CreatedBy != "curator" || task.Status != contract.TaskQueued {
+		t.Fatalf("task: %+v", task)
+	}
+	if len(task.Inputs) != 1 || len(task.Constraints) != 1 {
+		t.Fatalf("task lists: %+v", task)
+	}
+}
+
+func TestHandoffRejections(t *testing.T) {
+	runner, _, _ := runnerFor(t, &fakeGate{})
+	cases := map[string]string{
+		`{"owner":"","goal":"x"}`:                                      "owner 不能为空",
+		`{"owner":"scout","goal":"  "}`:                                "goal 不能为空",
+		`{"owner":"curator","goal":"x"}`:                               "接收者不能是自己",
+		`{"owner":"scout","goal":"` + strings.Repeat("长", 4001) + `"}`: "4000",
+	}
+	for body, want := range cases {
+		out, _ := runner.Run(context.Background(), call("handoff_task", body))
+		if !strings.Contains(out, want) {
+			t.Errorf("%s -> %s", body, out)
+		}
+	}
+	if len(runner.context.Snapshot().TaskBoard) != 0 {
+		t.Fatalf("rejected handoffs created tasks")
+	}
+
+	tooMany := `{"owner":"scout","goal":"x","inputs":[` + strings.Repeat(`"i",`, 50) + `"i"]}`
+	out, _ := runner.Run(context.Background(), call("handoff_task", tooMany))
+	if !strings.Contains(out, "最多 50 条") {
+		t.Fatalf("inputs limit: %s", out)
+	}
+	longInput := `{"owner":"scout","goal":"x","inputs":["` + strings.Repeat("长", 4001) + `"]}`
+	out, _ = runner.Run(context.Background(), call("handoff_task", longInput))
+	if !strings.Contains(out, "4000") {
+		t.Fatalf("input length: %s", out)
 	}
 }

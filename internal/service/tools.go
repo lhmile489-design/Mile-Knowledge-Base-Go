@@ -35,13 +35,14 @@ type AgentToolRunner struct {
 	gate      ApprovalGate
 	mutation  *MutationService
 	index     *IndexService
+	context   *ai.ContextHub
 }
 
 // NewAgentToolRunner builds a runner for one agent session.
 func NewAgentToolRunner(app *App, vaultID, agent, sessionID string, gate ApprovalGate) *AgentToolRunner {
 	return &AgentToolRunner{
 		app: app, vaultID: vaultID, agent: agent, sessionID: sessionID, gate: gate,
-		mutation: NewMutationService(app), index: NewIndexService(app),
+		mutation: NewMutationService(app), index: NewIndexService(app), context: app.Context,
 	}
 }
 
@@ -70,7 +71,7 @@ func (r *AgentToolRunner) Run(ctx context.Context, call ai.CompletedToolCall) (s
 	case "set_aliases":
 		return r.setAliases(ctx, call.Arguments), nil
 	case "handoff_task":
-		return "交接尚未就绪：该工具在共享上下文任务中提供。", nil
+		return r.handoff(call.Arguments), nil
 	default:
 		return fmt.Sprintf("未知工具：%s。可用的工具只有 %s。", call.Name, toolNames()), nil
 	}
@@ -459,6 +460,59 @@ func (r *AgentToolRunner) mutateNotes(ctx context.Context, raw string) (string, 
 		return "执行失败：" + report.Failure.Message, nil
 	}
 	return fmt.Sprintf("完成 %d 项，失败 %d 项", len(report.Completed), len(report.Failed)), nil
+}
+
+// handoff creates one task on the shared board. The initiator is the runner's
+// session agent, never the model's claim (kbTools.ts:533-553); the receiver
+// cannot be the sender. PRD FR-AI-AI limits: goal ≤4000, inputs and
+// constraints ≤50 entries of ≤4000 characters each.
+func (r *AgentToolRunner) handoff(raw string) string {
+	var args struct {
+		Owner       string   `json:"owner"`
+		Goal        string   `json:"goal"`
+		Inputs      []string `json:"inputs"`
+		Constraints []string `json:"constraints"`
+	}
+	if err := json.Unmarshal([]byte(rawOrDefault(raw, "{}")), &args); err != nil {
+		return "参数不合法：无法解析为 JSON"
+	}
+	owner := strings.TrimSpace(args.Owner)
+	goal := strings.TrimSpace(args.Goal)
+	if owner == "" {
+		return "owner 不能为空"
+	}
+	if goal == "" {
+		return "goal 不能为空：交接任务必须写明目标"
+	}
+	if len([]rune(goal)) > 4000 {
+		return "参数不合法：goal 不能超过 4000 字符"
+	}
+	if len(args.Inputs) > 50 {
+		return "参数不合法：inputs 最多 50 条"
+	}
+	if len(args.Constraints) > 50 {
+		return "参数不合法：constraints 最多 50 条"
+	}
+	for _, input := range args.Inputs {
+		if len([]rune(input)) > 4000 {
+			return "参数不合法：inputs 的每条不能超过 4000 字符"
+		}
+	}
+	for _, constraint := range args.Constraints {
+		if len([]rune(constraint)) > 4000 {
+			return "参数不合法：constraints 的每条不能超过 4000 字符"
+		}
+	}
+	if r.context == nil {
+		return "交接失败：共享上下文不可用"
+	}
+	task, f := r.context.CreateHandoff(r.agent, ai.HandoffRequest{
+		Owner: owner, Goal: goal, Inputs: args.Inputs, Constraints: args.Constraints,
+	})
+	if f != nil {
+		return f.Message
+	}
+	return "已创建交接任务 " + task.ID + "，接收者 " + owner
 }
 
 func (r *AgentToolRunner) setAliases(ctx context.Context, raw string) string {
