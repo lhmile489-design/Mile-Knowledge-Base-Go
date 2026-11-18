@@ -48,11 +48,13 @@ func main() {
 	docs := service.NewDocService(app)
 	renders := service.NewRenderService(app)
 	windows := service.NewWindowService(app, vaults)
+	indexes := service.NewIndexService(app)
 	mygo.Bind(vaults)
 	mygo.Bind(settingsSvc)
 	mygo.Bind(docs)
 	mygo.Bind(renders)
 	mygo.Bind(windows)
+	mygo.Bind(indexes)
 
 	// Schemes must be registered before the windows that use them.
 	if err := mygo.Protocol.HandleFunc("kbimg", service.ImageHandler(app)); err != nil {

@@ -78,6 +78,24 @@ export interface FileEntry {
   alias?: string;
 }
 
+/**
+ * IndexStatus is what IndexService.Status (M25) returns and what the
+ * index-status event (E02) carries.
+ */
+export interface IndexStatus {
+  vaultId?: string;
+  /** idle | scanning | ready | error */
+  phase: string;
+  documentCount: number;
+  tokenCount: number;
+  scanned: number;
+  skipped: number;
+  revision: number;
+  lastBuiltAt?: string;
+  errorMessage?: string;
+  failure?: Failure;
+}
+
 /** LayoutSettings mirrors the persisted workbench geometry. */
 export interface LayoutSettings {
   sidebarWidth: number;
@@ -281,10 +299,20 @@ export const WindowService = {
   toggleMaximize: bind<[], void>("WindowService.ToggleMaximize", () => []),
 } as const;
 
+/** IndexService exposes the search index (API.md M25, M26). */
+export const IndexService = {
+  /** Rebuild drops the index file and starts a background rebuild (M26). */
+  rebuild: bind<[string], IndexStatus>("IndexService.Rebuild", (vaultID: string) => [vaultID]),
+  /** Status returns the current index state for a vault (M25). */
+  status: bind<[string], IndexStatus>("IndexService.Status", (vaultID: string) => [vaultID]),
+} as const;
+
 // ---- Events ----
 
 /** Events sent by the Go side. Subscribe with `events.name.on(listener)`. */
 export const events = {
+  /** IndexStatusEvent is E02: the index phase or progress changed. */
+  indexStatus: event<IndexStatus>("index-status"),
   vaultChanged: event<VaultChangedEvent>("vault-changed"),
   settingsChanged: event<AppSettings>("settings-changed"),
   themeChanged: event<Record<string, string>>("theme-changed"),

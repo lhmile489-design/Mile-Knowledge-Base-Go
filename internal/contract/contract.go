@@ -220,6 +220,21 @@ const (
 	EventAppNotice       = "app-notice"
 )
 
+// IndexStatus is what IndexService.Status (M25) returns and what the
+// index-status event (E02) carries.
+type IndexStatus struct {
+	VaultID       string   `json:"vaultId,omitempty"`
+	Phase         string   `json:"phase"` // idle | scanning | ready | error
+	DocumentCount int      `json:"documentCount"`
+	TokenCount    int      `json:"tokenCount"`
+	Scanned       int      `json:"scanned"`
+	Skipped       int      `json:"skipped"`
+	Revision      int64    `json:"revision"`
+	LastBuiltAt   string   `json:"lastBuiltAt,omitempty"`
+	ErrorMessage  string   `json:"errorMessage,omitempty"`
+	Failure       *Failure `json:"failure,omitempty"`
+}
+
 // VaultChangedEvent tells the page which directory levels need a refresh.
 type VaultChangedEvent struct {
 	VaultID     string   `json:"vaultId"`

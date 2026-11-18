@@ -46,6 +46,7 @@ type App struct {
 	dirty     bool
 	picks     map[string]pickToken
 	watchers  map[string]context.CancelFunc
+	indexes   map[string]*indexHandle
 	resolvers map[string]*vaultResolver
 }
 
@@ -65,6 +66,7 @@ func New(dataDir, legacyDir string) (*App, error) {
 		Settings:  store,
 		picks:     map[string]pickToken{},
 		watchers:  map[string]context.CancelFunc{},
+		indexes:   map[string]*indexHandle{},
 		resolvers: map[string]*vaultResolver{},
 	}
 	app.Vaults = vault.New(store)
@@ -146,6 +148,8 @@ func (s *VaultService) Open(vaultID string) contract.VaultListResult {
 		return contract.VaultListResult{Failure: f}
 	}
 	s.app.loadAliases(vaultID)
+	s.app.startWatch(vaultID)
+	s.app.startIndex(vaultID)
 	return s.app.Vaults.List()
 }
 
@@ -155,6 +159,7 @@ func (s *VaultService) Forget(vaultID string) contract.VaultListResult {
 		return contract.VaultListResult{Failure: f}
 	}
 	s.app.stopWatch(vaultID)
+	s.app.indexStop(vaultID, true)
 	root, _ := s.app.Vaults.Root(vaultID)
 	if f := s.app.Vaults.Forget(vaultID); f != nil {
 		return contract.VaultListResult{Failure: f}
@@ -211,6 +216,7 @@ func (s *VaultService) registerChosen(root string) contract.ChooseVaultResult {
 	}
 	s.app.loadAliases(v.ID)
 	s.app.startWatch(v.ID)
+	s.app.startIndex(v.ID)
 	return contract.ChooseVaultResult{Vault: &v, ScaffoldedDir: scaffolded}
 }
 
@@ -561,6 +567,7 @@ func (a *App) startWatch(vaultID string) {
 	if f != nil {
 		return
 	}
+	a.startIndex(vaultID)
 	ctx, cancel := context.WithCancel(context.Background())
 	a.mu.Lock()
 	if old, ok := a.watchers[vaultID]; ok {
@@ -572,6 +579,7 @@ func (a *App) startWatch(vaultID string) {
 	a.mu.Unlock()
 
 	watcher, err := watch.New(watch.MygoBackend{}, root, func(dirs []string) {
+		a.enqueueIndex(vaultID, dirs)
 		if win == nil {
 			return
 		}
@@ -608,5 +616,6 @@ func (a *App) StartActiveWatch() {
 	if id := a.Vaults.Active(); id != "" {
 		a.loadAliases(id)
 		a.startWatch(id)
+		a.startIndex(id)
 	}
 }
