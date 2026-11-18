@@ -718,3 +718,89 @@ type SharedContextResult struct {
 	Context *SharedContext `json:"context,omitempty"`
 	Failure *Failure       `json:"failure,omitempty"`
 }
+
+// ---- Conversations (API.md M50–M59, 数据库设计 4.4) ----
+
+// ConversationMeta is one row of index.json.
+type ConversationMeta struct {
+	ID        string   `json:"id"`
+	Title     string   `json:"title"`
+	CreatedAt string   `json:"createdAt"`
+	UpdatedAt string   `json:"updatedAt"`
+	TurnCount int      `json:"turnCount"`
+	Agents    []string `json:"agents"`
+	Pinned    bool     `json:"pinned"`
+}
+
+// ConversationIndex is index.json; ActiveID nil means null.
+type ConversationIndex struct {
+	ActiveID      *string            `json:"activeId"`
+	Conversations []ConversationMeta `json:"conversations"`
+}
+
+// ConversationEvent is one jsonl line. Text/ID/Title/Status/StopReason/Message
+// are pointers so each event type serialises only its own fields while keeping
+// the legacy presence checks on read.
+type ConversationEvent struct {
+	Type       string  `json:"t"` // user|message|thought|tool|turn-end|error
+	At         string  `json:"at"`
+	Agent      string  `json:"agent"`
+	Text       *string `json:"text,omitempty"`
+	ID         *string `json:"id,omitempty"`
+	Title      *string `json:"title,omitempty"`
+	Kind       string  `json:"kind,omitempty"`
+	Status     *string `json:"status,omitempty"`
+	Detail     string  `json:"detail,omitempty"`
+	StopReason *string `json:"stopReason,omitempty"`
+	Message    *string `json:"message,omitempty"`
+}
+
+// ConversationListResult is M50.
+type ConversationListResult struct {
+	Index   *ConversationIndex `json:"index,omitempty"`
+	Failure *Failure           `json:"failure,omitempty"`
+}
+
+// ConversationMetaResult is M52–M54.
+type ConversationMetaResult struct {
+	Conversation *ConversationMeta `json:"conversation,omitempty"`
+	Failure      *Failure          `json:"failure,omitempty"`
+}
+
+// ConversationReadResult is M51 and M56.
+type ConversationReadResult struct {
+	Meta      *ConversationMeta   `json:"meta,omitempty"`
+	Events    []ConversationEvent `json:"events,omitempty"`
+	Skipped   int                 `json:"skipped"`
+	Truncated bool                `json:"truncated"`
+	Failure   *Failure            `json:"failure,omitempty"`
+}
+
+// ConversationSearchHit is one M57 hit.
+type ConversationSearchHit struct {
+	ConversationID string `json:"conversationId"`
+	Title          string `json:"title"`
+	Excerpt        string `json:"excerpt"`
+	MatchedAt      string `json:"matchedAt"`
+}
+
+// ConversationSearchResult is M57.
+type ConversationSearchResult struct {
+	VaultID string                  `json:"vaultId"`
+	Query   string                  `json:"query"`
+	Hits    []ConversationSearchHit `json:"hits"`
+	Failure *Failure                `json:"failure,omitempty"`
+}
+
+// ConversationExportResult is M58; Saved false means the user cancelled.
+type ConversationExportResult struct {
+	Saved   bool     `json:"saved"`
+	Name    string   `json:"name"`
+	Failure *Failure `json:"failure,omitempty"`
+}
+
+// ConversationClearResult is M59.
+type ConversationClearResult struct {
+	Removed int      `json:"removed"`
+	Failure *Failure `json:"failure,omitempty"`
+}

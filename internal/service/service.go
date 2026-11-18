@@ -18,6 +18,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/conversation"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/mutation"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/settings"
@@ -44,6 +45,11 @@ type App struct {
 	Keys     *ai.KeyStore
 	// Context is the shared context hub (M45–M49, T08).
 	Context *ai.ContextHub
+	// Conversations is the conversation history store (M50–M59, T09).
+	Conversations *conversation.Store
+	// AgentBusy reports whether a turn is running for the vault (M56 guard,
+	// wired by the turn loop in T10).
+	AgentBusy func(vaultID string) bool
 
 	mu             sync.Mutex
 	win            *mygo.Window
@@ -81,6 +87,7 @@ func New(dataDir, legacyDir string) (*App, error) {
 		Audit:          audit,
 		Keys:           ai.NewKeyStore(ai.NewSecretsBackend("")),
 		Context:        ai.NewContextHub(),
+		Conversations:  conversation.NewStore(dataDir),
 		auditErr:       auditErrText(auditErr),
 		picks:          map[string]pickToken{},
 		watchers:       map[string]context.CancelFunc{},
