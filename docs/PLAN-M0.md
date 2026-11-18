@@ -1,6 +1,6 @@
 # M0 实施计划：基础工程 + 首个业务闭环
 
-> 状态：已批准执行 v1.0（用户 2026-11-18 批准 B-05）。未执行任何任务。
+> 状态：M0 已完成（2026-11-18）：T00–T11 全部交付，AC 15/15，性能见 §6。T11 收尾已完成，推送待用户确认。未执行任何任务。
 > 本次目标：完成工作流阶段 10（基础工程）与阶段 11（首个业务闭环）。闭环为「打开知识库 → 浏览文件树 → 阅读 / 编辑 / 保存文档 → 外部修改同步」，对应技术设计第 9 节能力 C1 + C2 + C3。
 > 当前计划入口：本文件。M0 完成后，下一里程碑用 docs/PLAN-M1.md。
 
@@ -374,8 +374,8 @@ RESULT pass=15 fail=0
 
 ### 下次会话先读
 
-- 当前阶段：阶段 10/11，M0 执行中（B-05 已批准）。
-- 下一个任务：见第 9 节账本最后一行。
+- 当前阶段：M0 完成；M1 计划未制定。
+- 下一个任务：M1 计划（用户将更换模型后编写）。
 - 工作区：没有 git；没有正式工程代码；spikes/r4-window 的验证应用可能还在运行（PID 17392），不是本计划启动的。
 - 最近验证：阶段 07 的 spike 结果，见技术设计第 7 节。
 - 待决事项：B-05；13 项手动确认（T04）。
@@ -388,6 +388,7 @@ RESULT pass=15 fail=0
 | 2026-11-18 | T01 完成 | mygo 模板 + package/tsconfig/vite + 最小窗口 | doctor 必需项全绿；tsc 通过；vite build 通过；dev 启动 75s 正常 | — | T02 |
 | 2026-11-18 | T02 完成 | internal/testkit、cmd/genvault、vitest 配置 | 门禁负向对照：4 个门禁在故意破坏时均失败，移除后恢复通过 | — | T03 |
 | 2026-11-18 | T03 完成 | src/styles/tokens.css（4913 行原样移植）、theme-init.js、compare-tokens | 80 个令牌声明零差异 | 未按 DESIGN §3 拆分文件，M0 保持单文件，拆分留到 M3 | T05 |
+| 2026-11-18 | T11 完成 | README 命令表与状态、CLAUDE.md 当前阶段、本计划状态 | 提交 12 个，未推送；推送需用户确认 | 无（推送待确认） | M1 |
 | 2026-11-18 | T10 完成 | 生产构建注入 CSP（Vite 插件，仅 build）；`scripts/e2e/{ac-m0,perf}.sh` 入库；样本生成器改为一半嵌套一半平铺 | AC 15/15 通过；性能：典型冷启动 1101ms、大库 908ms、5000 项目录 320ms、滚动与 1000 文件外部改动长任务均为 0；CSP meta 存在于 dist 与页面 | 旧版性能基线未测（PRD Q7 待办）；读模式单独计时未做 | T11 |
 | 2026-11-18 | T09 完成 | ReaderView（Go HTML 注入 + 事件委托）、阅读/源码/分栏三模式、kbimg 图片、代码复制、wikilink 导航；EditorPane 模式切换与大文件禁用 | e2e：`.prose` 渲染、任务复选框、原始 HTML 以文字显示（无 div.x）、图片经 `http://kbimg.localhost/...` 加载（naturalWidth=1）、点 wikilink 打开目标文档（2 个标签、active=共享笔记.md）、点未创建链接不动作；分栏下 CM 与 prose 并存；截图 design/m0/t09-reader-1440x900.png | 表格/代码块由 render golden 覆盖，样本文档里没有，未在真实窗口截图；CSP 未接入 | T10 |
 | 2026-11-18 | T07b 审查修复 | 阻断：dirty 只上报当前标签 → 改为聚合全部标签；需要修改：稍后处理死按钮（新增 dismissConflict）、采用磁盘版本两步确认（600ms 门 + 4s 复位，纯函数 + 4 个单测）、新建文件权限 0600→0644、forget 清理 revision、外部变更按 hash 判定、冲突载荷带 diskSize；补 Go 回归测试 5 项（同大小同 mtime 不同内容、expectedRevision=0 冲突、revision 稳定、无 tmp 残留、负数 revision） | vault 测试 15 项通过；vitest 12 项；tsc 通过；API.md 补 diskSize 字段 | 自写回环断言留 T10 | T09 |
