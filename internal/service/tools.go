@@ -9,6 +9,7 @@ import (
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/policy"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 )
@@ -19,7 +20,7 @@ import (
 // A nil return allows the operation. A returned context error must reach the
 // turn loop so cancellation stops the turn; other errors become tool text.
 type ApprovalGate interface {
-	AllowWrite(ctx context.Context, sessionID, path string) error
+	AllowWrite(ctx context.Context, sessionID, path string, preview *contract.WritePreview) error
 	AllowMutation(ctx context.Context, sessionID, path string) error
 	ConsumeFreshMutation(ctx context.Context, sessionID, path string) error
 }
@@ -225,6 +226,25 @@ func (r *AgentToolRunner) listDir(raw string) string {
 	return strings.Join(lines, "\n")
 }
 
+// confirmPath runs the two policy gates of FR-AI-PERM: the spelling check
+// first (no disk access, so an invalid path never touches the disk), then the
+// canonical check on the resolved on-disk spelling, which expands Windows 8.3
+// short names and case aliases (legacy VaultFsBridge.ts:161-172). The
+// canonical path is what the caller must read and write.
+func (r *AgentToolRunner) confirmPath(root, path string) (string, string) {
+	if decision := policy.CanWrite(r.agent, path); !decision.Allowed {
+		return "", "被拒绝：" + decision.Reason
+	}
+	canonical, f := pathguard.CanonicalRel(root, path)
+	if f != nil {
+		return "", "被拒绝：" + f.Message
+	}
+	if decision := policy.CanWrite(r.agent, canonical); !decision.Allowed {
+		return "", "被拒绝：" + decision.Reason
+	}
+	return canonical, ""
+}
+
 func (r *AgentToolRunner) writeNote(ctx context.Context, raw string) (string, error) {
 	var args struct {
 		Path    string `json:"path"`
@@ -237,23 +257,29 @@ func (r *AgentToolRunner) writeNote(ctx context.Context, raw string) (string, er
 	if !ok {
 		return "参数不合法：path 必须是知识库内的相对路径", nil
 	}
-	if decision := policy.CanWrite(r.agent, path); !decision.Allowed {
-		return "被拒绝：" + decision.Reason, nil
-	}
-	if err := r.gate.AllowWrite(ctx, r.sessionID, path); err != nil {
-		return gateError(err)
-	}
 	root, errText := r.root()
 	if errText != "" {
 		return errText, nil
 	}
-	revision := int64(0)
-	if snapshot, f := vault.Read(root, path); f == nil {
-		revision = snapshot.Revision
-	} else if f.Code != contract.CodeNotFound {
-		return "读取失败：" + f.Message, nil
+	canonical, errText := r.confirmPath(root, path)
+	if errText != "" {
+		return errText, nil
 	}
-	outcome, f := vault.Write(root, path, revision, args.Content)
+	revision := int64(0)
+	var preview *contract.WritePreview
+	if snapshot, f := vault.Read(root, canonical); f == nil {
+		revision = snapshot.Revision
+		old := snapshot.Text
+		preview = ai.BuildWritePreview(args.Content, &old, int64(len(args.Content)))
+	} else if f.Code == contract.CodeNotFound {
+		preview = ai.BuildWritePreview(args.Content, nil, int64(len(args.Content)))
+	}
+	// A failed old-text read only drops the preview; the approval still shows
+	// its one-line summary and the write reports the real error (EngineHost.ts:658).
+	if err := r.gate.AllowWrite(ctx, r.sessionID, path, preview); err != nil {
+		return gateError(err)
+	}
+	outcome, f := vault.Write(root, canonical, revision, args.Content)
 	if f != nil {
 		return "写入失败：" + f.Message, nil
 	}
@@ -276,29 +302,40 @@ func (r *AgentToolRunner) editNote(ctx context.Context, raw string) (string, err
 	if !ok {
 		return "参数不合法：path 必须是知识库内的相对路径", nil
 	}
-	if decision := policy.CanWrite(r.agent, path); !decision.Allowed {
-		return "被拒绝：" + decision.Reason, nil
-	}
 	root, errText := r.root()
 	if errText != "" {
 		return errText, nil
 	}
-	snapshot, f := vault.Read(root, path)
+	canonical, errText := r.confirmPath(root, path)
+	if errText != "" {
+		return errText, nil
+	}
+	snapshot, f := vault.Read(root, canonical)
 	if f != nil {
 		return "读取失败：" + f.Message, nil
 	}
-	switch strings.Count(snapshot.Text, args.OldText) {
-	case 0:
-		return "old_text 在文件中不存在，未做修改", nil
-	case 1:
-	default:
-		return "old_text 在文件中出现了多次，未做修改；请提供更精确的片段", nil
+	from, to := toLf(args.OldText), toLf(args.NewText)
+	switch {
+	case from == "":
+		return "old_text 不能为空", nil
+	case from == to:
+		return "old_text 与 new_text 相同，没有可修改的内容", nil
 	}
-	if err := r.gate.AllowWrite(ctx, r.sessionID, path); err != nil {
+	count := countOccurrences(snapshot.Text, from)
+	switch {
+	case count == 0:
+		return "old_text 在笔记中找不到，请先 read_note 核对原文（空白与换行需完全一致）", nil
+	case count > 1:
+		return fmt.Sprintf("old_text 在笔记中出现了 %d 处，位置不唯一；请带上更多上下文使其只匹配一处", count), nil
+	}
+	index := strings.Index(snapshot.Text, from)
+	next := snapshot.Text[:index] + to + snapshot.Text[index+len(from):]
+	old := snapshot.Text
+	preview := ai.BuildWritePreview(next, &old, int64(len(next)))
+	if err := r.gate.AllowWrite(ctx, r.sessionID, path, preview); err != nil {
 		return gateError(err)
 	}
-	next := strings.Replace(snapshot.Text, args.OldText, args.NewText, 1)
-	outcome, f := vault.Write(root, path, snapshot.Revision, next)
+	outcome, f := vault.Write(root, canonical, snapshot.Revision, next)
 	if f != nil {
 		return "写入失败：" + f.Message, nil
 	}
@@ -306,6 +343,28 @@ func (r *AgentToolRunner) editNote(ctx context.Context, raw string) (string, err
 		return "写入冲突：文件在读取后又被修改", nil
 	}
 	return "已更新 " + path, nil
+}
+
+// toLf normalises CRLF to LF: the model may paste an old_text copied with
+// Windows line endings (noteText.ts:64).
+func toLf(value string) string { return strings.ReplaceAll(value, "\r\n", "\n") }
+
+// countOccurrences counts overlapping matches: "aa" occurs twice in "aaa",
+// which is ambiguous for an exact edit (noteText.ts:52-62).
+func countOccurrences(text, needle string) int {
+	if needle == "" {
+		return 0
+	}
+	count := 0
+	for from := 0; from < len(text); {
+		index := strings.Index(text[from:], needle)
+		if index < 0 {
+			return count
+		}
+		count++
+		from += index + 1
+	}
+	return count
 }
 
 func (r *AgentToolRunner) mutateNotes(ctx context.Context, raw string) (string, error) {
@@ -317,10 +376,13 @@ func (r *AgentToolRunner) mutateNotes(ctx context.Context, raw string) (string, 
 	if err := json.Unmarshal([]byte(rawOrDefault(raw, "{}")), &args); err != nil {
 		return "参数不合法：无法解析为 JSON", nil
 	}
+	// The six kinds of the tool schema; a note is created with write_note and
+	// edited with edit_note, so create/edit are not mutations here
+	// (kbTools.ts:245-266).
 	kind := args.Kind
 	switch kind {
-	case policy.KindCreate, policy.KindCreateDirectory, policy.KindEdit,
-		policy.KindMove, policy.KindCopy, policy.KindArchive, policy.KindTrash, policy.KindPermanentDelete:
+	case policy.KindCreateDirectory, policy.KindMove, policy.KindCopy,
+		policy.KindArchive, policy.KindTrash, policy.KindPermanentDelete:
 	default:
 		return "参数不合法：kind 只接受 createDirectory / move / copy / archive / trash / permanentDelete", nil
 	}
@@ -338,6 +400,32 @@ func (r *AgentToolRunner) mutateNotes(ctx context.Context, raw string) (string, 
 			return "参数不合法：target 必须是知识库内的相对路径", nil
 		}
 		target = normalized
+	}
+	if kind != policy.KindCreateDirectory && source == "" {
+		return "参数不合法：mutate_notes 的 kind 或路径不合法", nil
+	}
+	if (kind == policy.KindCreateDirectory || kind == policy.KindMove || kind == policy.KindCopy) && target == "" {
+		return "参数不合法：mutate_notes 的 kind 或路径不合法", nil
+	}
+	root, errText := r.root()
+	if errText != "" {
+		return errText, nil
+	}
+	// The second gate runs on the canonical spelling of both sides: a short
+	// name such as MILE-K~1 must not smuggle a path into the system area.
+	if source != "" {
+		canonical, f := pathguard.CanonicalRel(root, source)
+		if f != nil {
+			return "被拒绝：" + f.Message, nil
+		}
+		source = canonical
+	}
+	if target != "" {
+		canonical, f := pathguard.CanonicalRel(root, target)
+		if f != nil {
+			return "被拒绝：" + f.Message, nil
+		}
+		target = canonical
 	}
 	if decision := policy.CanMutate(r.agent, kind, source, target); !decision.Allowed {
 		return "被拒绝：" + decision.Reason, nil

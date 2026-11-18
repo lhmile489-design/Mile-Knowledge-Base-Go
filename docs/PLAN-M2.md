@@ -379,24 +379,25 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 
 | 批准标识 | 内容 | 依据和时间 | 状态 |
 | --- | --- | --- | --- |
-| B-M2-01 | M2 范围 = C6 + C7 + 设置两节 | — | 待确认 |
-| B-M2-02 | 第 1.3 节非目标、第 4 节任务与顺序、第 7 节 TDD 例外与审查安排 | — | 待确认 |
-| B-M2-03 | 执行节奏沿用「一次一个任务」 | — | 待确认 |
+| B-M2-01 | M2 范围 = C6 + C7 + 设置两节 | 用户 2026-11-18 批准 v0.3 并放行 T00 | 已确认 |
+| B-M2-02 | 第 1.3 节非目标、第 4 节任务与顺序、第 7 节 TDD 例外与审查安排 | 用户 2026-11-18 批准 v0.3 并放行 T00 | 已确认 |
+| B-M2-03 | 执行节奏沿用「一次一个任务」 | 用户 2026-11-18 批准 v0.3 并放行 T00 | 已确认 |
 | B-M2-04 | ~~代理能力不足时降级直连并提示~~ | 撤回：技术设计 2.1 已确认 netproxy 方案（含 PAC / WPAD、SOCKS5），不需要另批降级 | 已撤回 |
-| B-M2-05 | Agent 写路径按旧版：`write_note`/`edit_note` 走权限桥直写（不开事务、不记日志），`mutate_notes` 走 M29/M30；同时扩展 M29/M30 接受 agent origin | — | 待确认 |
+| B-M2-05 | Agent 写路径按旧版：`write_note`/`edit_note` 走权限桥直写（不开事务、不记日志），`mutate_notes` 走 M29/M30；同时扩展 M29/M30 接受 agent origin | 用户 2026-11-18 批准 v0.3 并放行 T00 | 已确认 |
 | B-M2-06 | Agent 默认配置按 PRD 现写法（D-010） | 用户 2026-11-18 选择「按 PRD 现写法」 | 已确认 |
 
 ## 9. 恢复入口与执行账本
 
 ### 下次会话先读
 
-- 当前阶段：T06 已完成，T05+T06 的权限门专项审查待启动。
-- 下一个任务：专项审查通过后 T07。
-- 工作区：`main` 领先 `origin/main`，本地提交 `b5343e0`（v0.2）与本次 v0.3 均未推送。
-- 待决事项：B-M2-01、02、03、05；13 项手动确认；旧版性能基线。B-M2-04 已撤回，B-M2-06 已确认。
+- 当前阶段：T06 已完成；T05+T06 权限门专项审查已处理（2 阻断 + 2 需改已修，N4 待用户决策）。
+- 下一个任务：用户放行后 T07（路由与改派）。
+- 工作区：`main` 领先 `origin/main`，本地提交 `b5343e0`（v0.2）、v0.3 与本次审查修复均未推送。
+- 待决事项：N4（write 卡是否同时登记 mutation 新鲜批准）；PRD FR-AI-PERM 的 60 秒表述与实现口径；13 项手动确认；旧版性能基线。B-M2-04 已撤回，B-M2-06 已确认。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-19 | T05+T06 权限门专项审查处理（独立 task-reviewer，范围 `a2f0e31^..HEAD`）。**B1 属实已修**：新增 `pathguard.CanonicalRel`（最深现存祖先 `EvalSymlinks` + 尾段拼接，展开 8.3 短名/大小写别名，同旧版 `resolveWithinRoot`），工具层 `confirmPath` 与 `mutateNotes`、执行器 agent 计划复查均改为「拼写门 → canonical 门」两道；本机 E: 有 8.3 别名，`MILE-K~1/settings/evil.json` 用例真实执行（未跳过）被拒，篡改计划用例执行器返回 permission-denied。**B2 属实已修**：`ApprovalGate.AllowWrite` 增加 `*contract.WritePreview`；write/edit 在发卡前用已读快照构造预览（新建 created、已有 modified、读失败无预览不堵审批，同 `EngineHost.ts:658`），`PermEvent` 全生命周期（pending/approved/rejected/expired）携带 ToolName/Detail/Preview/Options。**N1 属实已修**：`edit_note` 对齐 `applyExactEdit`——old/new 先 `toLf`、空串拒绝、相同拒绝、**重叠计数**（`aaa` 里 `aa` 判歧义）、四条文案照旧版。**N2 属实已修**：`mutate_notes` 收窄为 schema 的 6 种 kind（create/edit 走 write_note/edit_note），补 source/target 必填校验（旧版 `mutationArgs`）。**N3**：写卡不发复用 grant 为计划已注明的有意偏离；新代码先校验 old_text 再发卡，旧版「批准后校验失败、60 秒内重试不再询问」的场景不复存在，用户可见行为等价。**N4 待决**：旧版任意批准卡都登记 mutation 新鲜批准，新实现只有 mutation 卡登记（更严）；保持或对齐待用户拍板。建议项：删 `approval.go` 死占位、修正 `LineDiff` 参数注释。新增测试 11 项（canonical 2、工具 7、审批 3 含并发 approve/reject 与发卡后换档） | `internal/pathguard/pathguard.go`、`internal/service/tools.go`、`internal/ai/{approval,linediff}.go`、`internal/mutation/execute.go` 及四个包的测试 | `go test ./...` 397 项通过（16 包）；`go vet ./...` 无输出；`gofmt -l` 无输出；`tsc --noEmit` 无错；`vitest` 79 项通过；`go test -race` 需 cgo，本仓门禁未包含，未跑 | N4；PRD FR-AI-PERM「60 秒有效」表述与实现口径 | T07（待放行） |
 | 2026-11-18 | T06 完成 | `internal/ai/linediff.go`：移植旧版 LCS 行级 diff（4M 格退化、60 行上限、单行 200 字符裁剪）与 `BuildWritePreview`（created / modified / summary：too-large、unchanged）。`internal/ai/approval.go`：`ApprovalManager` 实现审批卡状态机（pending → approved/rejected/expired）、ask 与 auto 都发卡、yolo 不发卡、`ExpireSessionCards` 取消时推 expired、approve/reject 过期返回 `approval-expired`、mutation 批准登记 60 秒 grant 并由 `ConsumeFreshMutation` 消费一次（yolo 下永久删除无 grant，按 D-005 拒绝）、未知 approval 值降级 ask。`ApprovalGate` 接口由 `*contract.Failure` 改为 `error`：等待审批时取消可贯穿到回合循环，`gateError` 区分取消与拒绝文字。T05 的 runner 与 fake gate 同步更新。测试：lineDiff/preview 4 项、approval 11 项（允许/拒绝/取消过期/未知卡/非法选项/yolo/新鲜批准一次性与 60 秒过期/会话失效/模式归一） | docs/PLAN-M2.md、docs/API.md、internal/ai/{linediff,approval}.go 与测试、internal/contract（DiffLine/WritePreview）、internal/service/tools.go | `go test ./internal/ai ./internal/service` 112 项通过；全仓门禁待跑 | 审批卡帧接 StreamFrame 在 T10；写路径的「批准即放行本次」未登记可复用的 write grant（旧版 grant 用于批准与写盘之间，本次直接放行），已注明 | 权限专项审查（T05+T06） |
 | 2026-11-18 | T05 完成 | `internal/policy`：路径归一（拒绝对路径/UNC/盘符/空/dot 片段）、全局禁写前缀（config/transactions/index/provenance/settings，大小写不敏感）、system area 与 drafts 一律拒、内容区白名单、`CanMutate`（create 系列走写判定、结构变更查 source 与 target、permanentDelete 标 `RequiresFreshApproval`）。`internal/mutation`：计划接受 4 个 agent origin，权限门在**任何文件系统检查之前**运行（系统路径返回 permission-denied，不泄露存在性）；`Executor.Execute` 对 agent 计划再校验一次，防篡改计划绕过。`internal/ai/tool_schemas.go`：从 agnes-engine 的 kb-tool-schemas.json 逐字段生成 8 个工具定义。`internal/service/tools.go`：`AgentToolRunner` 实现 7 个工具（handoff 待 T08），`ApprovalGate` 接口留给 T06；write/edit 走「policy → gate → vault 直写」，mutate 走「policy → gate（永久删除再消费新鲜批准）→ M29 计划 → M30 执行」，set_aliases 经 M66。测试：policy 7 项、mutation 新增 5 项（agent 来源接受/拒绝、执行期二次拦截）、service 工具 14 项（写/编辑/分页/列目录隐藏系统区/目录创建/越权拒绝/永久删除新鲜批准/handoff/别名/未知工具/8 个 schema） | docs/API.md（M29 origin 注记）、docs/PLAN-M2.md、internal/{policy,mutation,service,ai} | `go test ./internal/...` 76 项通过（三个包）；`go build ./...` 通过 | 真实审批卡与 60 秒批准在 T06；handoff 在 T08；search_notes 走空索引时只验证了「没有命中」路径，真实索引结果待 T19 | T06 |
 | 2026-11-18 | T04 完成 | `internal/ai/session.go`：按 (agent, vault) 懒创建幂等会话、Reset、`SessionInfo`（`availableEfforts` 恒空）、`ResolveProvider`（会话所选 → 保存的 → 第一个 openai 默认模型 → 模型列表第一个，名字不在列表即回落，无可用时 engine-unavailable 带原因）、`ModelChoices`；`internal/ai/loop.go`：16 步工具循环、每步预算维护、用户消息先入历史、只有干净结束的采样写 assistant、工具调用与结果一一配对、取消回填「已取消，未执行」、工具失败/参数错误变文字、结果截断 20 000、`reasoning_content` 恒带（指针类型，空串也序列化）、usage 校准与累计、单回合 panic 隔离（监听器 panic 也复位于会话）；`internal/ai/budget.go`：字符估算、0.5–3 校准、80% 触发、16% 尾部切点只在 user 前、摘要替换与整轮截断兜底、`AddUsage`。测试：新增 12 项（预算 6、会话 4、循环 8 中的关键路径：普通回合、工具回合、步数上限、取消回填、工具错误文字、流错误只留提问、panic 隔离后会话可用、长历史压缩） | docs/PLAN-M2.md、internal/ai/{session,loop,budget}.go 与测试、internal/ai/engine.go（`ReasoningContent` 改指针） | `go test ./internal/ai` 全部通过（含新增） | 工具 panic 被转为工具错误文字而非终止回合（比「单回合出错隔离」更温和，已注明）；摘要失败路径用 truncate 兜底逻辑覆盖，未单独造摘要请求失败场景 | T05 |

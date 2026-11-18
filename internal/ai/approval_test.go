@@ -63,7 +63,7 @@ func (h *approvalHarness) waitPending(t *testing.T) PermEvent {
 func TestApprovalAllowWrite(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
 	done := make(chan error, 1)
-	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md") }()
+	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil) }()
 	pending := h.waitPending(t)
 	if pending.Approval != ApprovalAsk || pending.TargetPath != "raws/a.md" || len(pending.Options) != 2 {
 		t.Fatalf("pending: %+v", pending)
@@ -85,7 +85,7 @@ func TestApprovalAllowWrite(t *testing.T) {
 func TestApprovalReject(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalAuto})
 	done := make(chan error, 1)
-	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md") }()
+	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil) }()
 	pending := h.waitPending(t)
 	if pending.Approval != ApprovalAuto {
 		t.Fatalf("auto should also ask: %+v", pending)
@@ -104,7 +104,7 @@ func TestApprovalCancelExpires(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- h.manager.AllowWrite(ctx, "s1", "raws/a.md") }()
+	go func() { done <- h.manager.AllowWrite(ctx, "s1", "raws/a.md", nil) }()
 	pending := h.waitPending(t)
 	cancel()
 	if err := <-done; !errors.Is(err, context.Canceled) {
@@ -120,7 +120,7 @@ func TestApprovalCancelExpires(t *testing.T) {
 
 func TestApprovalYoloSkipsCard(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalYolo})
-	if err := h.manager.AllowWrite(context.Background(), "s1", "raws/a.md"); err != nil {
+	if err := h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil); err != nil {
 		t.Fatal(err)
 	}
 	if err := h.manager.AllowMutation(context.Background(), "s1", "raws/a.md"); err != nil {
@@ -179,7 +179,7 @@ func TestApproveUnknownCard(t *testing.T) {
 
 func TestApproveBadOption(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
-	go func() { _ = h.manager.AllowWrite(context.Background(), "s1", "raws/a.md") }()
+	go func() { _ = h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil) }()
 	pending := h.waitPending(t)
 	if f := h.manager.Approve(pending.RequestID, "always_allow"); f == nil || f.Code != contract.CodeInvalidInput {
 		t.Fatalf("bad option: %+v", f)
@@ -190,7 +190,7 @@ func TestApproveBadOption(t *testing.T) {
 func TestExpireSessionCards(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
 	done := make(chan error, 1)
-	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md") }()
+	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil) }()
 	pending := h.waitPending(t)
 	h.manager.ExpireSessionCards("s1")
 	if err := <-done; err == nil {
@@ -210,5 +210,73 @@ func TestNormalizeApproval(t *testing.T) {
 	}
 	if NormalizeApproval("bogus") != ApprovalAsk || NormalizeApproval("") != ApprovalAsk {
 		t.Fatal("invalid modes must degrade to ask")
+	}
+}
+
+func TestApprovalEventsCarryCardDetails(t *testing.T) {
+	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
+	preview := &contract.WritePreview{Kind: "created", NewLineCount: 1}
+	done := make(chan error, 1)
+	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", preview) }()
+	pending := h.waitPending(t)
+	if pending.ToolName != "write_note" || pending.Detail != "写入 raws/a.md" ||
+		pending.Preview == nil || pending.Preview.Kind != "created" {
+		t.Fatalf("pending card: %+v", pending)
+	}
+	if f := h.manager.Approve(pending.RequestID, "allow_once"); f != nil {
+		t.Fatal(f)
+	}
+	<-done
+	last, _ := h.last()
+	if last.Status != "approved" || last.ToolName != "write_note" ||
+		last.Detail != "写入 raws/a.md" || last.Preview == nil || len(last.Options) != 2 {
+		t.Fatalf("approved event: %+v", last)
+	}
+}
+
+func TestApprovalConcurrentDecision(t *testing.T) {
+	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
+	done := make(chan error, 1)
+	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil) }()
+	pending := h.waitPending(t)
+
+	var wg sync.WaitGroup
+	var approveF, rejectF *contract.Failure
+	wg.Add(2)
+	go func() { defer wg.Done(); approveF = h.manager.Approve(pending.RequestID, "allow_once") }()
+	go func() { defer wg.Done(); rejectF = h.manager.Reject(pending.RequestID) }()
+	wg.Wait()
+	if (approveF == nil) == (rejectF == nil) {
+		t.Fatalf("exactly one decision must win: approve=%+v reject=%+v", approveF, rejectF)
+	}
+	if approveF != nil && approveF.Code != contract.CodeApprovalExpired {
+		t.Fatalf("losing approve: %+v", approveF)
+	}
+	if rejectF != nil && rejectF.Code != contract.CodeApprovalExpired {
+		t.Fatalf("losing reject: %+v", rejectF)
+	}
+	err := <-done
+	if approveF == nil && err != nil {
+		t.Fatalf("approve won but the waiter got %v", err)
+	}
+	if rejectF == nil && err == nil {
+		t.Fatal("reject won but the waiter was allowed")
+	}
+}
+
+func TestIssuedCardKeepsItsMode(t *testing.T) {
+	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
+	done := make(chan error, 1)
+	go func() { done <- h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil) }()
+	pending := h.waitPending(t)
+	h.modes["s1"] = ApprovalYolo // switching the mode must not touch an issued card
+	if f := h.manager.Approve(pending.RequestID, "allow_once"); f != nil {
+		t.Fatal(f)
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if last, _ := h.last(); last.Approval != ApprovalAsk {
+		t.Fatalf("issued card mode changed: %+v", last)
 	}
 }

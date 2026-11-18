@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 )
@@ -197,6 +198,57 @@ func Resolve(root, rel string) (string, *contract.Failure) {
 		}
 	}
 	return current, nil
+}
+
+// CanonicalRel returns the on-disk spelling of rel under root. Every existing
+// segment is resolved to its real name, so a Windows 8.3 short name
+// (MILE-K~1) or a case alias comes back as the long name; a missing tail keeps
+// its spelling because nothing on disk exists to alias yet. This is the second
+// policy gate of FR-AI-PERM: the spelling check cannot see that MILE-K~1 means
+// .mile-kb. It mirrors legacy resolveWithinRoot (pathContainment.ts:154-189).
+func CanonicalRel(root, rel string) (string, *contract.Failure) {
+	abs, f := Resolve(root, rel)
+	if f != nil {
+		return "", f
+	}
+	realRoot, err := Canon(root)
+	if err != nil {
+		return "", failf(contract.CodeVaultUnavailable, "知识库根目录不可用")
+	}
+	if abs == realRoot {
+		return "", nil
+	}
+
+	current := abs
+	var missing []string
+	for {
+		real, evalErr := filepath.EvalSymlinks(current)
+		if evalErr == nil {
+			if !Within(realRoot, real) {
+				return "", failf(contract.CodePathEscape, "路径逃逸知识库范围")
+			}
+			for i := len(missing) - 1; i >= 0; i-- {
+				real = filepath.Join(real, missing[i])
+			}
+			canonical, relErr := filepath.Rel(realRoot, real)
+			if relErr != nil {
+				return "", failf(contract.CodeIOFailure, "无法解析路径")
+			}
+			return filepath.ToSlash(canonical), nil
+		}
+		if !errors.Is(evalErr, fs.ErrNotExist) && !errors.Is(evalErr, syscall.ENOTDIR) {
+			return "", failf(contract.CodeIOFailure, "无法解析路径")
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return "", failf(contract.CodeIOFailure, "无法解析路径")
+		}
+		missing = append(missing, filepath.Base(current))
+		current = parent
+		if !Within(realRoot, current) {
+			return "", failf(contract.CodePathEscape, "路径逃逸知识库范围")
+		}
+	}
 }
 
 // Within reports whether target lies inside root (case-insensitive on Windows).

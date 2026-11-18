@@ -2,8 +2,6 @@ package ai
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -61,7 +59,10 @@ type pendingApproval struct {
 	sessionID string
 	path      string
 	kind      string
+	toolName  string
+	detail    string
 	approval  string
+	preview   *contract.WritePreview
 	decided   chan bool
 	settled   bool
 	expired   bool
@@ -101,9 +102,11 @@ func NewApprovalManager(modeOf func(sessionID string) string, emit func(PermEven
 
 func grantKey(sessionID, path string) string { return sessionID + "\x00" + path }
 
-// AllowWrite asks for one file write. yolo proceeds without a card.
-func (m *ApprovalManager) AllowWrite(ctx context.Context, sessionID, path string) error {
-	return m.request(ctx, sessionID, path, "write", "write_note", "写入 "+path, nil)
+// AllowWrite asks for one file write and shows the diff preview on the card.
+// A nil preview is legal: the card then falls back to the one-line summary
+// (PRD FR-AI-PERM). yolo proceeds without a card.
+func (m *ApprovalManager) AllowWrite(ctx context.Context, sessionID, path string, preview *contract.WritePreview) error {
+	return m.request(ctx, sessionID, path, "write", "write_note", "写入 "+path, preview)
 }
 
 // AllowMutation asks for one structural change.
@@ -142,7 +145,8 @@ func (m *ApprovalManager) request(ctx context.Context, sessionID, path, kind, to
 
 	request := &pendingApproval{
 		requestID: m.newID(), sessionID: sessionID, path: path, kind: kind,
-		approval: mode, decided: make(chan bool, 1),
+		toolName: toolName, detail: detail, approval: mode, preview: preview,
+		decided: make(chan bool, 1),
 	}
 	m.mu.Lock()
 	m.pending[request.requestID] = request
@@ -200,8 +204,9 @@ func (m *ApprovalManager) Approve(requestID, optionID string) *contract.Failure 
 		return f
 	}
 	m.emitEvent(PermEvent{
-		RequestID: request.requestID, TargetPath: request.path,
-		Approval: request.approval, Status: "approved", Options: ApprovalOptions,
+		RequestID: request.requestID, ToolName: request.toolName, Detail: request.detail,
+		TargetPath: request.path, Approval: request.approval, Status: "approved",
+		Preview: request.preview, Options: ApprovalOptions,
 	})
 	request.decided <- true
 	return nil
@@ -214,8 +219,9 @@ func (m *ApprovalManager) Reject(requestID string) *contract.Failure {
 		return f
 	}
 	m.emitEvent(PermEvent{
-		RequestID: request.requestID, TargetPath: request.path,
-		Approval: request.approval, Status: "rejected", Options: ApprovalOptions,
+		RequestID: request.requestID, ToolName: request.toolName, Detail: request.detail,
+		TargetPath: request.path, Approval: request.approval, Status: "rejected",
+		Preview: request.preview, Options: ApprovalOptions,
 	})
 	request.decided <- false
 	return nil
@@ -237,8 +243,9 @@ func (m *ApprovalManager) ExpireSessionCards(sessionID string) {
 	m.mu.Unlock()
 	for _, request := range expired {
 		m.emitEvent(PermEvent{
-			RequestID: request.requestID, TargetPath: request.path,
-			Approval: request.approval, Status: "expired", Options: ApprovalOptions,
+			RequestID: request.requestID, ToolName: request.toolName, Detail: request.detail,
+			TargetPath: request.path, Approval: request.approval, Status: "expired",
+			Preview: request.preview, Options: ApprovalOptions,
 		})
 		request.decided <- false
 	}
@@ -264,10 +271,7 @@ func (m *ApprovalManager) emitEvent(event PermEvent) {
 
 // Compile-time note: ApprovalManager satisfies the tool gate.
 var _ interface {
-	AllowWrite(context.Context, string, string) error
+	AllowWrite(context.Context, string, string, *contract.WritePreview) error
 	AllowMutation(context.Context, string, string) error
 	ConsumeFreshMutation(context.Context, string, string) error
 } = (*ApprovalManager)(nil)
-
-var _ = errors.Is
-var _ = fmt.Sprintf

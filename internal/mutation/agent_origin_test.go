@@ -2,7 +2,9 @@ package mutation
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
@@ -92,4 +94,60 @@ func TestExecutorRechecksAgentPlans(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(root, "raws", "a.md")); err != nil {
 		t.Fatalf("source moved anyway: %v", err)
 	}
+}
+
+func TestExecutorRejectsShortNameEscape(t *testing.T) {
+	builder, root := agentBuilder(t)
+	if err := os.MkdirAll(filepath.Join(root, ".mile-kb", "settings"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	short := shortRootName(t, root, ".mile-kb")
+	if short == "" {
+		t.Skip("this volume has no 8.3 short names")
+	}
+	plan, f := builder.Plan(contract.PlanRequest{
+		VaultID: "v1", Origin: "curator",
+		Actions: []contract.MutationAction{{ID: "a1", Kind: contract.MutMove, Source: "raws/a.md", Target: "raws/b.md"}},
+	})
+	if f != nil {
+		t.Fatal(f)
+	}
+	// Tampered plan: the spelling passes the plan-time policy, the canonical
+	// spelling resolves to the system area and the executor must refuse it.
+	plan.Actions[0].Target = short + "/settings/a.md"
+	executor := Executor{Root: root, VaultID: "v1", Manager: TxManager{Root: root}}
+	report := executor.Execute(plan)
+	if report.Failure == nil || report.Failure.Code != contract.CodePermissionDenied {
+		t.Fatalf("executor accepted a short-name escape: %+v", report)
+	}
+	if _, err := os.Stat(filepath.Join(root, ".mile-kb", "settings", "a.md")); !os.IsNotExist(err) {
+		t.Fatalf("system file was written")
+	}
+}
+
+// shortRootName reads the 8.3 alias of one root entry from dir /x.
+func shortRootName(t *testing.T, root, long string) string {
+	t.Helper()
+	out, err := exec.Command("cmd", "/c", "dir", "/x", "/a", root).Output()
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		fields := strings.Fields(line)
+		hasLong := false
+		for _, field := range fields {
+			if strings.EqualFold(field, long) {
+				hasLong = true
+			}
+		}
+		if !hasLong {
+			continue
+		}
+		for _, field := range fields {
+			if strings.Contains(field, "~") && !strings.EqualFold(field, long) {
+				return field
+			}
+		}
+	}
+	return ""
 }

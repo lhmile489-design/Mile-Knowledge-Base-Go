@@ -174,3 +174,76 @@ func FuzzValidateRel(f *testing.F) {
 		}
 	})
 }
+
+func TestCanonicalRelExpandsCaseAndMissingTail(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "raws"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "raws", "a.md"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, f := CanonicalRel(root, "RAWS/A.MD")
+	if f != nil {
+		t.Fatalf("case alias: %+v", f)
+	}
+	if got != "raws/a.md" {
+		t.Fatalf("case alias = %q", got)
+	}
+
+	got, f = CanonicalRel(root, "raws/new.md")
+	if f != nil || got != "raws/new.md" {
+		t.Fatalf("missing tail = %q %+v", got, f)
+	}
+
+	if _, f := CanonicalRel(root, "../x"); f == nil {
+		t.Fatal("traversal accepted")
+	}
+}
+
+func TestCanonicalRelExpandsShortName(t *testing.T) {
+	root := t.TempDir()
+	long := "verylongdirectoryname123456"
+	if err := os.MkdirAll(filepath.Join(root, long, "settings"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	short := shortDirName(t, root, long)
+	if short == "" {
+		t.Skip("this volume has no 8.3 short names")
+	}
+	got, f := CanonicalRel(root, short+"/settings/x.json")
+	if f != nil {
+		t.Fatalf("short name: %+v", f)
+	}
+	if got != long+"/settings/x.json" {
+		t.Fatalf("short name = %q", got)
+	}
+}
+
+// shortDirName reads the 8.3 alias of one root entry from dir /x.
+func shortDirName(t *testing.T, root, long string) string {
+	t.Helper()
+	out, err := exec.Command("cmd", "/c", "dir", "/x", "/a", root).Output()
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		fields := strings.Fields(line)
+		hasLong := false
+		for _, field := range fields {
+			if strings.EqualFold(field, long) {
+				hasLong = true
+			}
+		}
+		if !hasLong {
+			continue
+		}
+		for _, field := range fields {
+			if strings.Contains(field, "~") && !strings.EqualFold(field, long) {
+				return field
+			}
+		}
+	}
+	return ""
+}

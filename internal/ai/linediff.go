@@ -9,19 +9,19 @@ const (
 	PreviewMaxLineChars = 200
 )
 
-// LineDiff returns the full aligned diff of mine against disk. mine is the
-// new text: its lines show as removed against disk and added from mine
+// LineDiff returns the full aligned diff of oldText against newText: the first
+// argument's lines show as removed, the second argument's lines as added
 // (lineDiff.ts:33-91). A huge input degrades to "all removed, then all added"
 // rather than guessing an alignment.
-func LineDiff(mine, disk string) []contract.DiffLine {
-	if mine == disk {
-		if mine == "" {
+func LineDiff(oldText, newText string) []contract.DiffLine {
+	if oldText == newText {
+		if oldText == "" {
 			return nil
 		}
-		return []contract.DiffLine{{Kind: "same", Text: mine}}
+		return []contract.DiffLine{{Kind: "same", Text: oldText}}
 	}
-	a := splitLines(mine)
-	b := splitLines(disk)
+	a := splitLines(oldText)
+	b := splitLines(newText)
 	if int64(len(a))*int64(len(b)) > MaxLCSHistoryCells {
 		out := make([]contract.DiffLine, 0, len(a)+len(b))
 		for _, text := range a {

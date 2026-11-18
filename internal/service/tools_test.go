@@ -4,23 +4,28 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/policy"
 )
 
 type fakeGate struct {
 	denyWrite, denyMutation, denyFresh bool
 	writes, mutations                  []string
+	previews                           []*contract.WritePreview
 }
 
-func (g *fakeGate) AllowWrite(_ context.Context, _ string, path string) error {
+func (g *fakeGate) AllowWrite(_ context.Context, _ string, path string, preview *contract.WritePreview) error {
 	if g.denyWrite {
 		return errors.New("未获批准")
 	}
 	g.writes = append(g.writes, path)
+	g.previews = append(g.previews, preview)
 	return nil
 }
 
@@ -101,11 +106,11 @@ func TestEditNoteRules(t *testing.T) {
 	}
 
 	missing, _ := runner.Run(context.Background(), call("edit_note", `{"path":"raws/a.md","old_text":"delta","new_text":"x"}`))
-	if !strings.Contains(missing, "不存在") {
+	if !strings.Contains(missing, "找不到") {
 		t.Fatalf("missing old_text: %s", missing)
 	}
 	ambiguous, _ := runner.Run(context.Background(), call("edit_note", `{"path":"raws/a.md","old_text":"a","new_text":"x"}`))
-	if !strings.Contains(ambiguous, "多次") {
+	if !strings.Contains(ambiguous, "位置不唯一") {
 		t.Fatalf("ambiguous old_text: %s", ambiguous)
 	}
 	ok, _ := runner.Run(context.Background(), call("edit_note", `{"path":"raws/a.md","old_text":"beta","new_text":"B"}`))
@@ -245,5 +250,172 @@ func TestSchemasHaveAllTools(t *testing.T) {
 		if !strings.Contains(joined, `"`+name+`"`) {
 			t.Errorf("schema missing %s", name)
 		}
+	}
+}
+
+func TestWriteNotePreview(t *testing.T) {
+	gate := &fakeGate{}
+	runner, _, _ := runnerFor(t, gate)
+	if _, err := runner.Run(context.Background(), call("write_note", `{"path":"raws/p.md","content":"line1\nline2"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if len(gate.previews) != 1 || gate.previews[0] == nil {
+		t.Fatalf("created preview missing: %+v", gate.previews)
+	}
+	if created := gate.previews[0]; created.Kind != "created" || len(created.Lines) != 2 {
+		t.Fatalf("created preview: %+v", created)
+	}
+
+	if _, err := runner.Run(context.Background(), call("write_note", `{"path":"raws/p.md","content":"line1\nLINE2"}`)); err != nil {
+		t.Fatal(err)
+	}
+	modified := gate.previews[1]
+	if modified == nil || modified.Kind != "modified" {
+		t.Fatalf("modified preview: %+v", modified)
+	}
+	hasRemoved, hasAdded := false, false
+	for _, line := range modified.Lines {
+		if line.Kind == "removed" && line.Text == "line2" {
+			hasRemoved = true
+		}
+		if line.Kind == "added" && line.Text == "LINE2" {
+			hasAdded = true
+		}
+	}
+	if !hasRemoved || !hasAdded {
+		t.Fatalf("diff lines: %+v", modified.Lines)
+	}
+}
+
+func TestEditNotePreview(t *testing.T) {
+	gate := &fakeGate{}
+	runner, root, _ := runnerFor(t, gate)
+	writeServiceFile(t, root, "raws/e.md", "alpha\nbeta\n")
+	out, _ := runner.Run(context.Background(), call("edit_note", `{"path":"raws/e.md","old_text":"beta","new_text":"BETA"}`))
+	if !strings.Contains(out, "已更新") {
+		t.Fatalf("edit: %s", out)
+	}
+	if len(gate.previews) != 1 || gate.previews[0] == nil || gate.previews[0].Kind != "modified" {
+		t.Fatalf("preview: %+v", gate.previews)
+	}
+}
+
+func TestEditNoteValidationMessages(t *testing.T) {
+	gate := &fakeGate{}
+	runner, root, _ := runnerFor(t, gate)
+	writeServiceFile(t, root, "raws/m.md", "aaa")
+	cases := []struct{ old, newText, want string }{
+		{"", "x", "old_text 不能为空"},
+		{"aa", "aa", "old_text 与 new_text 相同"},
+		{"aa", "b", "出现了 2 处"},
+		{"zzz", "b", "找不到"},
+	}
+	for _, c := range cases {
+		body := `{"path":"raws/m.md","old_text":"` + c.old + `","new_text":"` + c.newText + `"}`
+		out, _ := runner.Run(context.Background(), call("edit_note", body))
+		if !strings.Contains(out, c.want) {
+			t.Errorf("%+v: %s", c, out)
+		}
+	}
+	if len(gate.writes) != 0 {
+		t.Fatalf("gate must not be reached for a rejected edit: %v", gate.writes)
+	}
+}
+
+func TestEditNoteAcceptsCrlfOldText(t *testing.T) {
+	gate := &fakeGate{}
+	runner, root, _ := runnerFor(t, gate)
+	if err := os.WriteFile(filepath.Join(root, "raws", "crlf.md"), []byte("a\r\nb\r\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, _ := runner.Run(context.Background(), call("edit_note", `{"path":"raws/crlf.md","old_text":"a\r\nb","new_text":"a\nB"}`))
+	if !strings.Contains(out, "已更新") {
+		t.Fatalf("edit: %s", out)
+	}
+	body, _ := os.ReadFile(filepath.Join(root, "raws", "crlf.md"))
+	if string(body) != "a\r\nB\r\n" {
+		t.Fatalf("body: %q", body)
+	}
+}
+
+func TestSystemAreaShortNameRejected(t *testing.T) {
+	gate := &fakeGate{}
+	runner, root, _ := runnerFor(t, gate)
+	if err := os.MkdirAll(filepath.Join(root, ".mile-kb", "settings"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	short := shortNameFor(t, root, ".mile-kb")
+	if short == "" {
+		t.Skip("this volume has no 8.3 short names")
+	}
+	if decision := policy.CanWrite("curator", short+"/settings/evil.json"); !decision.Allowed {
+		t.Skipf("the spelling gate already blocks %q", short)
+	}
+	out, _ := runner.Run(context.Background(), call("write_note", `{"path":"`+short+`/settings/evil.json","content":"{}"}`))
+	if !strings.HasPrefix(out, "被拒绝：") {
+		t.Fatalf("short-name escape not rejected: %s", out)
+	}
+	if len(gate.writes) != 0 {
+		t.Fatalf("gate reached: %v", gate.writes)
+	}
+	if _, err := os.Stat(filepath.Join(root, ".mile-kb", "settings", "evil.json")); !os.IsNotExist(err) {
+		t.Fatalf("system file was written")
+	}
+}
+
+// shortNameFor reads the 8.3 alias of one root entry from dir /x.
+func shortNameFor(t *testing.T, root, long string) string {
+	t.Helper()
+	out, err := exec.Command("cmd", "/c", "dir", "/x", "/a", root).Output()
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		fields := strings.Fields(line)
+		hasLong := false
+		for _, field := range fields {
+			if strings.EqualFold(field, long) {
+				hasLong = true
+			}
+		}
+		if !hasLong {
+			continue
+		}
+		for _, field := range fields {
+			if strings.Contains(field, "~") && !strings.EqualFold(field, long) {
+				return field
+			}
+		}
+	}
+	return ""
+}
+
+func TestMutateRejectsNonSchemaKinds(t *testing.T) {
+	gate := &fakeGate{}
+	runner, _, _ := runnerFor(t, gate)
+	for _, body := range []string{`{"kind":"create","target":"raws/x.md"}`, `{"kind":"edit","source":"raws/旧名.md"}`} {
+		out, _ := runner.Run(context.Background(), call("mutate_notes", body))
+		if !strings.Contains(out, "参数不合法") {
+			t.Errorf("%s: %s", body, out)
+		}
+	}
+	if len(gate.mutations) != 0 {
+		t.Fatalf("gate reached: %v", gate.mutations)
+	}
+	moved, _ := runner.Run(context.Background(), call("mutate_notes", `{"kind":"move","source":"raws/旧名.md"}`))
+	if !strings.Contains(moved, "参数不合法") {
+		t.Fatalf("missing target: %s", moved)
+	}
+	deleted, _ := runner.Run(context.Background(), call("mutate_notes", `{"kind":"permanentDelete"}`))
+	if !strings.Contains(deleted, "参数不合法") {
+		t.Fatalf("missing source: %s", deleted)
+	}
+}
+
+func TestSetAliasesRejectsTraversal(t *testing.T) {
+	runner, _, _ := runnerFor(t, &fakeGate{})
+	out, _ := runner.Run(context.Background(), call("set_aliases", `{"aliases":{"../evil":"x"}}`))
+	if !strings.Contains(out, "设置别名失败") {
+		t.Fatalf("output: %s", out)
 	}
 }

@@ -46,7 +46,29 @@ func (e Executor) Execute(plan contract.MutationPlan) contract.MutationReport {
 	}
 	if policy.IsAgent(plan.Origin) {
 		for _, action := range plan.Actions {
-			if decision := policy.CanMutate(plan.Origin, action.Kind, action.Source, action.Target); !decision.Allowed {
+			// The second gate runs on the canonical spelling: an 8.3 short name
+			// or case alias can pass the spelling check while pointing into the
+			// system area (legacy VaultFsBridge.ts:161-172).
+			source, target := action.Source, action.Target
+			if source != "" {
+				canonical, f := pathguard.CanonicalRel(e.Root, source)
+				if f != nil {
+					report.Status = "failed"
+					report.Failure = f
+					return report
+				}
+				source = canonical
+			}
+			if target != "" {
+				canonical, f := pathguard.CanonicalRel(e.Root, target)
+				if f != nil {
+					report.Status = "failed"
+					report.Failure = f
+					return report
+				}
+				target = canonical
+			}
+			if decision := policy.CanMutate(plan.Origin, action.Kind, source, target); !decision.Allowed {
 				report.Status = "failed"
 				report.Failure = contract.Fail(contract.CodePermissionDenied, decision.Reason)
 				return report
