@@ -221,7 +221,7 @@ func TestStreamChatRequestShape(t *testing.T) {
 	err := StreamChat(context.Background(), ChatRequest{
 		BaseURL: server.URL + "/", Model: "m", MaxTokens: maxTokens, Tools: tools,
 		Messages: []ChatMessage{
-			{Role: "assistant", Content: nil, ReasoningContent: "why", ToolCalls: []ChatToolCallWire{{
+			{Role: "assistant", Content: nil, ReasoningContent: ptr("why"), ToolCalls: []ChatToolCallWire{{
 				ID: "call_1", Type: "function", Function: ToolFunction{Name: "search_notes", Arguments: `{}`},
 			}}},
 			{Role: "tool", Content: ptr("result"), ToolCallID: "call_1"},

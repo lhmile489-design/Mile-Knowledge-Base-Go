@@ -51,7 +51,7 @@ type ChatMessage struct {
 	Content          *string            `json:"content"`
 	ToolCallID       string             `json:"tool_call_id,omitempty"`
 	ToolCalls        []ChatToolCallWire `json:"tool_calls,omitempty"`
-	ReasoningContent string             `json:"reasoning_content,omitempty"`
+	ReasoningContent *string            `json:"reasoning_content,omitempty"`
 }
 
 // ChatRequest is one streaming completion request.
