@@ -69,6 +69,68 @@ func (s *IndexService) Search(ctx context.Context, query contract.SearchQuery) c
 	return result
 }
 
+// Health returns the knowledge-base health report (M28), cached per index
+// revision; partial while the first build is still running.
+func (s *IndexService) Health(ctx context.Context, vaultID string) contract.KbHealthReport {
+	empty := contract.KbHealthReport{
+		VaultID: vaultID, UnresolvedLinks: []contract.UnresolvedLinkItem{},
+		Orphans: []contract.OrphanItem{}, Duplicates: []contract.DuplicateNameItem{},
+		Untitled: []contract.UntitledItem{}, Partial: true,
+	}
+	if f := validateID(vaultID); f != nil {
+		empty.Failure = contract.Fail(contract.CodeInvalidInput, "知识库 id 不合法")
+		return empty
+	}
+	handle := s.app.indexHandle(vaultID)
+	if handle == nil {
+		if _, f := s.app.Vaults.Root(vaultID); f != nil {
+			empty.Failure = contract.Fail(contract.CodeVaultUnavailable, "知识库不可用")
+		}
+		return empty
+	}
+	handle.mu.Lock()
+	store := handle.store
+	phase := handle.status.Phase
+	cached := handle.healthReport
+	cachedRev := handle.healthRev
+	handle.mu.Unlock()
+	if store == nil {
+		empty.Failure = contract.Fail(contract.CodeIOFailure, "索引不可用")
+		return empty
+	}
+
+	revision, err := store.Revision(ctx)
+	if err != nil {
+		empty.Failure = contract.Fail(contract.CodeIOFailure, "索引不可用")
+		return empty
+	}
+	if cached != nil && cachedRev == revision {
+		report := *cached
+		report.Partial = phase != "ready"
+		return report
+	}
+
+	unresolved, orphans, duplicates, untitled, rev, err := index.Health(ctx, store)
+	if err != nil {
+		empty.Failure = contract.Fail(contract.CodeIOFailure, "读取健康报告失败")
+		return empty
+	}
+	report := contract.KbHealthReport{
+		VaultID:         vaultID,
+		UnresolvedLinks: unresolved,
+		Orphans:         orphans,
+		Duplicates:      duplicates,
+		Untitled:        untitled,
+		IndexRevision:   rev,
+		Partial:         phase != "ready",
+	}
+	handle.mu.Lock()
+	handle.healthReport = &report
+	handle.healthRev = rev
+	handle.mu.Unlock()
+	return report
+}
+
 // Links returns one document's outgoing edges and backlinks (M27).
 func (s *IndexService) Links(ctx context.Context, vaultID, path string) contract.LinkGraphResult {
 	result := contract.LinkGraphResult{Path: path}
@@ -169,13 +231,15 @@ func (s *IndexService) Rebuild(ctx context.Context, vaultID string) contract.Ind
 type indexHandle struct {
 	path string
 
-	mu          sync.Mutex
-	store       *index.Store
-	status      contract.IndexStatus
-	cancel      context.CancelFunc
-	updates     chan []string
-	resolver    *index.Resolver
-	resolverRev int64
+	mu           sync.Mutex
+	store        *index.Store
+	status       contract.IndexStatus
+	cancel       context.CancelFunc
+	updates      chan []string
+	resolver     *index.Resolver
+	resolverRev  int64
+	healthRev    int64
+	healthReport *contract.KbHealthReport
 }
 
 func indexPath(dataDir, vaultID string) string {

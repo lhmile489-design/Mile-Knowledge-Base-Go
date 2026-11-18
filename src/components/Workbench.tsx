@@ -4,6 +4,7 @@ import { TitleBar } from "./TitleBar";
 import { VaultSidebar } from "./VaultSidebar";
 import { EditorPane } from "./EditorPane";
 import { SearchPanel } from "./SearchPanel";
+import { HealthPanel } from "./HealthPanel";
 import { useDocStore } from "../stores/docStore";
 import { events } from "../lib/transport";
 import { useAppStore } from "../stores/appStore";
@@ -213,6 +214,7 @@ export function Workbench() {
           </section>
         )}
       </div>
+      <HealthPanel />
     </div>
   );
 }

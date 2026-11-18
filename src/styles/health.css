@@ -1,0 +1,101 @@
+/* Health panel (PRD FR-HLTH). No user entry in M1: the overview tile opens it
+   in M3, and the e2e suite opens it directly. */
+.health-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.18);
+}
+
+.health-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 92vw);
+  max-height: min(560px, 84vh);
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-panel);
+  background: var(--raw-card);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+}
+
+.health-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--raw-line);
+}
+
+.health-partial {
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+}
+
+.health-close {
+  margin-left: auto;
+}
+
+.health-tabs {
+  margin: 8px 12px 0;
+}
+
+.health-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 12px;
+}
+
+.health-status {
+  padding: 8px 0;
+  font-size: var(--text-body-sm);
+}
+
+.health-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 5px 0;
+  border: 0;
+  border-bottom: 1px solid var(--raw-line);
+  background: transparent;
+  color: var(--raw-text);
+  font-size: var(--text-body-sm);
+  text-align: left;
+}
+
+.health-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.health-link:hover {
+  color: var(--raw-accent);
+}
+
+.health-title {
+  font-weight: 600;
+}
+
+.health-detail {
+  font-family: var(--font-sans, inherit);
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.health-foot {
+  padding: 6px 12px;
+  border-top: 1px solid var(--raw-line);
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  font-variant-numeric: tabular-nums;
+}

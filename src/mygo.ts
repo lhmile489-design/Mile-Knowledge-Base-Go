@@ -48,6 +48,12 @@ export interface DocumentSnapshot {
   degraded?: string;
 }
 
+/** DuplicateNameItem groups files that share a name in different directories. */
+export interface DuplicateNameItem {
+  name: string;
+  paths: string[];
+}
+
 /**
  * Failure is the predictable-failure arm of a result union. Go methods return
  * these instead of Go errors for anything the UI can act on (API.md §1.2).
@@ -96,6 +102,18 @@ export interface IndexStatus {
   failure?: Failure;
 }
 
+/** KbHealthReport is the M28 response. */
+export interface KbHealthReport {
+  vaultId: string;
+  unresolvedLinks: UnresolvedLinkItem[];
+  orphans: OrphanItem[];
+  duplicates: DuplicateNameItem[];
+  untitled: UntitledItem[];
+  indexRevision: number;
+  partial: boolean;
+  failure?: Failure;
+}
+
 /** LayoutSettings mirrors the persisted workbench geometry. */
 export interface LayoutSettings {
   sidebarWidth: number;
@@ -113,6 +131,12 @@ export interface LinkGraphResult {
   outgoing: ResolvedLink[];
   backlinks: string[];
   failure?: Failure;
+}
+
+/** OrphanItem is a document with neither incoming nor outgoing links. */
+export interface OrphanItem {
+  path: string;
+  title: string;
 }
 
 /** PickFolderResult is the wizard's first step; the token replaces the path. */
@@ -236,6 +260,19 @@ export interface UnavailableVault {
   displayName: string;
   /** missing | no-permission */
   reason: string;
+}
+
+/** UnresolvedLinkItem is one broken wiki/internal link (API.md M28). */
+export interface UnresolvedLinkItem {
+  from: string;
+  target: string;
+  candidates: number;
+}
+
+/** UntitledItem is a document whose title fell back to its file name. */
+export interface UntitledItem {
+  path: string;
+  fileName: string;
 }
 
 /** Vault is one registered, usable knowledge base. */
@@ -363,6 +400,11 @@ export const WindowService = {
 
 /** IndexService exposes the search index (API.md M25, M26). */
 export const IndexService = {
+  /**
+   * Health returns the knowledge-base health report (M28), cached per index
+   * revision; partial while the first build is still running.
+   */
+  health: bind<[string], KbHealthReport>("IndexService.Health", (vaultID: string) => [vaultID]),
   /** Links returns one document's outgoing edges and backlinks (M27). */
   links: bind<[string, string], LinkGraphResult>("IndexService.Links", (vaultID: string, path: string) => [vaultID, path]),
   /** Rebuild drops the index file and starts a background rebuild (M26). */

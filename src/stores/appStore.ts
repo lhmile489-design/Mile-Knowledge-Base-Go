@@ -19,6 +19,7 @@ type AppState = {
   activeVaultId: string;
   notices: Notice[];
   bootError: string | null;
+  healthOpen: boolean;
 
   boot: () => Promise<void>;
   refreshVaults: () => Promise<void>;
@@ -29,6 +30,8 @@ type AppState = {
   chooseVault: () => Promise<void>;
   forgetVault: (id: string) => Promise<void>;
   retryVault: (id: string) => Promise<void>;
+  openHealth: () => void;
+  closeHealth: () => void;
   pushNotice: (text: string, level?: string) => void;
   dismissNotice: (id: number) => void;
 };
@@ -46,6 +49,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   unavailable: [],
   activeVaultId: "",
   notices: [],
+  healthOpen: false,
   bootError: null,
 
   boot: async () => {
@@ -122,6 +126,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const list = await vaultApi.retry(id);
     set({ vaults: list.vaults, unavailable: list.unavailable, activeVaultId: list.activeVaultId });
   },
+
+  openHealth: () => set({ healthOpen: true }),
+  closeHealth: () => set({ healthOpen: false }),
 
   pushNotice: (text, level = "info") => {
     noticeSeq += 1;

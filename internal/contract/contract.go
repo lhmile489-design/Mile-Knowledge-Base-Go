@@ -220,6 +220,43 @@ const (
 	EventAppNotice       = "app-notice"
 )
 
+// UnresolvedLinkItem is one broken wiki/internal link (API.md M28).
+type UnresolvedLinkItem struct {
+	From       string `json:"from"`
+	Target     string `json:"target"`
+	Candidates int    `json:"candidates"`
+}
+
+// DuplicateNameItem groups files that share a name in different directories.
+type DuplicateNameItem struct {
+	Name  string   `json:"name"`
+	Paths []string `json:"paths"`
+}
+
+// OrphanItem is a document with neither incoming nor outgoing links.
+type OrphanItem struct {
+	Path  string `json:"path"`
+	Title string `json:"title"`
+}
+
+// UntitledItem is a document whose title fell back to its file name.
+type UntitledItem struct {
+	Path     string `json:"path"`
+	FileName string `json:"fileName"`
+}
+
+// KbHealthReport is the M28 response.
+type KbHealthReport struct {
+	VaultID         string               `json:"vaultId"`
+	UnresolvedLinks []UnresolvedLinkItem `json:"unresolvedLinks"`
+	Orphans         []OrphanItem         `json:"orphans"`
+	Duplicates      []DuplicateNameItem  `json:"duplicates"`
+	Untitled        []UntitledItem       `json:"untitled"`
+	IndexRevision   int64                `json:"indexRevision"`
+	Partial         bool                 `json:"partial"`
+	Failure         *Failure             `json:"failure,omitempty"`
+}
+
 // ResolvedLink is one outgoing edge (API.md M27).
 type ResolvedLink struct {
 	Target     string  `json:"target"`
