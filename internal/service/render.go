@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"io/fs"
 	"net/url"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/index"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/render"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
@@ -32,7 +34,7 @@ type RenderResult struct {
 
 // RenderDocument renders one document for reading mode. The result is not
 // cached here: the frontend caches by revision.
-func (s *RenderService) RenderDocument(vaultID, rel string, revision int64) RenderResult {
+func (s *RenderService) RenderDocument(ctx context.Context, vaultID, rel string, revision int64) RenderResult {
 	root, f := s.app.Vaults.Root(vaultID)
 	if f != nil {
 		return RenderResult{Failure: f}
@@ -48,7 +50,7 @@ func (s *RenderService) RenderDocument(vaultID, rel string, revision int64) Rend
 		return RenderResult{Failure: contract.Fail(contract.CodeTooLarge, "文件超过 2 MiB，只提供只读预览")}
 	}
 
-	resolver := s.app.resolverFor(vaultID, root)
+	resolver := s.app.resolverFor(ctx, vaultID, root)
 	result, err := render.Render([]byte(snap.Text), render.Options{
 		Variant:  render.VariantReader,
 		Resolver: resolver,
@@ -70,8 +72,10 @@ func escapeURLPath(p string) string {
 	return strings.Join(segments, "/")
 }
 
-// resolverFor returns a resolver bound to a vault root, cached per vault.
-func (a *App) resolverFor(vaultID, root string) render.LinkResolver {
+// resolverFor returns a resolver bound to a vault root, cached per vault. When
+// the index has a resolver snapshot, link targets go through it (three layers,
+// including titles); images always use the filesystem resolver.
+func (a *App) resolverFor(ctx context.Context, vaultID, root string) render.LinkResolver {
 	a.mu.Lock()
 	if a.resolvers == nil {
 		a.resolvers = map[string]*vaultResolver{}
@@ -83,7 +87,55 @@ func (a *App) resolverFor(vaultID, root string) render.LinkResolver {
 	}
 	a.mu.Unlock()
 	r.refreshIfStale()
+	if indexed := a.indexResolver(ctx, vaultID); indexed != nil {
+		return &indexedLinkResolver{index: indexed, vault: r}
+	}
 	return r
+}
+
+// indexedLinkResolver lets the index answer link targets while the filesystem
+// resolver keeps handling images and anything the index does not know yet.
+type indexedLinkResolver struct {
+	index *index.Resolver
+	vault *vaultResolver
+}
+
+func (r *indexedLinkResolver) ResolveLink(target string) (string, string, bool) {
+	clean, blocked := cleanLinkTarget(target)
+	if blocked {
+		return "", "blocked", false
+	}
+	if clean == "" {
+		return "", "missing", false
+	}
+	path, candidates := r.index.Resolve(clean)
+	switch {
+	case candidates == 1:
+		return path, "internal", true
+	case candidates > 1:
+		return "", "ambiguous", false
+	}
+	return r.vault.ResolveLink(clean)
+}
+
+func (r *indexedLinkResolver) ResolveImage(src string) (string, bool) {
+	return r.vault.ResolveImage(src)
+}
+
+// cleanLinkTarget applies the same URL cleanup the M0 resolver used.
+func cleanLinkTarget(target string) (string, bool) {
+	clean := strings.TrimSpace(target)
+	if i := strings.IndexAny(clean, "?#"); i >= 0 {
+		clean = clean[:i]
+	}
+	if decoded, err := url.PathUnescape(clean); err == nil {
+		clean = decoded
+	}
+	clean = strings.ReplaceAll(clean, "\\", "/")
+	if strings.HasPrefix(clean, "/") || strings.Contains(clean, "..") {
+		return "", true
+	}
+	return clean, false
 }
 
 // vaultResolver resolves links through two layers in M0: the exact relative

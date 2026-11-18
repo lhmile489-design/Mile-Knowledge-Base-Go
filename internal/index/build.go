@@ -124,6 +124,12 @@ func Build(ctx context.Context, s *Store, root string, progress func(Status)) er
 		return err
 	}
 
+	// Link edges need the whole document set, so they are projected after the
+	// scan rather than per batch.
+	if err := projectAllLinks(ctx, s); err != nil {
+		return err
+	}
+
 	// Counts come from the table so a skipped directory cannot make them lie.
 	if err := s.withTx(ctx, func(tx *sql.Tx) error {
 		var docs, tokens int

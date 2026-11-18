@@ -9,6 +9,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/index"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 )
 
 // IndexStatusEvent is E02: the index phase or progress changed.
@@ -59,13 +60,100 @@ func (s *IndexService) Search(ctx context.Context, query contract.SearchQuery) c
 	result, err := index.Search(ctx, store, query)
 	if err != nil {
 		return contract.SearchResult{VaultID: query.VaultID, Query: query.Text,
-			Hits: []contract.SearchHit{},
+			Hits:    []contract.SearchHit{},
 			Failure: contract.Fail(contract.CodeIOFailure, "检索失败："+err.Error())}
 	}
 	if phase != "ready" {
 		result.Partial = true
 	}
 	return result
+}
+
+// Links returns one document's outgoing edges and backlinks (M27).
+func (s *IndexService) Links(ctx context.Context, vaultID, path string) contract.LinkGraphResult {
+	result := contract.LinkGraphResult{Path: path}
+	if f := validateID(vaultID); f != nil {
+		result.Failure = contract.Fail(contract.CodeInvalidInput, "知识库 id 不合法")
+		return result
+	}
+	norm, f := pathguard.ValidateRel(path)
+	if f != nil {
+		result.Failure = f
+		return result
+	}
+	handle := s.app.indexHandle(vaultID)
+	if handle == nil {
+		result.Failure = contract.Fail(contract.CodeVaultUnavailable, "知识库不可用")
+		return result
+	}
+	handle.mu.Lock()
+	store := handle.store
+	handle.mu.Unlock()
+	if store == nil {
+		result.Failure = contract.Fail(contract.CodeIOFailure, "索引不可用")
+		return result
+	}
+	graph, ok, err := index.Links(ctx, store, norm)
+	if err != nil {
+		result.Failure = contract.Fail(contract.CodeIOFailure, "读取链接失败")
+		return result
+	}
+	if !ok {
+		result.Failure = contract.Fail(contract.CodeNotFound, "文档不在索引中")
+		return result
+	}
+	result.Path = graph.Path
+	result.Backlinks = graph.Backlinks
+	for _, link := range graph.Outgoing {
+		result.Outgoing = append(result.Outgoing, contract.ResolvedLink{
+			Target: link.Target, Text: link.Text, Kind: link.Kind,
+			Path: link.Path, Candidates: link.Candidates,
+		})
+	}
+	return result
+}
+
+// indexHandle returns a vault's index handle, if it has been opened.
+func (a *App) indexHandle(vaultID string) *indexHandle {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.indexes[vaultID]
+}
+
+// indexResolver returns the resolver for the current index revision, or nil
+// when the index is not open yet. Cached per revision.
+func (a *App) indexResolver(ctx context.Context, vaultID string) *index.Resolver {
+	handle := a.indexHandle(vaultID)
+	if handle == nil {
+		return nil
+	}
+	handle.mu.Lock()
+	store := handle.store
+	handle.mu.Unlock()
+	if store == nil {
+		return nil
+	}
+	revision, err := store.Revision(ctx)
+	if err != nil {
+		return nil
+	}
+	handle.mu.Lock()
+	if handle.resolver != nil && handle.resolverRev == revision {
+		resolver := handle.resolver
+		handle.mu.Unlock()
+		return resolver
+	}
+	handle.mu.Unlock()
+
+	resolver, err := index.ResolverFor(ctx, store)
+	if err != nil {
+		return nil
+	}
+	handle.mu.Lock()
+	handle.resolver = resolver
+	handle.resolverRev = revision
+	handle.mu.Unlock()
+	return resolver
 }
 
 // Rebuild drops the index file and starts a background rebuild (M26).
@@ -81,11 +169,13 @@ func (s *IndexService) Rebuild(ctx context.Context, vaultID string) contract.Ind
 type indexHandle struct {
 	path string
 
-	mu      sync.Mutex
-	store   *index.Store
-	status  contract.IndexStatus
-	cancel  context.CancelFunc
-	updates chan []string
+	mu          sync.Mutex
+	store       *index.Store
+	status      contract.IndexStatus
+	cancel      context.CancelFunc
+	updates     chan []string
+	resolver    *index.Resolver
+	resolverRev int64
 }
 
 func indexPath(dataDir, vaultID string) string {

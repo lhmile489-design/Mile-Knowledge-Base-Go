@@ -68,6 +68,16 @@ func Update(ctx context.Context, s *Store, root string, dirs []string, progress 
 	}
 
 	if err := s.withTx(ctx, func(tx *sql.Tx) error {
+		changed := make([]string, 0, len(upserts))
+		for _, e := range upserts {
+			changed = append(changed, e.rel)
+		}
+		// Titles before the writes feed the link layer's title matching.
+		oldTitles, err := titlesFor(ctx, tx, append(append([]string{}, changed...), removed...))
+		if err != nil {
+			return err
+		}
+
 		for _, e := range upserts {
 			if _, _, err := indexEntry(ctx, tx, e); err != nil {
 				return err
@@ -80,6 +90,24 @@ func Update(ctx context.Context, s *Store, root string, dirs []string, progress 
 			}
 			status.Skipped++
 		}
+
+		// Only documents whose edges can change are recomputed (P-1).
+		newTitles, err := titlesFor(ctx, tx, changed)
+		if err != nil {
+			return err
+		}
+		resolver, err := resolverTx(ctx, tx)
+		if err != nil {
+			return err
+		}
+		affected, err := affectedByChange(ctx, tx, changed, removed, append(oldTitles, newTitles...))
+		if err != nil {
+			return err
+		}
+		if err := refreshLinksTx(ctx, tx, affected, resolver); err != nil {
+			return err
+		}
+
 		var docs, tokens int
 		if err := tx.QueryRowContext(ctx,
 			`SELECT COUNT(*), COALESCE(SUM(token_count), 0) FROM documents`).Scan(&docs, &tokens); err != nil {

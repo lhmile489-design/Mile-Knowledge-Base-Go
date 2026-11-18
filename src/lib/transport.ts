@@ -11,6 +11,7 @@ import {
   events,
   type AppSettings,
   type IndexStatus,
+  type LinkGraphResult,
   type SearchHit,
   type SearchQuery,
   type SearchResult,
@@ -25,7 +26,7 @@ import {
   type WriteOutcome,
 } from "../mygo";
 
-export type { AppSettings, IndexStatus, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
+export type { AppSettings, IndexStatus, LinkGraphResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
 /** TransportError carries a stable code; unexpected failures get `unknown`. */
 export class TransportError extends Error {
@@ -92,6 +93,7 @@ export const indexApi = {
   search: (query: SearchQuery) => guard(async () => unwrap(await IndexService.search(query))),
   status: (vaultId: string) => guard(async () => unwrap(await IndexService.status(vaultId))),
   rebuild: (vaultId: string) => guard(async () => unwrap(await IndexService.rebuild(vaultId))),
+  links: (vaultId: string, path: string) => guard(async () => unwrap(await IndexService.links(vaultId, path))),
 };
 
 export const windowApi = {

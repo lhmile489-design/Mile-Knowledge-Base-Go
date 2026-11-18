@@ -107,6 +107,14 @@ export interface LayoutSettings {
   agnesComposerHeight: number;
 }
 
+/** LinkGraphResult is the M27 response: outgoing edges plus backlinks. */
+export interface LinkGraphResult {
+  path: string;
+  outgoing: ResolvedLink[];
+  backlinks: string[];
+  failure?: Failure;
+}
+
 /** PickFolderResult is the wizard's first step; the token replaces the path. */
 export interface PickFolderResult {
   cancelled: boolean;
@@ -143,6 +151,15 @@ export interface RenderResult {
   revision?: number;
   hasImages?: boolean;
   failure?: Failure;
+}
+
+/** ResolvedLink is one outgoing edge (API.md M27). */
+export interface ResolvedLink {
+  target: string;
+  text: string;
+  kind: string;
+  path: string | null;
+  candidates: number;
 }
 
 /** SearchFilters narrows a search (API.md M24). */
@@ -346,6 +363,8 @@ export const WindowService = {
 
 /** IndexService exposes the search index (API.md M25, M26). */
 export const IndexService = {
+  /** Links returns one document's outgoing edges and backlinks (M27). */
+  links: bind<[string, string], LinkGraphResult>("IndexService.Links", (vaultID: string, path: string) => [vaultID, path]),
   /** Rebuild drops the index file and starts a background rebuild (M26). */
   rebuild: bind<[string], IndexStatus>("IndexService.Rebuild", (vaultID: string) => [vaultID]),
   /**

@@ -188,3 +188,59 @@
 .editor-scroll .reader {
   padding: 16px 20px 40px;
 }
+
+/* Backlinks and unresolved links under the document body (screenshot 20). */
+.backlinks {
+  flex: none;
+  max-height: 168px;
+  overflow: auto;
+  padding: 8px 12px;
+  border-top: 1px solid var(--raw-line);
+  background: var(--raw-card);
+}
+
+.backlinks-group + .backlinks-group {
+  margin-top: 8px;
+}
+
+.backlinks-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+  color: var(--raw-faint);
+}
+
+.backlinks-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--raw-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-align: left;
+  cursor: pointer;
+}
+
+.backlinks-item:hover {
+  color: var(--raw-accent);
+}
+
+.backlinks-item.is-static {
+  cursor: default;
+  color: var(--raw-muted);
+}
+
+.backlinks-item.is-static:hover {
+  color: var(--raw-muted);
+}
+
+.backlinks-reason {
+  color: var(--raw-faint);
+  font-family: var(--font-sans, inherit);
+}

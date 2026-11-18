@@ -220,6 +220,23 @@ const (
 	EventAppNotice       = "app-notice"
 )
 
+// ResolvedLink is one outgoing edge (API.md M27).
+type ResolvedLink struct {
+	Target     string  `json:"target"`
+	Text       string  `json:"text"`
+	Kind       string  `json:"kind"`
+	Path       *string `json:"path"`
+	Candidates int     `json:"candidates"`
+}
+
+// LinkGraphResult is the M27 response: outgoing edges plus backlinks.
+type LinkGraphResult struct {
+	Path      string         `json:"path"`
+	Outgoing  []ResolvedLink `json:"outgoing"`
+	Backlinks []string       `json:"backlinks"`
+	Failure   *Failure       `json:"failure,omitempty"`
+}
+
 // SearchFilters narrows a search (API.md M24).
 type SearchFilters struct {
 	Areas         []string `json:"areas,omitempty"`

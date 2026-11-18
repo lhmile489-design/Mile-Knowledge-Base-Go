@@ -4,6 +4,7 @@ import { TabStrip } from "./TabStrip";
 import { SourceEditor } from "./SourceEditor";
 import { ReaderView } from "./ReaderView";
 import { ConflictCard } from "./ConflictCard";
+import { BacklinksPanel } from "./BacklinksPanel";
 import { useAppStore } from "../stores/appStore";
 import { useDocStore, isDirty, tabTitle, useDirtyReporter } from "../stores/docStore";
 import { formatBytes } from "../lib/bytes";
@@ -201,6 +202,10 @@ export function EditorPane() {
             </div>
           )}
         </div>
+      ) : null}
+
+      {doc && !doc.loading && !doc.error ? (
+        <BacklinksPanel vaultId={vaultId} path={activePath} revision={doc.revision} />
       ) : null}
     </div>
   );
