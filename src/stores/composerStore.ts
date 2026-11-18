@@ -2,7 +2,7 @@
 // parameters and the persisted height. The routing rules live in lib/routing
 // so the composer and the tests share them.
 import { create } from "zustand";
-import type { AgentListResult, AgentPatch, RoutePreviewResult } from "../mygo";
+import type { AgentListResult, AgentPatch, EngineStatus, RoutePreviewResult } from "../mygo";
 import { agentApi } from "../lib/agentApi";
 import type { AgentId } from "../lib/agentMeta";
 import {
@@ -45,6 +45,7 @@ interface ComposerState {
   loadSession(vaultId: string | null): Promise<void>;
   updateModel(vaultId: string, model: string): Promise<void>;
   updateExecutionMode(vaultId: string, mode: ExecutionMode): Promise<void>;
+  applyEngineStatus(vaultId: string, status: EngineStatus): void;
   send(vaultId: string | null): Promise<void>;
   route(): { agent: AgentId; kind: FollowUpRouteKind };
   hasConversation(): boolean;
@@ -151,6 +152,16 @@ export const useComposerStore = create<ComposerState>()((set, get) => ({
       return;
     }
     await get().loadSession(vaultId);
+  },
+
+  applyEngineStatus: (vaultId, status) => {
+    const previous = get().session?.engine;
+    const changed = previous?.phase !== status.phase || previous?.message !== status.message;
+    if (!changed) return;
+    set((state) => ({
+      session: state.session ? { ...state.session, engine: status } : null,
+    }));
+    if (status.phase === "ready") void get().loadSession(vaultId);
   },
 
   hasConversation: () => hasUserLine(useAgentStore.getState().agent),

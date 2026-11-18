@@ -77,6 +77,7 @@ export const settingsApi = {
     guard(async () => unwrap(await SettingsService.appConfigPatchAgent(vaultId, agent, patch))),
   appConfigPatchAliases: (vaultId: string, patches: Record<string, string | null>) =>
     guard(async () => unwrap(await SettingsService.appConfigPatchAliases(vaultId, patches))),
+  providers: (vaultId: string) => guard(async () => unwrap(await SettingsService.providers(vaultId))),
   patch: (patch: Parameters<typeof SettingsService.patch>[0]) =>
     guard(async () => unwrap(await SettingsService.patch(patch))),
 };

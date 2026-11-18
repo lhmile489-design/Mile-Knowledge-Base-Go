@@ -1,18 +1,26 @@
 import { ChatCircleDots, Info, Plus } from "@phosphor-icons/react";
 import { AGENT_META } from "../../lib/agentMeta";
 import { useHistoryStore } from "../../stores/historyStore";
+import { useComposerStore } from "../../stores/composerStore";
 import { deriveConversationTitle } from "../../lib/conversationTime";
 import { useAgentStore } from "../../stores/agentStore";
 
 /** Chat header, 44px (PRD FR-AI-CHAT). History, session info and the pending
  * approvals tab are wired by T14–T16; the buttons exist so the bar keeps its
  * final shape. */
-export function ChatHeader() {
+export function ChatHeader({
+  infoOpen,
+  onOpenInfo,
+}: {
+  readonly infoOpen: boolean;
+  readonly onOpenInfo: () => void;
+}) {
   const agent = useAgentStore((state) => state.agent);
   const bucket = useAgentStore((state) => state.buckets[state.agent]);
   const newConversation = useAgentStore((state) => state.newConversation);
   const vaultId = useAgentStore((state) => state.vaultId);
   const historyOpen = useHistoryStore((state) => state.open);
+  const engineOffline = useComposerStore((state) => state.session?.engine?.phase === "offline");
   const toggleRail = useHistoryStore((state) => state.toggleRail);
 
   const firstUser = bucket.transcript.lines.find((line) => line.role === "user");
@@ -44,7 +52,18 @@ export function ChatHeader() {
       <span className="chat-agent" title={`${meta.name} · ${meta.scope}`}>
         {meta.name}
       </span>
-      <button type="button" className="icon-button" disabled aria-disabled="true" aria-label="会话信息">
+      {engineOffline ? (
+        <button type="button" className="pill" data-tone="fault" onClick={onOpenInfo} data-testid="engine-offline">
+          引擎离线
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className="icon-button"
+        aria-label="会话信息"
+        aria-expanded={infoOpen}
+        onClick={onOpenInfo}
+      >
         <Info size={16} aria-hidden />
       </button>
       <button
