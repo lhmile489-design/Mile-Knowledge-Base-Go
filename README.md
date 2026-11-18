@@ -69,6 +69,9 @@
 | M1 验收 | 检索 / 树操作 / 日志恢复 / 重启 | `bash scripts/e2e/ac-m1.sh` | 已验证 16/16 |
 | 新旧版兼容 | 事务与 provenance 字节互通 | `bash scripts/compat/legacy-compat.sh`（需要旧版仓库与 bun，只读复制到临时目录） | 已验证 7/7 |
 | M1 性能 | 冷启动 / 索引 / 检索 p95 / 批量改动 | `bash scripts/e2e/perf-m1.sh` | 已验证（见 docs/PLAN-M1.md §6.0） |
+| M2 冒烟 | Secrets 与系统代理能力 | `go run ./spikes/t00-smoke` | 已验证（Secrets 存取/超长拒绝/删除；netproxy 回环直连） |
+| M2 单元测试 | AI 引擎、工具、上下文、对话历史 | `go test ./internal/ai/... ./internal/conversation/...` | 占位：T01 起逐步建立 |
+| M2 验收 | 假供应商闭环 | `bash scripts/e2e/ac-m2.sh` | 占位：T19 建立 |
 | 性能 | 冷启动 / 大库 / 滚动 / 外部改动 | `bash scripts/e2e/perf.sh` | 已验证（见 docs/PLAN-M0.md §6） |
 | 构建 | 生产安装包 | `bun run build`（产物 `build/windows-amd64/`） | 已验证 |
 

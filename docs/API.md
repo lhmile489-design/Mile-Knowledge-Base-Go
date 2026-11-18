@@ -437,7 +437,13 @@ type LoadResult struct {
 #### M37 `renderBlock(text, kind)` — 对话增量块渲染
 
 - 入参：`text` 是当前正在写的块（≤64 000 字符），`kind ∈ 'message'\|'thought'\|'user'`。
-- 出参 `{html}`。Go 按块边界缓存已封口块，只重渲染末尾未封口块（技术设计 §4.5；FR-AI-CHAT「增量渲染」）。末尾未完成的表格/链接由渲染层先收起。
+- 出参 `BlockResult{html: string}`。Go 按块边界缓存已封口块，只重渲染末尾未封口块（技术设计 §4.5；FR-AI-CHAT「增量渲染」）。末尾未完成的表格/链接由渲染层先收起。
+
+```go
+type BlockResult struct {
+    HTML string `json:"html"`
+}
+```
 
 ### 4.6 AgentService（4 个 Agent 与共享上下文）
 
@@ -473,9 +479,78 @@ type LoadResult struct {
 #### M45-M49 共享上下文
 
 - `contextSnapshot(vaultId)` → `SharedContext{snapshotId, sequence, vault, activeDocument?, pinnedReferences, taskBoard, decisionLog, actionLedger, retrievalBundle}`（context.ts:97-118）。
-- `contextPin(vaultId, path, note?)`：`note` ≤500（validate.ts:163-167）；pin 的 id 不透明、不编码路径（register.ts:906-909）。
+- `contextPin(vaultId, path, note?)`：`note` ≤500 字符，超长**截断不拒绝**（validate.ts:163-167 走 assertString 的默认 onOverflow）；pin 的 id 不透明、不编码路径（register.ts:906-909）。
 - `contextSetTaskStatus(taskId, status)`：`status ∈ queued|running|blocked|done|cancelled`（context.ts:21-26）。
-- `contextReportDocument(vaultId, path?, revision, dirty)`：`path` 为 `null` 表示无打开文档；这是唯一由前端主动推给 ContextHub 的派生信息（ipc.ts:416-423）。
+- `contextReportDocument(vaultId, path?, revision, dirty, selection?)`：`path` 为 `null` 表示无打开文档；`revision` 必须是非负整数、`dirty` 必须严格布尔，否则 `invalid-input`（register.ts:930-932）；`selection` ≤200 字符，超长截断。这是唯一由前端主动推给 ContextHub 的派生信息（ipc.ts:416-423）。
+
+子结构（字段取自旧版 `shared/context.ts:20-118`）：
+
+```go
+type VaultContext struct {
+    ID            string `json:"id"`
+    RootLabel     string `json:"rootLabel"` // 只放显示名，绝对路径不进上下文
+    Revision      int64  `json:"revision"`
+    IndexRevision int64  `json:"indexRevision"`
+}
+
+type ActiveDocumentContext struct {
+    Path      string `json:"path"`
+    Revision  int64  `json:"revision"`
+    Dirty     bool   `json:"dirty"`
+    Selection string `json:"selection,omitempty"` // ≤200 字符
+}
+
+type Reference struct {
+    ID       string `json:"id"` // 不透明，不编码路径
+    Path     string `json:"path"`
+    Revision int64  `json:"revision"`
+    Note     string `json:"note,omitempty"` // ≤500 字符
+    PinnedAt string `json:"pinnedAt"`
+}
+
+type TaskItem struct {
+    ID          string   `json:"id"`
+    Owner       string   `json:"owner"`
+    Status      string   `json:"status"` // queued|running|blocked|done|cancelled
+    Goal        string   `json:"goal"`
+    Inputs      []string `json:"inputs"`
+    Constraints []string `json:"constraints"`
+    Outputs     []string `json:"outputs"`
+    CreatedBy   string   `json:"createdBy"`
+    CreatedAt   string   `json:"createdAt"`
+    UpdatedAt   string   `json:"updatedAt"`
+}
+
+type Decision struct {
+    ID        string   `json:"id"`
+    Summary   string   `json:"summary"`
+    DecidedBy string   `json:"decidedBy"` // agent id 或 "user"
+    DecidedAt string   `json:"decidedAt"`
+    Paths     []string `json:"paths,omitempty"`
+}
+
+type ContextActionSummary struct {
+    ID     string `json:"id"`
+    Kind   string `json:"kind"`
+    Source string `json:"source,omitempty"`
+    Target string `json:"target,omitempty"`
+    Status string `json:"status"`
+    At     string `json:"at"`
+}
+
+type RetrievalItem struct {
+    ID       string  `json:"id"`
+    Path     string  `json:"path"`
+    Revision int64   `json:"revision"`
+    Excerpt  string  `json:"excerpt"`
+    Score    float64 `json:"score"`
+    Reason   string  `json:"reason"`
+    Area     string  `json:"area"`
+    Stale    bool    `json:"stale,omitempty"` // 片段 revision 落后于磁盘
+}
+```
+
+- `selection` 字段本来就存在于旧版类型里（`shared/context.ts:82`，`contextTail.ts:88-89` 会消费并截到 200 字符），但旧版从未填入：唯一写入方 `ipc/register.ts:922-935` 只收 path/revision/dirty。新版按 PRD FR-AI-CTX 给 `contextReportDocument` **增加可选入参** `selection`，未传时 `activeDocument.selection` 缺省。新增的是入参，不是结构字段。
 
 ### 4.7 ConversationService（对话历史）
 
@@ -575,6 +650,76 @@ type PermFrame struct {
 }
 ```
 
+```go
+// ---- 帧载荷（§6 判别联合的成员） ----
+
+// ToolCallFrame：一次工具调用的状态，同 id 原地更新
+// （旧版 AgentToolCall，shared/agent.ts:122-129）。
+type ToolCallFrame struct {
+    ID     string `json:"id"`
+    Title  string `json:"title"`
+    Kind   string `json:"kind,omitempty"`
+    Status string `json:"status"` // pending | in-progress | completed | failed
+    Detail string `json:"detail,omitempty"` // 参数摘要，已截断，不含完整正文
+}
+
+// StatusFrame：回合阶段与重试提示（旧版 AgentEvent 'status'，shared/agent.ts:183-193）。
+type StatusFrame struct {
+    State  string `json:"state"`
+    Phase  string `json:"phase,omitempty"`
+    Model  string `json:"model,omitempty"`
+    Effort string `json:"effort,omitempty"`
+    Detail string `json:"detail,omitempty"` // 只含分类与次数，不含响应体或 URL
+}
+
+// UsageFrame / Usage：字段名逐字取自旧版 shared/usage.ts:22-50（源头是
+// Reasonix internal/acp/status_usage.go:6-29）。「不知道」不等于「零」：
+// 费用与命中率缺失时用指针/可空表示，前端显示「—」。
+type UsageFrame struct {
+    Turn       Usage `json:"turn"`
+    Cumulative Usage `json:"cumulative"`
+}
+
+type Usage struct {
+    TotalTokens      int64    `json:"totalTokens"`
+    PromptTokens     int64    `json:"promptTokens"`
+    CompletionTokens int64    `json:"completionTokens"`
+    ReasoningTokens  int64    `json:"reasoningTokens"` // 推理 token 必须单列
+    CacheHitTokens   int64    `json:"cacheHitTokens"`
+    CacheMissTokens  int64    `json:"cacheMissTokens"`
+    Estimated        bool     `json:"estimated,omitempty"`
+    CacheHitRatio    *float64 `json:"cacheHitRatio,omitempty"` // 缺失时由 hit/(hit+miss) 推导
+    EstimatedCost    *float64 `json:"estimatedCost,omitempty"` // 缺省 = 未提供，绝不当 0
+    Currency         string   `json:"currency,omitempty"`
+    CostComplete     *bool    `json:"costComplete,omitempty"` // false = 费用尚未结算完整
+    DisplayStatus    string   `json:"displayStatus,omitempty"`
+    UsageSource      string   `json:"usageSource,omitempty"`
+}
+
+// WritePreview：审批卡的写入预览（旧版 shared/lineDiff.ts:101-122）。三类用
+// Kind 区分，避免 TS 侧出现联合类型无法映射到 Go 的问题。
+type WritePreview struct {
+    Kind         string     `json:"kind"` // created | modified | summary
+    Lines        []DiffLine `json:"lines,omitempty"`
+    OldLineCount int        `json:"oldLineCount,omitempty"`
+    NewLineCount int        `json:"newLineCount,omitempty"`
+    OldBytes     int64      `json:"oldBytes"`
+    NewBytes     int64      `json:"newBytes"`
+    Reason       string     `json:"reason,omitempty"` // too-large | not-text | unchanged
+}
+
+type DiffLine struct {
+    Kind string `json:"kind"` // same | added | removed
+    Text string `json:"text"`
+}
+
+// PermissionOption：恒为 [允许, 拒绝]（旧版 shared/agent.ts:131-136）。
+type PermissionOption struct {
+    ID    string `json:"id"`
+    Label string `json:"label"`
+}
+```
+
 | kind | 载荷字段 | 含义 | 对应旧版 AgentEvent |
 | --- | --- | --- | --- |
 | `delta` | `text` | 正文增量（已按 ~16ms 合并成帧） | `message` |
@@ -585,7 +730,6 @@ type PermFrame struct {
 | `usage` | `usage{turn,cumulative}` | 用量收据（字段见 usage.ts:22-50） | `usage` |
 | `turn-end` | `stopReason` | 回合正常结束 | `turn-end` |
 | `error` | `message` | 回合级错误（已脱敏） | `error` |
-| `sidecar` | `status` | 引擎整体状态（并入帧，与回合同生命周期） | `sidecar` |
 
 规则（来源：PRD FR-AI-CHAT/ENG/PERM、agnes-engine §13、mygo-web-app bindings-and-channels §4）：
 
@@ -596,7 +740,7 @@ type PermFrame struct {
 - **批准凭证的键（E，与旧版一致）**：审批卡按 `requestId` 登记（`EngineHost.writeApprovals` Map 键 = requestId，EngineHost.ts:207-215）；用户点允许后产生两张凭证——`bridge.allowWriteOnce(sessionId, path)` 放行该会话该路径的一次写（写/编辑走桥接层逐路径消费），`mutationApprovals.set(sessionId, {path, expiresAt: now+60s})` 记结构变更批准（EngineHost.ts:221-225, 724-728）。`permanentDelete` 执行前 `consumeFreshMutationApproval(sessionId, path)`：要求 60 秒内、目标路径一致、且发卡时登记的执行模式不是 `yolo` 的消费型批准，用过即删（EngineHost.ts:733-743）。两种口径：`requestId` 键只管「这张卡批没批」；`sessionId+path` 键只管「这次写/这次结构变更放不放行」，二者不能互相替代。
 - **帧终结语义（H）**：`Prompt` 返回值（`PromptResult.stopReason`）与 Channel 的 `onclose` 是回合结束信号；`StreamFrame.finish` 只是 Go 标记「这是它主动发送的最后一帧」的提示位，前端不得据 `finish` 判断回合结束——`finish=true` 之后不会再有业务帧，但真正的结束以 Channel 关闭为准（背压/取消路径下可能无 `finish` 帧）。`turn-end` 帧与 `finish` 的关系：`turn-end` 携带 `stopReason` 是语义上的回合结果，`finish` 是通道层面的末帧标记，通常同帧或紧邻出现。
 - **顺序与完整性**：值按序到达，全部在 `Prompt` promise settle 之前；方法返回即 Channel 关闭，`onclose` 触发。
-- **历史落盘**：只有 `delta/thought/tool(终态)/turn-end/error` 落 `.jsonl`；`permission/usage/status/sidecar` 不落盘（FR-AI-HIST；agnes-engine §12）。
+- **历史落盘**：只有 `delta/thought/tool(终态)/turn-end/error` 落 `.jsonl`；`permission/usage/status` 不落盘（FR-AI-HIST；agnes-engine §12）。引擎整体状态已移到 E10 `engine-status`，不在本 Channel 内。
 
 ## 7. 事件清单（定向 Event）
 
