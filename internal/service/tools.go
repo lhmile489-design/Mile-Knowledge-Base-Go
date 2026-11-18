@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,10 +16,12 @@ import (
 // ApprovalGate decides whether one write or structural change may proceed.
 // T06 supplies the real gate (approval cards, 60-second grants); T05 tests
 // inject a fake.
+// A nil return allows the operation. A returned context error must reach the
+// turn loop so cancellation stops the turn; other errors become tool text.
 type ApprovalGate interface {
-	AllowWrite(ctx context.Context, sessionID, path string) *contract.Failure
-	AllowMutation(ctx context.Context, sessionID, path string) *contract.Failure
-	ConsumeFreshMutation(ctx context.Context, sessionID, path string) *contract.Failure
+	AllowWrite(ctx context.Context, sessionID, path string) error
+	AllowMutation(ctx context.Context, sessionID, path string) error
+	ConsumeFreshMutation(ctx context.Context, sessionID, path string) error
 }
 
 // AgentToolRunner executes the seven tools that are available in M2 (handoff
@@ -58,11 +61,11 @@ func (r *AgentToolRunner) Run(ctx context.Context, call ai.CompletedToolCall) (s
 	case "list_dir":
 		return r.listDir(call.Arguments), nil
 	case "write_note":
-		return r.writeNote(ctx, call.Arguments), nil
+		return r.writeNote(ctx, call.Arguments)
 	case "edit_note":
-		return r.editNote(ctx, call.Arguments), nil
+		return r.editNote(ctx, call.Arguments)
 	case "mutate_notes":
-		return r.mutateNotes(ctx, call.Arguments), nil
+		return r.mutateNotes(ctx, call.Arguments)
 	case "set_aliases":
 		return r.setAliases(ctx, call.Arguments), nil
 	case "handoff_task":
@@ -74,6 +77,13 @@ func (r *AgentToolRunner) Run(ctx context.Context, call ai.CompletedToolCall) (s
 
 func toolNames() string {
 	return "search_notes、read_note、list_dir、write_note、edit_note、mutate_notes、handoff_task、set_aliases"
+}
+
+func gateError(err error) (string, error) {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return "", err
+	}
+	return "被拒绝：" + err.Error(), nil
 }
 
 func (r *AgentToolRunner) root() (string, string) {
@@ -215,134 +225,134 @@ func (r *AgentToolRunner) listDir(raw string) string {
 	return strings.Join(lines, "\n")
 }
 
-func (r *AgentToolRunner) writeNote(ctx context.Context, raw string) string {
+func (r *AgentToolRunner) writeNote(ctx context.Context, raw string) (string, error) {
 	var args struct {
 		Path    string `json:"path"`
 		Content string `json:"content"`
 	}
 	if err := json.Unmarshal([]byte(rawOrDefault(raw, "{}")), &args); err != nil {
-		return "参数不合法：无法解析为 JSON"
+		return "参数不合法：无法解析为 JSON", nil
 	}
 	path, ok := policy.Normalize(args.Path)
 	if !ok {
-		return "参数不合法：path 必须是知识库内的相对路径"
+		return "参数不合法：path 必须是知识库内的相对路径", nil
 	}
 	if decision := policy.CanWrite(r.agent, path); !decision.Allowed {
-		return "被拒绝：" + decision.Reason
+		return "被拒绝：" + decision.Reason, nil
 	}
-	if f := r.gate.AllowWrite(ctx, r.sessionID, path); f != nil {
-		return "被拒绝：" + f.Message
+	if err := r.gate.AllowWrite(ctx, r.sessionID, path); err != nil {
+		return gateError(err)
 	}
 	root, errText := r.root()
 	if errText != "" {
-		return errText
+		return errText, nil
 	}
 	revision := int64(0)
 	if snapshot, f := vault.Read(root, path); f == nil {
 		revision = snapshot.Revision
 	} else if f.Code != contract.CodeNotFound {
-		return "读取失败：" + f.Message
+		return "读取失败：" + f.Message, nil
 	}
 	outcome, f := vault.Write(root, path, revision, args.Content)
 	if f != nil {
-		return "写入失败：" + f.Message
+		return "写入失败：" + f.Message, nil
 	}
 	if outcome.Status == "conflict" {
-		return "写入冲突：磁盘上的内容在本次读取后又被修改"
+		return "写入冲突：磁盘上的内容在本次读取后又被修改", nil
 	}
-	return fmt.Sprintf("已写入 %s（%d 字节）", path, outcome.Size)
+	return fmt.Sprintf("已写入 %s（%d 字节）", path, outcome.Size), nil
 }
 
-func (r *AgentToolRunner) editNote(ctx context.Context, raw string) string {
+func (r *AgentToolRunner) editNote(ctx context.Context, raw string) (string, error) {
 	var args struct {
 		Path    string `json:"path"`
 		OldText string `json:"old_text"`
 		NewText string `json:"new_text"`
 	}
 	if err := json.Unmarshal([]byte(rawOrDefault(raw, "{}")), &args); err != nil {
-		return "参数不合法：无法解析为 JSON"
+		return "参数不合法：无法解析为 JSON", nil
 	}
 	path, ok := policy.Normalize(args.Path)
 	if !ok {
-		return "参数不合法：path 必须是知识库内的相对路径"
+		return "参数不合法：path 必须是知识库内的相对路径", nil
 	}
 	if decision := policy.CanWrite(r.agent, path); !decision.Allowed {
-		return "被拒绝：" + decision.Reason
+		return "被拒绝：" + decision.Reason, nil
 	}
 	root, errText := r.root()
 	if errText != "" {
-		return errText
+		return errText, nil
 	}
 	snapshot, f := vault.Read(root, path)
 	if f != nil {
-		return "读取失败：" + f.Message
+		return "读取失败：" + f.Message, nil
 	}
 	switch strings.Count(snapshot.Text, args.OldText) {
 	case 0:
-		return "old_text 在文件中不存在，未做修改"
+		return "old_text 在文件中不存在，未做修改", nil
 	case 1:
 	default:
-		return "old_text 在文件中出现了多次，未做修改；请提供更精确的片段"
+		return "old_text 在文件中出现了多次，未做修改；请提供更精确的片段", nil
 	}
-	if f := r.gate.AllowWrite(ctx, r.sessionID, path); f != nil {
-		return "被拒绝：" + f.Message
+	if err := r.gate.AllowWrite(ctx, r.sessionID, path); err != nil {
+		return gateError(err)
 	}
 	next := strings.Replace(snapshot.Text, args.OldText, args.NewText, 1)
 	outcome, f := vault.Write(root, path, snapshot.Revision, next)
 	if f != nil {
-		return "写入失败：" + f.Message
+		return "写入失败：" + f.Message, nil
 	}
 	if outcome.Status == "conflict" {
-		return "写入冲突：文件在读取后又被修改"
+		return "写入冲突：文件在读取后又被修改", nil
 	}
-	return "已更新 " + path
+	return "已更新 " + path, nil
 }
 
-func (r *AgentToolRunner) mutateNotes(ctx context.Context, raw string) string {
+func (r *AgentToolRunner) mutateNotes(ctx context.Context, raw string) (string, error) {
 	var args struct {
 		Kind   string `json:"kind"`
 		Source string `json:"source"`
 		Target string `json:"target"`
 	}
 	if err := json.Unmarshal([]byte(rawOrDefault(raw, "{}")), &args); err != nil {
-		return "参数不合法：无法解析为 JSON"
+		return "参数不合法：无法解析为 JSON", nil
 	}
 	kind := args.Kind
 	switch kind {
 	case policy.KindCreate, policy.KindCreateDirectory, policy.KindEdit,
 		policy.KindMove, policy.KindCopy, policy.KindArchive, policy.KindTrash, policy.KindPermanentDelete:
 	default:
-		return "参数不合法：kind 只接受 createDirectory / move / copy / archive / trash / permanentDelete"
+		return "参数不合法：kind 只接受 createDirectory / move / copy / archive / trash / permanentDelete", nil
 	}
 	source, target := args.Source, args.Target
 	if source != "" {
 		normalized, ok := policy.Normalize(source)
 		if !ok {
-			return "参数不合法：source 必须是知识库内的相对路径"
+			return "参数不合法：source 必须是知识库内的相对路径", nil
 		}
 		source = normalized
 	}
 	if target != "" {
 		normalized, ok := policy.Normalize(target)
 		if !ok {
-			return "参数不合法：target 必须是知识库内的相对路径"
+			return "参数不合法：target 必须是知识库内的相对路径", nil
 		}
 		target = normalized
 	}
 	if decision := policy.CanMutate(r.agent, kind, source, target); !decision.Allowed {
-		return "被拒绝：" + decision.Reason
+		return "被拒绝：" + decision.Reason, nil
 	}
 	guardPath := source
 	if guardPath == "" {
 		guardPath = target
 	}
-	if f := r.gate.AllowMutation(ctx, r.sessionID, guardPath); f != nil {
-		return "被拒绝：" + f.Message
+	if err := r.gate.AllowMutation(ctx, r.sessionID, guardPath); err != nil {
+		return gateError(err)
 	}
 	fresh := false
 	if kind == policy.KindPermanentDelete {
-		if f := r.gate.ConsumeFreshMutation(ctx, r.sessionID, guardPath); f != nil {
-			return "被拒绝：" + f.Message
+		if err := r.gate.ConsumeFreshMutation(ctx, r.sessionID, guardPath); err != nil {
+			return gateError(err)
 		}
 		fresh = true
 	}
@@ -351,16 +361,16 @@ func (r *AgentToolRunner) mutateNotes(ctx context.Context, raw string) string {
 		VaultID: r.vaultID, Origin: r.agent, Actions: []contract.MutationAction{action}, FreshApproval: fresh,
 	})
 	if planned.Failure != nil {
-		return "无法生成变更计划：" + planned.Failure.Message
+		return "无法生成变更计划：" + planned.Failure.Message, nil
 	}
 	if planned.Plan == nil {
-		return "无法生成变更计划"
+		return "无法生成变更计划", nil
 	}
 	report := r.mutation.Execute(ctx, *planned.Plan)
 	if report.Failure != nil {
-		return "执行失败：" + report.Failure.Message
+		return "执行失败：" + report.Failure.Message, nil
 	}
-	return fmt.Sprintf("完成 %d 项，失败 %d 项", len(report.Completed), len(report.Failed))
+	return fmt.Sprintf("完成 %d 项，失败 %d 项", len(report.Completed), len(report.Failed)), nil
 }
 
 func (r *AgentToolRunner) setAliases(ctx context.Context, raw string) string {

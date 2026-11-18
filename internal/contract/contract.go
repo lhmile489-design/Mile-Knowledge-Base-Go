@@ -277,6 +277,23 @@ type LinkGraphResult struct {
 	Failure   *Failure       `json:"failure,omitempty"`
 }
 
+// DiffLine is one line of an approval-card preview.
+type DiffLine struct {
+	Kind string `json:"kind"` // same | added | removed
+	Text string `json:"text"`
+}
+
+// WritePreview is the approval card's write preview (API §6).
+type WritePreview struct {
+	Kind         string     `json:"kind"` // created | modified | summary
+	Lines        []DiffLine `json:"lines,omitempty"`
+	OldLineCount int        `json:"oldLineCount,omitempty"`
+	NewLineCount int        `json:"newLineCount,omitempty"`
+	OldBytes     int64      `json:"oldBytes"`
+	NewBytes     int64      `json:"newBytes"`
+	Reason       string     `json:"reason,omitempty"` // too-large | not-text | unchanged
+}
+
 // Usage is one usage group (turn or cumulative). Fields follow the legacy
 // shared/usage.ts:22-50; unknown cost/ratio stay nil and render as an em dash.
 type Usage struct {

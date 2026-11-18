@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
-	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 )
 
 type fakeGate struct {
@@ -16,25 +16,25 @@ type fakeGate struct {
 	writes, mutations                  []string
 }
 
-func (g *fakeGate) AllowWrite(_ context.Context, _ string, path string) *contract.Failure {
+func (g *fakeGate) AllowWrite(_ context.Context, _ string, path string) error {
 	if g.denyWrite {
-		return contract.Fail(contract.CodePermissionDenied, "未获批准")
+		return errors.New("未获批准")
 	}
 	g.writes = append(g.writes, path)
 	return nil
 }
 
-func (g *fakeGate) AllowMutation(_ context.Context, _ string, path string) *contract.Failure {
+func (g *fakeGate) AllowMutation(_ context.Context, _ string, path string) error {
 	if g.denyMutation {
-		return contract.Fail(contract.CodePermissionDenied, "未获批准")
+		return errors.New("未获批准")
 	}
 	g.mutations = append(g.mutations, path)
 	return nil
 }
 
-func (g *fakeGate) ConsumeFreshMutation(_ context.Context, _ string, _ string) *contract.Failure {
+func (g *fakeGate) ConsumeFreshMutation(_ context.Context, _ string, _ string) error {
 	if g.denyFresh {
-		return contract.Fail(contract.CodePermissionDenied, "永久删除需要本次单独确认")
+		return errors.New("永久删除需要本次单独确认")
 	}
 	return nil
 }
