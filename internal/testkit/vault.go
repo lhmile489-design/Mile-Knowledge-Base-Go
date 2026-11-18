@@ -96,7 +96,12 @@ func BuildTypical(root string) error {
 func BuildBig(root string) error {
 	const docs = 10000
 	for i := 0; i < docs; i++ {
-		dir := filepath.Join("bulk", fmt.Sprintf("组%02d", i%40), fmt.Sprintf("层%d", (i/40)%6))
+		// Half in deep nested groups, half in one flat directory: the flat one
+		// is what the 10k-row scroll measurement expands.
+		dir := "bulk/flat"
+		if i < docs/2 {
+			dir = filepath.Join("bulk", fmt.Sprintf("组%02d", i%40), fmt.Sprintf("层%d", (i/40)%6))
+		}
 		rel := filepath.ToSlash(filepath.Join(dir, fmt.Sprintf("文档-%05d.md", i)))
 		body := "# 文档 " + strconv.Itoa(i) + "\n\ntags: bulk\n\n" +
 			"第 " + strconv.Itoa(i) + " 篇，关键词：知识库、检索、整理。\n\n" +

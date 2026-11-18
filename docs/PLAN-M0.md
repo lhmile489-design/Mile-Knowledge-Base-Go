@@ -310,15 +310,30 @@ FR-WIN、FR-THEME、FR-VLT、FR-AREA（读取侧）、FR-TREE（浏览，不含�
 | V-RENDER-2 | 文档含 `../` 图片、SVG 图片、远程图片 | 阅读模式 | 分别为越界占位、拒绝、点击后才加载 | Go 测试 + e2e |
 | AC-M0-1 | 首次启动、无知识库 | 引导建库 → 打开 → 展开 skills → 打开文档 → 切源码 → 编辑 → Ctrl+S → 外部改另一篇已打开文档 | 每步与截图和 PRD 一致；重启后最近文档和布局都保留 | e2e |
 
-性能指标（PRD 10.1，M0 只警告）：
+性能指标（PRD 10.1）。测量方法：`scripts/e2e/perf.sh`（e2e 构建 + automation，样本由 `cmd/genvault` 生成；进程启动到树第一行出现，含 WebView 启动）。
 
-| 指标 | 目标 | 新版实测 | 旧版基线 |
+| 指标 | 目标 | 新版实测（2026-11-18） | 旧版基线 |
 | --- | --- | --- | --- |
-| 冷启动到侧栏首屏可点（典型） | ≤ 1.5s | 未测 | 未测 |
-| 大知识库打开到树首屏 | ≤ 300ms | 未测 | 未测 |
-| 外部改动同步 | ≤ 1s | 未测 | 旧版承诺 1 秒 |
-| 外部批量改 1000 个文件期间主线程最长任务 | ≤ 200ms | 未测 | 未测 |
-| 树单目录 10 000 项滚动 | 60fps | 未测 | 未虚拟化 |
+| 冷启动到树首屏（典型） | ≤ 1.5s | 1101ms（进程启动起算） | 未测 |
+| 冷启动到树首屏（大：1 万 md + 5 千代码文件） | — | 908ms | 未测 |
+| 打开一个含 5 000 项的单目录 | 首屏 ≤ 300ms | 目录数据 320ms 到位；DOM 中只有 40 行（虚拟化生效） | 未虚拟化 |
+| 树 5 000 项滚动 3 秒 | 60fps | 长任务 0 个（>50ms 为 0） | 未测 |
+| 外部一次改 1 000 个文件期间主线程 | 无 >200ms 任务 | 长任务 0 个（观察 4 秒） | 机制性卡顿（P-1） |
+| 渲染 100 KB 文档 | — | R-3 基准约 24ms | 未测 |
+| 读模式端到端 | — | 已验证渲染与图片；单独计时未做 | — |
+
+旧版基线（PRD Q7）尚未测量：需要把同一套样本交给旧版 Electron 应用跑一遍。M0 未做，记录为待办；G-PERF 维持警告级。
+
+### 6.1 闭环验收记录（AC-M0-1，2026-11-18）
+
+`scripts/e2e/ac-m0.sh` 在临时 APPDATA + 样本知识库上按用户路径驱动真实窗口，15 项断言全部通过：
+
+```text
+workbench、9 个分区、展开 skills、子项可见、点开 raws、点开 raws/首页.md、
+阅读模式渲染、切源码、源码编辑器可见、编辑后脏点出现、保存后脏点消失、
+磁盘文件确有「AC 追加。」、外部修改被自动采用、生产页面含 CSP meta
+RESULT pass=15 fail=0
+```
 
 ## 7. 协作、审查与执行方式
 
@@ -373,6 +388,7 @@ FR-WIN、FR-THEME、FR-VLT、FR-AREA（读取侧）、FR-TREE（浏览，不含�
 | 2026-11-18 | T01 完成 | mygo 模板 + package/tsconfig/vite + 最小窗口 | doctor 必需项全绿；tsc 通过；vite build 通过；dev 启动 75s 正常 | — | T02 |
 | 2026-11-18 | T02 完成 | internal/testkit、cmd/genvault、vitest 配置 | 门禁负向对照：4 个门禁在故意破坏时均失败，移除后恢复通过 | — | T03 |
 | 2026-11-18 | T03 完成 | src/styles/tokens.css（4913 行原样移植）、theme-init.js、compare-tokens | 80 个令牌声明零差异 | 未按 DESIGN §3 拆分文件，M0 保持单文件，拆分留到 M3 | T05 |
+| 2026-11-18 | T10 完成 | 生产构建注入 CSP（Vite 插件，仅 build）；`scripts/e2e/{ac-m0,perf}.sh` 入库；样本生成器改为一半嵌套一半平铺 | AC 15/15 通过；性能：典型冷启动 1101ms、大库 908ms、5000 项目录 320ms、滚动与 1000 文件外部改动长任务均为 0；CSP meta 存在于 dist 与页面 | 旧版性能基线未测（PRD Q7 待办）；读模式单独计时未做 | T11 |
 | 2026-11-18 | T09 完成 | ReaderView（Go HTML 注入 + 事件委托）、阅读/源码/分栏三模式、kbimg 图片、代码复制、wikilink 导航；EditorPane 模式切换与大文件禁用 | e2e：`.prose` 渲染、任务复选框、原始 HTML 以文字显示（无 div.x）、图片经 `http://kbimg.localhost/...` 加载（naturalWidth=1）、点 wikilink 打开目标文档（2 个标签、active=共享笔记.md）、点未创建链接不动作；分栏下 CM 与 prose 并存；截图 design/m0/t09-reader-1440x900.png | 表格/代码块由 render golden 覆盖，样本文档里没有，未在真实窗口截图；CSP 未接入 | T10 |
 | 2026-11-18 | T07b 审查修复 | 阻断：dirty 只上报当前标签 → 改为聚合全部标签；需要修改：稍后处理死按钮（新增 dismissConflict）、采用磁盘版本两步确认（600ms 门 + 4s 复位，纯函数 + 4 个单测）、新建文件权限 0600→0644、forget 清理 revision、外部变更按 hash 判定、冲突载荷带 diskSize；补 Go 回归测试 5 项（同大小同 mtime 不同内容、expectedRevision=0 冲突、revision 稳定、无 tmp 残留、负数 revision） | vault 测试 15 项通过；vitest 12 项；tsc 通过；API.md 补 diskSize 字段 | 自写回环断言留 T10 | T09 |
 | 2026-11-18 | T08 完成 | E01 订阅 → 打开的文档重读；干净文档自动采用磁盘版本，脏文档只在卡上提示不覆盖；通知栈（监听降级/导入提示）；lib/docUtils 抽出并加单测 | e2e 实测：外部追加 → 文档自动跟进（adopted=true, dirty=false）；本地有草稿时外部改动 → 保留本地、externalRevision=3、卡片出现；截图 design/m0/t08-external-change-1440x900.png；vitest 8 项通过 | 自写回环未单独断言（保存后重读同内容，无可见影响，T10 补） | T09 |

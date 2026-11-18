@@ -80,3 +80,8 @@ export const useTreeStore = create<TreeState>((set, get) => ({
     }
   },
 }));
+
+// E2E hook: the same store the sidebar uses.
+if (typeof window !== "undefined") {
+  (window as unknown as { __mkbTree?: unknown }).__mkbTree = useTreeStore;
+}

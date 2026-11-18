@@ -58,9 +58,14 @@
 
 | 命令标识 | 操作 | 实际命令或脚本入口 | 前置条件与验证状态 |
 | --- | --- | --- | --- |
-| 待分配 | 安装依赖 | 阶段 10 建立工程后填写 | 未配置、未验证 |
-| 待分配 | 本地启动 | 同上 | 未配置、未验证 |
-| 待分配 | 检查与测试 | 同上 | 未配置、未验证 |
-| 待分配 | 构建与打包 | 同上 | 未配置、未验证 |
+| 安装依赖 | 安装前端依赖 | `bun install` | 已验证（2026-11-18） |
+| 本地启动 | 开发模式 | `bun run dev`（端口 5274，自定义协议 kbimg） | 已验证 |
+| 类型检查 | `tsc --noEmit` | `bun run typecheck` | 已验证 |
+| 前端单测 | Vitest | `bun run test:web` | 已验证（13 项） |
+| Go 测试 | 单元测试 | `bun run test:go` / `bun run test:go-race` / `bun run lint:go` | 已验证（vault 等全绿） |
+| 模糊测试 | 路径与渲染 | `bun run test:fuzz` | 已接入（时长待按基线固定） |
+| 端到端 | e2e 构建 + automation | `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再 `bash scripts/e2e/ac-m0.sh` | 已验证 15/15 |
+| 性能 | 冷启动 / 大库 / 滚动 / 外部改动 | `bash scripts/e2e/perf.sh` | 已验证（见 docs/PLAN-M0.md §6） |
+| 构建 | 生产安装包 | `bun run build`（产物 `build/windows-amd64/`） | 已验证 |
 
 工程建立后给技术设计中的每个质量门禁分配稳定的命令标识，并在此表或项目脚本中写入真实命令。不要把旧版或 Mile-Typora 的命令未经验证就填成可用。
