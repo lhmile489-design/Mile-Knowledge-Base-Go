@@ -13,8 +13,8 @@
     "test:go": "go test ./...",
     "test:go-race": "go test -race ./internal/...",
     "lint:go": "go vet ./...",
-    "test:fuzz": "go test -run=^$ -fuzz=Fuzz -fuzztime=60s ./internal/...",
-    "test:e2e": "go run ./e2e",
+    "test:fuzz": "bash scripts/test-fuzz.sh",
+    "test:e2e": "bash scripts/test-e2e.sh",
     "bench": "go test -run=^$ -bench=. -benchtime=1x ./internal/..."
   },
   "dependencies": {

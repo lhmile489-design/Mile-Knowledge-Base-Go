@@ -98,7 +98,7 @@ M0 已完成。M1 为本计划。M2、M3 的划分见 docs/PLAN-M0.md 第 3 节�
 
 | 编号 | 目标 | 修改范围 | 依赖 | 产物 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
-| T00 | 契约回写与门禁修复 | docs/{API.md,PRD.md,decisions.md}、README、package.json、scripts/ | — | D-009 落到 API.md M19、PRD FR-PROV；`test:e2e`、`test:fuzz` 能真实运行 | 两个门禁命令各做一次「故意失败 → 非零退出，恢复 → 通过」；README 状态与实际一致 | 待做 |
+| T00 | 契约回写与门禁修复 | docs/{API.md,PRD.md,decisions.md,技术设计.md}、README、package.json、scripts/、internal/pathguard/pathguard_test.go | — | D-009 落到 API.md M19、PRD FR-PROV；`test:e2e`、`test:fuzz` 能真实运行 | 两个门禁命令各做一次「故意失败 → 非零退出，恢复 → 通过」；README 状态与实际一致 | 已验证 |
 | T01 | 分词、文档解析、片段与高亮 | `internal/index/tokenize.go`、`parse.go`、`excerpt.go`；`src/lib/tokenize.ts`、`src/lib/highlight.ts` | T00 | Go 与 TS 两份分词实现 | 移植 tokenize 21 例、searchHighlight 9 例全部通过；Go 与 TS 对同一份夹具输出的 token 序列逐项相同 | 待做 |
 | T02 | SQLite 索引库与增量更新 | `internal/index/{store.go,migrate.go,migrations/001_init.sql,build.go,update.go}`、`internal/service/index.go`（M25、M26、E02）、`internal/service/service.go`（接监听批次、移除知识库时删库） | T01 | `index/<vaultId>.db`；后台首建；监听批次增量写；状态事件 | V-IDX 全部通过 | 待做 |
 | T03 | 检索与搜索面板 | `internal/index/search.go`、`internal/service/index.go`（M24）、`src/components/SearchPanel.tsx`、`src/stores/searchStore.ts`、侧栏「搜索」条与 Ctrl+P | T02 | M24；搜索面板 | V-SRCH 全部通过；对照截图 26、27、28 | 待做 |
@@ -378,4 +378,5 @@ M0 已完成。M1 为本计划。M2、M3 的划分见 docs/PLAN-M0.md 第 3 节�
   - T12 依赖 WebView2 自定义协议能收到 POST 请求体，未实测，第一步先验证；上传端点是新的写入口，授权校验写进了交接，T12 后独立审查；
   - T13 的兼容脚本依赖旧版模块能在 bun 下单独运行，未实测；
   - 链接全量解析和增量重算的耗时要在哈希实现上重测，结果可能要求调整 T04 的实现。
+| 2026-11-18 | T00 完成 | D-009（6 项决定）写入 decisions.md；API.md：M19 改协议端点、方法总数 73→72、§3 映射改 change、§4.2 与 §5 重写（路径 + vault 参数、上传端点、5 条授权规则）；PRD v1.6：FR-AREA「进检索」备注、FR-PROV 同步规则、FR-DOC 图片传输、AC-PROV-2；技术设计门禁表接入状态；README 两条命令更正；`scripts/test-fuzz.sh`、`scripts/test-e2e.sh` 新增；`ac-m0.sh` 失败时返回非零 | fuzz：正向 3s×2 目标通过、负向（临时必失败目标）退出 1；e2e：正向 15/15 退出 0、负向（翻转一条断言）14/15 退出 1。fuzz 首次实跑抓到 `FuzzValidateRel` 断言过严（把「名字含 ..」当成越界，`..0` 其实是合法名）：修正断言为「任何路径段都不是 . 或 ..」，补 `..0`/`a..b.md`/`notes..txt` 三个合法用例并把 `..0` 加入 fuzz 种子；这不是产品代码缺陷，M0 的 fuzz 门禁当时从未真正跑过所以没暴露 | 无 | T01 |
 | 2026-11-18 | 计划已批准（B-M1-05、B-M1-06），开始 T00 | docs/PLAN-M1.md v1.0 | 用户回复「通过，开始 T00」 | — | T00 |

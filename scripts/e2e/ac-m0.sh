@@ -57,3 +57,5 @@ check "csp present in built page" "!!document.querySelector('meta[http-equiv=\"C
 echo "RESULT pass=$pass fail=$fail"
 taskkill //F //IM "Mile Knowledge Base.exe" >/dev/null 2>&1
 rm -rf "$WORK"
+# The gate reads the exit code: any failed assertion fails the run.
+[ "$fail" -eq 0 ]

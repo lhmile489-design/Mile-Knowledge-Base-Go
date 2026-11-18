@@ -63,8 +63,8 @@
 | 类型检查 | `tsc --noEmit` | `bun run typecheck` | 已验证 |
 | 前端单测 | Vitest | `bun run test:web` | 已验证（13 项） |
 | Go 测试 | 单元测试 | `bun run test:go` / `bun run test:go-race` / `bun run lint:go` | 已验证（vault 等全绿） |
-| 模糊测试 | 路径与渲染 | `bun run test:fuzz` | 已接入（时长待按基线固定） |
-| 端到端 | e2e 构建 + automation | `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再 `bash scripts/e2e/ac-m0.sh` | 已验证 15/15 |
+| 模糊测试 | 路径与渲染（`FuzzValidateRel`、`FuzzRender`） | `bun run test:fuzz`（`scripts/test-fuzz.sh`，每个目标默认 60s，`FUZZ_TIME=3s` 可缩短） | 已验证（2026-11-18：正向通过；故意失败的对照返回非零） |
+| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`；`E2E_SKIP_BUILD=1` 跳过构建） | 已验证（2026-11-18：ac-m0 15/15 且退出码 0；故意失败的对照返回非零） |
 | 性能 | 冷启动 / 大库 / 滚动 / 外部改动 | `bash scripts/e2e/perf.sh` | 已验证（见 docs/PLAN-M0.md §6） |
 | 构建 | 生产安装包 | `bun run build`（产物 `build/windows-amd64/`） | 已验证 |
 

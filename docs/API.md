@@ -130,7 +130,7 @@ type LoadResult struct {
 | M16 | `DocService.tree(vaultId, path)` | Doc | FR-TREE | `Tree(ctx, vaultId, path string) (*TreeResult, error)` | `vault-unavailable`、`not-a-directory`、`path-escape` |
 | M17 | `DocService.read(vaultId, path)` | Doc | FR-DOC | `Read(ctx, vaultId, path string) (*ReadResult, error)` | `not-found`、`not-a-file`、`too-large`、`unsupported-encoding`、`path-escape` |
 | M18 | `DocService.write(vaultId, path, expectedRevision, text)` | Doc | FR-DOC | `Write(ctx, vaultId, path string, expectedRev int64, text string) (*WriteOutcome, error)` | `revision-mismatch`（返回 conflict 形态）、`too-large`、`path-escape` |
-| M19 | `DocService.saveImage(vaultId, bytes)` | Doc | FR-DOC | `SaveImage(ctx, vaultId string, bytes []byte) (*SaveImageResult, error)` | `too-large`、`invalid-input`（非图片魔数） |
+| M19 | 协议端点 `POST http://kbimg.localhost/__upload?vault=<id>`（§5） | Doc | FR-DOC | 不是绑定方法；请求体为图片原始字节，响应 JSON `{path, existed}` 或 `{failure}` | `too-large`、`invalid-input`（非图片魔数、SVG/ICO）、`vault-unavailable`、`path-escape` |
 | M20 | `DocService.rename(vaultId, path, newName)` | Doc | FR-TREE | `Rename(ctx, ...) (*PlanResult, error)` | 同 M21 |
 | M21 | `DocService.createFile(vaultId, dirPath, name)` | Doc | FR-TREE | `CreateFile(ctx, ...) (*PlanResult, error)` | 走变更计划：返回 plan 供确认，不直接落盘 |
 | M22 | `DocService.createDir(vaultId, dirPath, name)` | Doc | FR-TREE | `CreateDir(ctx, ...) (*PlanResult, error)` | 同上 |
@@ -186,7 +186,7 @@ type LoadResult struct {
 | M72 | `SettingsService.recentDocuments(vaultId)` | Settings | FR-OVW | `RecentDocuments(ctx, vaultId string) (*RecentDocumentsResult, error)` | `vault-unavailable` |
 | M73 | `SettingsService.noteDocumentOpened(vaultId, path)` | Settings | FR-OVW | `NoteDocumentOpened(ctx, ...) (*RecentDocumentsResult, error)` | `not-found`、`invalid-input` |
 
-共 73 个绑定方法。
+共 72 个绑定方法；M19 是协议端点（§5），不在绑定方法内。
 
 ### 2.3 Channel 与事件目录
 
@@ -221,7 +221,7 @@ type LoadResult struct {
 | `vault:tree` | `DocService.tree` M16 | same | 懒加载一层 |
 | `vault:read` | `DocService.read` M17 | same | — |
 | `vault:read-image` | **删除** | drop | 被自定义图片协议 `kbimg://` 替代（§5）。旧版用 base64 data URI 回传（ipc.ts:236-256），新版图片不经 IPC，彻底解决 P-5 型传输与 8MiB base64 膨胀 |
-| `vault:save-image` | `DocService.saveImage` M19 | same | 仍是 Renderer → Go 字节流；mygo JSON 编码 `[]byte` 为 base64（bindings.md:156），与旧版语义一致 |
+| `vault:save-image` | 协议端点 `kbimg` `POST /__upload`（M19，§5） | change | 旧版经 IPC 传字节；新版由页面直接 POST 到自定义协议，Go 侧仍做 vaultId 校验、文件头判定与内容去重。不经 base64（PRD FR-DOC、D-009） |
 | `vault:write` | `DocService.write` M18 | same | — |
 | `vault:mutate` | `MutationService.execute` M30 | split | 旧版一个频道既做计划内嵌校验又执行；新版把「生成计划」拆给 M20-M23/M29（前端先拿 plan 显示确认卡），`execute` 只收确认过的完整 plan |
 | `vault:pick-folder` | `VaultService.pickFolder` M12 | same | 10 分钟 token |
@@ -356,11 +356,14 @@ type LoadResult struct {
   - `{status:'conflict', diskText, diskRevision, diskHash, diskSize, baseRevision}` —— 对应 `revision-mismatch`，磁盘未被修改，`diskText` 由 Go 回传供合并比较（FR-DOC 三选）。
 - 写回是 tmp+rename 原子操作，保留原文件权限（go-service-engineering §5.3）。
 
-#### M19 `saveImage(vaultId, bytes)` — 保存粘贴/拖入图片
+#### M19 `saveImage` — 保存粘贴/拖入图片（协议端点，不是绑定方法）
 
-- 入参 `bytes`：`[]byte`（mygo JSON 为 base64）；上限 8 MiB（document.ts:97；validate.ts:284-295）。
-- Go 侧按魔数判类型：png/jpg/gif/webp/bmp/avif，SVG/ICO 拒绝 `invalid-input`（FR-DOC）。
+- 形式：`POST http://kbimg.localhost/__upload?vault=<vaultId>`，请求体是图片原始字节；不经 base64、不经绑定方法（D-009）。
+- 与读图共用 `kbimg` 协议，但处理器独立，不共用读图分支（§5）。
+- 上限 8 MiB（document.ts:97；validate.ts:284-295），超过返回 `too-large`，不截断。
+- Go 侧按文件头判类型：png/jpg/gif/webp/bmp/avif；SVG/ICO 拒绝 `invalid-input`（FR-DOC）。
 - 出参 `{path, existed}`：`path` 是 `raws/attachments/pasted-<sha256前12位>.<ext>`（FR-DOC；旧版 attachments.ts:49），`existed=true` 表示同内容已存在未重复写盘（ipc.ts:268-272）。
+- 保存图片不开事务、不写操作记录（旧版行为，`VaultService.saveImage` L391-425）。
 
 #### M20-M23 树操作 → 统一返回 `PlanResult`
 
@@ -513,17 +516,20 @@ type LoadResult struct {
 
 `setKey`：value 只在出站请求头出现，不进日志/错误/上下文/界面；`Secrets.Set` 返回 `ErrUnsupported` → `secret-unavailable` 拒绝保存不退回明文（FR-AI-PROV）。
 
-## 5. 自定义图片协议（替代 `vault:read-image`）
+## 5. 自定义图片协议（替代 `vault:read-image`；M19 上传也走这里）
 
 - 协议名（已定，用户 2026-11-18 确认）：`kbimg`。
-- URL 形式：Windows WebView2 上页面里写 `http://kbimg.localhost/<token>`；Go 侧统一按 `kbimg://localhost/<token>` 处理（mygo `protocol.go:204` 的 `schemeHosts` 机制，`internal/schemehost/schemehost.go:5-7`）。`<token>` 是渲染时由 `RenderService` 生成的一次性随机串，映射到「窗口 ID + 已校验的真实路径」。
+- URL 形式（D-009 第 6 条，与 M0 实现一致）：Windows WebView2 上页面里写 `http://kbimg.localhost/<库内相对路径>?vault=<vaultId>`；Go 侧统一按 `kbimg://localhost/<路径>` 处理（mygo `protocol.go:204` 的 `schemeHosts` 机制，`internal/schemehost/schemehost.go:5-7`）。不做一次性 token：路径与 vault 参数都只是「请校验」的输入，是否放行由每次请求的校验决定。
+- 读图：`GET http://kbimg.localhost/<路径>?vault=<id>`。
+- 上传（M19）：`POST http://kbimg.localhost/__upload?vault=<id>`，请求体是图片原始字节；响应 `application/json`，成功 `{path, existed}`，失败 `{failure:{code,message}}`。上传处理器独立实现，不在读图分支上加方法判断。
 - 注册：建窗前 `mygo.Protocol.Handle("kbimg", handler)`（protocol.go:53）。
-- 授权规则（mygo-web-app skill desktop-integration §7，已核 v0.10.0）：
-  1. 每次请求重新 `Lstat` 校验路径仍在授权范围内（防渲染后换成目录联接）；
-  2. `CallerWindow(r.Context())` 必须非空——只服务本应用窗口，不是本应用页面一律 404；
-  3. 只放行 png/jpg/gif/webp/bmp/avif（按文件头），SVG/ICO 一律 403 不回传路径；
-  4. 单张 ≤8 MiB，超限 403；
+- 授权规则（mygo-web-app skill desktop-integration §7，已核 v0.10.0；读图与上传都必须满足）：
+  1. 每次请求重新解析并 `Lstat` 校验路径仍在授权范围内（防渲染后换成目录联接或指向库外的联接点）；
+  2. `CallerWindow(r.Context())` 必须非空——只服务本应用窗口，不是本应用页面一律 404（`ipc.go:461-479`）；
+  3. 读图只放行 png/jpg/gif/webp/bmp/avif（按文件头），SVG/ICO 一律 403 不回传路径；
+  4. 读图单张 ≤8 MiB，超限 403；上传请求体 ≤8 MiB，超限返回 `too-large`；
   5. `Cache-Control: no-store`；`Content-Type` 按魔数判定。
+- 上传附加规则：只接受 POST（其他方法 405）；写入位置固定为 `raws/attachments/`，不接受调用方指定路径；文件名由内容哈希决定（M19）。
 - 错误响应：越权/非法格式/超限 → `403`（不带路径）；文件不存在 → `404`。不回传任何绝对路径或内部原因。
 - 库内相对路径图片在 `RenderService` 输出时即改写成该协议 URL；`data:image/*` 直接显示、https 远程图默认占位点击才加载、http 拦截（FR-DOC，前端/renderer 职责）。
 - 前端 CSP 需放行 `img-src` 的 `http://kbimg.localhost` 与 `data:`。

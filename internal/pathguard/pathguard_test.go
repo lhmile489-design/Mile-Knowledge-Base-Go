@@ -21,6 +21,11 @@ func TestValidateRel(t *testing.T) {
 		"中文/笔记.md":        "中文/笔记.md",
 		"a b/c d.md":      "a b/c d.md",
 		"README.md":       "README.md",
+		// ".." inside a name is legal; only the segments "." and ".." are not
+		// (FR-TREE). Found by FuzzValidateRel in T00.
+		"..0":        "..0",
+		"a..b.md":    "a..b.md",
+		"notes..txt": "notes..txt",
 	}
 	for in, want := range good {
 		got, f := ValidateRel(in)
@@ -148,7 +153,7 @@ func TestWithin(t *testing.T) {
 }
 
 func FuzzValidateRel(f *testing.F) {
-	for _, seed := range []string{"a.md", "../x", "a/b", `C:\x`, "a\x00", "con", "中文/笔记.md"} {
+	for _, seed := range []string{"a.md", "../x", "a/b", `C:\x`, "a\x00", "con", "中文/笔记.md", "..0"} {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, p string) {
@@ -156,8 +161,16 @@ func FuzzValidateRel(f *testing.F) {
 		if fail != nil {
 			return
 		}
-		if strings.HasPrefix(norm, "/") || strings.Contains(norm, "..") || strings.ContainsRune(norm, 0) {
+		if strings.HasPrefix(norm, "/") || strings.ContainsRune(norm, 0) {
 			t.Fatalf("ValidateRel accepted %q as %q", p, norm)
+		}
+		// The real invariant: no segment is "." or "..", so the result cannot
+		// climb out of the vault. A name that merely contains ".." ("..0",
+		// "a..b.md") is legal (FR-TREE).
+		for _, seg := range strings.Split(norm, "/") {
+			if seg == "." || seg == ".." {
+				t.Fatalf("ValidateRel accepted %q as %q (segment %q)", p, norm, seg)
+			}
 		}
 	})
 }
