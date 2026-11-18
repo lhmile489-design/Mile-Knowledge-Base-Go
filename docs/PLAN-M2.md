@@ -1,6 +1,6 @@
 # M2 实施计划：AI 引擎、Agent、对话与设置（模型服务、Agents）
 
-> 状态：草案 v0.2（2026-11-18，已按独立审查修订），待用户审批。审批前不执行第 4 节的任何任务。
+> 状态：草案 v0.3（2026-11-18，已按独立审查与复审修订），待用户审批。审批前不执行第 4 节的任何任务。
 > 本次目标：交付技术设计第 9 节能力 C6（AI 引擎与权限）、C7（对话、历史、用量）与设置页的「模型服务」「Agents」两节，形成闭环：配置 DeepSeek 并填 key → 发消息 → 自动路由 → 流式回答 → 工具调用弹审批 → 用量收据 → 重启恢复对话 → 历史搜索。
 > 上一里程碑：docs/PLAN-M1.md（已完成并推送，`cdc7a21`）。
 
@@ -46,7 +46,7 @@ FR-AI-ENG、FR-AI-AGT、FR-AI-ROUTE、FR-AI-PERM、FR-AI-CHAT、FR-AI-HIST、FR-
 | API.md | v1.0；M38–M49、M63、M64、M67–M71 已定义；§6 StreamFrame 主结构已定义 | **§6 引用的 ToolCallFrame / StatusFrame / UsageFrame / WritePreview / PermissionOption 没有定义**；M45–M49 的详细字段需在 T00 补齐 | 阻断 T03，T00 先补 |
 | 数据库设计 | v1.0；3.1 agents.json、3.6 providers.json、4.4 对话历史与 search.db 已定稿；§6-8 有并发与恢复纪律 | 无 | 否 |
 | M1 代码 | index（M24/M25/M27）、mutation（M29/M30/M31–M33）、vault 别名、render（M36）、service 绑定 | **M49 只有关窗用的弱化版**：M0 的 `WindowService.ReportDocument` 仅记录 dirty；`AgentService.ContextReportDocument` 与 ContextHub 均未实现 | 否，T08 处理 |
-| mygo v0.10.0 能力 | Secrets、netproxy、Channel、Event、Clipboard 已在 M0/M1 核对 | **Secrets 的实际存储后端、netproxy 的系统代理/PAC 行为未在本项目实测**（技术设计 R-5 标注待验证） | 阻断 T01/T03，各自第一步先验证 |
+| mygo v0.10.0 能力 | 选型已在技术设计 2.1 确认：`mygo/netproxy`（WinHTTP，含 PAC / WPAD，回环直连，SOCKS5 可用）与 `mygo.Secrets`（Windows 凭据管理器，`MaxSecretSize`=2560，`secrets.go:58`）；Channel、Event、Clipboard 已在 M0/M1 使用 | 两者都没在本机实际调用过；Secrets 写的是真实凭据管理器，测试必须隔离（见 T01） | 否；T00 做本机冒烟验证 |
 | 旧版实现 | 盘点见 2.1（只读参考） | — | 否 |
 | Skills | agnes-engine（4 份 references，含工具 schema）、mygo-web-app、design-tokens、react-best-practices、kb-index-sqlite | 实际调用情况未验证 | 否 |
 | D-002 / D-005 | 已确认 | 验收要按旧版行为判定 | 否 |
@@ -90,6 +90,8 @@ FR-AI-ENG、FR-AI-AGT、FR-AI-ROUTE、FR-AI-PERM、FR-AI-CHAT、FR-AI-HIST、FR-
 
 - D-002 三项属实：ask 与 auto 都弹卡（NativeEngine.ts:468-469）；`availableEfforts` 恒空（NativeEngine.ts:215）→ 强度控件禁用；systemPrompt 从未传入（NativeEngine.ts:268/278-279，`engineServer.ts:93-101`）。D-005 属实（EngineHost.ts:816-827）。
 - 默认 steering 原文在 `shared/appConfig.ts:336-373`（4 段，T02 原样迁移，不自行改写）。
+- **Agent 默认配置与旧版运行行为不同（D-010）**：`shared/agent.ts:289-297` 的 `DEFAULT_AGENT_CONFIG` 在旧版 `src/` 与 `tests/` 中没有引用；旧版运行时 4 个 Agent 都是 `ask`、模型为空串。用户确认按 PRD 现写法实现，见 T02。
+- 共享上下文的写入方：`ContextHub.applyAgentPatch`（`ContextHub.ts:176`）在旧版没有调用方，Agent 实际只经 `handoff_task` 写任务板；actionLedger 由变更执行完成后的回调写入（`main/index.ts:442-456`、`ipc/register.ts:462-475`）。`search_notes` 不写检索片段。
 - 旧版对话搜索逐文件扫描（性能坑），新版按数据库设计 4.4 改为 search.db FTS5，属于已批准差异。
 
 渲染进程（`src/renderer/src/components/agnes/`）：`AgnesDrawer.tsx`（600，容器）、`AgentTranscript.tsx`（413，**旧版无虚拟化**）、`UnifiedComposer.tsx`（418）、`RuntimeControls.tsx`（291）、`UsageReceipt.tsx`（91）、`PermissionCard.tsx`（158）、`EvidenceRadar.tsx`（96）、`ConversationHistory.tsx`（488）、`ProviderDiagnostics.tsx`（71）、`ThinkingIndicator.tsx`（69）、`RestoreNote.tsx`（35）、`agentMeta.ts`（74）；设置：`settings/ModelSection.tsx`（688）、`ProviderEditor.tsx`（718）、`AgentsSection.tsx`（551）。
@@ -112,20 +114,20 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | --- | --- | --- | --- | --- | --- | --- |
 | T00 | 契约补齐与实测前置 | docs/API.md §6/§4.6–4.8、README | M1 | 帧载荷类型、M45–M49 字段、错误码核对；Secrets 与代理的验证脚本 | API 定义完整且与实现字段一一对应；Secrets 存取、netproxy 系统代理/PAC 各有「能/不能」结论并记录 | 待做 |
 | T01 | 供应商与 key（M67–M70） | `internal/ai/providers.go`、`internal/service/settings.go`（M67–M70）、`internal/ai/providers_test.go` | T00 | providers.json 读写、reasonix.toml 只读迁移、DeepSeek 预设、fetchModels、key 存取 | V-PROV 全部通过 | 待做 |
-| T02 | Agent 配置与 steering（M63、M64、M71） | `internal/ai/agents.go`、`internal/service/settings.go`、`internal/index`（skillCatalog 只读） | T01 | agents.json 字节兼容、默认配置、steering clamp/基线、skillCatalog | V-AGT 全部通过 | 待做 |
+| T02 | Agent 配置与 steering（M63、M64、M71） | `internal/ai/agents.go`、`internal/service/appconfig.go`、`internal/index`（skillCatalog 只读） | T01 | agents.json 字节兼容、D-010 默认配置、steering clamp/基线、skillCatalog | V-AGT 全部通过 | 待做 |
 | T03 | 引擎骨架与 SSE 流式 | `internal/ai/{engine.go,sse.go,retry.go,usage.go}` | T01、T00 | OpenAI 兼容客户端、SSE 组装、重试/退避/Retry-After、空闲超时、出站校验、netproxy | V-ENG 全部通过（httptest 假供应商） | 待做 |
-| T04 | 上下文预算与压缩 | `internal/ai/budget.go`、`compress.go` | T03 | token 估算、真实用量校准、80% 压缩、摘要与整轮丢弃 | V-BUDGET 全部通过 | 待做 |
-| T05 | 工具、权限门与 Agent 写路径 | `internal/ai/tools/*`、`internal/ai/{policy.go,bridge.go}`、`internal/mutation/{plan.go,execute.go}`（接受 agent origin）、`internal/service/mutation.go` | T03、M1 | 工具 schema、两条写路径（直写桥 / 变更计划）、两道判定、系统区禁写、60 秒批准、D-005；M29/M30 支持 agent origin 并挂权限矩阵 | V-TOOL、V-PERM 全部通过；**权限专项测试**（提示词无法扩大权限） | 待做 |
+| T04 | 回合循环、会话与上下文预算 | `internal/ai/{session.go,loop.go,model.go,budget.go,compress.go}` | T01、T02、T03 | 会话懒创建、模型选择顺序、16 步工具循环、调用与结果配对、取消回填、只写完整采样、单回合出错隔离、`reasoning_content` 回填、token 估算与压缩 | V-LOOP、V-BUDGET 全部通过 | 待做 |
+| T05 | 工具、权限门与 Agent 写路径 | `internal/ai/tools/*`、`internal/ai/{policy.go,bridge.go}`、`internal/mutation/{plan.go,execute.go}`（接受 agent origin）、`internal/service/mutation.go` | T04、M1 | 8 个工具中除 `handoff_task` 外的 7 个（`handoff_task` 依赖 ContextHub，随 T08 交付）、两条写路径（直写桥 / 变更计划）、两道判定、系统区禁写、60 秒批准、D-005；M29/M30 支持 agent origin 并挂权限矩阵 | V-TOOL、V-PERM 全部通过；**权限专项测试**（提示词无法扩大权限） | 待做 |
 | T06 | 执行模式与审批卡（M41、M42） | `internal/ai/approval.go`、`internal/service/agent.go`（M39–M43） | T05 | 3 档模式、perm 帧状态机、expired、差异预览 | V-APPROVAL 全部通过 | 待做 |
 | T07 | 路由与改派（M44） | `internal/ai/{routing.go,priority.go}` | T03 | 词表原样迁移、优先级、理由文本 | V-ROUTE 全部通过 | 待做 |
-| T08 | 共享上下文（M45–M49） | `internal/ai/context.go`、`internal/service/agent.go` | T03 | 快照、pin/unpin、任务状态、当前文档上报、contextTail 2400 预算与脱敏 | V-CTX 全部通过 | 待做 |
+| T08 | 共享上下文与交接（M45–M49） | `internal/ai/{context.go,tools/handoff.go}`、`internal/service/{agent.go,mutation.go}` | T05 | 快照、pin/unpin、任务状态、当前文档上报、actionLedger 接变更完成回调、`handoff_task` 工具、contextTail 2400 预算与脱敏 | V-CTX 全部通过 | 待做 |
 | T09 | 对话历史与搜索（M50–M59） | `internal/conversation/{store.go,events.go,search.go}`、`internal/service/conversation.go` | T03、T06 | index.json/jsonl、上限、损坏恢复、search.db FTS5、导出、接着问 | V-HIST 全部通过 | 待做 |
 | T10 | 绑定层与流式通道 | `internal/service/agent.go`（M38–M43 全部）、`src/lib/{stream.ts,agentApi}` | T03–T09 | StreamFrame TS、Channel 前端封装、E07/E08/E09/E10 | 契约测试：Bind 集合 = 前端调用集合 | 待做 |
-| T11 | 对话界面骨架 | `src/components/chat/{ChatPane,MessageList,AgentMessage,UserMessage,Header}`、`src/stores/agentStore.ts` | T10 | 头部 44px、消息布局、过程流水线、思考折叠、呼吸动画 | V-CHAT 全部通过；截图 37、38、39 | 待做 |
-| T12 | Markdown 流式与引用 | `internal/render`（M37 按块增量，新增）、`src/components/chat/{MarkdownBlock,EvidenceRadar}` | T00（M37 契约）、T11 | 末尾未封口块收起、宽表横向滚动、代码复制、引用标签、证据雷达 | V-CHAT-MD 全部通过 | 待做 |
+| T11 | 对话界面骨架 | `src/components/chat/{ChatPane,MessageList,AgentMessage,UserMessage,Header}`、`src/stores/agentStore.ts` | T10 | 头部 44px、消息布局、过程流水线、思考折叠、呼吸动画、每条消息的「复制 / 重新回答」 | V-CHAT 全部通过；截图 37、38、39 | 待做 |
+| T12 | Markdown 流式与引用 | `internal/render`（M37 按块增量，新增）、`src/components/chat/{MarkdownBlock,EvidenceRadar}` | T00（补 `BlockResult` 结构）、T11 | 末尾未封口块收起、宽表横向滚动、代码复制、引用标签、证据雷达 | V-CHAT-MD 全部通过 | 待做 |
 | T13 | 输入框、运行参数条、路由/改派 | `src/components/chat/{Composer,RunParams,RouteLine,AgentPicker}`、`src/stores/composerStore.ts` | T11、T07 | Enter 发送、高度持久化、32 000 上限、参数条、改派菜单 | V-COMPOSER 全部通过；截图 34、35、36 | 待做 |
 | T14 | 审批卡与用量收据 | `src/components/chat/{PermissionCard,UsageReceipt}` | T06、T13 | 差异预览（60 行）、允许/拒绝、Go 确认后移除、收据未知显示「—」 | V-CARD-AI 全部通过；截图 42、43 | 待做 |
-| T15 | 历史栏与恢复 | `src/components/chat/HistoryRail`、`src/stores/historyStore.ts` | T09、T11 | 分组、搜索（250ms）、重命名/置顶/删除/清空、导出、接着问、恢复提示 | V-HIST-UI 全部通过；截图 45、46 | 待做 |
+| T15 | 历史栏、只读查看器与恢复 | `src/components/chat/{HistoryRail,ConversationViewer}`、`src/stores/historyStore.ts` | T09、T11 | 分组、搜索（250ms）、重命名/置顶/删除/清空、只读查看器（虚拟化）、导出、接着问、恢复提示 | V-HIST-UI 全部通过；截图 45、46 | 待做 |
 | T16 | 会话信息浮层与引擎状态 | `src/components/chat/SessionInfo`、`EngineBadge` | T08、T10 | 引擎状态、模型诊断、读写边界、权限摘要、共享上下文 | V-INFO 全部通过；截图 40、44 | 待做 |
 | T17 | 设置页「模型服务」 | `src/components/settings/{ProvidersSection,ProviderForm}` | T01、T00 | 供应商列表/表单、拉模型、key 状态、空状态 | V-SET-PROV 全部通过；截图 41、49、50 | 待做 |
 | T18 | 设置页「Agents」 | `src/components/settings/{AgentsSection,SteeringEditor}` | T02 | 模型/强度/模式/Skills 即时生效、steering 草稿与保存条、对比与恢复默认 | V-SET-AGT 全部通过；截图 51 | 待做 |
@@ -133,7 +135,7 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | T20 | 性能复核与独立审查 | `scripts/e2e/perf-ai.sh`、本计划第 6 节 | T19 | 流式帧率、输入延迟 p90、历史首帧、消息虚拟化 | 指标有实测；**整体独立审查**（权限门重点） | 待做 |
 | T21 | 收尾 | README、CLAUDE.md、本计划 | T20 | 文档同步；推送前确认 | 用户确认后推送 | 待做 |
 
-依赖顺序 T00 → T01 → T02 → T03 → T04/T05/T06/T07/T08 各自可依序进行（按「一次一个」串行）→ T09 → T10 → T11–T18 → T19 → T20 → T21。
+依赖顺序 T00 → T01 → T02 → T03 → T04 → T05 → T06 → T07 → T08 → T09 → T10 → T11–T18 → T19 → T20 → T21，按「一次一个」串行。T07 只依赖 T03，排在 T06 之后只是为了让权限门专项审查（T05+T06）尽早做完。
 
 ## 5. 单任务精确交接
 
@@ -141,11 +143,13 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 
 ### T00 契约补齐与实测前置
 
-- API.md §6：补 `ToolCallFrame{id,title,kind?,status,detail?}`、`StatusFrame{state,phase?,model?,effort?,detail?}`、`UsageFrame{turn,cumulative}` 与 `Usage` 字段（对齐旧版 `usage.ts` 的 token/费用/缓存结构，未知可空）、`WritePreview`（沿用 T10 的 lineDiff 形状，Go 侧新增实现）、`PermissionOption{id,label}`。
+- API.md §6：补 `ToolCallFrame{id,title,kind?,status,detail?}`、`StatusFrame{state,phase?,model?,effort?,detail?}`、`UsageFrame{turn,cumulative}` 与 `Usage` 字段（对齐旧版 `usage.ts` 的 token/费用/缓存结构，未知可空）、`WritePreview`（形状沿用 M1 的 `src/lib/lineDiff.ts`，Go 侧移植见 T06）、`PermissionOption{id,label}`。
+- API.md §6：帧表删去 `sidecar` 这一 kind。§9 Q4 已决定引擎状态走 E10 `engine-status` 事件，不放进 Channel。
+- API.md §4.5：补 M37 的 `BlockResult` 结构。
 - API.md §4.6：补 M45–M49 的入参校验与出参完整字段；核对 M38 的 `capabilities` 固定值。
-- 两个实测（各写一次性 Go 测试或 spike，结论写进第 9 节）：
-  1. `mygo.Secrets`：Set/Get/Delete 在 Windows 上可用；超过 2560 字节拒绝；不可用时返回 `ErrUnsupported`。
-  2. `mygo` netproxy：系统代理（含 PAC）读取方式；回环地址是否绕过；SOCKS 是否回落直连。若能力不足，记录降级方案（直连 + 明确提示），不静默。
+- 两个本机冒烟验证（一次性 spike，结论写进第 9 节）：
+  1. `mygo.Secrets`：只用一次性服务名 `Secrets.Service("mkb-spike-<随机>")` 做 Set / Get / Delete，结束时删除；验证超过 2560 字节被拒绝。不碰应用自己的服务名。
+  2. `netproxy.Transport()`：对回环地址直连；系统未设代理时直连。PAC / WPAD 与 SOCKS5 的行为以 mygo 源码文档与技术设计 2.1 为准，本机没有对应代理环境时记为「未实测」，不当作已验证。
 - README 增加 M2 会用到的命令占位。
 
 ### T01 供应商与 key
@@ -153,33 +157,43 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 - providers.json 读写按 3.6：整文件 `SetEscapeHTML(false)`、固定键序、未知字段保留；读取截 50、保存校验 32；同名忽略大小写去重；`reasonix.toml` 托管区只读迁移（不存在时才读，结果为空不写文件）。
 - DeepSeek 预设常量；`fetchModels`：openai 类型 `GET {baseUrl}/models` + Bearer；anthropic 类型按旧版 `modelCatalog.ts:55-59`（`GET {root}/v1/models` + `x-api-key` + `anthropic-version`，仍是只存不调聊天）；10 秒超时、响应 ≤2 MiB、解析 `data[].id`、去 `models/` 前缀、≤500 条排序；错误信息先替换 key 再脱敏。
 - key：`Secrets.Set(envName, value)`，≤2560 字节、不含换行；界面状态由「能否读到」决定，不返回明文。
+- **凭据隔离**：Secrets 写的是 Windows 凭据管理器，按应用标识区分，临时 APPDATA 隔离不了。所以 key 存取写成接口：单元测试用内存实现；唯一的真实存储测试用 `Secrets.Service("mkb-test-<随机>")` 并在 `t.Cleanup` 中删除；e2e 一律使用不需要 key 的假供应商。任何测试都不读写应用自己服务名下的凭据。
 - **未保存草稿的 key**：`fetchModels` 的 `apiKey?` 参数承接编辑器里刚粘贴、尚未保存的明文，只在该请求内使用，不落盘、不进日志；T17 的「测试连接/拉模型」用它。
 - 测试：移植 providerForm、modelCatalog、credentialStore 用例；新增伪造 key 不落日志。
 
 ### T02 Agent 配置与 steering
 
-- agents.json 按 3.1：4 个键固定顺序、未知顶层键丢弃、未知字段保留；**两层默认要分清**：①写入 agents.json 的落盘默认按 `shared/appConfig.ts:330-374`（model=''、effort='auto'、approval='ask'，4 个 Agent 全 ask）；②引擎在无配置时的展示/兜底默认按 `shared/agent.ts:293-296`（effort='high'、scout='auto' 其余 'ask'）。PRD 的「默认配置」一段指后者，实现时两层各按其来源，不混用；非法 effort 归 auto、非法 approval 降级 ask。
+- agents.json 按 3.1：4 个键固定顺序、未知顶层键丢弃、未知字段保留；**默认配置按 D-010（PRD 现写法）**：agents.json 缺失、或缺某个 Agent 的键时，curator / scout / general 为 `model:"deepseek-v4-flash"`，distiller 为 `"deepseek-v4-pro"`；`effort:"high"`；scout 为 `approval:"auto"`，其余为 `"ask"`。模型存裸名，供应商里没有该模型时按 T04 的选择顺序回落。这与旧版运行行为不同（旧版 4 个都是空模型加 `ask`），已在 D-010 记录。非法 effort 归 `auto`、非法 approval 降级 `ask`，回退值与默认值是两回事。
 - steering：≤4000，超出截断并标注；`steeringBaseVersion` 保留；「与默认对比」「恢复默认只改草稿」由前端状态实现，后端提供默认值接口（M64 reset 返回默认，不落盘）。
 - skillCatalog（M71）：由索引文档派生（skillPaths 指向的目录）；只读。
-- 测试：移植 appConfig/agents 相关用例 + 字节往返。
+- 测试：移植 appConfig/agents 相关用例 + 字节往返；新增「文件缺失时 4 个 Agent 的默认值等于 D-010」与「已有文件的值优先于默认值」。
 
 ### T03 引擎骨架与 SSE
 
-- 出站校验：https 任意、http 只回环、URL 禁凭据；用 netproxy；按 T00 结论处理 SOCKS/PAC。
+- 出站校验：https 任意、http 只回环、URL 禁凭据；HTTP 客户端用 `netproxy.Transport()`（技术设计 2.1）：回环直连、PAC / WPAD、SOCKS5 可用，设置了代理环境变量时以环境变量为准（D-010）。
 - SSE：`delta.content`/`reasoning_content`/`reasoning`、`<think>` 拆分、tool_calls 按 index 累积（无 id 补 `call_<index>`）、`[DONE]`/finish_reason 完整性、半截流报错。
 - 重试：仅响应头前；408/429/5xx；401/403 立即鉴权错误；其他 4xx 立即失败；最多 10 次，500ms×2^(n-1) 上限 15s + 0–250ms 抖动；遵守 Retry-After ≤60s；状态帧文案「第 n/m 次重试，x 秒后自动继续」。
 - 空闲：300 秒无字节中止（超时值可注入，便于测试缩短）；取消贯穿请求（ctx 取消 → 关连接）。
 - 测试：httptest 假供应商覆盖 401/429(Retry-After)/5xx/半截流/超时/取消；**R-4 复测**：真实引擎 + 真实 Markdown，记录流式性能。
 
-### T04 上下文预算
+### T04 回合循环、会话与上下文预算
 
+对应旧版 `engine/NativeEngine.ts`（631 行），是 M2 里最核心的一块。工具执行在本任务里用测试替身注入，真实工具由 T05 提供。
+
+- 会话：按 (agent, vaultId) 懒创建、幂等（旧版 `engineHost.test.ts` 的「重复 createSession 是幂等的」）；会话信息供 M38 使用，`availableEfforts` 恒为空（D-002）。
+- 模型选择顺序（旧版 `engine/nativeProvider.ts:24-51`）：会话所选 → Agent 保存的 → 第一个可用 openai 供应商的默认模型 → 该供应商模型列表第一个；名字不在可用供应商的模型列表里就回落，不把任意字符串发给供应商。没有可用供应商时引擎状态为 offline，并带原因。
+- 工具循环：每轮最多 16 步，到上限以 `max_turn_requests` 结束；每个工具调用都要有对应的结果消息；取消时剩余调用回填「已取消，未执行」；只有正常结束的采样写入历史；参数不合法以错误文字回给模型，不中断回合。
+- 带工具调用的 assistant 消息总是带上 `reasoning_content` 字段（DeepSeek 思考模式缺这个字段会返回 400，旧版 `NativeEngine.ts:351-358`）。
+- steering 与共享上下文尾部块拼在用户消息末尾，不进 system；system 提示为空（D-002）。尾部块由 T08 提供，本任务先用空串。
+- 单回合出错隔离：回合内的 panic 由 recover 转为该回合的 `error` 帧，不影响其他会话和应用。
 - 估算：ASCII/4 + 非 ASCII×0.7 + 每消息 4；用真实 prompt_tokens 校准系数 0.5–3；窗口默认 64 000，供应商可覆盖。
 - 80% 触发压缩：保留最近 ~16%，切点只在 user 消息前；旧内容由模型摘要；失败或仍超限 → 整轮丢最旧 + 截断说明；system 与工具定义计入。
-- 测试：移植 contextBudget 全部用例 + 摘要失败路径。
+- 测试：移植 contextBudget 全部用例、nativeEngine 中与循环相关的用例（步数上限、取消回填、只写完整采样、供应商报错不带 key）、nativeProvider 的模型选择用例，加摘要失败路径与 panic 隔离。
 
 ### T05 工具与权限
 
-- 8 个工具 schema 用 agnes-engine skill 的 kb-tool-schemas，并逐字段对照旧版 `engine/kbTools.ts:86-234`；描述中文；参数校验失败以错误文字回模型，不中断回合；结果截断 20 000。
+- 8 个工具的 schema 都在本任务定义（用 agnes-engine skill 的 kb-tool-schemas，逐字段对照旧版 `engine/kbTools.ts:86-234`），执行实现交付其中 7 个；`handoff_task` 在 T08 实现，在此之前调用它返回「交接尚未就绪」工具错误。描述中文；参数校验失败以错误文字回模型，不中断回合；结果截断 20 000。
+- `set_aliases`：Agent 不能直接写 `.mile-kb/settings/`，所以按旧版（`EngineHost.ts:896-913`）经 M1 已有的 `AppConfigPatchAliases`（M66）写入，路径键先过相对路径校验，成功后发 E08 `app-config-changed`。
 - 两条写路径（与旧版一致，见 `engine/kbTools.ts:495-517` 与 `EngineHost.ts:816-846`）：
   - `write_note` / `edit_note` → 权限桥 `bridge.go` → `vault.Write`；两道判定在桥内，60 秒 `allowWriteOnce` 在落盘前消费；**不生成变更计划、不开事务、不记操作日志**。`write_note` 自动建父目录但只能写内容区；`edit_note` old_text 必须恰好 1 次。
   - `mutate_notes` → M29 生成计划 → M30 执行（事务与操作日志照旧）。
@@ -192,7 +206,7 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 - 三档：ask/auto 都发卡（文案不同）；yolo 不发卡直接执行内容区；permanentDelete 在 yolo 下直接拒绝并回工具错误（D-005）。非法值降级 ask。
 - PermFrame 状态机 pending→approved/rejected/expired；Go 确认后才发 approved/rejected；取消/换库/重启对未决卡发 expired；approve/reject 过期返回 `approval-expired`。
 - 60 秒消费型批准：键 sessionId+path；permanentDelete 额外要求「发卡时非 yolo」，用完即删（旧版 `EngineHost.ts:712-713,816-827`）。
-- 差异预览：Go 侧 lineDiff（LCS 4M 格、60 行上限、单行 200 字符），读取原文失败显示摘要。
+- 差异预览：把 M1 的 `src/lib/lineDiff.ts` 移植成 Go（`MAX_LCS_CELLS`=4 000 000、`PREVIEW_MAX_LINES`=60、`PREVIEW_MAX_LINE_CHARS`=200），复用 M1 的 TS 用例作为 Go 用例的期望值；读取原文失败只显示一行摘要。
 - 测试：移植 permissionRouter/executionMode 用例 + 卡片状态机 + 批准过期 + 消费一次。
 
 ### T07 路由
@@ -203,8 +217,11 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 ### T08 共享上下文
 
 - 快照字段与 M45 一致（`SharedContext{snapshotId,sequence,vault,activeDocument?,pinnedReferences,taskBoard,decisionLog,actionLedger,retrievalBundle}`）；任务板/决策/检索片段由 Agent 写，任务状态只能改自己那条。
+- **actionLedger**：M30 执行完成后，先更新索引再调 ContextHub 记录（与旧版 `ipc/register.ts:462-475` 顺序一致）；用户与 Agent 的变更走同一入口。
+- **`handoff_task`**：在本任务实现。发起者按 sessionId 反查，不信任模型自报的 agent；不能交给自己；goal ≤4000，inputs / constraints 各 ≤50 条、每条 ≤4000。
+- 旧版 `ContextHub.applyAgentPatch` 没有调用方，Agent 只经 `handoff_task` 写任务板。新版照此，不新增让 Agent 写决策记录或检索片段的工具。
 - **M49 需完整实现**：`AgentService.ContextReportDocument(vaultID,path?,revision,dirty)` 写入 ContextHub 的 activeDocument（含 revision 与可选 selection）；M0 的 `WindowService.ReportDocument` 保留为关窗守卫的专用入口，两者职责在契约里写明，不互相替代。
-- contextTail：2400 字符预算，优先级 revision → 当前文件/未保存/选区≤200 → 固定引用（≤1500）→ 未完成任务 → 决策 → 检索片段（≤4，放不下整条丢）；省略时「另有 N 项未列出」；绝对路径脱敏（旧版 `agent/contextTail.ts:67-186`）。
+- contextTail（接到 T04 的尾部块）：2400 字符预算，优先级 revision → 当前文件/未保存/选区≤200 → 固定引用（≤1500）→ 未完成任务 → 决策 → 检索片段（≤4，放不下整条丢）；省略时「另有 N 项未列出」；绝对路径脱敏（旧版 `agent/contextTail.ts:67-186`）。
 - 测试：移植 contextHub/contextTail 用例 + 截断顺序 + 脱敏。
 
 ### T09 对话历史与搜索
@@ -223,6 +240,7 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 
 - 头部 44px（历史开关、标题、待审批标签、会话信息、新对话）；用户消息右对齐 72%，Agent 消息 760px 居中、24px 头像；过程流水线（工具合并、已完成 N 步 · 思考 x.xs、同 id 原地更新）；思考折叠；呼吸动画（减少动效静止）。
 - 消息列表虚拟化（P-3/P-5）；流式只更新进行中消息。
+- 每条消息的操作（PRD FR-AI-CHAT）：复制（只复制正文）、重新回答（用同一条用户消息重新发起回合）。流式中断或空闲超时后也能重新回答（PRD §9）。
 - 截图 37/38/39 对照。
 
 ### T12 Markdown 流式与引用
@@ -244,6 +262,7 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 
 ### T15 历史栏与恢复
 
+- 只读查看器（旧版 `ConversationHistory.tsx` 的 `ConversationViewer`）：回放一条历史对话，消息列表虚拟化（P-4），提供「接着问 / 导出 / 返回」。
 - 200px、开合持久化；搜索 250ms/≤200；分组置顶/今天/昨天/更早；行悬停重命名/置顶/删除；底部「共 N 条 · 清空全部」；两步确认复用 confirmGate；导出；接着问；启动恢复提示。
 - 截图 45/46。
 
@@ -262,7 +281,7 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 ### T19 假供应商 e2e 与闭环验收
 
 - `internal/ai/fake_provider_test.go`：httptest 假 OpenAI 供应商，覆盖流式、工具调用、审批、取消、重试、半截流、用量。
-- `scripts/e2e/ac-m2.sh`：真实窗口 + 假供应商配置 → 发消息 → 路由 → 流式 → 工具审批 → 允许 → 收据 → 重启恢复 → 历史搜索。
+- `scripts/e2e/ac-m2.sh`：真实窗口 + 不需要 key 的假供应商（`apiKeyEnv` 留空，不写凭据管理器） → 发消息 → 路由 → 流式 → 工具审批 → 允许 → 收据 → 重启恢复 → 历史搜索。
 - AC-M2 全部通过。
 
 ### T20 性能与整体审查
@@ -286,14 +305,22 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | V-PROV-1 | 新增 DeepSeek 预设 | 保存 | providers.json 字节符合 3.6，Key 存 Secrets，界面「已配置」 | Go + e2e |
 | V-PROV-2 | 33 个供应商 | 保存 | 拒绝（保存上限 32） | Go |
 | V-PROV-3 | 文件含 60 条 | 读取 | 保留 50，其余截断 | Go |
-| V-PROV-4 | 无 key 环境 | 发请求 | 引擎 offline，原因如实；编辑器检索照常 | e2e |
+| V-PROV-4 | 没有任何可用供应商 | 打开对话 | 引擎 offline，原因如实；编辑器与检索照常 | e2e |
+| V-PROV-5 | 供应商需要 key 但未配置 | 发消息 | 回合报鉴权类错误，错误文字不含 key；界面提示去配置 | httptest + e2e |
+| V-PROV-6 | 任意测试运行后 | 检查凭据管理器 | 应用自己服务名下没有新增或改动的凭据 | Go |
 | V-AGT-1 | 修改 steering 4001 字符 | 保存 | 截断并标「已截断」 | Go |
 | V-AGT-2 | 非法 effort/approval | 读取 | 归 auto / 降级 ask | Go |
 | V-AGT-3 | agents.json 含未知字段 | 读写往返 | 未知字段保留、键序稳定 | Go |
+| V-AGT-4 | agents.json 不存在 | 读取 | 4 个 Agent 的默认值等于 D-010；已有文件时文件值优先 | Go |
 | V-ENG-1 | 假供应商 401 | 发消息 | 立即鉴权错误，不重试 | httptest |
 | V-ENG-2 | 429 + Retry-After | 发消息 | 按 Retry-After 等待并重试，状态帧可见 | httptest |
 | V-ENG-3 | 半截流 | 发消息 | 回合报错，不写入半截回答 | httptest |
 | V-ENG-4 | 300 秒无字节 | 发消息 | 中止并报超时（用缩短配置测试） | httptest |
+| V-LOOP-1 | 假供应商连续返回工具调用 | 发消息 | 第 16 步后以 `max_turn_requests` 结束 | httptest |
+| V-LOOP-2 | 等审批时取消 | 取消 | 当前与剩余调用都回填「已取消，未执行」，历史里没有半截采样 | httptest |
+| V-LOOP-3 | 上一轮有工具调用 | 发下一轮 | 请求里那条 assistant 消息带 `reasoning_content` 字段 | httptest |
+| V-LOOP-4 | 工具实现 panic | 发消息 | 该回合以 error 结束，其他会话照常，应用不退出 | Go |
+| V-LOOP-5 | 会话所选的模型不在任何供应商里 | 发消息 | 回落到第一个可用供应商的默认模型 | Go |
 | V-BUDGET-1 | 窗口 80% | 继续发消息 | 压缩发生，切点在 user 前，摘要注入 | Go |
 | V-BUDGET-2 | 摘要失败 | 继续 | 整轮丢最旧 + 截断说明，不丢当前消息 | Go |
 | V-TOOL-1 | 8 个工具 | 逐个调用 | 参数/结果/截断符合 PRD 表 | httptest |
@@ -312,6 +339,8 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | V-HIST-4 | 删除/清空 | 两步确认 | 600ms 内二次点击无效；清空删残留 | Go + e2e |
 | V-CHAT-1 | 流式 10k 字符 | 观察 | 60fps，只更新进行中消息 | e2e + perf |
 | V-CHAT-2 | 末尾未闭合表格 | 观察 | 收起并显示「正在生成…」 | e2e |
+| V-CHAT-3 | 一条已完成的回答 | 点「重新回答」 | 用同一条用户消息发起新回合；「复制」只复制正文 | e2e |
+| V-HIST-5 | 50 条长回答的历史对话 | 打开只读查看器 | 消息列表虚拟化，首帧按 T20 口径计时 | e2e + perf |
 | V-CARD-AI-1 | 允许审批 | 点击 | 卡片在 Go 确认帧后移除 | e2e |
 | V-CARD-AI-2 | 供应商无费用 | 回合结束 | 费用「— 未提供」，不显示 $0.00（AC-AI-4） | Go + e2e |
 | V-SET-PROV-1 | 空状态 | 打开 | 与截图 41 一致 | e2e |
@@ -333,18 +362,18 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 - 测试先行：Go 侧协议、重试、预算、权限、路由、上下文、历史、存储一律先写测试；移植旧版单测按 2.1 清单。
 - TDD 例外：契约文档（T00）、设置页纯视觉外壳（T17/T18 外壳，逻辑仍有单测）、e2e 脚本本身。
 - 独立审查：**T05+T06 完成后一并做权限门专项审查**（两道判定、系统区、审批状态机、Agent origin），T19 后整体审查；修复上限 3 轮。
-- 写知识库只经 MutationService；key 只进 Secrets；日志不记正文与 key。
+- Agent 写知识库只走两条既定路径（直写桥 / 变更计划，见第 5 节通用纪律）；key 只进 Secrets，测试不碰应用自己服务名下的凭据；日志不记正文与 key。
 - 提交：每个任务一次，不推送；M2 末询问。
 
 ## 8. 来源基线与批准记录
 
 | 资料 | 版本 / 日期 | 适用范围 |
 | --- | --- | --- |
-| PRD | v1.6 | FR-AI-*、FR-SRCH/LINK/MUT/AREA 的复用 |
+| PRD | v1.7 | FR-AI-*、FR-SRCH/LINK/MUT/AREA 的复用 |
 | API | v1.0 + T00 补齐 | M38–M49、M63/M64、M67–M71、§6 |
 | 数据库设计 | v1.0 | 3.1、3.6、4.4、§6–8 |
-| 技术设计 | v1.0 | 第 4.6、第 7 节 R-4/R-5、第 10 节门禁 |
-| decisions | D-001–D-009 | D-002、D-005 |
+| 技术设计 | v1.0 | 第 2.1 节选型（netproxy、Secrets）、第 4.6 节、第 7 节 R-4、第 10 节门禁 |
+| decisions | D-001–D-010 | D-002、D-005、D-010 |
 | 旧版代码 | v2.7.0，只读 | 2.1 盘点 |
 | Skills | agnes-engine 等 | 第 2 节 |
 
@@ -353,20 +382,22 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | B-M2-01 | M2 范围 = C6 + C7 + 设置两节 | — | 待确认 |
 | B-M2-02 | 第 1.3 节非目标、第 4 节任务与顺序、第 7 节 TDD 例外与审查安排 | — | 待确认 |
 | B-M2-03 | 执行节奏沿用「一次一个任务」 | — | 待确认 |
-| B-M2-04 | 代理能力不足时降级直连并提示（T00 结论触发） | — | 待确认 |
+| B-M2-04 | ~~代理能力不足时降级直连并提示~~ | 撤回：技术设计 2.1 已确认 netproxy 方案（含 PAC / WPAD、SOCKS5），不需要另批降级 | 已撤回 |
 | B-M2-05 | Agent 写路径按旧版：`write_note`/`edit_note` 走权限桥直写（不开事务、不记日志），`mutate_notes` 走 M29/M30；同时扩展 M29/M30 接受 agent origin | — | 待确认 |
+| B-M2-06 | Agent 默认配置按 PRD 现写法（D-010） | 用户 2026-11-18 选择「按 PRD 现写法」 | 已确认 |
 
 ## 9. 恢复入口与执行账本
 
 ### 下次会话先读
 
-- 当前阶段：M2 计划草案，待审批。
+- 当前阶段：M2 计划草案 v0.3，待审批。
 - 下一个任务：审批后 T00。
-- 工作区：`main` 与 `origin/main` 对齐于 `cdc7a21`，工作区干净。
-- 待决事项：B-M2-01..04；13 项手动确认；旧版性能基线。
+- 工作区：`main` 领先 `origin/main`，本地提交 `b5343e0`（v0.2）与本次 v0.3 均未推送。
+- 待决事项：B-M2-01、02、03、05；13 项手动确认；旧版性能基线。B-M2-04 已撤回，B-M2-06 已确认。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-18 | 复审（主会话自审，用户要求）2 阻断 7 需改 4 小问题：**阻断** ①PRD 的 Agent 默认配置来自旧版死代码 `DEFAULT_AGENT_CONFIG`（`shared/agent.ts:289-297`，src 与 tests 零引用），旧版运行时 4 个都是 ask 加空模型；用户选择按 PRD 现写法，记为 D-010，PRD 升 v1.7、数据库设计 3.1 同步，模型存裸名；②旧版 NativeEngine 的回合循环没有任务负责 → T04 扩为「回合循环、会话与上下文预算」，新增 V-LOOP-1..5。**需改** `handoff_task` 依赖 ContextHub → 移到 T08，并补 actionLedger 回调；`set_aliases` 经 M66；§7 写路径表述与两条路径统一；B-M2-04 撤回（技术设计 2.1 已确认 netproxy），PRD 的 SOCKS 与环境变量口径改为与之一致；Secrets 测试隔离；每条消息的「复制 / 重新回答」进 T11；只读查看器进 T15；V-PROV-4 改写并新增 V-PROV-5、6。**小问题** WritePreview 的 lineDiff 指 M1 的 TS 版并移植为 Go；T12 依赖改为补 `BlockResult`；帧表删 `sidecar`；恢复入口与待决事项更新 | docs/PLAN-M2.md v0.3、docs/decisions.md D-010、docs/PRD.md v1.7、docs/数据库设计.md 3.1 | 旧版核对：`agent.ts:289` 全仓库只有定义；`NativeEngine.ts:189` 会话默认 ask；`appConfig.ts:330-367` 4 个 Agent 均为空模型 + auto + ask；`nativeProvider.ts:41-50` 精确匹配模型名；`ContextHub.ts:176` 无调用方；mygo `netproxy.go` 文档与 `secrets.go:58` | B-M2-01、02、03、05 | T00 |
 | 2026-11-18 | 独立审查（task-reviewer，只读）1 阻断 8 需改 4 建议：**阻断** Agent 写路径语义错误——旧版 write/edit 走权限桥直写、不经变更计划，计划却写「一律经 MutationService」，且 M29 目前拒绝非 user origin → 已拆成两条既定路径，并把「扩展 M29/M30 接受 agent origin + 权限矩阵」并入 T05，新增 B-M2-05 请用户确认；**需改** M49 只有关窗弱化版（补完整语义并区分 WindowService.ReportDocument）、路由词表计数改为 56、agents.json 落盘默认与引擎兜底默认两层分开写、M37 是新建绑定（依赖 T00）、fetchModels 草稿 key 链路、anthropic 拉模型按旧版保留、性能测量口径写死、AC-AI-2 补「切 ask 后弹卡」；**建议** 权限审查点合并 T05+T06、idle timeout 可注入、search.db 版本迁移、Z1 列入 B-M2-05。均已落进计划 | docs/PLAN-M2.md v0.2 | 自查见第 10 节；旧版盘点 20 处 file:line 抽查 18 处属实（2 处已修正） | B-M2-01..05 | T00 |
 | 2026-11-18 | 计划草案完成 | docs/PLAN-M2.md v0.1 | 自查见第 10 节；API §6 帧载荷缺失已确认 | B-M2-01..04 | T00 |
 
@@ -375,4 +406,4 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 - 覆盖：第 1.2 节需求 → 任务/验收映射；PRD 第 12 节 AC-AI-1..6 全部映射到第 6 节（AC-AI-2 两段、AC-AI-5 双击、AC-AI-6 2400 截断均有对应 V 项），AC-SRCH/LINK/MUT 复用 M1 的验收。
 - 接口一致：M38–M49、M63/M64、M67–M71 来自 API 2.2；帧载荷缺口在 T00 补齐；存储格式只引用数据库设计小节。
 - 未定值：系统代理/PAC、Secrets 可用性、旧版词表与 steering 默认文本的精确内容，都在 T00/盘点中落实，不在此臆造。
-- 已知风险：权限门与 key 是安全核心（专项审查）；R-4 需用真实引擎复测；D-002 三处行为需按旧版判定；M2 规模最大，任务数 22。
+- 已知风险：权限门与 key 是安全核心（专项审查）；R-4 需用真实引擎复测；D-002 三处行为按旧版判定，D-010 默认配置按 PRD 判定；T04 回合循环是最复杂的单项，单独有 V-LOOP；M2 规模最大，任务数 22。

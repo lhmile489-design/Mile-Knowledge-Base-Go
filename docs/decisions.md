@@ -134,6 +134,21 @@
 - 受影响：docs/API.md（M19、§3 映射、§5、方法总数）、docs/PRD.md（FR-AREA、FR-DOC、FR-PROV，版本 v1.6）、docs/PLAN-M1.md（T00、T09、T12、B-M1-01..08）、internal/service/image.go（T12 补齐校验）、vite.config.ts（CSP connect-src，T12）。
 - 正文同步情况：本决策已回写上述文档；D-009 之前的 M0 阶段文档不改写。
 
+## D-010：M2 计划复审的 Agent 默认配置与代理口径
+
+- 日期与状态：2026-11-18，已确认（用户选择「按 PRD 现写法」）。
+- 背景：复审 docs/PLAN-M2.md 时发现，PRD FR-AI-PROV 写的 Agent 默认配置（模型 flash、distiller 用 pro、推理强度高、scout 自动审批）来自旧版 `shared/agent.ts:289-297` 的 `DEFAULT_AGENT_CONFIG`。这个常量在旧版 `src/` 与 `tests/` 中没有任何引用。旧版实际运行时：会话建立时审批为 `ask`（`NativeEngine.ts:189`），随后被 agents.json 覆盖；agents.json 的默认值（`shared/appConfig.ts:330-367`）4 个 Agent 都是 `model=''`、`effort='auto'`、`approval='ask'`，`model` 为空时用供应商默认模型。
+- 备选：①按旧版实际运行行为（4 个都逐条审批、都用默认模型）；②按 PRD 现写法。
+- 结论：
+  1. **按 PRD 现写法**。agents.json 缺失、或缺某个 Agent 的键时，默认值为：curator / scout / general 的模型 `deepseek-v4-flash`，distiller 为 `deepseek-v4-pro`；推理强度 `high`；审批 scout 为 `auto`，其余为 `ask`。steering 默认文本不变（`shared/appConfig.ts:336-373`）。
+  2. **模型名落盘用裸名**。PRD 写的 `deepseek/deepseek-v4-flash` 中 `deepseek/` 表示供应商，不写进 agents.json：模型解析按供应商模型列表精确匹配（旧版 `nativeProvider.ts:41-46`），DeepSeek 预设的模型列表是裸名（`appConfig.ts:125-133`），带前缀的值永远匹配不上。用户的供应商里没有该模型时，按既有规则回落到第一个可用供应商的默认模型。
+  3. **非法值的回退规则不变**：非法 effort 归 `auto`，非法 approval 降级 `ask`（降级只往严格方向走）。默认值与回退值是两回事。
+  4. **代理口径以技术设计为准**：技术设计第 2.1 节已确认用 `mygo/netproxy`（WinHTTP，含 PAC / WPAD，回环直连，SOCKS5 可用）。PRD「SOCKS 代理回落为直连」改为与之一致；另记录一处差异：netproxy 在设置了 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY` 时以环境变量为准，旧版只问系统代理。
+- 原因：用户选择 PRD 的产品意图（scout 只读检索免审批、distiller 用更强模型）；第 2 条是让该意图在既有解析规则下真正生效所必需的解释，不是新行为。
+- 代价与风险：与旧版运行行为不一致的地方有 4 处：scout 默认免审批，distiller 默认 pro，强度默认 high，模型默认值非空。已有 agents.json 的知识库不受影响，文件里的值优先。强度控件在 D-002 下始终禁用，`high` 只是存储值，不改变请求。
+- 受影响：docs/PRD.md（FR-AI-PROV 默认配置、FR-AI-ENG 代理，v1.7）、docs/数据库设计.md（3.1 默认值）、docs/PLAN-M2.md（T00、T02、T04、v0.3）。
+- 正文同步情况：本决策已回写上述文档。
+
 ## 单条模板
 
 ### 待编号：决策标题

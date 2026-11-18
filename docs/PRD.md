@@ -1,6 +1,6 @@
 # 产品需求文档：Go 重构版（功能对齐 + 性能）
 
-> 状态：已确认 v1.5（v1.0 于 2026-11-18 审核通过；v1.1–v1.5 同日修订，见文末修订记录）。
+> 状态：已确认 v1.7（v1.0 于 2026-11-18 审核通过；v1.1–v1.7 同日修订，见文末修订记录）。
 > 迭代名称：R1 重构对齐版；负责人：用户；确认日期：2026-11-18。
 > 产品总览见 [PRODUCT.md](../PRODUCT.md)，本文件只定义本次重写的范围与规则。
 > 需求来源：旧版 `E:\WebApp\Mile-Project\Mile-Knowledge-Base-master` v2.7.0 源码（以代码为准，文档与代码冲突时取代码），2026-11-18 盘点；用户本轮说明。
@@ -450,7 +450,8 @@
 - 代理：
   - 跟随系统代理设置，包括 PAC；
   - 回环地址不走代理；
-  - SOCKS 代理回落为直连；
+  - SOCKS5 代理可用（Go 传输层支持；旧版回落为直连，技术设计 2.1 已确认改进）；
+  - 设置了 `HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 或 `NO_PROXY` 环境变量时以环境变量为准（mygo netproxy 的规则；旧版只问系统代理，D-010）；
   - 新版取得系统代理的方式在阶段 07 验证。
 - 出站地址：https 任意；http 只允许 127.0.0.1、localhost 这类回环地址；URL 不能带用户名密码。
 - 工具循环：
@@ -613,8 +614,8 @@
   - 系统加密不可用时拒绝保存，不退回明文；
   - 界面只显示「已配置 / 未配置」，不显示掩码；
   - 解密失败时提示重新填写。
-- Agent 默认配置：
-  - 模型：deepseek/deepseek-v4-flash，distiller 用 deepseek-v4-pro；
+- Agent 默认配置（agents.json 缺失或缺某个 Agent 时使用；D-010 按本条执行，旧版运行时实际是 4 个都逐条审批、都用供应商默认模型）：
+  - 模型：deepseek 供应商的 deepseek-v4-flash，distiller 用 deepseek-v4-pro；agents.json 中存裸名 `deepseek-v4-flash` / `deepseek-v4-pro`，供应商里没有该模型时回落到第一个可用供应商的默认模型；
   - 推理强度：高；
   - 审批：scout 为自动，其他为手动；
   - 每个 Agent 的配置存在 `.mile-kb/settings/agents.json`。
@@ -838,3 +839,4 @@
 | v1.4 | 2026-11-18 | 阶段 07 实测（spikes/r3-render）：原始 HTML 在旧版是转义成文字显示，不是丢弃，FR-DOC 改为转义显示；写明标题不生成 id、`#xx` 锚点点击无动作 | 用户确认，decisions.md D-007 |
 | v1.5 | 2026-11-18 | 设计交接检查修订：FR-AI-PROV 供应商上限改为「保存 32 / 读取保留 50」；FR-AI-HIST 搜索改用 SQLite FTS5；§7 引擎状态枚举统一为 starting/ready/offline；§12 新增 AC-OVW-1（待审批计数磁贴）与 AC-AI-6（共享上下文 2400 字符上限与省略标注） | 用户确认，decisions.md D-008 |
 | v1.6 | 2026-11-18 | FR-PROV 增加「从来源同步」的完整规则与 AC-PROV-2（新行为）；FR-DOC 的图片传输改为 `kbimg` 协议上传；FR-AREA 注明「进检索」开关旧版未实现、M1 不生效 | 用户 2026-11-18 选择，decisions.md D-009 |
+| v1.7 | 2026-11-18 | M2 计划复审（D-010）：FR-AI-PROV 默认配置注明旧版运行差异与裸名落盘规则；FR-AI-ENG 代理改为 SOCKS5 可用、环境变量优先，与技术设计 2.1 一致 | 用户确认按 PRD 现写法 |
