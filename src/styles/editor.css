@@ -228,7 +228,7 @@
 }
 
 .backlinks-item:hover {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .backlinks-item.is-static {

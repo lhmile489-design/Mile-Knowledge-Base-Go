@@ -171,7 +171,7 @@
 }
 
 .provenance-link:hover {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .provenance-sync {
@@ -220,7 +220,7 @@
 }
 
 .plan-diff-lines span[data-kind="added"] {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .plan-diff-lines span[data-kind="removed"] {
@@ -294,7 +294,7 @@
 .audit-status[data-status="completed"],
 .audit-status[data-status="reverted"] {
   border-color: var(--raw-accent);
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .audit-kind {

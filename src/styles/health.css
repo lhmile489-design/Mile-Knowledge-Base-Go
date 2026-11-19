@@ -79,7 +79,7 @@
 }
 
 .health-link:hover {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .health-title {

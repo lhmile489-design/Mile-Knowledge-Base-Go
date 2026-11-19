@@ -1,0 +1,200 @@
+/* R2 theme color presets (DESIGN.md 12.1, 12.3). Each block overrides
+   only the ten tokens; the rest of the palette is theme-wide. The
+   :root defaults in tokens.css are the orange palette. */
+
+/* 橙（默认） · 浅色 */
+[data-accent='orange'] {
+  --raw-accent: #e87226;
+  --raw-accent-hover: #d16722;
+  --raw-accent-active: #ba5b1e;
+  --raw-accent-soft: #fceee5;
+  --raw-accent-text: #aa541c;
+  --raw-accent-btn: #ba5b1e;
+  --raw-accent-btn-hover: #a7521b;
+  --raw-accent-btn-active: #954918;
+  --raw-on-accent: #ffffff;
+  --focus: #e87226;
+}
+
+/* 橙（默认） · 深色 */
+[data-theme='dark'][data-accent='orange'] {
+  --raw-accent: #fa8234;
+  --raw-accent-hover: #fb914c;
+  --raw-accent-active: #dc722e;
+  --raw-accent-soft: #4d3426;
+  --raw-accent-text: #fa8234;
+  --raw-accent-btn: #fa8234;
+  --raw-accent-btn-hover: #fb914c;
+  --raw-accent-btn-active: #dc722e;
+  --raw-on-accent: #111214;
+  --focus: #fa8234;
+}
+
+/* 靛 · 浅色 */
+[data-accent='indigo'] {
+  --raw-accent: #4f46e5;
+  --raw-accent-hover: #4338ca;
+  --raw-accent-active: #3730a3;
+  --raw-accent-soft: #ebeafd;
+  --raw-accent-text: #4f46e5;
+  --raw-accent-btn: #4f46e5;
+  --raw-accent-btn-hover: #4338ca;
+  --raw-accent-btn-active: #3730a3;
+  --raw-on-accent: #ffffff;
+  --focus: #4f46e5;
+}
+
+/* 靛 · 深色 */
+[data-theme='dark'][data-accent='indigo'] {
+  --raw-accent: #8b8ff8;
+  --raw-accent-hover: #a2a5fa;
+  --raw-accent-active: #7579ec;
+  --raw-accent-soft: #2a2b45;
+  --raw-accent-text: #8b8ff8;
+  --raw-accent-btn: #8b8ff8;
+  --raw-accent-btn-hover: #a2a5fa;
+  --raw-accent-btn-active: #7579ec;
+  --raw-on-accent: #111214;
+  --focus: #8b8ff8;
+}
+
+/* 蓝 · 浅色 */
+[data-accent='blue'] {
+  --raw-accent: #2563eb;
+  --raw-accent-hover: #2159d4;
+  --raw-accent-active: #1e4fbc;
+  --raw-accent-soft: #e5ecfd;
+  --raw-accent-text: #2461e6;
+  --raw-accent-btn: #2563eb;
+  --raw-accent-btn-hover: #2159d4;
+  --raw-accent-btn-active: #1e4fbc;
+  --raw-on-accent: #ffffff;
+  --focus: #2563eb;
+}
+
+/* 蓝 · 深色 */
+[data-theme='dark'][data-accent='blue'] {
+  --raw-accent: #81a5f3;
+  --raw-accent-hover: #90b0f4;
+  --raw-accent-active: #7291d6;
+  --raw-accent-soft: #323c50;
+  --raw-accent-text: #81a5f3;
+  --raw-accent-btn: #81a5f3;
+  --raw-accent-btn-hover: #90b0f4;
+  --raw-accent-btn-active: #7291d6;
+  --raw-on-accent: #111214;
+  --focus: #81a5f3;
+}
+
+/* 绿 · 浅色 */
+[data-accent='green'] {
+  --raw-accent: #16a34a;
+  --raw-accent-hover: #149343;
+  --raw-accent-active: #12823b;
+  --raw-accent-soft: #e3f4e9;
+  --raw-accent-text: #117c38;
+  --raw-accent-btn: #12873d;
+  --raw-accent-btn-hover: #107a37;
+  --raw-accent-btn-active: #0e6c31;
+  --raw-on-accent: #ffffff;
+  --focus: #16a34a;
+}
+
+/* 绿 · 深色 */
+[data-theme='dark'][data-accent='green'] {
+  --raw-accent: #4cb874;
+  --raw-accent-hover: #61c185;
+  --raw-accent-active: #43a266;
+  --raw-accent-soft: #274034;
+  --raw-accent-text: #4cb874;
+  --raw-accent-btn: #4cb874;
+  --raw-accent-btn-hover: #61c185;
+  --raw-accent-btn-active: #43a266;
+  --raw-on-accent: #111214;
+  --focus: #4cb874;
+}
+
+/* 青 · 浅色 */
+[data-accent='teal'] {
+  --raw-accent: #0d9488;
+  --raw-accent-hover: #0c857a;
+  --raw-accent-active: #0a766d;
+  --raw-accent-soft: #e2f2f1;
+  --raw-accent-text: #0b7970;
+  --raw-accent-btn: #0c857a;
+  --raw-accent-btn-hover: #0b786e;
+  --raw-accent-btn-active: #0a6a62;
+  --raw-on-accent: #ffffff;
+  --focus: #0d9488;
+}
+
+/* 青 · 深色 */
+[data-theme='dark'][data-accent='teal'] {
+  --raw-accent: #56b4ac;
+  --raw-accent-hover: #6abdb6;
+  --raw-accent-active: #4c9e97;
+  --raw-accent-soft: #293f40;
+  --raw-accent-text: #56b4ac;
+  --raw-accent-btn: #56b4ac;
+  --raw-accent-btn-hover: #6abdb6;
+  --raw-accent-btn-active: #4c9e97;
+  --raw-on-accent: #111214;
+  --focus: #56b4ac;
+}
+
+/* 紫 · 浅色 */
+[data-accent='violet'] {
+  --raw-accent: #7c3aed;
+  --raw-accent-hover: #7034d5;
+  --raw-accent-active: #632ebe;
+  --raw-accent-soft: #efe7fd;
+  --raw-accent-text: #7c3aed;
+  --raw-accent-btn: #7c3aed;
+  --raw-accent-btn-hover: #7034d5;
+  --raw-accent-btn-active: #632ebe;
+  --raw-on-accent: #ffffff;
+  --focus: #7c3aed;
+}
+
+/* 紫 · 深色 */
+[data-theme='dark'][data-accent='violet'] {
+  --raw-accent: #b793f5;
+  --raw-accent-hover: #c0a0f6;
+  --raw-accent-active: #a181d8;
+  --raw-accent-soft: #3e3850;
+  --raw-accent-text: #b793f5;
+  --raw-accent-btn: #b793f5;
+  --raw-accent-btn-hover: #c0a0f6;
+  --raw-accent-btn-active: #a181d8;
+  --raw-on-accent: #111214;
+  --focus: #b793f5;
+}
+
+/* 自定义色：20 个值由 theme-init.js 或 appStore 写成内联变量，
+   这两段只把它们映射到令牌上；没设时退回 :root 的橙色。 */
+[data-accent='custom'] {
+  --raw-accent: var(--accent-light-accent, var(--raw-accent));
+  --raw-accent-hover: var(--accent-light-hover, var(--raw-accent-hover));
+  --raw-accent-active: var(--accent-light-active, var(--raw-accent-active));
+  --raw-accent-soft: var(--accent-light-soft, var(--raw-accent-soft));
+  --raw-accent-text: var(--accent-light-text, --raw-accent-text);
+  --raw-accent-btn: var(--accent-light-btn, var(--raw-accent-btn));
+  --raw-accent-btn-hover: var(--accent-light-btn-hover, var(--raw-accent-btn-hover));
+  --raw-accent-btn-active: var(--accent-light-btn-active, var(--raw-accent-btn-active));
+  --raw-on-accent: var(--accent-light-on-accent, var(--raw-on-accent));
+  --text-on-accent: var(--raw-on-accent);
+  --focus: var(--accent-light-focus, var(--focus));
+}
+[data-theme='dark'][data-accent='custom'] {
+  --raw-accent: var(--accent-dark-accent, var(--raw-accent));
+  --raw-accent-hover: var(--accent-dark-hover, var(--raw-accent-hover));
+  --raw-accent-active: var(--accent-dark-active, var(--raw-accent-active));
+  --raw-accent-soft: var(--accent-dark-soft, var(--raw-accent-soft));
+  --raw-accent-text: var(--accent-dark-text, --raw-accent-text);
+  --raw-accent-btn: var(--accent-dark-btn, var(--raw-accent-btn));
+  --raw-accent-btn-hover: var(--accent-dark-btn-hover, var(--raw-accent-btn-hover));
+  --raw-accent-btn-active: var(--accent-dark-btn-active, var(--raw-accent-btn-active));
+  --raw-on-accent: var(--accent-dark-on-accent, var(--raw-on-accent));
+  --text-on-accent: var(--raw-on-accent);
+  --focus: var(--accent-dark-focus, var(--focus));
+}

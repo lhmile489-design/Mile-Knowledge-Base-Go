@@ -65,15 +65,7 @@
    * 永远不表达状态。它与 --info 同为靛蓝，区分靠用法而不是色相。
    * hover / active 各有一档，按压与悬停不再靠 color-mix 现算。
    */
-  --raw-accent: #4f46e5;
-  --raw-accent-hover: #4338ca;
-  --raw-accent-active: #3730a3;
-  /* 设计稿给的是定值，不再混入 --panel-bg：三块面板已是同一色相，混出来几乎一样。 */
-  --raw-accent-soft: #ebeafd;
-  --raw-on-accent: #ffffff;
-  /* 强调色上的前景。深色主题方向相反，所以是独立令牌而不是写死白色。 */
-  --text-on-accent: var(--raw-on-accent);
-  --focus: #4f46e5;
+
 
   /* 只有两档：面板一档、浮层一档。深色面板不投影，见下。 */
   --shadow-panel: 0 4px 14px rgb(20 22 28 / 0.06);
@@ -170,6 +162,25 @@
   --raw-panel-editor: #ffffff;
   --raw-panel-agnes: #ffffff;
 }
+/* 主题色只在 :root / 深色上给默认值；[data-preview] 缩略图不覆盖，好让它跟着当前选择走。 */
+:root {
+  /* R2（DESIGN.md 12.1）：默认橙色。带文字的强调色底用 --raw-accent-btn 一族，
+     浅色下比 --raw-accent 深，好让白字达到 4.5:1；其余预设与自定义色见 accent.css。 */
+  --raw-accent: #e87226;
+  --raw-accent-hover: #d16722;
+  --raw-accent-active: #ba5b1e;
+  /* 设计稿给的是定值，不再混入 --panel-bg：三块面板已是同一色相，混出来几乎一样。 */
+  --raw-accent-soft: #fceee5;
+  --raw-accent-text: #aa541c;
+  --raw-accent-btn: #ba5b1e;
+  --raw-accent-btn-hover: #a7521b;
+  --raw-accent-btn-active: #954918;
+  --raw-on-accent: #ffffff;
+  /* 强调色上的前景。深色主题方向相反，所以是独立令牌而不是写死白色。 */
+  --text-on-accent: var(--raw-on-accent);
+  --focus: #e87226;
+}
+
 
 /* ---------- 原始层：深色，石墨（M20-S3，方案 B） ---------- */
 /*
@@ -201,13 +212,7 @@
 
   --text-on-ink: #0e0f11;
 
-  /* 白字放在 #8b8ff8 上不及格，所以前景翻成近黑。 */
-  --raw-accent: #8b8ff8;
-  --raw-accent-hover: #a2a5fa;
-  --raw-accent-active: #7579ec;
-  --raw-accent-soft: #2a2b45;
-  --raw-on-accent: #111214;
-  --focus: #8b8ff8;
+
 
   /* 深色面板不投影：暗底上阴影看不见，只会把边缘弄脏。浮层仍要一档。 */
   --shadow-panel: none;
@@ -216,6 +221,21 @@
   --glass: rgb(28 30 34 / 0.72);
   --glass-line: rgb(255 255 255 / 0.08);
 }
+/* 主题色只在 :root / 深色上给默认值；[data-preview] 缩略图不覆盖，好让它跟着当前选择走。 */
+[data-theme='dark'] {
+  /* 深色下亮底近黑字（D-015 第 6 条）：按钮与强调色同一档。 */
+  --raw-accent: #fa8234;
+  --raw-accent-hover: #fb914c;
+  --raw-accent-active: #dc722e;
+  --raw-accent-soft: #4d3426;
+  --raw-accent-text: #fa8234;
+  --raw-accent-btn: #fa8234;
+  --raw-accent-btn-hover: #fb914c;
+  --raw-accent-btn-active: #dc722e;
+  --raw-on-accent: #111214;
+  --focus: #fa8234;
+}
+
 
 /* ---------- 语义层 ---------- */
 @theme inline {
@@ -621,7 +641,7 @@ body {
 .segmented-item[aria-selected='true'],
 .segmented-item[aria-checked='true'] {
   background: var(--raw-card);
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 /* 铺满一整行、各项等分。用在面板内部的选择器上，不用在标题栏。 */
@@ -833,7 +853,7 @@ body {
   border: 0;
   border-radius: var(--radius-chip, 4px);
   background: var(--raw-accent-soft);
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
   font-family: var(--font-mono);
   font-size: 0.92em;
   cursor: pointer;
@@ -954,7 +974,7 @@ body {
 
 /* 节标题的隐喻图标用强调色做锚点；名字仍是 raw-text，颜色不单独承担信息。 */
 .tree-row-head .tree-glyph {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .tree-count {
@@ -1075,7 +1095,7 @@ body {
 
 /* 路由目标用强调色表达「这是这次请求的处理者」，与提案的 .route .who 一致。 */
 .route-who {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 /* 卡片内的输入框去掉自身边框，坐在抬升面里；保留原生纵向把手与焦点环（键盘可达）。 */
@@ -1101,8 +1121,8 @@ body {
   justify-content: center;
   border: 0;
   border-radius: 999px;
-  background: var(--raw-accent);
-  color: var(--raw-card);
+  background: var(--raw-accent-btn);
+  color: var(--raw-on-accent);
   cursor: pointer;
   transition:
     background-color 150ms,
@@ -1111,7 +1131,7 @@ body {
 }
 
 .composer-send:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--raw-accent) 85%, var(--raw-ink));
+  background: var(--raw-accent-btn-hover);
 }
 
 .composer-send:active:not(:disabled) {
@@ -1477,13 +1497,13 @@ body {
   color: var(--raw-faint);
 }
 .answer a {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
 .answer a:hover {
-  color: var(--raw-accent-hover);
+  color: var(--raw-accent-btn-hover);
 }
 /* 外链文字后的「离开应用」指示：第二重线索，颜色不是唯一信息载体。*/
 .answer a .ext {
@@ -1562,7 +1582,7 @@ body {
   border-color: var(--raw-line-strong);
 }
 .answer .img-label .img-open {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 .answer .img-label .img-note {
   color: var(--raw-faint);
@@ -2146,7 +2166,7 @@ button.overview-tile {
   height: 24px;
   border-radius: var(--radius-control, 8px);
   background: var(--raw-accent-soft);
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .overview-title {
@@ -2408,11 +2428,11 @@ button.overview-tile {
 
 .welcome-step[data-state='current'] .welcome-step-mark {
   border-color: var(--raw-accent);
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .welcome-step[data-state='done'] .welcome-step-mark {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 /* 目录 / 技能清单：描边列表而不是嵌套卡片。 */
@@ -2455,8 +2475,8 @@ button.overview-tile {
   padding: 0.4375rem 0.875rem;
   border: 1px solid transparent;
   border-radius: var(--radius-control, 8px);
-  background: var(--raw-accent);
-  color: var(--text-on-accent);
+  background: var(--raw-accent-btn);
+  color: var(--raw-on-accent);
   font-family: var(--font-ui);
   font-size: var(--text-body);
   font-weight: 600;
@@ -2469,7 +2489,7 @@ button.overview-tile {
 }
 
 .btn-accent:hover {
-  background: color-mix(in srgb, var(--raw-accent) 88%, var(--raw-ink));
+  background: var(--raw-accent-btn-hover);
 }
 
 .btn-accent:active {
@@ -3345,7 +3365,7 @@ button.overview-tile {
 
 .theme-tile-check {
   margin-left: auto;
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
   visibility: hidden;
 }
 
@@ -3806,7 +3826,7 @@ button.overview-tile {
   width: 14px;
   height: 14px;
   margin: 0;
-  accent-color: var(--raw-accent);
+  accent-color: var(--raw-accent-btn);
   cursor: pointer;
 }
 
@@ -4482,7 +4502,7 @@ button.overview-tile {
   flex: none;
   font-size: var(--text-caption);
   font-weight: 600;
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .session-info {
@@ -4595,7 +4615,7 @@ button.overview-tile {
   margin-left: 6px;
   font-size: var(--text-caption);
   font-weight: 600;
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .si-foot {
@@ -4705,7 +4725,7 @@ button.overview-tile {
   border: 1px solid var(--raw-line-strong);
   border-radius: 3px;
   transform: translateY(2px);
-  accent-color: var(--raw-accent);
+  accent-color: var(--raw-accent-btn);
 }
 
 .prose blockquote {
@@ -4765,14 +4785,14 @@ button.overview-tile {
 }
 
 .prose a {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
 
 .prose a:hover {
-  color: var(--raw-accent-hover);
+  color: var(--raw-accent-btn-hover);
 }
 
 .prose a.wiki-missing {
@@ -4881,7 +4901,7 @@ button.overview-tile {
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
   font-size: var(--text-meta);
   cursor: pointer;
 }

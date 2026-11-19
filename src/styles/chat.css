@@ -184,7 +184,7 @@
 }
 
 .route-target .route-who {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .route-reason {
@@ -284,7 +284,7 @@
   margin-left: auto;
   align-self: center;
   font-size: var(--text-caption);
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 /* Runtime parameter bar (reuses .runtime-controls from tokens.css). */
@@ -729,7 +729,7 @@
 .restore-note button {
   border: 0;
   background: transparent;
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
   font-size: var(--text-meta);
   cursor: pointer;
 }
@@ -910,7 +910,7 @@
 
 .info-current {
   font-size: var(--text-caption);
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .info-provider-meta {

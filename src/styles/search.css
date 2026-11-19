@@ -92,7 +92,7 @@
 
 .search-chip[aria-pressed="true"] {
   border-color: var(--raw-accent);
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .search-sep {

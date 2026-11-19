@@ -166,7 +166,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
   font-size: var(--text-meta);
   cursor: pointer;
 }

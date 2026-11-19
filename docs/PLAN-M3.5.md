@@ -81,7 +81,7 @@
 | T00 | 首帧方案验证（A-1–A-4） | `spikes/r10-preload/`（新） | 用户批准本计划 | RESULT.md 给出 A-1–A-4 的实测结论；若 A-1 不成立，提出替代方案并停下等用户决定 | 待验证（证据齐，待用户验收） |
 | T01 | Go：`accent` 字段、规范化与校验 | `internal/settings/{settings,accent}.go`、`internal/contract/contract.go`、生成的绑定 | T00 | V-ACC-GO 全部通过；`check:bindings` 通过 | 待验证（门禁已过，待用户验收） |
 | T02 | 前端配色算法 | `src/lib/accent.ts`（新）、`src/lib/accent.test.ts`（新） | T00 | 12 套预设快照与 DESIGN.md 12.3 逐值相同；V-ACC-ALG 通过 | 待验证（门禁已过，待用户验收） |
-| T03 | 令牌拆分与 12 套配色 | `src/styles/*.css` | T02 | 29 处改名、按钮与发送按钮改按钮令牌；默认橙；V-ACC-TOK 通过（含靛下 49 张逐像素比对） | 待做 |
+| T03 | 令牌拆分与 12 套配色 | `src/styles/*.css`、`scripts/visual/capture-new.py` | T02 | 29 处改名、按钮与发送按钮改按钮令牌；默认橙；V-ACC-TOK 通过（含靛下逐像素比对） | 待验证（门禁已过，待用户验收） |
 | T04 | 首帧链路 | `main.go`、`public/theme-init.js`、`src/stores/appStore.ts` | T00、T01、T02、T03 | V-ACC-BOOT 通过 | 待做 |
 | T05 | 标题栏色点与色板 | `src/components/TitleBar.tsx`、`src/components/AccentPicker.tsx`（新）、`src/styles/` | T04 | 交互与可访问性按 UI 稿 10.1、DESIGN.md 12；单测与构建通过 | 待做 |
 | T06 | 设置页「主题色」一行 | `src/components/settings/GeneralSection.tsx` | T05 | 与色板同步；单测与构建通过 | 待做 |
@@ -142,6 +142,14 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 - 29 处 `color:` 改用 `--raw-accent-text`；`.btn-accent`、`.composer-send` 及其悬停 / 按下改用按钮令牌，`.composer-send` 前景改为 `--raw-on-accent`；两处 `accent-color` 改用 `--raw-accent-btn`。逐处在交付说明里列出。
 - 其余背景、描边类用法保持 `--raw-accent`。
 - 验证：见 V-ACC-TOK。
+
+### T03 补充说明（2026-11-20 实测）
+
+- 「靛下 49 张逐像素比对」实际做了 50 张（M3 的清单里 60 号也在内），对照的是**同一份代码改动前构建**的截图，因为 M3 留下的那套截图分辨率不同（2498×1565 对 1424×892），不能直接比。
+- 差异判定标准：橙色像素 0 且「一侧橙、一侧靛」的互换像素 0；其余差异逐张看过，都是时间文本（「刚刚」/「N 分钟前」、搜索耗时）或运行态（强度选择、最近文档顺序、流式文本）。
+- 两处修正：
+  1. 主题色默认值原先与 `[data-preview='light'|'dark']` 共用选择器，导致设置页主题缩略图不跟随所选颜色；已拆成独立的 `:root` / `[data-theme='dark']` 规则。
+  2. `capture-new.py` 注入 `data-accent` 后立刻截图会截到换色前的帧；已加 0.3 秒等待。`CAPTURE_ACCENT` 环境变量在 T08 正式用于重拍。
 
 ### T04 首帧链路
 
@@ -237,6 +245,7 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 获批 | — | 自查见第 10 节 | T00 已放行 |
 | 2026-11-20 | T00 | 完成：方案成立，A-1–A-4 全过 | 见下 | RESULT.md；技术设计 14.3 | 用户已验收并放行 T01 |
+| 2026-11-20 | T03 | 完成：新增 accent.css（12 预设 + custom 映射）、令牌拆分、27 处文字改名、按钮组；靛下与「改动前同一份构建」逐像素比对：50 张里 26 张完全相同、橙色像素 0、橙靛互换 0，其余差异为时间文本与运行态（强度选择、最近文档顺序）。过程中修了两处：主题缩略图不再覆盖强调色；截图脚本注入后等一次重绘 | 见下 | 两次 e2e 构建 + 50 张对照；`build:web` | 等待放行 T04 |
 | 2026-11-20 | T02 | 完成：`src/lib/accent.ts`（6 预设常量、`deriveAccent`、对比度函数、`tokensFor`、CSS 变量映射）+ 12 个单测；DESIGN.md 12.3 橙色浅色按钮三值按算法回写（`#b95b1e`→`#ba5b1e` 等，因为规则是「从 accent 继续加深」） | 见下 | `tsc`、Vitest 199 项（含新增 12 项） | 等待放行 T03 |
 | 2026-11-20 | T01 | 完成：`accent` 类型、读入回落、Patch 严格校验；坏 accent 不再让整个设置文件被判损坏；Patch 改为「全部校验后再组装」 | 见下 | Go 526 项、vet/gofmt、绑定对拍、`tsc`、Vitest 187 项 | 等待放行 T02 |
 

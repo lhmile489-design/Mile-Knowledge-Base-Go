@@ -296,7 +296,7 @@
 }
 
 .provider-default svg {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .provider-test {

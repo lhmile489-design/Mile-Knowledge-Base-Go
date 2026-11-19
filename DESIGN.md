@@ -454,7 +454,7 @@ R2 的视觉验收以 `design/r2/shots/` 的 18 张截图为基准，方法同 �
 | `--focus` | 等于强调色 | 跟随 `--raw-accent` |
 | `--info` | 靛蓝 | **不变**，它是状态色 |
 
-实现：每套配色写成 `[data-accent='orange']`（浅）与 `[data-theme='dark'][data-accent='orange']`（深）两段，只覆盖上表 10 个令牌；自定义色由前端算好后写到 `<html>` 的内联样式变量上。`:root` 的默认值改为橙色。
+实现：每套配色写成 `[data-accent='orange']`（浅）与 `[data-theme='dark'][data-accent='orange']`（深）两段，只覆盖上表 10 个令牌；默认值只写在 `:root` 与 `[data-theme='dark']` 上，`[data-preview]` 的主题缩略图不覆盖强调色，跟随当前选择；自定义色由前端算好后写到 `<html>` 的内联样式变量上。`:root` 的默认值改为橙色。
 
 ### 12.2 不随主题色变的
 

@@ -91,7 +91,7 @@
 }
 
 .tree-row[aria-selected="true"] .tree-icon {
-  color: var(--raw-accent);
+  color: var(--raw-accent-text);
 }
 
 .tree-label {

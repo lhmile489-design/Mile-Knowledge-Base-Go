@@ -27,6 +27,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / "build" / "windows-amd64" / "Mile Knowledge Base.exe"
 OUT = ROOT / "design" / "compare" / "new"
+# 设了就把每个状态都切到这个主题色再截图（R2 T03 的靛色回归对照用）。
+ACCENT = os.environ.get("CAPTURE_ACCENT", "")
 BASELINE = ROOT / "design" / "baseline"
 MANIFEST = BASELINE / "manifest.json"
 
@@ -266,6 +268,9 @@ def shot(entry_id, name, note="", status="captured", theme=None):
         entry["size"] = LEGACY[str(entry_id)].get("size", "1440x900")
     try:
         if status == "captured":
+            if ACCENT:
+                DRIVER.js("document.documentElement.dataset.accent = " + json.dumps(ACCENT) + "; true")
+                time.sleep(0.3)  # 等一次重绘，否则截到的是换色前的帧
             png = DRIVER.capture()
             file = f"{entry_id}-{name}.png"
             OUT.mkdir(parents=True, exist_ok=True)
