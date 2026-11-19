@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"sort"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
@@ -12,27 +10,60 @@ import (
 )
 
 // AppConfigGet returns the vault-level settings the UI reads (M62): display
-// aliases and the raw categories file (the settings page consumes it in M3).
+// aliases, the parsed category table and the four agents.
 func (s *SettingsService) AppConfigGet(ctx context.Context, vaultID string) contract.AppConfigResult {
-	result := contract.AppConfigResult{Aliases: map[string]string{}}
+	result := contract.AppConfigResult{Aliases: map[string]string{}, Categories: []contract.CategoryConfig{}}
 	root, f := s.vaultRoot(vaultID, &result.Failure)
 	if f != nil {
 		return result
 	}
 	aliases := vault.ReadAliases(vault.AliasPath(root))
 	result.Aliases = aliases.Map()
-	if raw, err := os.ReadFile(filepath.Join(root, ".mile-kb", "settings", "categories.json")); err == nil {
-		result.Categories = raw
-	}
+	result.Categories = toContractCategories(vault.ReadCategories(root))
 	agents, _ := ai.ReadAgents(root)
 	result.Agents = toContractAgents(agents)
 	return result
 }
 
+// AppConfigSetCategories writes the category table (M65). Invalid rows are
+// dropped and rows equal to the defaults are not persisted, matching the
+// legacy writer (数据库设计 3.2, D-013).
+func (s *SettingsService) AppConfigSetCategories(ctx context.Context, vaultID string, categories []contract.CategoryConfig) contract.AppConfigResult {
+	result := s.appConfigResult(ctx, vaultID)
+	if result.Failure != nil {
+		return result
+	}
+	root := s.vaultRootOrEmpty(vaultID)
+	list := make([]vault.Category, 0, len(categories))
+	for _, item := range categories {
+		list = append(list, vault.Category{
+			Directory: item.Directory, Alias: item.Alias,
+			Area: item.Area, Indexed: item.Indexed, Order: item.Order,
+		})
+	}
+	if err := vault.WriteCategories(root, list); err != nil {
+		result.Failure = contract.Fail(contract.CodeIOFailure, "写入分类设置失败")
+		return result
+	}
+	result.Categories = toContractCategories(vault.ReadCategories(root))
+	return result
+}
+
+func toContractCategories(list []vault.Category) []contract.CategoryConfig {
+	out := make([]contract.CategoryConfig, 0, len(list))
+	for _, item := range list {
+		out = append(out, contract.CategoryConfig{
+			Directory: item.Directory, Alias: item.Alias,
+			Area: item.Area, Indexed: item.Indexed, Order: item.Order,
+		})
+	}
+	return out
+}
+
 // AppConfigPatchAliases applies alias edits (M66). A nil or empty value deletes
 // the entry; the file keeps byte compatibility with the legacy writer.
 func (s *SettingsService) AppConfigPatchAliases(ctx context.Context, vaultID string, patches map[string]*string) contract.AppConfigResult {
-	result := contract.AppConfigResult{Aliases: map[string]string{}}
+	result := contract.AppConfigResult{Aliases: map[string]string{}, Categories: []contract.CategoryConfig{}}
 	root, f := s.vaultRoot(vaultID, &result.Failure)
 	if f != nil {
 		return result
@@ -55,6 +86,7 @@ func (s *SettingsService) AppConfigPatchAliases(ctx context.Context, vaultID str
 	}
 	result.Aliases = file.Map()
 	s.app.Vaults.SetAliases(vaultID, result.Aliases)
+	result.Categories = toContractCategories(vault.ReadCategories(root))
 	return result
 }
 

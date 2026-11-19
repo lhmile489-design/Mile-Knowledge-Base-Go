@@ -135,7 +135,7 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 | 编号 | 目标 | 修改范围 | 依赖 | 产物 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T00 | 决策落盘与契约补齐 | docs/decisions.md、docs/PRD.md、docs/API.md、docs/数据库设计.md、docs/技术设计.md | 用户批准本计划 | D-013；PRD v1.9；API 新增关于页绑定与存储路径复制；索引排除字段与 schema 版本；版本号 1.0.0 | 文档之间无冲突；新增字段与绑定能一一对应到后续任务 | 已验证 |
-| T01 | 分类配置读写（M65） | `internal/ai` 或 `internal/settings` 中的 categories 读写、`internal/service/appconfig.go`、`internal/contract` | T00 | categories.json 字节兼容读写、非法行丢弃、200 上限、默认条目不落盘 | V-CAT 全部通过 | 待做 |
+| T01 | 分类配置读写（M65） | `internal/vault/categories.go`（新）、`internal/service/appconfig.go`、`internal/contract` | T00 | categories.json 字节兼容读写、非法行丢弃、200 上限、默认条目不落盘 | V-CAT 全部通过 | 已验证 |
 | T02 | 「进检索」生效 | `internal/index/{build,update,search}.go`、migrations、`internal/service/tools.go`（search_notes） | T01 | 独立排除字段、开关后后台重标记、搜索与 search_notes 排除 | V-IDX 全部通过；链接与健康结果不变 | 待做 |
 | T03 | 技能导入后端（M14、M15） | `internal/vault/skillimport.go`（新）、`internal/service/vault.go`、`internal/contract` | T00 | 来源选择、预览缓存、限制、复制、回滚 | V-SKILL 全部通过 | 待做 |
 | T04 | 设置页壳层与统一保存条 | `src/components/settings/{SettingsPage,SettingsSaveBar}`、`src/stores/settingsStore.ts`、`AgentsSection.tsx` | T00 | 4 组 5 节导航、↑↓、页面级保存条、Ctrl+S、未保存确认、2 秒提示、无库提示 | V-SET-SHELL 全部通过 | 待做 |
@@ -388,14 +388,16 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 
 ### 下次会话先读
 
-- 当前阶段：T00 已完成并提交，等待用户放行 T01。
-- 下一个任务：T01（分类配置读写 M65）。
+- 当前阶段：T01 已完成并提交，等待用户放行 T02。
+- 下一个任务：T02（「进检索」生效）。
 - 工作区：`main` 与 `origin/main` 同在 `3aa3fba`；本计划尚未提交。
 - 待决事项：无（B-M3-01、B-M3-05、B-M3-06 已确认）；其余设计口径随各任务确认。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | 独立审查（task-reviewer，只读）0 阻断、2 需改、5 建议，主会话逐条复核后全部采纳：**需改** ①T12 补前置断言（沙箱内 appData/userData）与旧版仓库快照比对；②V-SET-ABOUT-2 补剪贴板验证通道（Go 注入 + e2e readText，权限被拒时人工确认）；**建议** ③新增 V-A11Y-1（DESIGN.md 7.2）；④T09 写明新版侧栏已显示系统配置分区；⑤T15 加旧版仓库与真实应用数据的红线核对；⑥T00 写明 API 四处同步；⑦V-IDX-2 改为验证 `ignored` 链路不受影响。另修 2 处行号偏差（OverviewGrid 265、603）。复核时新发现：旧版仓库已有既有改动 `D commit-msg.txt`（非本轮造成，来源无法确认，未处理），T12 改为快照比对 | docs/PLAN-M3.md v0.2 | 审查抽查：旧版引用 20 处中 18 处属实（2 处行号差 1 行已修）、新版代码事实 9 处、mygo 文档 3 处、契约一致 4 处全部属实；审查标「未核实」的旧版 `electron.exe` 已确认存在 | B-M3-01、05、06 | T00（待批准） |
+| 2026-11-19 | T01 完成（分类配置读写 M65） | `internal/vault/categories.go`（新）：`Category`、`ParseCategories`（逐项容错——非对象/类型不符/非法目录名丢行；目录 trim、单段 ≤64、禁 `/:*?"<>\|`、非 `.`/`..`、大小写不敏感去重；alias trim 后按 rune 截 64；area 只接受 9 个合法值否则 null；缺 `indexed` 按 `DefaultIndexedFor`（系统区 false）补；order 非有限数归 0、其余按 `Math.floor(x+0.5)` 取整；上限 200）、`NormalizeCategories`（M65 类型化入参同一套规则，indexed 取调用方真实值）、`ReadCategories`（缺失/损坏 → 空表）、`WriteCategories`（归一后丢弃与默认无异的行、原子写、`JSON.stringify(…, null, 2)+"
+"` 同款字节、字段序 directory/alias/area/indexed/order、`SetEscapeHTML(false)`）、`DefaultIndexedFor`、`IsMeaningfulCategory`、`IsAreaID`、`CategoriesPath`。`internal/service/appconfig.go`：M62 返回解析后的 `categories`（不再透传 RawMessage）；新增 M65 `AppConfigSetCategories`（写盘后回读，失败 `io-failure`）；M66 响应同样带 `categories`；所有 `AppConfigResult` 构造初始化空数组，线上不会是 null。`internal/contract`：`Categories []CategoryConfig` 与新类型 `CategoryConfig{directory, alias, area *string, indexed, order}`，删除不再使用的 `encoding/json` 导入。`src/mygo.ts` 重新生成（M65 绑定 + 类型）。测试：vault 新增 8 项（非法行/重复/缺 indexed 默认/area 非法→null/order 取整与字符串→0/200 上限/非数组/别名截断/类型化入参/默认值判定/缺失与损坏/写入字节与默认行过滤/旧版种子字节往返）；service 新增 M65 用例（写盘字节、非法行丢弃、默认行不落盘、回读一致、无库失败）并更新别名测试里 categories 的旧断言。**差异/待办**：类型化入参无法区分「缺 indexed」与「false」，按调用方真实值处理（前端总会带完整行，T06 保证）；alias 截断按 rune（旧版按 UTF-16 单元，仅星平面字符有差异）；进检索尚未接索引（T02） | `internal/vault/{categories.go,categories_test.go}`、`internal/service/{appconfig.go,appconfig_test.go}`、`internal/contract/contract.go`、`src/mygo.ts`、docs/PLAN-M3.md | `go test ./...` **494 项通过（+10）**；`go vet ./...`、`gofmt -l` 无输出；`npm run test:web` 152 项 + `check:bindings` 通过；`go build ./...` 通过。e2e 未跑：T01 无界面变化，全量回归在 T13 | 无 | T02（待放行） |
 | 2026-11-19 | T00 完成（决策落盘与契约补齐） | **D-013**：4 项用户选择（进检索只排除全文检索、M3 实测旧版基线、本地安装包 + 冒烟、版本 1.0.0）+ 2 项契约修订（M74/M75、`search_excluded` 与 schema +1）。**PRD v1.9**：FR-AREA 改写进检索语义（含系统区优先与旧版差异说明）、FR-SET 关于页写明脱敏显示与宿主剪贴板、Q7 关闭、修订记录。**API**：§2.2 加 M74/M75 并把方法总数 72 → 74；§3 映射表加两行「无旧版频道」；§4.8 加 M74/M75 行、M62 的 categories 改为解析后数组、M65 加进检索副作用；§10 声明改为 M0–M2 已实现、M74/M75 与 M65 副作用待实现。**数据库设计**：4.5 加 `search_excluded` 列与独立语义说明、4.6 迁移段写明首个升级用例删库重建。**技术设计**：第 6 节交付改为 1.0.0 / 当前用户安装 / 无签名；第 10 节 G-PERF 写明 T12 校准与正反对照 | docs/{decisions.md,PRD.md,API.md,数据库设计.md,技术设计.md}、docs/PLAN-M3.md | docs-only：UTF-8 无 BOM、LF；`git diff` 仅这 5 个文件；随后做跨文档一致性核验（PRD/API/数据库设计/技术设计/计划互引，逐条 grep 核对） | 无 | T01（待放行） |
 | 2026-11-19 | 计划批准（B-M3-01、B-M3-05、B-M3-06 确认） | docs/PLAN-M3.md v0.2 | 用户 2026-11-19「批准并放行 T00」 | 无 | T00 |
 | 2026-11-19 | 计划草案完成 | docs/PLAN-M3.md v0.1 | 用户 4 项选择（进检索生效、M3 测旧版基线、本地安装包 + 冒烟、1.0.0）；旧版盘点由只读子代理完成，关键 file:line 已写入 2.1；新版现状按代码核对（见第 2 节表） | B-M3-01、05、06 | T00（待批准） |

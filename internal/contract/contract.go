@@ -5,8 +5,6 @@
 // Field names follow docs/API.md; JSON tags are the wire contract.
 package contract
 
-import "encoding/json"
-
 // Failure is the predictable-failure arm of a result union. Go methods return
 // these instead of Go errors for anything the UI can act on (API.md §1.2).
 type Failure struct {
@@ -347,9 +345,19 @@ type FetchModelsResult struct {
 type AppConfigResult struct {
 	VaultID    string                 `json:"vaultId,omitempty"`
 	Aliases    map[string]string      `json:"aliases"`
-	Categories json.RawMessage        `json:"categories,omitempty"`
+	Categories []CategoryConfig       `json:"categories"`
 	Agents     map[string]AgentConfig `json:"agents,omitempty"`
 	Failure    *Failure               `json:"failure,omitempty"`
+}
+
+// CategoryConfig is one categories.json entry as the settings page sees it
+// (M65). The Go side drops invalid rows instead of reporting them.
+type CategoryConfig struct {
+	Directory string  `json:"directory"`
+	Alias     string  `json:"alias"`
+	Area      *string `json:"area"`
+	Indexed   bool    `json:"indexed"`
+	Order     int     `json:"order"`
 }
 
 // AgentConfig is one agents.json entry as the settings page sees it (M63).

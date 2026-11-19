@@ -77,21 +77,88 @@ func TestAliasPatchWritesLegacyBytesAndReachesTree(t *testing.T) {
 		t.Fatalf("after delete = %q", body)
 	}
 
-	// Categories pass through untouched (M62 read side).
+	// Categories come back parsed (M62 read side, T01).
 	catDir := filepath.Join(root, ".mile-kb", "settings")
 	if err := os.MkdirAll(catDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	categories := `[{"directory":"raws","alias":"","area":"raws","indexed":true,"order":0}]`
+	categories := `[{"directory":"raws","alias":"暂存","area":"raws","indexed":true,"order":0}]`
 	if err := os.WriteFile(filepath.Join(catDir, "categories.json"), []byte(categories), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	got := svc.AppConfigGet(ctx, vaultID)
-	if string(got.Categories) != categories {
-		t.Errorf("categories = %s", got.Categories)
-	}
 	if got.Failure != nil {
 		t.Errorf("get failure: %+v", got.Failure)
+	}
+	if len(got.Categories) != 1 {
+		t.Fatalf("categories = %+v", got.Categories)
+	}
+	entry := got.Categories[0]
+	if entry.Directory != "raws" || entry.Alias != "暂存" || entry.Area == nil || *entry.Area != "raws" || !entry.Indexed {
+		t.Errorf("category = %+v", entry)
+	}
+}
+
+func TestAppConfigSetCategoriesWritesAndDropsInvalid(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	svc := NewSettingsService(app)
+	ctx := context.Background()
+	area := "raws"
+	bad := "bogus"
+	got := svc.AppConfigSetCategories(ctx, vaultID, []contract.CategoryConfig{
+		{Directory: "wiki", Alias: "", Indexed: true},              // 与默认无异
+		{Directory: "projects", Alias: " 项目 ", Indexed: true},      // 有效
+		{Directory: "a/b", Alias: "越界", Indexed: true},             // 非法目录名
+		{Directory: "raws", Alias: "", Area: &area, Indexed: true}, // 有效 area
+		{Directory: "tools", Alias: "", Area: &bad, Indexed: true}, // 非法 area → null，与默认无异被丢弃
+	})
+	if got.Failure != nil {
+		t.Fatalf("set: %+v", got.Failure)
+	}
+	if len(got.Categories) != 2 {
+		t.Fatalf("categories = %+v", got.Categories)
+	}
+	if got.Categories[0].Directory != "projects" || got.Categories[0].Alias != "项目" {
+		t.Errorf("projects = %+v", got.Categories[0])
+	}
+	if got.Categories[1].Directory != "raws" || got.Categories[1].Area == nil || *got.Categories[1].Area != "raws" {
+		t.Errorf("raws = %+v", got.Categories[1])
+	}
+
+	body, err := os.ReadFile(vault.CategoriesPath(root))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `[
+  {
+    "directory": "projects",
+    "alias": "项目",
+    "area": null,
+    "indexed": true,
+    "order": 0
+  },
+  {
+    "directory": "raws",
+    "alias": "",
+    "area": "raws",
+    "indexed": true,
+    "order": 0
+  }
+]
+`
+	if string(body) != want {
+		t.Fatalf("bytes = %q, want %q", body, want)
+	}
+
+	// A second read returns the same table.
+	again := svc.AppConfigGet(ctx, vaultID)
+	if len(again.Categories) != 2 {
+		t.Fatalf("reload = %+v", again.Categories)
+	}
+
+	missing := svc.AppConfigSetCategories(ctx, "no-such-vault", nil)
+	if missing.Failure == nil || missing.Failure.Code != contract.CodeVaultUnavailable && missing.Failure.Code != contract.CodeInvalidInput {
+		t.Fatalf("missing vault = %+v", missing.Failure)
 	}
 }
 

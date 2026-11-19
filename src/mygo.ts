@@ -89,7 +89,7 @@ export interface AppConfigChangedEvent {
 export interface AppConfigResult {
   vaultId?: string;
   aliases: Record<string, string>;
-  categories?: unknown;
+  categories: CategoryConfig[];
   agents?: Record<string, AgentConfig>;
   failure?: Failure;
 }
@@ -130,6 +130,18 @@ export interface AuditListResult {
 export interface BlockResult {
   html: string;
   failure?: Failure;
+}
+
+/**
+ * CategoryConfig is one categories.json entry as the settings page sees it
+ * (M65). The Go side drops invalid rows instead of reporting them.
+ */
+export interface CategoryConfig {
+  directory: string;
+  alias: string;
+  area: string | null;
+  indexed: boolean;
+  order: number;
 }
 
 /** ChooseVaultResult is returned by choose/createVault. */
@@ -931,7 +943,7 @@ export const VaultService = {
 export const SettingsService = {
   /**
    * AppConfigGet returns the vault-level settings the UI reads (M62): display
-   * aliases and the raw categories file (the settings page consumes it in M3).
+   * aliases, the parsed category table and the four agents.
    */
   appConfigGet: bind<[string], AppConfigResult>("SettingsService.AppConfigGet", (vaultID: string) => [vaultID]),
   /** AppConfigPatchAgent merges one agent's patch and writes agents.json (M63). */
@@ -946,6 +958,12 @@ export const SettingsService = {
    * response carries the defaults; nothing is written until the user saves.
    */
   appConfigResetSteering: bind<[string, string], AppConfigResult>("SettingsService.AppConfigResetSteering", (vaultID: string, agent: string) => [vaultID, agent]),
+  /**
+   * AppConfigSetCategories writes the category table (M65). Invalid rows are
+   * dropped and rows equal to the defaults are not persisted, matching the
+   * legacy writer (数据库设计 3.2, D-013).
+   */
+  appConfigSetCategories: bind<[string, CategoryConfig[]], AppConfigResult>("SettingsService.AppConfigSetCategories", (vaultID: string, categories: CategoryConfig[]) => [vaultID, categories]),
   /**
    * FetchModels asks a provider for its model list (M70). A draft key wins over
    * the stored one, matching the legacy handler.
