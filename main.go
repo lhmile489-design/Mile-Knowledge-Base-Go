@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
@@ -75,16 +76,22 @@ func main() {
 	// One-shot import and the saved theme happen before the first paint.
 	imported := app.Settings.ImportLegacy()
 	applyTheme(app.Settings.Get().Theme)
+	// 主题色经 PreloadScript 在页面脚本之前注入，首帧就是所选颜色（技术设计 14.2）。
+	accentJSON, err := json.Marshal(app.Settings.Get().Accent)
+	if err != nil {
+		log.Fatal(err)
+	}
+	accentPreload := "window.__MKB_ACCENT__ = " + string(accentJSON) + ";"
 
 	mygo.App.WhenReady(func() {
-		startUI(app, docs, imported)
+		startUI(app, docs, imported, accentPreload)
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func startUI(app *service.App, docs *service.DocService, imported settings.ImportResult) {
+func startUI(app *service.App, docs *service.DocService, imported settings.ImportResult, accentPreload string) {
 	win := mygo.NewWindow(mygo.WindowOptions{
 		Title:           windowTitle,
 		Width:           1440,
@@ -95,6 +102,7 @@ func startUI(app *service.App, docs *service.DocService, imported settings.Impor
 		BackgroundColor: background,
 		StateKey:        "main",
 		URL:             "/",
+		Page:            mygo.PageOptions{PreloadScript: accentPreload},
 	})
 	app.SetWindow(win)
 	installCloseGuard(app, win)

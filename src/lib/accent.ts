@@ -239,3 +239,49 @@ export function accentCssVars(t: AccentTokens): Record<string, string> {
     "--color-text-on-accent": t.onAccent,
   };
 }
+
+const TOKEN_VARS: Record<keyof AccentTokens, string> = {
+  accent: "accent", hover: "hover", active: "active", soft: "soft", text: "text",
+  btn: "btn", btnHover: "btn-hover", btnActive: "btn-active", onAccent: "on-accent", focus: "focus",
+};
+
+/** accentInlineVars names the 20 variables accent.css reads for a custom color. */
+export function accentInlineVars(cache: AccentCache): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const theme of ["light", "dark"] as const) {
+    const tokens = cache[theme];
+    for (const [key, suffix] of Object.entries(TOKEN_VARS)) {
+      out[`--accent-${theme}-${suffix}`] = tokens[key as keyof AccentTokens];
+    }
+  }
+  return out;
+}
+
+/**
+ * applyAccentTo mirrors an accent onto <html> (DESIGN.md 12.1, 技术设计 14.2).
+ * Called at boot, on a settings change and before each optimistic switch, so
+ * theme-init.js and the running app land on the same attributes.
+ */
+export function applyAccentTo(root: HTMLElement, setting: AccentSetting | null | undefined) {
+  for (const theme of ["light", "dark"]) {
+    for (const suffix of Object.values(TOKEN_VARS)) root.style.removeProperty(`--accent-${theme}-${suffix}`);
+  }
+  const preset = setting?.preset ?? "orange";
+  if (preset === "custom") {
+    let cache = setting?.cache;
+    if (!cache) {
+      try {
+        cache = deriveAccent(setting?.hex ?? "");
+      } catch {
+        root.dataset.accent = "orange";
+        return;
+      }
+    }
+    root.dataset.accent = "custom";
+    for (const [name, value] of Object.entries(accentInlineVars(cache))) {
+      root.style.setProperty(name, value);
+    }
+    return;
+  }
+  root.dataset.accent = preset;
+}

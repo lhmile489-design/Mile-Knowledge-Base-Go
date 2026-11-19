@@ -6,7 +6,8 @@ import {
   events,
   type AppSettings,
 } from "../lib/transport";
-import type { UnavailableVault, Vault } from "../mygo";
+import type { AccentSetting, UnavailableVault, Vault } from "../mygo";
+import { applyAccentTo, deriveAccent } from "../lib/accent";
 
 export type ThemeMode = "light" | "dark" | "system";
 export type HealthTab = "unresolvedLinks" | "orphans" | "duplicates" | "untitled";
@@ -29,6 +30,7 @@ type AppState = {
   boot: () => Promise<void>;
   refreshVaults: () => Promise<void>;
   setTheme: (mode: ThemeMode) => Promise<void>;
+  setAccent: (next: AccentSetting) => Promise<void>;
   setCloseBehavior: (mode: "ask" | "tray" | "quit") => Promise<void>;
   setLayout: (patch: Partial<AppSettings["layout"]>) => Promise<void>;
   openVault: (id: string) => Promise<void>;
@@ -78,10 +80,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeVaultId: vaults.activeVaultId,
       });
       applyTheme(asTheme(settings.settings?.theme));
+      applyAccentTo(document.documentElement, settings.settings?.accent);
 
       events.settingsChanged.on((next) => {
         set({ settings: next });
         applyTheme(asTheme(next.theme));
+        applyAccentTo(document.documentElement, next.accent);
       });
       events.vaultChanged.on(() => {
         void get().refreshVaults();
@@ -105,6 +109,33 @@ export const useAppStore = create<AppState>((set, get) => ({
     const result = await settingsApi.patch({ theme: mode });
     set({ settings: result.settings ?? null });
     applyTheme(mode);
+  },
+
+  setAccent: async (next) => {
+    // 先在页面上换色，再写设置；失败时回到原色并提示（技术设计 14.2 第 3 条）。
+    const previous = get().settings?.accent ?? { preset: "orange" };
+    let outgoing = next;
+    if (next.preset === "custom" && !next.cache) {
+      try {
+        outgoing = { ...next, cache: deriveAccent(next.hex ?? "") };
+      } catch {
+        get().pushNotice("主题色值不合法", "fault");
+        return;
+      }
+    }
+    applyAccentTo(document.documentElement, outgoing);
+    try {
+      const result = await settingsApi.patch({ accent: outgoing });
+      if (result.failure || !result.settings) {
+        applyAccentTo(document.documentElement, previous);
+        get().pushNotice(result.failure?.message ?? "主题色保存失败", "fault");
+        return;
+      }
+      set({ settings: result.settings });
+    } catch (error) {
+      applyAccentTo(document.documentElement, previous);
+      get().pushNotice(error instanceof TransportError ? error.message : String(error), "fault");
+    }
   },
 
   setCloseBehavior: async (mode) => {

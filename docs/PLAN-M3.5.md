@@ -82,7 +82,7 @@
 | T01 | Go：`accent` 字段、规范化与校验 | `internal/settings/{settings,accent}.go`、`internal/contract/contract.go`、生成的绑定 | T00 | V-ACC-GO 全部通过；`check:bindings` 通过 | 待验证（门禁已过，待用户验收） |
 | T02 | 前端配色算法 | `src/lib/accent.ts`（新）、`src/lib/accent.test.ts`（新） | T00 | 12 套预设快照与 DESIGN.md 12.3 逐值相同；V-ACC-ALG 通过 | 待验证（门禁已过，待用户验收） |
 | T03 | 令牌拆分与 12 套配色 | `src/styles/*.css`、`scripts/visual/capture-new.py` | T02 | 29 处改名、按钮与发送按钮改按钮令牌；默认橙；V-ACC-TOK 通过（含靛下逐像素比对） | 待验证（门禁已过，待用户验收） |
-| T04 | 首帧链路 | `main.go`、`public/theme-init.js`、`src/stores/appStore.ts` | T00、T01、T02、T03 | V-ACC-BOOT 通过 | 待做 |
+| T04 | 首帧链路 | `main.go`、`public/theme-init.js`、`src/stores/appStore.ts`、`src/lib/accent.ts` | T00、T01、T02、T03 | V-ACC-BOOT 通过 | 待验证（门禁已过，待用户验收） |
 | T05 | 标题栏色点与色板 | `src/components/TitleBar.tsx`、`src/components/AccentPicker.tsx`（新）、`src/styles/` | T04 | 交互与可访问性按 UI 稿 10.1、DESIGN.md 12；单测与构建通过 | 待做 |
 | T06 | 设置页「主题色」一行 | `src/components/settings/GeneralSection.tsx` | T05 | 与色板同步；单测与构建通过 | 待做 |
 | T07 | 验收与全量回归 | `scripts/e2e/ac-m35.sh`（新）、`scripts/e2e/accent-contrast.js`（新） | T06 | AC-ACC-1–6 与真实组件对比度检查通过；`bun run test:e2e` 全过；冷启动性能不劣于 M3 | 待做 |
@@ -245,6 +245,7 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 获批 | — | 自查见第 10 节 | T00 已放行 |
 | 2026-11-20 | T00 | 完成：方案成立，A-1–A-4 全过 | 见下 | RESULT.md；技术设计 14.3 | 用户已验收并放行 T01 |
+| 2026-11-20 | T04 | 完成：Go 经 `Page.PreloadScript` 注入设置里的主题色；`theme-init.js` 首帧读值（预设设 `data-accent`，自定义写 20 个内联变量）；`appStore` 载入 / 设置变化时应用，切换走 `setAccent`：先换色、再 patch（自定义补算缓存），失败回滚并提示。实测：预设蓝注入 `blue`、计算值 `#2563eb`、截图 423 个蓝色像素；自定义黄 `data-accent=custom`、内联变量 `#999900`、按钮 `#7a7a00` | 见下 | `tsc`、Vitest 208 项；Go build/vet | 等待放行 T05 |
 | 2026-11-20 | T03 | 完成：新增 accent.css（12 预设 + custom 映射）、令牌拆分、27 处文字改名、按钮组；靛下与「改动前同一份构建」逐像素比对：50 张里 26 张完全相同、橙色像素 0、橙靛互换 0，其余差异为时间文本与运行态（强度选择、最近文档顺序）。过程中修了两处：主题缩略图不再覆盖强调色；截图脚本注入后等一次重绘 | 见下 | 两次 e2e 构建 + 50 张对照；`build:web` | 等待放行 T04 |
 | 2026-11-20 | T02 | 完成：`src/lib/accent.ts`（6 预设常量、`deriveAccent`、对比度函数、`tokensFor`、CSS 变量映射）+ 12 个单测；DESIGN.md 12.3 橙色浅色按钮三值按算法回写（`#b95b1e`→`#ba5b1e` 等，因为规则是「从 accent 继续加深」） | 见下 | `tsc`、Vitest 199 项（含新增 12 项） | 等待放行 T03 |
 | 2026-11-20 | T01 | 完成：`accent` 类型、读入回落、Patch 严格校验；坏 accent 不再让整个设置文件被判损坏；Patch 改为「全部校验后再组装」 | 见下 | Go 526 项、vet/gofmt、绑定对拍、`tsc`、Vitest 187 项 | 等待放行 T02 |

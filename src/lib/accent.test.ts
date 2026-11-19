@@ -5,6 +5,8 @@ import {
   PRESET_NAMES,
   PRESETS,
   accentCssVars,
+  accentInlineVars,
+  applyAccentTo,
   contrastRatio,
   deriveAccent,
   isNearGray,
@@ -105,5 +107,36 @@ describe("accentCssVars", () => {
     expect(vars["--raw-accent"]).toBe(PRESETS.orange.light.accent);
     expect(vars["--raw-accent-btn"]).toBe(PRESETS.orange.light.btn);
     expect(vars["--raw-on-accent"]).toBe(PRESETS.orange.light.onAccent);
+  });
+});
+
+describe("inline variables and application", () => {
+  it("names twenty variables for a custom color", () => {
+    const vars = accentInlineVars(deriveAccent("#2563eb"));
+    expect(Object.keys(vars)).toHaveLength(20);
+    expect(vars["--accent-light-btn"]).toBe(deriveAccent("#2563eb").light.btn);
+    expect(vars["--accent-dark-on-accent"]).toBe(deriveAccent("#2563eb").dark.onAccent);
+  });
+
+  it("applies a preset name to the root element", () => {
+    const root = document.createElement("html");
+    applyAccentTo(root, { preset: "teal" });
+    expect(root.dataset.accent).toBe("teal");
+  });
+
+  it("applies a custom color and clears its variables when switching back", () => {
+    const root = document.createElement("html");
+    applyAccentTo(root, { preset: "custom", hex: "#ffff00", cache: deriveAccent("#ffff00") });
+    expect(root.dataset.accent).toBe("custom");
+    expect(root.style.getPropertyValue("--accent-light-accent")).toBe(deriveAccent("#ffff00").light.accent);
+    applyAccentTo(root, { preset: "blue" });
+    expect(root.dataset.accent).toBe("blue");
+    expect(root.style.getPropertyValue("--accent-light-accent")).toBe("");
+  });
+
+  it("falls back to orange for an unusable custom color", () => {
+    const root = document.createElement("html");
+    applyAccentTo(root, { preset: "custom", hex: "nope" });
+    expect(root.dataset.accent).toBe("orange");
   });
 });
