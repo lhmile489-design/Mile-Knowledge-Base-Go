@@ -4,6 +4,7 @@ import { useAppStore, type ThemeMode } from "../stores/appStore";
 import { useWindowStore } from "../stores/windowStore";
 import { windowApi } from "../lib/transport";
 import appIcon from "../../resources/icon.png";
+import { AccentPicker } from "./AccentPicker";
 
 const THEME_LABEL: Record<ThemeMode, string> = {
   light: "浅色",
@@ -49,6 +50,8 @@ export function TitleBar() {
       <div className="min-w-0 flex-1 truncate text-body-sm" style={{ color: "var(--raw-muted)" }}>
         {active ? active.displayName : "未选择知识库"}
       </div>
+
+      <AccentPicker />
 
       <div
         className="segmented no-drag"

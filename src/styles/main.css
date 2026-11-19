@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "./accent.css";
+@import "./accent-picker.css";
 @import "./welcome.css";
 @import "./sidebar.css";
 @import "./editor.css";

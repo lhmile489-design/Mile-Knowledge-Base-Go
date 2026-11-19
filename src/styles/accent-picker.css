@@ -1,0 +1,151 @@
+/* Title-bar accent dot and its swatch popover (docs/UI设计稿.md 10.1). The
+   popover itself reuses .popover for the glass and shadow; this file only
+   adds the layout and the swatch shapes. */
+.accent-picker {
+  position: relative;
+  flex: none;
+  display: flex;
+}
+
+.accent-dot-btn {
+  width: 28px;
+  height: 28px;
+}
+
+.accent-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--raw-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent);
+}
+
+.accent-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 272px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  border-radius: var(--radius-card);
+}
+
+.accent-title {
+  margin: 0;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--raw-muted);
+}
+
+.accent-swatches {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.accent-swatch {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--raw-muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.accent-swatch:hover {
+  background: var(--raw-raised);
+}
+
+.accent-swatch[aria-checked='true'] {
+  color: var(--raw-strong);
+  font-weight: 600;
+}
+
+.accent-swatch:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* 每块的勾用该块自己的前景色（浅色橙、绿、青是近黑字），不跟当前主题色走。 */
+.accent-chip {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--swatch);
+  color: var(--on-swatch, #fff);
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent);
+}
+
+.accent-swatch[aria-checked='true'] .accent-chip {
+  box-shadow:
+    0 0 0 2px var(--raw-card),
+    0 0 0 4px var(--swatch);
+}
+
+.accent-sep {
+  height: 1px;
+  background: var(--raw-line);
+}
+
+.accent-custom {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 22px;
+  gap: 8px;
+  align-items: center;
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.accent-hex {
+  min-width: 0;
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--raw-line-strong);
+  border-radius: var(--radius-control);
+  background: var(--raw-card);
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+  white-space: nowrap;
+}
+
+.accent-hex:focus-visible {
+  outline: none;
+  border-color: var(--raw-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--raw-accent) 22%, transparent);
+}
+
+.accent-hex[aria-invalid='true'] {
+  border-color: color-mix(in srgb, var(--fault) 45%, var(--raw-line));
+}
+
+.accent-preview {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  justify-self: end;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent);
+}
+
+.accent-note {
+  margin: 0;
+  font-size: var(--text-meta);
+  line-height: 1.5;
+  color: var(--raw-muted);
+}
+
+.accent-note[data-tone='error'] {
+  color: var(--fault);
+}
