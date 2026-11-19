@@ -15,6 +15,9 @@ import (
 //go:embed resources/icon.png
 var iconPNG []byte
 
+//go:embed resources/icon-tray.png
+var trayPNG []byte
+
 const (
 	windowTitle = "Mile Knowledge Base"
 	// background equals --raw-canvas in both themes (PRD Q6).
@@ -200,7 +203,7 @@ func installCloseGuard(app *service.App, win *mygo.Window) {
 
 func createTray(app *service.App, win *mygo.Window) {
 	tray, err := mygo.NewTray(mygo.TrayOptions{
-		Icon:    iconPNG,
+		Icon:    trayPNG,
 		ToolTip: windowTitle,
 		Menu: mygo.NewMenu([]*mygo.MenuItem{
 			{Label: "显示主窗口", Click: func(*mygo.MenuItem, *mygo.Window) { app.ShowWindow() }},
