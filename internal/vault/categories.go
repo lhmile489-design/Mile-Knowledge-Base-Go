@@ -38,6 +38,8 @@ func CategoriesPath(root string) string {
 
 // DefaultIndexedFor is the indexed value a directory has with no config: dot
 // directories classify as system and stay out of search, everything else is in.
+// The settings UI mirrors this rule in src/lib/categoriesTable.ts; keep both in
+// step if AreaFor ever gains a non-dot system directory.
 func DefaultIndexedFor(directory string) bool {
 	return AreaFor(directory) != AreaSystem
 }

@@ -150,7 +150,7 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 | T12 | 旧版性能基线与 G-PERF 校准 | `scripts/perf-legacy/{bench.cjs,bench.sh}`、`scripts/perf-gate.py`（新）、PRD 10.1、技术设计第 10 节 | T11b | 旧版实测、校准、G-PERF 阻断与正反对照 | 用户 2026-11-19 确认改阻断；正反对照通过 | 已验证 |
 | T13 | M3 闭环验收与全量回归 | `scripts/e2e/ac-m3.sh`（新）、`internal/service/service.go`、`src/stores/{settingsStore,overviewStore}.ts`、`OverviewGrid.tsx` | T12 | AC-M3（32 项）、ac-m0..m3 全量回归 | `bun run test:e2e` 退出码 0（85 项断言全过） | 已验证 |
 | T14 | 1.0.0 安装包与本机冒烟 | `mygo.config.ts`、docs/发布清单.md | T13 | 安装包；安装、启动、卸载冒烟；发布清单 | 安装/版本/启动/卸载通过；**升级未测（无 0.1.0 包）**；界面级冒烟需人工 | 待验证 |
-| T15 | 整体独立审查 | 本计划第 6 节、审查报告 | T14 | 审查结论与修复 | 阻断与需改全部处理 | 待做 |
+| T15 | 整体独立审查 | 本计划第 6 节、审查报告 | T14 | 审查结论与修复 | 0 阻断、3 需改已修、4 验证缺口记录/补测 | 已验证 |
 | T16 | 收尾 | README、CLAUDE.md、本计划、docs/PLAN-M0.md 路线 | T15 | 文档同步；推送前确认 | 用户确认后推送 | 待做 |
 
 依赖顺序 T00 → T01 → … → T16，按「一次一个」串行。T12 排在视觉修复之后，是为了让性能测的是最终界面。
@@ -342,6 +342,8 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 
 旧版基线口径（T12，脚本 `scripts/perf-legacy/bench.sh`）：沙箱 APPDATA + 旧版 `out/main`，样本由 `cmd/genvault` 生成，与 M0/M1 新版测量同一生成器；冷启动计时从驱动脚本入口开始（不含 Electron 进程启动），新版从进程启动起算；检索经渲染层 `__mileSearchStore`（含输入防抖与 IPC），新版 M1 数字为后端调用，两者不可直接相减。未测：1000 文件外部改动的旧版长任务（PRD 已记为机制性卡顿）、空闲/打开库后的内存、旧版安装包体积（旧仓库未打安装包）、外部改动同步端到端计时。历史查看器旧版 172–189ms 与流式 6.7–9.9ms/帧沿用 PRD 既有基线。红线核对：跑完旧版仓库 `git status --porcelain` 与 T12 前快照一致（仅既有 ` D commit-msg.txt`），真实 `%APPDATA%` 未读写。
 
+T15 审查遗留（不阻断）：M65 保存若落在索引全量重建的窗口内，构建批次可能用旧排除快照覆盖标记（方向是「关掉后仍可搜到」，下次增量/重建自愈，约 18.6s 窗口）；关于页剪贴板的 `navigator.clipboard.readText` e2e 未做（M75 由 Go 注入测试覆盖，读回需人工）；总览 719/460 两个断点只实测了 360px 单列；安装版界面冒烟与 0.1.0→1.0.0 升级待用户环境。
+
 视觉对照（T10 采集、T11 复核）：56 个 manifest 编号全部有结果——49 张已截、7 条写明原因；本地并排页 `design/compare/index.html`（生成物，不入库）。T11 复核结论：总览容器断点实测生效（360px → 单列 328px）；`.obsidian` 在树数据里存在（侧栏滚动位置问题，不是过滤）；无供应商阶段改为先开新对话再拍，40 正确呈现离线。T11b 已把引导改成欢迎页上的覆盖层并重拍 00/01/03；02 需原生对话框。仍待用户：34–46 对话逐张对照，以及三项有意差异确认（40 离线口径、关于页技术栈 D-013、Agent 状态无「重启中」）。
 
 性能（PRD 10.1；T12 填写）：
@@ -397,14 +399,15 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 
 ### 下次会话先读
 
-- 当前阶段：T14 已构建 1.0.0 安装包并在本机安装→启动→卸载冒烟（版本 1.0.0、卸载清理、应用数据保留）；升级未测；安装版界面级冒烟需人工。对话 34–46 视觉确认仍待用户。
-- 下一个任务：T15（整体独立审查）。
+- 当前阶段：T15 完成——独立审查 0 阻断、3 需改（已修）、4 验证缺口（已补 ac-m3 两项，其余记录）；全量 e2e 100 项断言全过。对话 34–46、安装版界面、升级与三项有意差异仍待用户。
+- 下一个任务：T16（收尾：README/CLAUDE.md/账本/推送前确认）。
 - 工作区：`main` 与 `origin/main` 同在 `3aa3fba`；本计划尚未提交。
 - 待决事项：无（B-M3-01、B-M3-05、B-M3-06 已确认）；其余设计口径随各任务确认。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | 独立审查（task-reviewer，只读）0 阻断、2 需改、5 建议，主会话逐条复核后全部采纳：**需改** ①T12 补前置断言（沙箱内 appData/userData）与旧版仓库快照比对；②V-SET-ABOUT-2 补剪贴板验证通道（Go 注入 + e2e readText，权限被拒时人工确认）；**建议** ③新增 V-A11Y-1（DESIGN.md 7.2）；④T09 写明新版侧栏已显示系统配置分区；⑤T15 加旧版仓库与真实应用数据的红线核对；⑥T00 写明 API 四处同步；⑦V-IDX-2 改为验证 `ignored` 链路不受影响。另修 2 处行号偏差（OverviewGrid 265、603）。复核时新发现：旧版仓库已有既有改动 `D commit-msg.txt`（非本轮造成，来源无法确认，未处理），T12 改为快照比对 | docs/PLAN-M3.md v0.2 | 审查抽查：旧版引用 20 处中 18 处属实（2 处行号差 1 行已修）、新版代码事实 9 处、mygo 文档 3 处、契约一致 4 处全部属实；审查标「未核实」的旧版 `electron.exe` 已确认存在 | B-M3-01、05、06 | T00（待批准） |
+| 2026-11-19 | T15 完成（整体独立审查与修复） | 独立审查（task-reviewer，只读，范围 `3aa3fba..HEAD` 共 17 个提交）：**0 阻断、3 需改、4 个验证缺口**，账本抽查 10 条全部属实。**需改修复**：①`DocService.Tree` 的分类显示名合并改回「aliases.json 优先、分类别名兜底」并对 key 做大小写归一（注释与代码一致，旧版可观察行为不变；T13 的 e2e 改用无既有别名的 `projects` 目录验证分类显示名）；②`redactHome` 增加分隔符边界并把 home 之外的路径回落为 `<app-data>`，保证 M74 的 display 永不含绝对路径；③`defaultIndexedFor` 的 Go/前端双实现加互引注释。另删除无调用的 `ProbeFolder` 及其测试（-1 项）。**验证缺口处理**：ac-m3 从 32 项扩到 **47 项**——新增 Ctrl+S 只保存设置不保存背后脏文档、AC-OVW-1 待审批磁贴（跨 Agent 注入 1 张卡、计数 1 与警示边框）、无库时设置提示；M65 重标记与全量重建的竞态窗口、剪贴板 `readText` e2e、719/460 两个断点边界、安装版界面冒烟与 0.1.0→1.0.0 升级仍记录为待人工/待验证。**账本纠偏**：`capture-new.py` 行数从「约 700」改按实际计。**全量回归**：ac-m0 15、ac-m1 16、ac-m2 22、ac-m3 47，共 **100 项断言全过** | 审查报告（子代理只读）；`internal/service/{service.go,about.go,about_test.go}`、`internal/vault/{skillimport.go,skillimport_test.go,categories.go}`、`src/lib/categoriesTable.ts`、`scripts/e2e/ac-m3.sh`、docs/PLAN-M3.md | `go test ./...` **513 项**（删 1 项死代码测试）；`go vet`/`gofmt` 干净；vitest 187；`bun run test:e2e` 全绿（15+16+22+47=100，退出码 0）；旧版仓库快照仍只有 ` D commit-msg.txt`（审查员与主会话各核对一次） | M65 竞态、剪贴板 e2e、断点边界、安装版界面、升级、34–46 对话、三项有意差异均待用户/后续 | T16（待放行） |
 | 2026-11-19 | T14 完成本机冒烟（界面级与升级待人工） | `mygo.config.ts` 版本 0.1.0 → 1.0.0；`bun run build` 产出 `mile-knowledge-base-setup-1.0.0-amd64.exe`（6.2MB）。本机冒烟（用户 2026-11-19 同意安装）：安装到 `%LOCALAPPDATA%\Programs\Mile Knowledge Base`；安装后 exe 的 `FileVersion`/`ProductVersion` 均为 1.0.0；临时 APPDATA 启动，进程存活并写出 `settings.json`/`recent-documents.json`/`import-legacy.done`；卸载后程序目录与开始菜单项消失、应用数据保留（卸载器异步完成）。**未测**：从 0.1.0 升级（旧包不在本机）；安装版界面级冒烟（生产构建无 automation 插件）。发布清单第 7 节记录实际结果与风险（无签名、未在干净机器验证） | `mygo.config.ts`、docs/发布清单.md、docs/PLAN-M3.md | 安装包 6.2MB；`VersionInfo` 1.0.0；首次启动写应用数据；卸载清理目录与快捷方式 | 升级与界面级冒烟需用户环境；对话 34–46 对照仍待用户 | T15（待放行） |
 | 2026-11-19 | T13 完成（M3 闭环验收与全量回归） | `scripts/e2e/ac-m3.sh`（新，32 项断言）：临时 APPDATA + genvault 典型库；总览可见/最近磁贴/技能计数、索引就绪后检索、打开文档后最近列表刷新、设置五节逐个打开、关于页版本、主题切换即时生效、分类显示名走草稿+保存条并落到侧栏、进检索关→无 raws 命中/开→恢复、重启后主题与显示名保持。**修复两个真实缺口**：①分类「显示名」此前只写 categories.json、不进侧栏——`DocService.Tree` 现把分类显示名并入根层别名（用户维护的那份优先于 aliases.json），新增 `TestTreeUsesCategoryAlias`；②打开文档后总览最近列表不刷新——概览监听 `activePath` 并在 600ms 后重读（等 noteOpened 落盘）。设置页保存别名后主动重读根层树。**全量 e2e**：ac-m0 15/15、ac-m1 16/16、ac-m2 22/22、ac-m3 32/32，共 85 项断言、退出码 0。**未自动化**：引导建库与导入技能的真实点击（系统原生对话框），由 T03/T08 单测与截图覆盖，保留为人工项 | `scripts/e2e/ac-m3.sh`、`internal/service/{service.go,appconfig_test.go}`、`src/stores/settingsStore.ts`、`src/components/overview/OverviewGrid.tsx`、docs/PLAN-M3.md | `bun run test:e2e` 全绿（85/85，退出码 0）；`go test ./...` 全绿；`go vet`/`gofmt` 干净；vitest 187 项；`check:bindings` 通过 | 引导/导入的人工点击与 34–46 对话对照仍待用户 | T14（待放行） |
 | 2026-11-19 | T12 完成实测（旧版性能基线），G-PERF 待确认 | `scripts/perf-legacy/bench.cjs`（新，在旧版 Electron 里运行：沙箱 `app.setPath`、只读 `out/main`、等侧栏渲染、经 `__mileSearchStore` 跑 12 条查询取 p95）与 `bench.sh`（genvault 同样本、临时 APPDATA、settings 注册知识库、结果 JSON）。**实测**：典型冷启动 1067ms、检索 p95 210ms；大库（1 万 md + 5 千代码）冷启动 5944ms、检索 p95 281ms。**新版对照**（M0–M2 同脚本）：典型 910–1101ms、大库 1093ms；检索 p95 2.7/45.3ms（后端口径）。**校准**：用户 2026-11-19 确认「改成阻断」——PRD 10.1 目标维持不变，G-PERF 改为阻断；新增 `scripts/perf-gate.py`（读取指标 JSON，任一项超目标即 exit 1）与 `perf:gate` 命令，正反对照实测：达标 `perf-gate ok` exit 0、故意超标 exit 1。口径差异与未测项（1000 文件长任务、内存、旧版安装包、外部同步计时）已写入第 6 节。**红线**：旧版仓库状态与快照一致，未碰真实应用数据 | `scripts/perf-legacy/{bench.cjs,bench.sh}`、docs/PLAN-M3.md | 两轮脚本实跑：`kind=typical cold=1067ms searchP95=210.4ms samples=12`、`kind=big cold=5944ms searchP95=280.6ms samples=12`；旧版仓库 `git status` 与快照一致 | G-PERF 改阻断待用户确认；其余指标未测项已记录 | T13（待放行） |

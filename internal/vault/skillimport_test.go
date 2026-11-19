@@ -21,22 +21,6 @@ func writeSkillFile(t *testing.T, root, rel, body string) {
 	}
 }
 
-func TestProbeFolderIgnoresOnlyOSJunk(t *testing.T) {
-	empty := t.TempDir()
-	writeSkillFile(t, empty, ".DS_Store", "x")
-	writeSkillFile(t, empty, "Thumbs.db", "x")
-	writeSkillFile(t, empty, "desktop.ini", "x")
-	if count, isempty, err := ProbeFolder(empty); err != nil || !isempty || count != 0 {
-		t.Fatalf("junk only: count=%d empty=%v err=%v", count, isempty, err)
-	}
-
-	repo := t.TempDir()
-	writeSkillFile(t, repo, ".git/HEAD", "ref")
-	if count, isempty, err := ProbeFolder(repo); err != nil || isempty || count != 1 {
-		t.Fatalf("dot dir counts as content: count=%d empty=%v err=%v", count, isempty, err)
-	}
-}
-
 func TestIsSingleSegmentName(t *testing.T) {
 	accept := []string{"vue", "react-native", strings.Repeat("a", 80), "技能"}
 	for _, name := range accept {

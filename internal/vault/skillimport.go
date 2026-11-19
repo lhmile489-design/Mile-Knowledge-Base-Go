@@ -27,22 +27,6 @@ const (
 // osJunk are the system files that do not make a folder "non-empty".
 var osJunk = map[string]bool{".ds_store": true, "thumbs.db": true, "desktop.ini": true}
 
-// ProbeFolder counts user content. Only OS junk is ignored: a dot directory
-// such as .git means the folder is a repository, so it counts.
-func ProbeFolder(folder string) (entryCount int, empty bool, err error) {
-	entries, err := os.ReadDir(folder)
-	if err != nil {
-		return 0, false, err
-	}
-	for _, entry := range entries {
-		if osJunk[strings.ToLower(entry.Name())] {
-			continue
-		}
-		entryCount++
-	}
-	return entryCount, entryCount == 0, nil
-}
-
 // IsSingleSegmentName reports whether a category or skill name is safe to join
 // into a path: one segment, no leading dot, within the length limit.
 func IsSingleSegmentName(name string) bool {

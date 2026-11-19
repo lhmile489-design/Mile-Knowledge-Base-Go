@@ -108,13 +108,22 @@ func (s *SettingsService) storageEntries() []storageEntry {
 	return entries
 }
 
-// redactHome replaces the leading home directory with <home> (PRD 10.2).
+// redactHome replaces a path under the home directory with <home> (PRD 10.2).
+// Paths outside it become <app-data> so the page never receives an absolute
+// path, and the match requires a separator boundary (a sibling whose name
+// starts with the home name must not be swallowed).
 func redactHome(path, home string) string {
-	if home == "" || path == "" {
+	if path == "" {
 		return path
 	}
-	if strings.HasPrefix(strings.ToLower(path), strings.ToLower(home)) {
-		return "<home>" + path[len(home):]
+	if home != "" {
+		lowerPath, lowerHome := strings.ToLower(path), strings.ToLower(home)
+		if strings.HasPrefix(lowerPath, lowerHome) {
+			rest := path[len(home):]
+			if rest == "" || rest[0] == '\\' || rest[0] == '/' {
+				return "<home>" + rest
+			}
+		}
 	}
-	return path
+	return "<app-data>"
 }

@@ -535,16 +535,18 @@ func (s *DocService) Tree(vaultID, path string) contract.TreeResult {
 	}
 	aliases := s.app.Vaults.Aliases(vaultID)
 	if path == "" {
-		// 分类里的显示名也参与树展示（旧版同一份显示名）；aliases.json 更具体，优先。
+		// 分类里的显示名只作兜底：aliases.json 里的同名单段（旧版的显示名来源）
+		// 仍然优先，保证与旧版可观察行为一致。
 		merged := make(map[string]string, len(aliases))
+		present := make(map[string]bool, len(aliases))
 		for key, value := range aliases {
 			merged[key] = value
+			present[strings.ToLower(key)] = true
 		}
 		for _, category := range vault.ReadCategories(root) {
-			if category.Alias == "" {
+			if category.Alias == "" || present[strings.ToLower(category.Directory)] {
 				continue
 			}
-			// 分类里的显示名是用户在设置页维护的那一份，优先于 aliases.json。
 			merged[category.Directory] = category.Alias
 		}
 		aliases = merged

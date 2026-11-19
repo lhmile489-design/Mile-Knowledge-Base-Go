@@ -8,7 +8,8 @@ export interface CategoryRow extends CategoryConfig {
   readonly present: boolean;
 }
 
-/** The indexed value a directory has with no configuration (数据库设计 3.2). */
+/** The indexed value a directory has with no configuration (数据库设计 3.2).
+ * Mirrors Go's vault.DefaultIndexedFor; keep the two in step. */
 export function defaultIndexedFor(directory: string): boolean {
   return !directory.startsWith(".");
 }
