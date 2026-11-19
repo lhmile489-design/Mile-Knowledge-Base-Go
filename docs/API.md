@@ -790,3 +790,46 @@ type PermissionOption struct {
 - 本文覆盖 PRD v1.9 全部 P0 功能对前端暴露的接口面；Agent 知识库工具（8 个 OpenAI function calling 工具）是给模型的接口，不是前端接口，见 `kb-tool-schemas.json` 与 agnes-engine §6。
 - `.mile-kb/` 文件格式、SQLite 索引结构、应用数据文件格式不在本文，见 数据库设计.md。
 - M0–M2 的接口已实现并通过门禁（见 docs/PLAN-M0/M1/M2.md 的账本）；M74、M75 与 M65 的进检索副作用为「已设计、未实现」，随 M3 的 T02、T07 实现并验证（docs/PLAN-M3.md）。
+
+## 11. R2 增补：主题色（M3.5）
+
+> 状态：用户 2026-11-20 审核通过；已设计、未实现。需求见 PRD 第 16 节（FR-ACCENT），存储格式见数据库设计 4.1.1，首帧方案见技术设计第 14 节。
+
+不新增方法，也不新增事件：只扩展 M60 `get` 与 M61 `patch` 的 `settings`。应用只有一个窗口，`patch` 的返回值就是新设置，前端据此换色，不需要像 `theme-changed`（E05）那样另推事件（E05 是因为系统主题会在应用外变化）。
+
+### 11.1 类型
+
+```ts
+type AccentPreset = 'orange' | 'indigo' | 'blue' | 'green' | 'teal' | 'violet';
+type AccentTokens = {            // 10 个令牌，DESIGN.md 12.1；值一律 #rrggbb 小写
+  accent, hover, active, soft, text, btn, btnHover, btnActive, onAccent, focus: string;
+};
+type AccentSetting =
+  | { preset: AccentPreset }
+  | { preset: 'custom'; hex: string; cache?: { light: AccentTokens; dark: AccentTokens } };
+```
+
+`AppSettings` 增加 `accent: AccentSetting`；`SettingsPatch` 增加可选 `accent?: AccentSetting`（整体替换，不做字段级合并）。
+
+### 11.2 M61 `patch` 的校验
+
+| 输入 | 处理 |
+| --- | --- |
+| `preset` 是 6 个预设之一 | 接受；`hex`、`cache` 即使传了也丢弃 |
+| `preset = 'custom'` | `hex` 必填，匹配 `^#[0-9a-fA-F]{6}$`，存成小写；不匹配 → `invalid-input` |
+| `cache` | 可选，只在 `custom` 下有意义；`light`、`dark` 两组都要有，每组 10 个键都匹配 `^#[0-9a-fA-F]{6}$`；有任何一项不合法 → `invalid-input` |
+| 其他 `preset` 值、多余字段 | `invalid-input` |
+
+沿用 §4.8 的规则：所有字段校验完才组装，抛错时不留半个 patch。
+
+`cache` 是前端按 DESIGN.md 12.4 算好的结果。Go 不自己算颜色，只检查格式，原样保存，供下次启动首帧使用（技术设计 14.2）。它只是颜色值，不涉及权限，所以不需要 Go 复算校验。
+
+### 11.3 M60 `get` 的输出
+
+返回规范化后的 `accent`：文件里缺字段、预设名未知、`hex` 不合法时，一律返回 `{preset: 'orange'}`；`cache` 不合法时去掉 `cache`，保留 `preset` 与 `hex`。规则见数据库设计 4.1.1。
+
+### 11.4 验证
+
+- Go 单元测试：上表每一行各一条，再加「非法 patch 不改动已保存的值」；
+- 前端：`src/lib/accent.ts` 的 12 套预设快照（DESIGN.md 12.3）与自定义色边界用例；
+- e2e：AC-ACC-1、2、5（PRD 16.7）。
