@@ -79,7 +79,7 @@
 | 编号 | 目标 | 修改范围 | 依赖 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | T00 | 首帧方案验证（A-1–A-4） | `spikes/r10-preload/`（新） | 用户批准本计划 | RESULT.md 给出 A-1–A-4 的实测结论；若 A-1 不成立，提出替代方案并停下等用户决定 | 待验证（证据齐，待用户验收） |
-| T01 | Go：`accent` 字段、规范化与校验 | `internal/settings/settings.go`、`internal/contract/contract.go`、`internal/service/service.go`、生成的绑定 | T00 | V-ACC-GO 全部通过；`check:bindings` 通过 | 待做 |
+| T01 | Go：`accent` 字段、规范化与校验 | `internal/settings/{settings,accent}.go`、`internal/contract/contract.go`、生成的绑定 | T00 | V-ACC-GO 全部通过；`check:bindings` 通过 | 待验证（门禁已过，待用户验收） |
 | T02 | 前端配色算法 | `src/lib/accent.ts`（新）、`src/lib/accent.test.ts`（新） | T00 | 12 套预设快照与 DESIGN.md 12.3 逐值相同；V-ACC-ALG 通过 | 待做 |
 | T03 | 令牌拆分与 12 套配色 | `src/styles/*.css` | T02 | 29 处改名、按钮与发送按钮改按钮令牌；默认橙；V-ACC-TOK 通过（含靛下 49 张逐像素比对） | 待做 |
 | T04 | 首帧链路 | `main.go`、`public/theme-init.js`、`src/stores/appStore.ts` | T00、T01、T02、T03 | V-ACC-BOOT 通过 | 待做 |
@@ -92,6 +92,10 @@
 | T11 | 收尾 | README、CLAUDE.md、本计划、docs/PLAN-M0.md 路线 | T10 | 文档同步；列提交；推送前询问用户 | 待做 |
 
 依赖顺序 T00 → T11，串行。T01 与 T02 互不依赖，但仍按「一次一个」分开放行。
+
+T01 实现中补充的两处（已在契约范围内，未改契约）：
+- 读入时 `accent` 用单独宽松解析：字段类型不对只回落成默认色，其余字段坏了才按「文件损坏」备份（数据库设计 4.1.1 的「不报错、只回落」）。
+- `Store.Patch` 改为先把所有字段校验完再组装，任一不合法都不留下半个 patch（API §4.8 的要求；此前 theme 合法而后续字段非法时，内存里会先改掉 theme）。
 
 ## 5. 单任务精确交接
 
@@ -232,7 +236,8 @@
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 获批 | — | 自查见第 10 节 | T00 已放行 |
-| 2026-11-20 | T00 | 完成：方案成立，A-1–A-4 全过 | 见下 | RESULT.md；技术设计 14.3 | 等待放行 T01 |
+| 2026-11-20 | T00 | 完成：方案成立，A-1–A-4 全过 | 见下 | RESULT.md；技术设计 14.3 | 用户已验收并放行 T01 |
+| 2026-11-20 | T01 | 完成：`accent` 类型、读入回落、Patch 严格校验；坏 accent 不再让整个设置文件被判损坏；Patch 改为「全部校验后再组装」 | 见下 | Go 526 项、vet/gofmt、绑定对拍、`tsc`、Vitest 187 项 | 等待放行 T02 |
 
 ## 10. 自查
 

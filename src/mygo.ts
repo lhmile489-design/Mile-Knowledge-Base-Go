@@ -19,6 +19,40 @@ export interface AboutInfoResult {
   failure?: Failure;
 }
 
+/**
+ * AccentCache carries the palettes the frontend derived for a custom color,
+ * so the next launch can paint the first frame without recomputing.
+ */
+export interface AccentCache {
+  light: AccentTokens;
+  dark: AccentTokens;
+}
+
+/** AccentSetting is the theme color (PRD §16, API.md §11). */
+export interface AccentSetting {
+  /** orange | indigo | blue | green | teal | violet | custom */
+  preset: string;
+  hex?: string;
+  cache?: AccentCache;
+}
+
+/**
+ * AccentTokens is the ten theme-color tokens one theme applies (DESIGN.md
+ * 12.1, API.md §11). Every value is a lowercase #rrggbb string.
+ */
+export interface AccentTokens {
+  accent: string;
+  hover: string;
+  active: string;
+  soft: string;
+  text: string;
+  btn: string;
+  btnHover: string;
+  btnActive: string;
+  onAccent: string;
+  focus: string;
+}
+
 /** ActionRecord is one executed (or skipped) action (API.md M30/M31). */
 export interface ActionRecord {
   id: string;
@@ -123,6 +157,7 @@ export interface AppSettings {
   theme: string;
   /** ask | tray | quit */
   closeBehavior: string;
+  accent: AccentSetting;
   layout: LayoutSettings;
   recentVaults: Vault[];
   lastVaultId?: string;
@@ -729,6 +764,7 @@ export interface SearchResult {
 export interface SettingsPatch {
   theme?: string;
   closeBehavior?: string;
+  accent?: AccentSetting;
   layout?: LayoutSettings;
 }
 

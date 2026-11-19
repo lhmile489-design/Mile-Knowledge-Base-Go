@@ -230,11 +230,41 @@ type LayoutSettings struct {
 	AgnesComposerHeight    int  `json:"agnesComposerHeight"`
 }
 
+// AccentTokens is the ten theme-color tokens one theme applies (DESIGN.md
+// 12.1, API.md §11). Every value is a lowercase #rrggbb string.
+type AccentTokens struct {
+	Accent    string `json:"accent"`
+	Hover     string `json:"hover"`
+	Active    string `json:"active"`
+	Soft      string `json:"soft"`
+	Text      string `json:"text"`
+	Btn       string `json:"btn"`
+	BtnHover  string `json:"btnHover"`
+	BtnActive string `json:"btnActive"`
+	OnAccent  string `json:"onAccent"`
+	Focus     string `json:"focus"`
+}
+
+// AccentCache carries the palettes the frontend derived for a custom color,
+// so the next launch can paint the first frame without recomputing.
+type AccentCache struct {
+	Light AccentTokens `json:"light"`
+	Dark  AccentTokens `json:"dark"`
+}
+
+// AccentSetting is the theme color (PRD §16, API.md §11).
+type AccentSetting struct {
+	Preset string       `json:"preset"` // orange | indigo | blue | green | teal | violet | custom
+	Hex    string       `json:"hex,omitempty"`
+	Cache  *AccentCache `json:"cache,omitempty"`
+}
+
 // AppSettings is the whole persisted settings document.
 type AppSettings struct {
 	Version       int            `json:"version"`
 	Theme         string         `json:"theme"`         // light | dark | system
 	CloseBehavior string         `json:"closeBehavior"` // ask | tray | quit
+	Accent        AccentSetting  `json:"accent"`
 	Layout        LayoutSettings `json:"layout"`
 	RecentVaults  []Vault        `json:"recentVaults"`
 	LastVaultID   string         `json:"lastVaultId,omitempty"`
@@ -245,6 +275,7 @@ type AppSettings struct {
 type SettingsPatch struct {
 	Theme         *string         `json:"theme,omitempty"`
 	CloseBehavior *string         `json:"closeBehavior,omitempty"`
+	Accent        *AccentSetting  `json:"accent,omitempty"`
 	Layout        *LayoutSettings `json:"layout,omitempty"`
 }
 

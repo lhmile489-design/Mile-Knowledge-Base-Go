@@ -48,6 +48,7 @@ func Defaults() contract.AppSettings {
 		Version:       Version,
 		Theme:         "system",
 		CloseBehavior: "ask",
+		Accent:        contract.AccentSetting{Preset: AccentDefault},
 		Layout: contract.LayoutSettings{
 			SidebarWidth:           SidebarDef,
 			DocWidth:               DocDef,
@@ -228,21 +229,31 @@ func (s *Store) Get() contract.AppSettings {
 func (s *Store) Patch(p contract.SettingsPatch) (contract.AppSettings, *contract.Failure) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// 全部字段校验完再组装：任何一个不合法都不留下半个 patch（API.md §4.8）。
+	next := s.settings
 	if p.Theme != nil {
 		if !isTheme(*p.Theme) {
 			return s.settings, contract.Fail(contract.CodeInvalidInput, "主题值不合法")
 		}
-		s.settings.Theme = *p.Theme
+		next.Theme = *p.Theme
 	}
 	if p.CloseBehavior != nil {
 		if !isClose(*p.CloseBehavior) {
 			return s.settings, contract.Fail(contract.CodeInvalidInput, "关窗行为值不合法")
 		}
-		s.settings.CloseBehavior = *p.CloseBehavior
+		next.CloseBehavior = *p.CloseBehavior
 	}
 	if p.Layout != nil {
-		s.settings.Layout = clampLayout(*p.Layout)
+		next.Layout = clampLayout(*p.Layout)
 	}
+	if p.Accent != nil {
+		accent, ok := validateAccentPatch(p.Accent)
+		if !ok {
+			return s.settings, contract.Fail(contract.CodeInvalidInput, "主题色值不合法")
+		}
+		next.Accent = accent
+	}
+	s.settings = next
 	if f := s.saveLocked(); f != nil {
 		return s.settings, f
 	}
@@ -319,12 +330,25 @@ func (s *Store) load() *contract.Failure {
 		s.backupCorrupt(path)
 		return nil
 	}
-	var parsed contract.AppSettings
-	if err := json.Unmarshal(raw, &parsed); err != nil {
+	// accent 单独宽松解析：旧字段类型不对只回落成默认色，不让整个文件被判为损坏
+	// （数据库设计 4.1.1）。
+	var shadow struct {
+		contract.AppSettings
+		Accent json.RawMessage `json:"accent"`
+	}
+	if err := json.Unmarshal(raw, &shadow); err != nil {
 		s.backupCorrupt(path)
 		return nil
 	}
-	known := map[string]bool{"version": true, "theme": true, "closeBehavior": true, "layout": true, "recentVaults": true, "lastVaultId": true}
+	parsed := shadow.AppSettings
+	parsed.Accent = contract.AccentSetting{Preset: AccentDefault}
+	if len(shadow.Accent) > 0 {
+		var a contract.AccentSetting
+		if err := json.Unmarshal(shadow.Accent, &a); err == nil {
+			parsed.Accent = a
+		}
+	}
+	known := map[string]bool{"version": true, "theme": true, "closeBehavior": true, "accent": true, "layout": true, "recentVaults": true, "lastVaultId": true}
 	for k, v := range doc {
 		if !known[k] {
 			s.unknown[k] = v
@@ -377,6 +401,7 @@ func (s *Store) saveLocked() *contract.Failure {
 	payload["version"] = Version
 	payload["theme"] = s.settings.Theme
 	payload["closeBehavior"] = s.settings.CloseBehavior
+	payload["accent"] = s.settings.Accent
 	payload["layout"] = s.settings.Layout
 	payload["recentVaults"] = s.settings.RecentVaults
 	if s.settings.LastVaultID != "" {
@@ -480,6 +505,7 @@ func clampSettings(s contract.AppSettings) contract.AppSettings {
 	if !isClose(s.CloseBehavior) {
 		s.CloseBehavior = "ask"
 	}
+	s.Accent = NormalizeAccent(s.Accent)
 	s.Layout = clampLayout(s.Layout)
 	if len(s.RecentVaults) > MaxRecentVaults {
 		s.RecentVaults = s.RecentVaults[:MaxRecentVaults]
