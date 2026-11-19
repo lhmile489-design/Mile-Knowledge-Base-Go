@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>R2 主题色原型</title>
+<!-- 令牌引用工程的 tokens.css；本页用内联变量覆盖强调色一族，模拟 DESIGN.md 第 12 节的 [data-accent] 规则。 -->
+<link rel="stylesheet" href="../../src/styles/tokens.css">
+<style>
+  html, body { margin: 0; background: var(--raw-canvas); font-family: var(--font-ui); color: var(--raw-text); }
+  * { box-sizing: border-box; }
+  button, input { font-family: inherit; }
+
+  .app { position: relative; width: 1440px; height: 900px; overflow: hidden; background: var(--raw-canvas);
+    display: grid; grid-template-rows: var(--titlebar-h) minmax(0, 1fr); }
+  .titlebar { display: flex; align-items: center; gap: 12px; padding-left: 12px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-size: var(--text-body); font-weight: 600; }
+  .brand img { width: 18px; height: 18px; }
+  .vault-tag { font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: .32em; color: var(--raw-faint); }
+  .vault-name { flex: 1; min-width: 0; font-size: var(--text-body-sm); color: var(--raw-muted); }
+  .win { display: flex; } .win span { width: 46px; height: 40px; display: grid; place-items: center; }
+  .segmented-item[aria-selected='true'], .segmented-item[aria-checked='true'] { color: var(--raw-accent-text); }
+
+  .skm-trigger { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 9px; border: 0; border-radius: var(--radius-pill);
+    background: var(--raw-raised); color: var(--raw-text); font-size: var(--text-body-sm); font-weight: 600; }
+  .skm-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: inline-grid; place-items: center;
+    background: color-mix(in srgb, var(--warn) 18%, var(--raw-card)); color: color-mix(in srgb, var(--warn) 78%, var(--raw-strong)); font-size: var(--text-caption); font-weight: 700; }
+
+  /* 标题栏色点 */
+  .accent-dot-btn { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: var(--radius-control); background: transparent; cursor: pointer; }
+  .accent-dot-btn:hover { background: var(--raw-raised); }
+  .accent-dot-btn[aria-expanded='true'] { background: var(--raw-raised); }
+  .accent-dot-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .dot14 { width: 14px; height: 14px; border-radius: 999px; background: var(--raw-accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent); }
+
+  /* 色板浮层：复用 .popover 的毛玻璃（DESIGN.md §5.6） */
+  .picker { position: absolute; z-index: 5; top: calc(var(--titlebar-h) + 6px); width: 272px; padding: 12px; display: grid; gap: 10px;
+    border: 1px solid var(--raw-line); border-radius: var(--radius-card);
+    background: var(--glass, var(--raw-card)); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+    box-shadow: var(--shadow-float); }
+  .picker h4 { margin: 0; font-size: var(--text-meta); font-weight: 600; color: var(--raw-muted); }
+  .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .swatch { display: grid; justify-items: center; gap: 4px; padding: 4px 0; border: 0; background: none; border-radius: 8px; cursor: pointer;
+    font-size: var(--text-caption); color: var(--raw-muted); }
+  .swatch:hover { background: var(--raw-raised); }
+  .swatch .chip { position: relative; width: 28px; height: 28px; border-radius: 999px; background: var(--c); display: grid; place-items: center;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent); }
+  .swatch[aria-checked='true'] .chip { box-shadow: 0 0 0 2px var(--raw-card), 0 0 0 4px var(--c); }
+  .swatch[aria-checked='true'] { color: var(--raw-strong); font-weight: 600; }
+  .swatch .chip svg { width: 14px; height: 14px; stroke: var(--on, #fff); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .swatch:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .sep { height: 1px; background: var(--raw-line); }
+  .custom { display: grid; grid-template-columns: auto 1fr 28px; gap: 8px; align-items: center; font-size: var(--text-body-sm); }
+  .hexbox { height: 30px; padding: 0 10px; border: 1px solid var(--raw-line-strong); border-radius: var(--radius-control); background: var(--raw-card);
+    font-family: var(--font-mono); font-size: var(--text-body-sm); color: var(--raw-text); display: flex; align-items: center; }
+  .hexbox[data-invalid] { border-color: color-mix(in srgb, var(--fault) 45%, var(--raw-line)); }
+  .hexbox[data-focus] { border-color: var(--raw-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--raw-accent) 22%, transparent); }
+  .preview { width: 22px; height: 22px; border-radius: 999px; background: var(--pv); justify-self: end; box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent); }
+  .note { font-size: var(--text-meta); line-height: 1.5; color: var(--raw-muted); }
+  .note b { font-family: var(--font-mono); font-weight: 600; color: var(--raw-text); }
+  .note[data-tone='fault'] { color: var(--fault); }
+  .note .mini { display: inline-block; width: 10px; height: 10px; border-radius: 999px; vertical-align: -1px; margin: 0 3px; background: var(--m); }
+
+  /* 背景工作台：一个能看出强调色用法的页面 */
+  .grid { display: grid; grid-template-columns: 232px 8px minmax(480px, 1fr) 8px 560px; padding: 0 8px 8px; min-height: 0; }
+  .pb { padding: 14px; display: grid; gap: 8px; align-content: start; }
+  .tree-head { font-size: var(--text-caption); letter-spacing: .12em; color: var(--raw-faint); font-weight: 600; margin-top: 6px; }
+  .tree-row { display: flex; justify-content: space-between; align-items: center; height: 28px; padding: 0 8px; border-radius: 8px; font-size: var(--text-body); }
+  .tree-row em { font-style: normal; font-size: var(--text-caption); color: var(--raw-faint); }
+  .tree-row[aria-selected='true'] { background: var(--raw-accent-soft); color: var(--raw-accent-text); font-weight: 600; }
+  .agnes-head { display: flex; gap: 16px; align-items: center; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--raw-line); font-size: var(--text-body-sm); }
+  .agnes-head .on { color: var(--raw-accent-text); font-weight: 600; }
+  .card { border: 1px solid var(--raw-line); border-radius: var(--radius-card); background: var(--panel-card, var(--raw-card)); padding: 12px 14px; display: grid; gap: 10px; }
+  .card h5 { margin: 0; font-size: var(--text-meta); font-weight: 600; color: var(--raw-muted); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  /* 带文字的强调色底只用按钮令牌（DESIGN.md 12.1）：浅色下比 --raw-accent 深，好让白字达标。 */
+  .btn-accent2 { display: inline-flex; align-items: center; gap: 6px; padding: 0.3125rem 0.75rem; border: 1px solid transparent; border-radius: var(--radius-control);
+    background: var(--raw-accent-btn); color: var(--raw-on-accent); font-size: var(--text-body); font-weight: 600; cursor: pointer; }
+  .btn-accent2[data-state='hover'] { background: var(--raw-accent-btn-hover); }
+  .btn-accent2[data-state='active'] { background: var(--raw-accent-btn-active); }
+  .send-demo { width: 30px; height: 30px; border-radius: 999px; display: grid; place-items: center; background: var(--raw-accent-btn); color: var(--raw-on-accent); }
+  .send-demo svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-accent2[data-state='focus'] { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .link { color: var(--raw-accent-text); text-decoration: underline; text-underline-offset: 3px; font-size: var(--text-body); }
+  .switch { width: 34px; height: 20px; border-radius: 999px; background: var(--raw-accent); position: relative; }
+  .switch::after { content: ""; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 999px; background: var(--raw-card); } /* 与 tokens.css .switch 一致：滑块是卡片色 */
+  .switch.off { background: var(--raw-line-strong); } .switch.off::after { right: auto; left: 2px; background: #fff; }
+  .check { width: 16px; height: 16px; border-radius: 4px; background: var(--raw-accent-btn); display: grid; place-items: center; }
+  .check svg { width: 12px; height: 12px; stroke: var(--raw-on-accent); fill: none; stroke-width: 2.6; }
+  .composer { position: absolute; left: 16px; right: 16px; bottom: 16px; height: 130px; border: 1px solid var(--raw-accent); border-radius: var(--radius-card);
+    background: var(--panel-card, var(--raw-card)); padding: 12px; font-size: var(--text-body-sm); color: var(--raw-faint);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--raw-accent) 18%, transparent); }
+  .resize-demo { width: 2px; height: 48px; border-radius: 999px; background: var(--raw-accent); align-self: center; justify-self: center; }
+  .status-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .prose { font-size: var(--text-read, 15px); line-height: 1.75; color: var(--raw-text); }
+  .prose h2 { font-size: var(--text-title); color: var(--raw-strong); margin: 0 0 6px; }
+  .prose a { color: var(--raw-accent-text); }
+  .prose mark { background: var(--raw-accent-soft); color: var(--raw-strong); padding: 0 2px; border-radius: 3px; }
+
+  /* 设置页「外观」一行 */
+  .settings { position: absolute; inset: var(--titlebar-h) 0 0 0; background: var(--raw-canvas); display: grid; grid-template-columns: 232px 8px 1fr; padding: 0 8px 8px; z-index: 4; }
+  .nav-item { display: flex; align-items: center; height: 32px; padding: 0 10px; border-radius: 8px; font-size: var(--text-body); }
+  .nav-item[aria-current='page'] { background: var(--raw-accent-soft); color: var(--raw-accent-text); font-weight: 600; }
+  .set-wrap { padding: 28px 36px; display: grid; gap: 16px; align-content: start; max-width: 860px; }
+  .set-wrap h2 { margin: 0; font-size: var(--text-display); color: var(--raw-strong); }
+  .set-card { border: 1px solid var(--raw-line); border-radius: var(--radius-card); background: var(--panel-card, var(--raw-card)); }
+  .set-row { display: grid; grid-template-columns: 200px 1fr; gap: 16px; align-items: center; padding: 14px 16px; }
+  .set-row + .set-row { border-top: 1px solid var(--raw-line); }
+  .set-row .label b { display: block; font-size: var(--text-body); color: var(--raw-strong); }
+  .set-row .label span { font-size: var(--text-meta); color: var(--raw-muted); }
+  .inline-swatches { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .inline-swatches .swatch { grid-template-columns: auto; padding: 4px 6px; }
+
+  .proto-nav { position: fixed; right: 12px; bottom: 12px; z-index: 99; display: flex; flex-wrap: wrap; gap: 4px; max-width: 460px; padding: 8px;
+    background: var(--raw-card); border: 1px solid var(--raw-line); border-radius: 10px; box-shadow: var(--shadow-float); font-size: 12px; }
+  .proto-nav a { color: var(--raw-accent-text); text-decoration: none; padding: 2px 6px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const P = new URLSearchParams(location.search);
+const THEME = P.get('theme') === 'dark' ? 'dark' : 'light';
+const STATE = P.get('state') || 'picker';
+document.documentElement.dataset.theme = THEME;
+
+/* DESIGN.md 12.3 的 12 套预设（与文档表格同一份数值）。 */
+const PRESETS = {"orange-light":{"accent":"#e87226","hover":"#ea803c","active":"#ed8e51","soft":"#fceee5","on":"#ffffff","text":"#aa541c","btn":"#b95b1e","btn_hover":"#a6521b","btn_active":"#944918"},"orange-dark":{"accent":"#fa8234","hover":"#fb914c","active":"#dc722e","soft":"#4d3426","on":"#111214","text":"#fa8234","btn":"#fa8234","btn_hover":"#fb914c","btn_active":"#dc722e"},"indigo-light":{"accent":"#4f46e5","hover":"#4338ca","active":"#3730a3","soft":"#ebeafd","on":"#ffffff","text":"#4f46e5","btn":"#4f46e5","btn_hover":"#4338ca","btn_active":"#3730a3"},"indigo-dark":{"accent":"#8b8ff8","hover":"#a2a5fa","active":"#7579ec","soft":"#2a2b45","on":"#111214","text":"#8b8ff8","btn":"#8b8ff8","btn_hover":"#a2a5fa","btn_active":"#7579ec"},"blue-light":{"accent":"#2563eb","hover":"#2159d4","active":"#1e4fbc","soft":"#e5ecfd","on":"#ffffff","text":"#2461e6","btn":"#2563eb","btn_hover":"#2159d4","btn_active":"#1e4fbc"},"blue-dark":{"accent":"#81a5f3","hover":"#90b0f4","active":"#7291d6","soft":"#323c50","on":"#111214","text":"#81a5f3","btn":"#81a5f3","btn_hover":"#90b0f4","btn_active":"#7291d6"},"green-light":{"accent":"#16a34a","hover":"#2dac5c","active":"#45b56e","soft":"#e3f4e9","on":"#ffffff","text":"#117c38","btn":"#12873d","btn_hover":"#107a37","btn_active":"#0e6c31"},"green-dark":{"accent":"#4cb874","hover":"#61c185","active":"#43a266","soft":"#274034","on":"#111214","text":"#4cb874","btn":"#4cb874","btn_hover":"#61c185","btn_active":"#43a266"},"teal-light":{"accent":"#0d9488","hover":"#259f94","active":"#3da9a0","soft":"#e2f2f1","on":"#ffffff","text":"#0b7970","btn":"#0c857a","btn_hover":"#0b786e","btn_active":"#0a6a62"},"teal-dark":{"accent":"#56b4ac","hover":"#6abdb6","active":"#4c9e97","soft":"#293f40","on":"#111214","text":"#56b4ac","btn":"#56b4ac","btn_hover":"#6abdb6","btn_active":"#4c9e97"},"violet-light":{"accent":"#7c3aed","hover":"#7034d5","active":"#632ebe","soft":"#efe7fd","on":"#ffffff","text":"#7c3aed","btn":"#7c3aed","btn_hover":"#7034d5","btn_active":"#632ebe"},"violet-dark":{"accent":"#b793f5","hover":"#c0a0f6","active":"#a181d8","soft":"#3e3850","on":"#111214","text":"#b793f5","btn":"#b793f5","btn_hover":"#c0a0f6","btn_active":"#a181d8"}};
+const ORDER = [['orange', '橙', '#fa7b29'], ['indigo', '靛', '#4f46e5'], ['blue', '蓝', '#2563eb'], ['green', '绿', '#16a34a'], ['teal', '青', '#0d9488'], ['violet', '紫', '#7c3aed']];
+
+/* DESIGN.md 12.4 的自定义色规则（与生成 12.3 的脚本同一套）。 */
+const hx = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const toHex = c => '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+const lum = h => { const f = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; const [r, g, b] = hx(h); return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+const cr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const mix = (a, b, t) => { const A = hx(a), B = hx(b); return toHex(A.map((v, i) => Math.round(v * t + B[i] * (1 - t)))); };
+const until = (base, toward, ok) => { for (let k = 0; k <= 100; k++) { const c = mix(toward, base, k / 100); if (ok(c)) return c; } return toward; };
+const LB = { card: '#ffffff', canvas: '#eceef1', raised: '#eceef1' }, DB = { card: '#1c1e22', canvas: '#0e0f11', raised: '#26282d' }, INK = '#111214';
+function derive(b, theme) {
+  if (theme === 'light') {
+    const accent = cr(b, LB.card) >= 3 ? b : until(b, '#000000', c => cr(c, LB.card) >= 3);
+    const on = cr('#ffffff', accent) >= 4.5 ? '#ffffff' : INK;
+    const away = on === '#ffffff' ? '#000000' : '#ffffff';
+    const soft = mix(accent, LB.card, 0.12);
+    const text = until(b, '#000000', c => Math.min(...[...Object.values(LB), soft].map(x => cr(c, x))) >= 4.5);
+    // 按钮：在 accent 基础上继续加深，直到白字 >=4.5:1；悬停与按下再往深处走（DESIGN.md 12.4）。
+    const btn = until(accent, '#000000', c => cr('#ffffff', c) >= 4.5);
+    return { accent, hover: mix(away, accent, 0.10), active: mix(away, accent, 0.20), soft, on: '#ffffff', text,
+      btn, btn_hover: mix('#000000', btn, 0.10), btn_active: mix('#000000', btn, 0.20) };
+  }
+  const accent = until(b, '#ffffff', c => Math.min(...Object.values(DB).map(x => cr(c, x))) >= 4.5 && cr(c, mix(c, DB.card, 0.22)) >= 4.5);
+  const on = cr(INK, accent) >= 4.5 ? INK : '#ffffff';
+  const hover = mix('#ffffff', accent, 0.12), active = mix('#000000', accent, 0.12);
+  return { accent, hover, active, soft: mix(accent, DB.card, 0.22), on, text: accent, btn: accent, btn_hover: hover, btn_active: active };
+}
+
+const ACCENT = P.get('accent') || 'orange';
+const CUSTOM = P.get('hex') || '#ffff00';
+const pal = ACCENT === 'custom' ? derive(CUSTOM, THEME) : PRESETS[`${ACCENT}-${THEME}`];
+const rs = document.documentElement.style;
+rs.setProperty('--raw-accent', pal.accent); rs.setProperty('--raw-accent-hover', pal.hover); rs.setProperty('--raw-accent-active', pal.active);
+rs.setProperty('--raw-accent-soft', pal.soft); rs.setProperty('--raw-on-accent', pal.on); rs.setProperty('--text-on-accent', pal.on);
+rs.setProperty('--raw-accent-text', pal.text); rs.setProperty('--raw-accent-btn', pal.btn); rs.setProperty('--raw-accent-btn-hover', pal.btn_hover); rs.setProperty('--raw-accent-btn-active', pal.btn_active); rs.setProperty('--focus', pal.accent); rs.setProperty('--color-accent', pal.accent);
+document.documentElement.dataset.accent = ACCENT;
+
+const tick = '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+const nameOf = k => (ORDER.find(o => o[0] === k) || [k, '自定义'])[1];
+function swatches(cls = 'swatches') {
+  return `<div class="${cls}" role="radiogroup" aria-label="主题色">${ORDER.map(([k, n]) => {
+    const p = PRESETS[`${k}-${THEME}`];
+    const on = k === ACCENT;
+    return `<button class="swatch" role="radio" aria-checked="${on}" style="--c:${p.btn};--on:${p.on}"><span class="chip">${on ? tick : ''}</span>${n}</button>`;
+  }).join('')}</div>`;
+}
+function customRow(mode) {
+  const invalid = mode === 'invalid';
+  const value = invalid ? '#ff12' : (ACCENT === 'custom' ? CUSTOM : '#fa7b29');
+  const used = ACCENT === 'custom' ? pal.accent : PRESETS[`orange-${THEME}`].accent;
+  const adjusted = used.toLowerCase() !== value.toLowerCase();
+  let note;
+  if (invalid) note = `<div class="note" data-tone="fault">请输入 #RRGGBB 格式，例如 #2563eb。当前颜色不变。</div>`;
+  else if (adjusted) note = `<div class="note">实际使用<span class="mini" style="--m:${used}"></span><b>${used}</b>（${THEME === 'light' ? '浅色' : '深色'}），为了让文字和按钮看得清做了调整。</div>`;
+  else note = `<div class="note">与输入一致。</div>`;
+  return `<div class="custom"><span>自定义</span><span class="hexbox"${invalid ? ' data-invalid' : ''}${mode === 'focus' || invalid ? ' data-focus' : ''}>${value}</span><span class="preview" style="--pv:${invalid ? 'transparent' : used}"></span></div>${note}`;
+}
+
+function sample() {
+  const tree = [['技能 SKILLS', 'skills', 24, false], ['暂存 STAGING', 'Clippings', 1, true], ['项目 PROJECTS', 'projects', 2, false], ['工具 TOOLS', 'tools', 1, false]]
+    .map(([h, n, c, sel]) => `<div class="tree-head">${h}</div><div class="tree-row" aria-selected="${sel}"><span>${n}</span><em>${c}</em></div>`).join('');
+  return `<div class="grid">
+    <section class="workbench-panel" data-panel="sidebar"><div class="pb">${tree}</div></section>
+    <div class="resize-demo" title="拖拽条悬停"></div>
+    <section class="workbench-panel" data-panel="agnes" style="position:relative">
+      <div class="agnes-head"><span>历史</span><span class="on">Agnes</span><span style="margin-left:auto">会话信息</span><span>新对话</span></div>
+      <div class="pb">
+        <div class="card"><h5>按钮：常态 / 悬停 / 按下 / 焦点 · 发送</h5><div class="row">
+          <button class="btn-accent2">执行计划</button><button class="btn-accent2" data-state="hover">执行计划</button>
+          <button class="btn-accent2" data-state="active">执行计划</button><button class="btn-accent2" data-state="focus">执行计划</button>
+          <button class="btn-quiet">取消</button><span class="send-demo" title="发送"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span></div></div>
+        <div class="card"><h5>分段、开关、复选、链接</h5><div class="row">
+          <div class="segmented" role="radiogroup"><button class="segmented-item" aria-checked="false">手动</button><button class="segmented-item" aria-checked="true">自动</button><button class="segmented-item" aria-checked="false">全自动</button></div>
+          <span class="switch"></span><span class="switch off"></span><span class="check">${tick.replace('<svg', '<svg')}</span><a class="link">打开操作日志</a></div></div>
+        <div class="card"><h5>状态色不随主题色变</h5><div class="status-row"><span class="pill" data-tone="live">已就绪</span><span class="pill" data-tone="info">进行中</span><span class="pill" data-tone="warn">知识库有更新</span><span class="pill" data-tone="fault">链接失效</span><span class="pill" data-tone="idle">独立</span></div></div>
+      </div>
+      <div class="composer">输入框聚焦时的强调色描边…</div>
+    </section>
+    <div></div>
+    <section class="workbench-panel" data-panel="editor"><div class="pb prose"><h2>知识库分类</h2>
+      <p>skills 放可复用的技能包，每个技能一个目录；raws 是<mark>暂存区</mark>，剪藏和草稿先放这里。</p>
+      <p>相关文档：<a>发布清单</a>、<a>操作日志说明</a>。分类别名只影响显示，不改目录名。</p></div></section>
+  </div>`;
+}
+
+function titlebar(open) {
+  return `<header class="titlebar">
+    <div class="brand"><img src="../../resources/icon.png" alt="">Mile Knowledge Base<span class="vault-tag">VAULT</span></div>
+    <div class="vault-name">我的知识库</div>
+    <span class="skm-trigger">技能<span class="skm-badge">2</span></span>
+    <button class="accent-dot-btn" id="dot" aria-label="主题色：${nameOf(ACCENT)}" aria-haspopup="dialog" aria-expanded="${open}"><span class="dot14"></span></button>
+    <div class="segmented" role="tablist"><button class="segmented-item" aria-selected="${THEME === 'light'}">浅色</button><button class="segmented-item" aria-selected="${THEME === 'dark'}">深色</button><button class="segmented-item">系统</button></div>
+    <div class="win"><span>&#8211;</span><span>&#9633;</span><span>&#10005;</span></div>
+  </header>`;
+}
+
+function settings() {
+  return `<div class="settings">
+    <section class="workbench-panel" data-panel="settings-nav"><div class="pb">
+      <div class="nav-item" aria-current="page">常规</div><div class="nav-item">模型服务</div><div class="nav-item">Agents</div><div class="nav-item">分类与检索</div><div class="nav-item">关于与诊断</div></div></section>
+    <div></div>
+    <section class="workbench-panel" data-panel="settings-content"><div class="set-wrap"><h2>常规</h2>
+      <div class="set-card">
+        <div class="set-row"><div class="label"><b>主题</b><span>浅色、深色或跟随系统</span></div><div><div class="segmented" role="radiogroup"><button class="segmented-item" aria-checked="${THEME === 'light'}">浅色</button><button class="segmented-item" aria-checked="${THEME === 'dark'}">深色</button><button class="segmented-item" aria-checked="false">跟随系统</button></div></div></div>
+        <div class="set-row"><div class="label"><b>主题色</b><span>按钮、选中态、链接与焦点环</span></div><div style="display:grid;gap:10px">${swatches('inline-swatches')}<div style="max-width:340px">${customRow('')}</div></div></div>
+        <div class="set-row"><div class="label"><b>关窗行为</b><span>点关闭按钮时</span></div><div><div class="segmented" role="radiogroup"><button class="segmented-item" aria-checked="true">每次询问</button><button class="segmented-item" aria-checked="false">挂到托盘</button><button class="segmented-item" aria-checked="false">退出</button></div></div></div>
+      </div></div></section>
+  </div>`;
+}
+
+const open = STATE === 'picker' || STATE === 'custom' || STATE === 'invalid';
+let html = `<div class="app">${titlebar(open)}${sample()}`;
+if (open) html += `<div class="picker" id="picker" role="dialog" aria-label="主题色"><h4>主题色</h4>${swatches()}<div class="sep"></div>${customRow(STATE === 'invalid' ? 'invalid' : STATE === 'custom' ? 'focus' : '')}</div>`;
+if (STATE === 'settings') html += settings();
+html += `</div>`;
+document.getElementById('root').innerHTML = html;
+if (open) { const d = document.getElementById('dot').getBoundingClientRect(); const p = document.getElementById('picker'); p.style.left = Math.round(d.right - 272 + 8) + 'px'; }
+
+if (!P.get('shot')) {
+  const nav = document.createElement('nav'); nav.className = 'proto-nav';
+  const links = [];
+  for (const [k] of ORDER) for (const th of ['light', 'dark']) links.push(`<a href="?state=sample&accent=${k}&theme=${th}">${k}·${th === 'dark' ? '深' : '浅'}</a>`);
+  links.push('<a href="?state=picker">色板</a>', '<a href="?state=custom&accent=custom&hex=%23ffff00">自定义</a>', '<a href="?state=invalid">输入错误</a>', '<a href="?state=settings">设置页</a>');
+  nav.innerHTML = links.join(''); document.body.appendChild(nav);
+}
+</script>
+</body>
+</html>
