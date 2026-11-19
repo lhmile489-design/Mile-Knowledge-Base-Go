@@ -15,6 +15,8 @@ type TreeState = {
   load: (path: string) => Promise<void>;
   toggle: (path: string) => Promise<void>;
   select: (path: string) => void;
+  /** Expand the ancestors of a path and select it (overview tiles). */
+  reveal: (path: string) => Promise<void>;
   invalidate: (dirs: string[]) => Promise<void>;
 };
 
@@ -59,6 +61,17 @@ export const useTreeStore = create<TreeState>((set, get) => ({
   },
 
   select: (path) => set({ selected: path }),
+
+  reveal: async (path) => {
+    const parts = path.split("/").filter(Boolean);
+    let prefix = "";
+    for (let index = 0; index < parts.length - 1; index += 1) {
+      prefix = prefix ? `${prefix}/${parts[index]}` : (parts[index] ?? "");
+      set((state) => ({ expanded: { ...state.expanded, [prefix]: true } }));
+      if (!get().nodes[prefix]) await get().load(prefix);
+    }
+    set({ selected: path });
+  },
 
   invalidate: async (dirs) => {
     const { nodes, expanded, load } = get();

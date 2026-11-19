@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Warning } from "@phosphor-icons/react";
 import { useAgentStore } from "../../stores/agentStore";
+import { OverviewGrid } from "../overview/OverviewGrid";
 import { groupTranscript, type TranscriptSegment } from "../../lib/transcriptGroups";
 import { groupTurns, splitTurn, turnStatus, type TurnGroup } from "../../lib/turnGroups";
 import type { AgentId } from "../../lib/agentMeta";
@@ -62,11 +63,7 @@ export function MessageList() {
       }}
     >
       <div className="chat-column">
-        {empty ? (
-          <p className="chat-empty" data-testid="chat-empty">
-            还没有对话。在下方输入内容开始。
-          </p>
-        ) : null}
+        {empty ? <OverviewGrid /> : null}
 
         {groups.length > 0 ? (
           <div className="chat-virtual" style={{ height: totalSize }}>

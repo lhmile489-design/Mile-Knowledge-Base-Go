@@ -22,6 +22,7 @@ export function HealthPanel() {
   const openDoc = useDocStore((state) => state.open);
   const setLayout = useAppStore((state) => state.setLayout);
 
+  const healthTab = useAppStore((state) => state.healthTab);
   const [report, setReport] = useState<KbHealthReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>("unresolvedLinks");
@@ -38,12 +39,14 @@ export function HealthPanel() {
 
   useEffect(() => {
     if (!open) return;
+    // 总览磁贴要求打开在「未解析链接」页。
+    setTab(healthTab);
     void load();
     const off = events.indexStatus.on((status) => {
       if (status.vaultId === vaultId && status.phase === "ready") void load();
     });
     return () => off();
-  }, [open, load, vaultId]);
+  }, [open, load, vaultId, healthTab]);
 
   useEffect(() => {
     if (!open) return;

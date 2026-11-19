@@ -1,0 +1,195 @@
+/* Overview tiles (M3 T09). The grid breaks on the panel's own width, not the
+   window's: the chat column may be narrow while the window is wide. */
+
+.overview-shell {
+  container-type: inline-size;
+  height: 100%;
+  padding: 14px 16px 18px;
+  overflow-y: auto;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 120px;
+  gap: 10px;
+}
+
+.overview-tile {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  overflow: hidden;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-card);
+  background: var(--raw-card);
+  color: var(--raw-text);
+  text-align: left;
+}
+
+.overview-tile[data-span="2x2"] {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.overview-tile[data-span="2x1"] {
+  grid-column: span 2;
+}
+
+.overview-button {
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.overview-button:hover {
+  border-color: var(--raw-line-strong);
+}
+
+.overview-tile[data-warn="true"] {
+  border-color: var(--fault);
+  box-shadow: 0 0 0 1px var(--fault);
+}
+
+.overview-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--raw-muted);
+  text-transform: uppercase;
+}
+
+.overview-main {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--raw-strong);
+}
+
+.overview-line {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-list {
+  display: flex;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.overview-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 4px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--raw-text);
+  font-size: var(--text-meta);
+  text-align: left;
+  cursor: pointer;
+}
+
+.overview-row:hover {
+  background: var(--raw-raised);
+}
+
+.overview-row strong {
+  flex: none;
+  font-size: var(--text-meta);
+  font-weight: 600;
+}
+
+.overview-row span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--raw-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.overview-chip {
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-pill);
+  background: var(--raw-raised);
+  font-size: var(--text-caption);
+  color: var(--raw-text);
+  cursor: pointer;
+}
+
+.overview-chip:hover {
+  border-color: var(--raw-line-strong);
+}
+
+.overview-agent-row,
+.overview-change-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.overview-agent-row span:first-child {
+  flex: none;
+  font-size: var(--text-meta);
+  color: var(--raw-text);
+}
+
+.overview-link {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--raw-accent);
+  font-size: var(--text-meta);
+  cursor: pointer;
+}
+
+@container (max-width: 719px) {
+  .overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-tile[data-span="2x2"],
+  .overview-tile[data-span="2x1"] {
+    grid-column: span 2;
+  }
+}
+
+@container (max-width: 479px) {
+  .overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overview-tile[data-span="2x2"],
+  .overview-tile[data-span="2x1"] {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}

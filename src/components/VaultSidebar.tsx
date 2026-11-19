@@ -147,6 +147,16 @@ export function VaultSidebar() {
     overscan: 12,
   });
 
+  // 总览磁贴的「在侧栏定位」：选中项一旦出现就滚到可见位置。
+  const selectedPath = useTreeStore((state) => state.selected);
+  useEffect(() => {
+    if (!selectedPath) return;
+    const index = rows.findIndex(
+      (row) => row.kind === "entry" && row.entry.path === selectedPath,
+    );
+    if (index >= 0) virtualizer.scrollToIndex(index, { align: "center" });
+  }, [selectedPath, rows, virtualizer]);
+
   const notify = (message: string) => useAppStore.getState().pushNotice(message, "warn");
 
   const proposePlan = async (pending: Promise<PlanResult>, title: string) => {

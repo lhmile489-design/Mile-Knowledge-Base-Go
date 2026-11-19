@@ -9,6 +9,7 @@ import {
 import type { UnavailableVault, Vault } from "../mygo";
 
 export type ThemeMode = "light" | "dark" | "system";
+export type HealthTab = "unresolvedLinks" | "orphans" | "duplicates" | "untitled";
 export type Notice = { id: number; text: string; level: string };
 
 type AppState = {
@@ -20,6 +21,7 @@ type AppState = {
   notices: Notice[];
   bootError: string | null;
   healthOpen: boolean;
+  healthTab: HealthTab;
   auditOpen: boolean;
   settingsOpen: boolean;
   skillWizardOpen: boolean;
@@ -37,7 +39,7 @@ type AppState = {
   closeSettings: () => void;
   openSkillWizard: () => void;
   closeSkillWizard: () => void;
-  openHealth: () => void;
+  openHealth: (tab?: HealthTab) => void;
   toggleAudit: () => void;
   closeHealth: () => void;
   pushNotice: (text: string, level?: string) => void;
@@ -58,6 +60,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeVaultId: "",
   notices: [],
   healthOpen: false,
+  healthTab: "unresolvedLinks",
   auditOpen: false,
   settingsOpen: false,
   skillWizardOpen: false,
@@ -142,7 +145,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   closeSettings: () => set({ settingsOpen: false }),
   openSkillWizard: () => set({ skillWizardOpen: true }),
   closeSkillWizard: () => set({ skillWizardOpen: false }),
-  openHealth: () => set({ healthOpen: true }),
+  openHealth: (tab) => set({ healthOpen: true, healthTab: tab ?? "unresolvedLinks" }),
   toggleAudit: () => set((state) => ({ auditOpen: !state.auditOpen })),
   closeHealth: () => set({ healthOpen: false }),
 

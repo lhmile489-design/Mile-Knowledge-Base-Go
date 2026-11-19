@@ -731,7 +731,7 @@
 }
 
 .settings-savebar-error {
-  color: var(--raw-danger, #b42318);
+  color: var(--fault);
   white-space: normal;
 }
 
