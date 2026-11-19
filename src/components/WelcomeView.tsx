@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowClockwise, ClockCounterClockwise, FolderOpen, Trash, Warning } from "@phosphor-icons/react";
 import { TitleBar } from "./TitleBar";
 import { OnboardingGuide } from "./OnboardingGuide";
@@ -37,20 +37,15 @@ export function WelcomeView() {
     }
   };
 
-  if (firstRun || guideOpen) {
-    return (
-      <div className="app-shell" style={{ gridTemplateRows: "var(--titlebar-h) minmax(0, 1fr)" }}>
-        <TitleBar />
-        <main className="welcome-shell" aria-label="欢迎">
-          <OnboardingGuide
-            canDismiss={!firstRun}
-            onDismiss={() => setGuideOpen(false)}
-            onDone={() => setGuideOpen(false)}
-          />
-        </main>
-      </div>
-    );
-  }
+  // 向导是覆盖层（旧版结构）：欢迎页始终在下面，Esc 只在允许返回时关闭。
+  useEffect(() => {
+    if (!guideOpen || firstRun) return;
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") setGuideOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [guideOpen, firstRun]);
 
   return (
     <div className="app-shell" style={{ gridTemplateRows: "var(--titlebar-h) minmax(0, 1fr)" }}>
@@ -138,6 +133,15 @@ export function WelcomeView() {
         </div>
         <p className="welcome-footnote">移除记录只影响本应用的列表，不会移动或删除任何文件。</p>
       </main>
+      {guideOpen ? (
+        <div className="welcome-guide-backdrop" role="presentation">
+          <OnboardingGuide
+            canDismiss={!firstRun}
+            onDismiss={() => setGuideOpen(false)}
+            onDone={() => setGuideOpen(false)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

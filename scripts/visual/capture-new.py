@@ -762,6 +762,29 @@ def main():
         subprocess.run(["taskkill", "/F", "/IM", "Mile Knowledge Base.exe"], capture_output=True)
         time.sleep(0.8)
         welcome_appdata = canon(tempfile.mkdtemp(prefix="mkb-visual-welcome-"))
+        # 放一条已断开的记录：欢迎页同时出现故障卡（旧版 00），向导可返回关闭。
+        missing_root = canon(tempfile.mkdtemp(prefix="mkb-visual-missing-"))
+        shutil.rmtree(missing_root, ignore_errors=True)
+        write_settings(
+            welcome_appdata,
+            "light",
+            missing_root,
+            vault_id_of(missing_root),
+            layout={
+                "sidebarWidth": 232, "docWidth": 560, "docCollapsed": True,
+                "sidebarCollapsed": False, "agnesControlsCollapsed": False,
+                "agnesHistoryOpen": True, "agnesComposerHeight": 96,
+            },
+        )
+        # 没有 lastVaultId：停在欢迎页而不是打开工作台。
+        data_dir = Path(welcome_appdata) / "Mile Knowledge Base"
+        payload = json.loads((data_dir / "settings.json").read_text(encoding="utf-8"))
+        payload.pop("lastVaultId", None)
+        (data_dir / "settings.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2) + chr(10),
+            encoding="utf-8",
+            newline=chr(10),
+        )
         app = subprocess.Popen(
             [str(APP)],
             env={**os.environ, "APPDATA": welcome_appdata, "MYGO_AUTOMATION": f"tcp:127.0.0.1:{PORT}"},
@@ -772,15 +795,29 @@ def main():
         DRIVER.wait("!!document.querySelector('.welcome-shell')", 40)
         step("00 welcome light", lambda: time.sleep(0.8), "00", "welcome")
         step(
+            "01 onboarding step 1",
+            lambda: (
+                DRIVER.js(
+                    "(() => { const b = [...document.querySelectorAll('button')]"
+                    " .find((x) => x.textContent.includes('新建知识库向导'));"
+                    " if (!b) throw new Error('guide entry missing'); b.click(); return true; })()"
+                ),
+                DRIVER.wait("!!document.querySelector('.welcome-guide-backdrop .onboarding')", 8),
+                time.sleep(0.4),
+            ),
+            "01", "onboarding-step1",
+        )
+        DRIVER.js(
+            "(() => { const b = [...document.querySelectorAll('.welcome-guide-backdrop button')]"
+            " .find((x) => x.textContent.trim() === '返回'); if (b) b.click(); return true; })()"
+        )
+        time.sleep(0.4)
+        step(
             "03 welcome dark",
             lambda: (DRIVER.js("window.__mkbApp.getState().setTheme('dark')"), time.sleep(0.8)),
             "03", "welcome-dark", theme="dark",
         )
-        for entry_id, name, note in [
-            ("01", "onboarding-step1", "欢迎页与引导在新版是同一屏（旧版为两步：欢迎页 + 引导覆盖层）"),
-            ("02", "onboarding-step2", "非空目录确认需要系统选目录对话框，自动化不可达（T13 e2e 覆盖流程）"),
-        ]:
-            shot(entry_id, name, note=note, status="skipped")
+        shot("02", "onboarding-step2", note="非空目录确认需要系统选目录对话框，自动化不可达（T13 e2e 覆盖流程）", status="skipped")
 
         log("== no-provider phase")
         app.terminate()

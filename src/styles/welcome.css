@@ -137,3 +137,19 @@
     grid-row: span 1;
   }
 }
+
+/* T11b: the new-vault guide is an overlay over the welcome page (legacy). */
+.welcome-guide-backdrop {
+  position: fixed;
+  inset: var(--titlebar-h) 0 0 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(10 12 16 / 0.28);
+  overflow-y: auto;
+}
+
+.welcome-guide-backdrop .onboarding {
+  width: min(560px, calc(100vw - 48px));
+}
