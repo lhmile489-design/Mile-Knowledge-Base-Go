@@ -32,6 +32,7 @@
 | [docs/PLAN-M1.md](docs/PLAN-M1.md) | M1 实施计划、交接、验收与账本 | 已完成并推送（59a1076） |
 | [docs/PLAN-M2.md](docs/PLAN-M2.md) | M2 实施计划、交接、验收、性能与账本 | 已完成并推送（f6d663a） |
 | [docs/PLAN-M3.md](docs/PLAN-M3.md) | M3 实施计划、验收、性能与账本 | 已完成并推送（765f908） |
+| [docs/PLAN-M3.5.md](docs/PLAN-M3.5.md) | M3.5 主题色实施计划 | v0.1 草案，待审批 |
 | [docs/UI设计稿.md](docs/UI设计稿.md) 与 `design/baseline/`、`design/r2/` | 页面与状态清单、旧版截图基线；第 9 节与 `design/r2/` 是 R2 技能浮层原型 | 已确认 v1.0；第 9 节 2026-11-20 审核通过 |
 | [docs/decisions.md](docs/decisions.md) | 重要取舍 | 按需记录 |
 | [docs/发布清单.md](docs/发布清单.md) | 发布与恢复验证 | 模板 |
