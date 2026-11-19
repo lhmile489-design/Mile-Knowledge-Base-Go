@@ -176,6 +176,22 @@
 - 正文同步情况：已回写 PRD 与 PLAN。
 - 附录（2026-11-19，T20 整体审查修复）：grant 进一步按变更 kind 绑定——`AllowMutation` 带 kind，`ConsumeFreshMutation` 只接受 `kind=permanentDelete` 的卡，move/copy 等其它结构变更的批准也不能顶替永久删除。D-012 的「只认变更审批卡」据此收窄为「只认永久删除的变更审批卡」。受影响：internal/ai/approval.go、internal/service/tools.go、internal/ai/approval_test.go（`TestMutationGrantIsKindBound`）。
 
+## D-013：M3 计划的 4 项选择与 2 项契约修订
+
+- 日期与状态：2026-11-19，已确认（用户批准 docs/PLAN-M3.md v0.2 并放行 T00）。
+- 背景：编写 M3 计划时，有 4 处口径需要用户选择；另有 2 处契约按现有文档无法实现。
+- 结论：
+  1. **「进检索」真正生效，范围只含全文检索**：关掉后该一级目录下的文件不再出现在搜索面板（M24）与 Agent 的 `search_notes`；链接解析、反向链接、健康检查不受影响。原因：新版链接图与健康都按 `ignored` 过滤（`internal/index/project.go:30,76`、`internal/index/health.go:49`），若一并排除，指向这些目录的 wikilink 会全部变成未解析、断链数暴涨，不是用户选「真正生效」的意图。与旧版的差异：旧版只保存不生效（`IndexService.ts` 不读 categories.json）。实现：`documents.search_excluded` 独立列，不复用 `ignored`；M65 保存后后台重标记并发 `index-status`。
+  2. **旧版性能基线在 M3 实测**（T12）：在沙箱里运行旧版 Electron，只读引用旧版仓库；测得基线后，PRD 10.1 的目标按「新版实测 / 旧版基线 / 原目标」给出校准建议，**经用户确认后**把 G-PERF 从警告改为阻断，并做正反对照。Q7 至此收口。
+  3. **发布只做本地安装包与本机冒烟**：`mygo build` 产出安装包，本机安装、从 0.1.0 升级、卸载；不发 GitHub Release，不做代码签名（没有证书，SmartScreen 警告写进发布清单的已知风险）。安装动作执行前再单独确认一次。
+  4. **首个发布版本号 1.0.0**：与旧版 v2.7.0 并存（identifier `dev.mile.kb`），不做 2.8.0 之类的续号。
+  5. **关于与诊断新增两个绑定**：M74 `aboutInfo` 返回版本、技术栈、引擎状态与能力、重启次数、存储位置列表（`display` 为脱敏路径）；M75 `copyStoragePath(kind)` 由 Go 把真实路径写入系统剪贴板，`credentials` 返回 `unsupported`。原因：API 第 1 节约定不向前端发完整路径，而 PRD FR-SET 要求每行可复制。剪贴板写入经可替换接口注入，测试不依赖真实剪贴板。
+  6. **索引 schema 版本 +1**：`documents` 新增 `search_excluded INTEGER NOT NULL DEFAULT 0`；`meta.schema_version` +1；版本不符按数据库设计第 6 节「删库重建」处理（派生数据）。FTS 表结构不变，排除只作用于查询。
+- 原因：第 1、2 条把「设置项可见但无效」「性能目标没有基线」两处欠账在 M3 收口；第 3、4 条是发布口径；第 5、6 条让契约能支撑实现。
+- 代价与风险：进检索生效后，关掉开关的目录在搜索里消失、链接仍可跳转——刻意选择，分类页脚注会说明；旧版基线要运行旧版 Electron，写入风险由沙箱与快照比对兜底；无签名安装包在别的机器上会触发 SmartScreen。
+- 受影响：docs/PRD.md（FR-AREA、FR-SET、Q7，v1.9）、docs/API.md（M74、M75、M65、§2.2 方法总数 74、§3 映射、§4.8、§10）、docs/数据库设计.md（4.5、第 6 节重建规则）、docs/技术设计.md（第 6 节交付、第 10 节 G-PERF）、docs/PLAN-M3.md。
+- 正文同步情况：已回写上述文档。
+
 ## 单条模板
 
 ### 待编号：决策标题

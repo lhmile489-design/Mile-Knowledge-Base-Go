@@ -23,7 +23,7 @@
 | [CLAUDE.md](CLAUDE.md) | 唯一约束入口：执行规则、当前阶段、文档索引、Skills | 已填项目事实 |
 | [WORKFLOW.md](WORKFLOW.md) | 13 阶段流程、审核、完成标准 | 通用规范 |
 | [PRODUCT.md](PRODUCT.md) | 产品定位、用户、概念、长期边界 | 已确认 |
-| [docs/PRD.md](docs/PRD.md) | 重写版需求范围、规则与验收 | 已确认 v1.8 |
+| [docs/PRD.md](docs/PRD.md) | 重写版需求范围、规则与验收 | 已确认 v1.9 |
 | [DESIGN.md](DESIGN.md) | 全局 UI 契约 | 已确认 v1.0 |
 | [docs/技术设计.md](docs/技术设计.md) | 选型、架构、质量门禁 | 已确认 v1.0 |
 | [docs/API.md](docs/API.md) | Go 绑定与事件契约 | 已确认 v1.0 |

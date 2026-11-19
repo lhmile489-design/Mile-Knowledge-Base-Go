@@ -185,8 +185,10 @@ type LoadResult struct {
 | M71 | `SettingsService.skillCatalog(vaultId)` | Settings | FR-AI-PROV | `SkillCatalog(ctx, vaultId string) (*SkillCatalogResult, error)` | `vault-unavailable` |
 | M72 | `SettingsService.recentDocuments(vaultId)` | Settings | FR-OVW | `RecentDocuments(ctx, vaultId string) (*RecentDocumentsResult, error)` | `vault-unavailable` |
 | M73 | `SettingsService.noteDocumentOpened(vaultId, path)` | Settings | FR-OVW | `NoteDocumentOpened(ctx, ...) (*RecentDocumentsResult, error)` | `not-found`、`invalid-input` |
+| M74 | `SettingsService.aboutInfo()` | Settings | FR-SET | `AboutInfo(ctx) (*AboutInfoResult, error)` | `io-failure` |
+| M75 | `SettingsService.copyStoragePath(kind)` | Settings | FR-SET | `CopyStoragePath(ctx, kind string) (*CopyStoragePathResult, error)` | `invalid-input`、`unsupported`（credentials）、`io-failure` |
 
-共 72 个绑定方法；M19 是协议端点（§5），不在绑定方法内。
+共 74 个绑定方法；M19 是协议端点（§5），不在绑定方法内。
 
 ### 2.3 Channel 与事件目录
 
@@ -288,6 +290,8 @@ type LoadResult struct {
 | `agent:event` | **删除**（并入 C01 Channel） | merge | 见 M39 行；全局广播改为随回合的 Channel |
 | 引擎 RPC（`EngineHost` 内部） | **删除** | drop | 旧版引擎是 utilityProcess、经内部 RPC 与 Main 通信；新版引擎在 Go 进程内运行，无此边界（技术设计 §4.6，agnes-engine §13） |
 | `vault:read-image` 的 data URI 通道 | `kbimg://` 自定义协议（§5） | change | 见上 |
+| （无） | `SettingsService.aboutInfo` M74 | add | 旧版关于页直接读渲染进程内的 store 与构建注入的版本号，没有对应频道 |
+| （无） | `SettingsService.copyStoragePath` M75 | add | 旧版复制按钮在渲染进程用剪贴板 API 写 `credentialsPath`；新版不向前端发完整路径，改由宿主写剪贴板（D-013） |
 
 汇总：67 个旧版请求频道中，`same` 58 个、`merge` 3 个（provenance×2 + agent:event）、`split` 2 个（vault:mutate → plan/execute、window:command → 3 个方法）、`drop` 4 个（vault:read-image、vault:watch、agent:set-config、引擎 RPC）、`change` 2 个（agent:prompt 返回值不变但事件并入 Channel、vault:read-image 改 kbimg 协议——该行在表中按「删除 + 协议替代」记入 drop 与 change 各一次）。10 个旧版广播事件全部保留：9 个仍是 Event，`agent:event` 并入 `Prompt` 的 Channel；另新增 `engine-status`（原 sidecar 语义，独立于回合）与 `app-notice`。
 
@@ -575,10 +579,10 @@ type RetrievalItem struct {
 | --- | --- | --- | --- |
 | `get` M60 | — | `{settings: AppSettings, resolvedTheme, platform}` | ipc.ts:522-533 |
 | `patch` M61 | `closeBehavior ∈ ask\|tray\|quit`；`theme ∈ light\|dark\|system`；layout 各宽度/高度**夹到边界不拒绝**（sidebarWidth 192–320、docWidth 320–800、composerHeight 72–400）；`lastVaultId` 可为 `null` | 同 `get` | validate.ts:428-503；settings.ts:14-39 |
-| `appConfigGet` M62 | — | 扁平 `AppConfigResult{vaultId, aliases, categories(raw), agents}`；`agents` 固定 4 个键。旧版是 `{config: AppConfig{...}}` 包一层，新版从 M1 起就是扁平的 | appConfig.ts:497-508 |
+| `appConfigGet` M62 | — | 扁平 `AppConfigResult{vaultId, aliases, categories, agents}`；`categories` 为按数据库设计 3.2 解析后的数组（非法行丢弃，不原样透传）；`agents` 固定 4 个键。旧版是 `{config: AppConfig{...}}` 包一层，新版从 M1 起就是扁平的 | appConfig.ts:497-508 |
 | `appConfigPatchAgent` M63 | patch 只处理提供的键：model ≤128 可空、effort ∈ 5 档、approval ∈ ask\|auto\|yolo、steering ≤4000 **截断不拒绝**、skillPaths ≤500 条各过路径校验（非法路径 `path-escape`） | 同 M62；写盘后回新配置 | validate.ts:513-560 |
 | `appConfigResetSteering` M64 | — | 把该 Agent 的 steering 与 `steeringBaseVersion` 恢复为内置默认并写盘，回新配置 | — |
-| `appConfigSetCategories` M65 | categories ≤200 条；非法行**丢弃不抛错** | 同上 | validate.ts:567-577；appConfig.ts:438-486 |
+| `appConfigSetCategories` M65 | categories ≤200 条；非法行**丢弃不抛错**；「进检索」变化后由 Go 后台重标记索引并推 `index-status`（E02），不重建 FTS（D-013） | 同上 | validate.ts:567-577；appConfig.ts:438-486 |
 | `appConfigPatchAliases` M66 | aliases ≤2000 条；key 是合法相对路径，value `null` 或空串删除；非法 key 静默跳过 | 同上 | validate.ts:579-616 |
 | `providers` M67 | — | `{providers: ProviderDraft[], credentials: [{envName, isSet}]}` —— **绝不含 key 值，连掩码都没有**。新版没有凭据文件（key 在 OS 凭据管理器），旧版的 `credentialsPath` 字段删除 | ipc.ts:611-620；appConfig.ts:116-119；D-011 |
 | `saveProviders` M68 | providers ≤32（保存路径上限，旧版 `validate.ts:618 MAX_PROVIDERS=32`；读取 providers.json 时另按 `ProviderStore.ts:36` 最多保留 50 条——两个数字都是旧版代码，Q1 已关闭）；每个过 `normalizeProviderDraft`：name 以字母数字开头 ≤64、kind ∈ openai\|anthropic、baseUrl http(s) host 非空 ≤512、models ≤32 各 ≤128 至少 1 个、apiKeyEnv 匹配 `^[A-Za-z_][A-Za-z0-9_]*$` ≤96 可空、contextWindow 正整数可选；名称忽略大小写去重 | 同上 | validate.ts:622-644；appConfig.ts:103-286 |
@@ -587,6 +591,8 @@ type RetrievalItem struct {
 | `skillCatalog` M71 | — | `{skills: [{path, category, name}]}`；由 Go 读取索引（`skills/…/SKILL.md`，深度 ≥3，分类取第二段，名字优先索引标题、退回目录名，按分类与名字排序）；索引未打开时返回空数组 | ipc.ts:622-629 |
 | `recentDocuments` M72 | — | `{vaultId, documents: RecentDocument[]}`；已过滤掉暂时不存在的，但不回写删除 | ipc.ts:697-701；FR-OVW |
 | `noteDocumentOpened` M73 | 文件必须真实存在（防塞任意字符串） | 同上 | register.ts:589-593 |
+| `aboutInfo` M74 | — | `{version, techStack, engine: EngineStatus, capabilities: EngineCapabilities, restartCount, storage: [{kind, label, display}]}`；`display` 一律脱敏（库根 → `<vault>`、主目录 → `<home>`），不含绝对路径；`kind ∈ vault-root\|vault-settings\|providers\|app-data\|logs\|credentials`；`credentials` 的 `display` 是固定文字「Windows 凭据管理器」 | FR-SET；D-011、D-013 |
+| `copyStoragePath` M75 | `kind` 同上；`credentials` 返回 `unsupported` | `{ok: true}`；由 Go 把真实路径写入系统剪贴板（经可替换接口，测试不依赖真实剪贴板） | D-013 |
 
 `patch` 副作用：字段全部校验完再组装，抛错不留半个 patch（validate.ts:428-503）；`theme` 变化时先持久化成功再 `Theme.SetSource` + 推 `theme-changed`（mygo-web-app skill desktop-integration §3）。
 
@@ -781,6 +787,6 @@ type PermissionOption struct {
 
 ## 10. 范围与状态声明
 
-- 本文覆盖 PRD v1.5 全部 P0 功能对前端暴露的接口面；Agent 知识库工具（8 个 OpenAI function calling 工具）是给模型的接口，不是前端接口，见 `kb-tool-schemas.json` 与 agnes-engine §6。
+- 本文覆盖 PRD v1.9 全部 P0 功能对前端暴露的接口面；Agent 知识库工具（8 个 OpenAI function calling 工具）是给模型的接口，不是前端接口，见 `kb-tool-schemas.json` 与 agnes-engine §6。
 - `.mile-kb/` 文件格式、SQLite 索引结构、应用数据文件格式不在本文，见 数据库设计.md。
-- 所有接口状态为「已设计、未实现」；实施与验证在阶段 09 的 PLAN 中跟踪。
+- M0–M2 的接口已实现并通过门禁（见 docs/PLAN-M0/M1/M2.md 的账本）；M74、M75 与 M65 的进检索副作用为「已设计、未实现」，随 M3 的 T02、T07 实现并验证（docs/PLAN-M3.md）。
