@@ -147,7 +147,7 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 | T10 | 新版截图与并排对照 | `scripts/visual/capture-new.py`（新）、`design/compare/`（生成物，已 gitignore） | T09 | 按 manifest 编号驱动新版到同状态并截图；生成本地并排对照页；差异清单 | 56 个编号全部有截图或写明原因；差异清单入第 6 节 | 已验证 |
 | T11 | 视觉差异修复 | 按 T10 清单 | T10 | 修复项与有意差异记录 | **拆分**：T11 修模型服务「更多」菜单并复核两个疑点；欢迎页/引导结构与 34–46 对话逐张对照转 T11b | 待验证 |
 | T11b | 视觉差异修复（二）：欢迎页与引导结构 | `WelcomeView.tsx`、`welcome.css`、`scripts/visual/capture-new.py` | T11 | 引导改为欢迎页上的覆盖层；00/01/03 重拍 | 结构对齐；02 与 34–46 对话留人工/用户并排看 | 待验证 |
-| T12 | 旧版性能基线与 G-PERF 校准 | `scripts/perf-legacy/`（新）、docs/PRD.md 10.1、docs/技术设计.md 第 10 节 | T11 | 旧版在同样本上的实测值；新旧对比；校准后的目标 | 用户确认校准值后 G-PERF 改为阻断，并做正反对照 | 待做 |
+| T12 | 旧版性能基线与 G-PERF 校准 | `scripts/perf-legacy/{bench.cjs,bench.sh}`（新）、docs/PLAN-M3.md 第 6 节 | T11b | 旧版同样本冷启动与检索实测；新旧对比与校准建议 | 实测已入第 6 节；**G-PERF 改阻断待用户确认校准值** | 待验证 |
 | T13 | M3 闭环验收与全量回归 | `scripts/e2e/ac-m3.sh`（新）、`scripts/test-e2e.sh` | T12 | AC-M3、ac-m0..m3 全量回归 | `bun run test:e2e` 退出码 0 | 待做 |
 | T14 | 1.0.0 安装包与本机冒烟 | `mygo.config.ts`、`resources/`、docs/发布清单.md、README | T13 | 安装包；安装、升级、卸载冒烟；发布清单 | V-REL 中本机项全部通过；用户环境项列明 | 待做 |
 | T15 | 整体独立审查 | 本计划第 6 节、审查报告 | T14 | 审查结论与修复 | 阻断与需改全部处理 | 待做 |
@@ -340,6 +340,8 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 | V-MAN-1 | 13 项窗口手动确认（spikes/r4-window/RESULT.md 第 4 节） | 用户操作 | 结果回填 | 用户环境 |
 | V-MAN-2 | 真实供应商（R-4） | 用户填真实 key 发长回答 | 流式流畅，结果回填 | 用户环境 |
 
+旧版基线口径（T12，脚本 `scripts/perf-legacy/bench.sh`）：沙箱 APPDATA + 旧版 `out/main`，样本由 `cmd/genvault` 生成，与 M0/M1 新版测量同一生成器；冷启动计时从驱动脚本入口开始（不含 Electron 进程启动），新版从进程启动起算；检索经渲染层 `__mileSearchStore`（含输入防抖与 IPC），新版 M1 数字为后端调用，两者不可直接相减。未测：1000 文件外部改动的旧版长任务（PRD 已记为机制性卡顿）、空闲/打开库后的内存、旧版安装包体积（旧仓库未打安装包）、外部改动同步端到端计时。历史查看器旧版 172–189ms 与流式 6.7–9.9ms/帧沿用 PRD 既有基线。红线核对：跑完旧版仓库 `git status --porcelain` 与 T12 前快照一致（仅既有 ` D commit-msg.txt`），真实 `%APPDATA%` 未读写。
+
 视觉对照（T10 采集、T11 复核）：56 个 manifest 编号全部有结果——49 张已截、7 条写明原因；本地并排页 `design/compare/index.html`（生成物，不入库）。T11 复核结论：总览容器断点实测生效（360px → 单列 328px）；`.obsidian` 在树数据里存在（侧栏滚动位置问题，不是过滤）；无供应商阶段改为先开新对话再拍，40 正确呈现离线。T11b 已把引导改成欢迎页上的覆盖层并重拍 00/01/03；02 需原生对话框。仍待用户：34–46 对话逐张对照，以及三项有意差异确认（40 离线口径、关于页技术栈 D-013、Agent 状态无「重启中」）。
 
 性能（PRD 10.1；T12 填写）：
@@ -355,6 +357,9 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 | 历史查看器首帧 | ≤100ms | M2：62.4ms | 172–189ms | 待定 |
 | 长列表滚动 | 60fps | M0：树 5 000 项 0 长任务；M2：消息虚拟化最多 9 项；搜索与日志 200 条未单独测 | 未虚拟化 | 待定 |
 | 进检索切换（1 万文档） | 远小于全量重建 | 70.3ms（全量构建 18.6s；2026-11-19 一次性测量） | — | — |
+| 冷启动（典型） | ≤1.5s | 910–1101ms（M1，进程启动起算） | **1067ms**（T12 实测，脚本起算，不含 Electron 进程启动） | 建议维持 ≤1.5s |
+| 冷启动 / 大库首屏（大：1 万 md + 5 千代码文件） | 首屏 ≤300ms | 冷启动 1093ms、首屏数据约 320ms（M0/M1） | **5944ms**（T12 实测，脚本起算） | 建议维持「首屏 ≤300ms + 后台索引」 |
+| 检索响应 p95（典型 / 大） | ≤100 / ≤200ms | 2.7ms / 45.3ms（M1，后端调用） | **210ms / 281ms**（T12 实测，经渲染层 store，含 180–250ms 输入防抖与 IPC） | 建议维持现目标；口径差异见备注 |
 | 内存与包体 | 低于旧版 | 待测 | 待测 | 待定 |
 
 ## 7. 协作、审查与执行方式
@@ -392,14 +397,15 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 
 ### 下次会话先读
 
-- 当前阶段：T11b 已完成并提交：欢迎页与引导结构对齐旧版（覆盖层），00/01/03 重拍；整轮 `50 captured, 0 failed`。对话 34–46 的逐张视觉判断仍需用户看对照页。
-- 下一个任务：T12（旧版性能基线与 G-PERF 校准）；对话视觉确认可随时插入。
+- 当前阶段：T12 已实测旧版基线（典型 1067ms/210ms，大库 5944ms/281ms），校准建议为维持 PRD 目标；G-PERF 改阻断待用户确认。对话 34–46 视觉确认仍待用户。
+- 下一个任务：T13（M3 闭环验收与全量回归），或按用户确认先落 G-PERF。
 - 工作区：`main` 与 `origin/main` 同在 `3aa3fba`；本计划尚未提交。
 - 待决事项：无（B-M3-01、B-M3-05、B-M3-06 已确认）；其余设计口径随各任务确认。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | 独立审查（task-reviewer，只读）0 阻断、2 需改、5 建议，主会话逐条复核后全部采纳：**需改** ①T12 补前置断言（沙箱内 appData/userData）与旧版仓库快照比对；②V-SET-ABOUT-2 补剪贴板验证通道（Go 注入 + e2e readText，权限被拒时人工确认）；**建议** ③新增 V-A11Y-1（DESIGN.md 7.2）；④T09 写明新版侧栏已显示系统配置分区；⑤T15 加旧版仓库与真实应用数据的红线核对；⑥T00 写明 API 四处同步；⑦V-IDX-2 改为验证 `ignored` 链路不受影响。另修 2 处行号偏差（OverviewGrid 265、603）。复核时新发现：旧版仓库已有既有改动 `D commit-msg.txt`（非本轮造成，来源无法确认，未处理），T12 改为快照比对 | docs/PLAN-M3.md v0.2 | 审查抽查：旧版引用 20 处中 18 处属实（2 处行号差 1 行已修）、新版代码事实 9 处、mygo 文档 3 处、契约一致 4 处全部属实；审查标「未核实」的旧版 `electron.exe` 已确认存在 | B-M3-01、05、06 | T00（待批准） |
+| 2026-11-19 | T12 完成实测（旧版性能基线），G-PERF 待确认 | `scripts/perf-legacy/bench.cjs`（新，在旧版 Electron 里运行：沙箱 `app.setPath`、只读 `out/main`、等侧栏渲染、经 `__mileSearchStore` 跑 12 条查询取 p95）与 `bench.sh`（genvault 同样本、临时 APPDATA、settings 注册知识库、结果 JSON）。**实测**：典型冷启动 1067ms、检索 p95 210ms；大库（1 万 md + 5 千代码）冷启动 5944ms、检索 p95 281ms。**新版对照**（M0–M2 同脚本）：典型 910–1101ms、大库 1093ms；检索 p95 2.7/45.3ms（后端口径）。**校准建议**：PRD 10.1 目标维持不变（新版全部明显优于旧版），G-PERF 可在用户确认后从警告改为阻断；口径差异与未测项（1000 文件长任务、内存、旧版安装包、外部同步计时）已写入第 6 节。**红线**：旧版仓库状态与快照一致，未碰真实应用数据 | `scripts/perf-legacy/{bench.cjs,bench.sh}`、docs/PLAN-M3.md | 两轮脚本实跑：`kind=typical cold=1067ms searchP95=210.4ms samples=12`、`kind=big cold=5944ms searchP95=280.6ms samples=12`；旧版仓库 `git status` 与快照一致 | G-PERF 改阻断待用户确认；其余指标未测项已记录 | T13（待放行） |
 | 2026-11-19 | T11b 完成（欢迎页与引导结构） | `WelcomeView.tsx`：去掉「首次运行直接用向导替换整页」的分支，欢迎页始终渲染（主卡 + 最近库 + 已断开卡），「新建知识库向导」按钮打开**覆盖层**（旧版结构）；首次运行仍不可返回（与旧版 `canDismiss=false` 一致），有已登记库时 Esc/返回可关闭；`welcome.css` 加覆盖层样式（从标题栏下方开始、居中、宽 560）。`capture-new.py` 欢迎阶段改为写入一条**已断开的最近库**再启动：00 同时出现故障卡、向导可关闭；01 现在真实截到（步骤 1 覆盖层），02 仍需原生选目录对话框（跳过并写明原因）。**重拍**：00/01/03 更新，整轮 `50 captured, 0 failed`。**未完成**：34–46 对话逐张视觉判断仍需用户并排看（我这边读图不可靠，已两次张冠李戴）；三项有意差异（40 离线口径、关于页文案、Agent 状态无重启）仍待用户确认 | `src/components/WelcomeView.tsx`、`src/styles/welcome.css`、`scripts/visual/capture-new.py`、docs/PLAN-M3.md | `tsc --noEmit` 无错；vitest 187 项；`npm run build:web` 成功；`go test ./...` 513 项；e2e 重建后截图 `50 captured, 0 failed`（02 与 14/56/57/58/59 共 6 条写明原因） | 对话视觉与三项有意差异需用户确认 | T12（待放行） |
 | 2026-11-19 | T11 完成可独立做的部分（更多菜单与疑点复核） | `src/lib/providerForm.ts` 加 `moveToFront` + 2 项 vitest。`ModelServiceSection`：行内「更多」菜单（`⋯`，`role=menu`，点外面/Esc 关闭）——**更换 API Key**（行内 password 输入 + 保存/取消，空值禁用，保存后刷新）、**移到首位**（`saveProviders` 立即保存，首位禁用）、**删除**（沿用 600ms 两步确认）；原独立的删除按钮收进菜单，与旧版结构一致。**疑点复核**：①总览断点——用 automation 实测 `overview-shell` 客户端宽 360px 时 `gridTemplateColumns` 为单列 328px，`container-type: inline-size` 生效，T10 的「两列」是误读，不是缺陷；②空目录——根目录条目里 `.obsidian` 存在（12 个目录齐全），侧栏只是滚动位置未露出，不是过滤。**采集修正**：无供应商阶段先 `newConversation()` 再拍（前面阶段留下了历史，否则拍到的是旧对话），40 现在正确呈现离线空状态。**重拍**：e2e 重建后整轮 `49 captured, 0 failed`。**转交 T11b**：欢迎页与引导结构（旧版欢迎页 + 两步覆盖层，新版一屏）与 34–46 对话逐张视觉对照；**待用户确认的有意差异**：40 的离线口径（API M38）、关于页技术栈与存储位置文案（D-013）、Agent 状态无「重启中」 | `src/lib/{providerForm.ts,providerForm.test.ts}`、`src/components/settings/ModelServiceSection.tsx`、`src/styles/settings.css`、`scripts/visual/capture-new.py`、docs/PLAN-M3.md | `tsc --noEmit` 无错；**vitest 187 项（+2）**；`npm run build:web` 成功；`go test ./...` 513 项不变；e2e 重建后截图 `49 captured, 0 failed`；探针输出（360px → 单列；根目录 12 个含 `.obsidian`） | 有意差异待用户确认；T11b 的范围待用户决定 | T11b（待确认） |
 | 2026-11-19 | T10 完成（新版截图与并排对照） | `scripts/visual/capture-new.py`（新，约 700 行）：临时样本库（逐字移植旧版 `buildVault`：skills/raws/projects/同名/大文件/provenance 等）、临时 APPDATA（`%APPDATA%\Mile Knowledge Base`，真实数据不碰）、假供应商、automation 驱动；`capture` 结果 base64 落 PNG；三阶段（workbench + 欢迎页 + 无供应商）。逐状态驱动写库/store/DOM，单状态失败只记录不中断；产出 `design/compare/new/manifest.json` 与本地并排页 `design/compare/index.html`（已加入 .gitignore）。**覆盖：56 个编号全部有结果——49 张已截、7 条写明原因**（01/02 欢迎页与引导合并且非空目录确认需原生对话框、14 悬停态需真实指针、56/57 automation 无窗口缩放、58/59 原生对话框旧版也未截）。**差异清单（T11 处理）**：①欢迎页与引导在新版是一屏，旧版为欢迎页 + 两步覆盖层，是否拆分留给 T11；②40 未配置模型服务：新版按 API M38 显示离线原因（旧版截图显示在线，既有记录）；③关于页技术栈与存储位置是新版实际值（有意差异，D-013）；④Agent 状态没有「重启中」（引擎在进程内）；⑤**待核对**：对话列约 400px 时总览仍是两列，需确认 `container-type` 断点是否生效；⑥**待核对**：侧栏没显示空的 `.obsidian` 目录，需确认树是否过滤空目录；其余按 `design/compare/index.html` 人工并排看 | `scripts/visual/capture-new.py`、`.gitignore`、docs/PLAN-M3.md | 脚本连跑通过：`done: 49 captured, 0 failed`；与旧版 manifest 的 56 个 id 一一对应（missing/extra 均为空）；每张 PNG 与旧版基线字节不同；两轮复跑覆盖稳定 | 差异的视觉判断属 T11 与用户；⑤⑥ 是可疑项不是结论 | T11（待放行） |
