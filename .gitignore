@@ -28,3 +28,6 @@ Thumbs.db
 spikes/**/node_modules/
 spikes/**/build/
 spikes/**/*.exe
+
+# 视觉对照生成物（本地看，不入库）：scripts/visual/capture-new.py
+design/compare/
