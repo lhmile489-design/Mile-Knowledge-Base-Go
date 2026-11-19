@@ -348,6 +348,13 @@ export interface FileEntry {
   alias?: string;
 }
 
+/** ImportSkillsResult is M15. Reason is exists | unknown | too-large | failed. */
+export interface ImportSkillsResult {
+  imported: string[];
+  skipped: SkillSkip[];
+  failure?: Failure;
+}
+
 /**
  * IndexStatus is what IndexService.Status (M25) returns and what the
  * index-status event (E02) carries.
@@ -469,6 +476,17 @@ export interface PickFolderResult {
   empty: boolean;
   entryCount: number;
   willCreate: string[];
+  failure?: Failure;
+}
+
+/**
+ * PickSkillSourceResult is M14: the wizard's source step. Candidates are the
+ * skills found one level under the picked folder (or the folder itself).
+ */
+export interface PickSkillSourceResult {
+  cancelled: boolean;
+  token?: string;
+  candidates: SkillCandidate[];
   failure?: Failure;
 }
 
@@ -718,6 +736,12 @@ export interface SharedContextResult {
   failure?: Failure;
 }
 
+/** SkillCandidate is one importable skill. */
+export interface SkillCandidate {
+  name: string;
+  fileCount: number;
+}
+
 /** SkillCatalogResult is the M71 payload. */
 export interface SkillCatalogResult {
   skills: SkillEntry[];
@@ -729,6 +753,12 @@ export interface SkillEntry {
   path: string;
   category: string;
   name: string;
+}
+
+/** SkillSkip is one skill the import left alone. */
+export interface SkillSkip {
+  name: string;
+  reason: string;
 }
 
 /** StatusFrame is a turn-phase or retry hint (§6). */
@@ -926,6 +956,12 @@ export const VaultService = {
   createVault: bind<[string, boolean], ChooseVaultResult>("VaultService.CreateVault", (token: string, confirmNonEmpty: boolean) => [token, confirmNonEmpty]),
   /** Forget removes a vault and its recent documents. */
   forget: bind<[string], VaultListResult>("VaultService.Forget", (vaultID: string) => [vaultID]),
+  /**
+   * ImportSkills copies the selected skills into skills/<category>/ (M15). The
+   * token is not consumed: a name that already exists can be retried under
+   * another category until the token expires.
+   */
+  importSkills: bind<[string, string, string, string[]], ImportSkillsResult>("VaultService.ImportSkills", (vaultID: string, token: string, category: string, names: string[]) => [vaultID, token, category, names]),
   /** List returns the registered vaults. */
   list: bind<[], VaultListResult>("VaultService.List", () => []),
   /** Open makes a registered vault active. */
@@ -935,6 +971,11 @@ export const VaultService = {
    * the absolute path.
    */
   pickFolder: bind<[], PickFolderResult>("VaultService.PickFolder", () => []),
+  /**
+   * PickSkillSource is the skill wizard's first step (M14): pick a folder, list
+   * the skills one level down and hand back an opaque token.
+   */
+  pickSkillSource: bind<[], PickSkillSourceResult>("VaultService.PickSkillSource", () => []),
   /** Retry re-checks an unavailable vault. */
   retry: bind<[string], VaultListResult>("VaultService.Retry", (vaultID: string) => [vaultID]),
 } as const;

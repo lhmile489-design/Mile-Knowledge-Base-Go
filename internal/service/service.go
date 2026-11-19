@@ -70,6 +70,7 @@ type App struct {
 	quitting       bool
 	dirty          bool
 	picks          map[string]pickToken
+	skillPreviews  map[string]*vault.SkillSourcePreview
 	watchers       map[string]context.CancelFunc
 	indexes        map[string]*indexHandle
 	vaultRevisions map[string]int64
@@ -106,6 +107,7 @@ func New(dataDir, legacyDir string) (*App, error) {
 		Blocks:         render.NewBlockCache(),
 		auditErr:       auditErrText(auditErr),
 		picks:          map[string]pickToken{},
+		skillPreviews:  map[string]*vault.SkillSourcePreview{},
 		watchers:       map[string]context.CancelFunc{},
 		indexes:        map[string]*indexHandle{},
 		vaultRevisions: map[string]int64{},
@@ -320,6 +322,132 @@ func (s *VaultService) PickFolder(ctx context.Context) contract.PickFolderResult
 		EntryCount:  count,
 		WillCreate:  willCreate,
 	}
+}
+
+// PickSkillSource is the skill wizard's first step (M14): pick a folder, list
+// the skills one level down and hand back an opaque token.
+func (s *VaultService) PickSkillSource(ctx context.Context) contract.PickSkillSourceResult {
+	result := contract.PickSkillSourceResult{Candidates: []contract.SkillCandidate{}}
+	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+		Parent:    mygo.CallerWindow(ctx),
+		Title:     "选择技能所在的文件夹",
+		Directory: true,
+	})
+	if err != nil || len(paths) == 0 {
+		result.Cancelled = true
+		return result
+	}
+	preview, err := vault.PreviewSkillSource(paths[0])
+	if err != nil {
+		result.Failure = contract.Fail(contract.CodeIOFailure, "无法读取技能目录")
+		return result
+	}
+	app := s.app
+	// Drop previews whose token already expired, so the map cannot grow forever.
+	app.mu.Lock()
+	for token := range app.skillPreviews {
+		if item, ok := app.picks[token]; !ok || time.Now().After(item.expiresAt) {
+			delete(app.skillPreviews, token)
+		}
+	}
+	app.mu.Unlock()
+
+	token := app.newPickToken(paths[0])
+	app.mu.Lock()
+	app.skillPreviews[token] = preview
+	app.mu.Unlock()
+
+	for _, candidate := range preview.Candidates {
+		result.Candidates = append(result.Candidates, contract.SkillCandidate{
+			Name: candidate.Name, FileCount: candidate.FileCount,
+		})
+	}
+	result.Token = token
+	return result
+}
+
+// ImportSkills copies the selected skills into skills/<category>/ (M15). The
+// token is not consumed: a name that already exists can be retried under
+// another category until the token expires.
+func (s *VaultService) ImportSkills(ctx context.Context, vaultID, token, category string, names []string) contract.ImportSkillsResult {
+	result := contract.ImportSkillsResult{Imported: []string{}, Skipped: []contract.SkillSkip{}}
+	if f := validateID(vaultID); f != nil {
+		result.Failure = f
+		return result
+	}
+	if f := validateID(token); f != nil {
+		result.Failure = contract.Fail(contract.CodeInvalidInput, "技能来源已过期，请重新选择")
+		return result
+	}
+	if len(names) == 0 {
+		result.Failure = contract.Fail(contract.CodeInvalidInput, "names 不能为空")
+		return result
+	}
+	if len(names) > maxImportNames {
+		result.Failure = contract.Fail(contract.CodeInvalidInput, "一次导入的技能过多")
+		return result
+	}
+	for _, name := range names {
+		if len([]rune(name)) > 200 {
+			result.Failure = contract.Fail(contract.CodeInvalidInput, "技能名过长")
+			return result
+		}
+	}
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		result.Failure = contract.Fail(contract.CodeVaultUnavailable, "知识库不可用")
+		return result
+	}
+	source, f := s.app.peekPickToken(token)
+	if f != nil {
+		result.Failure = contract.Fail(contract.CodeInvalidInput, "技能来源已过期，请重新选择")
+		return result
+	}
+	s.app.mu.Lock()
+	preview := s.app.skillPreviews[token]
+	s.app.mu.Unlock()
+	if preview == nil {
+		result.Failure = contract.Fail(contract.CodeInvalidInput, "技能来源已过期，请重新选择")
+		return result
+	}
+
+	unique := make([]string, 0, len(names))
+	seen := map[string]bool{}
+	for _, name := range names {
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+		unique = append(unique, name)
+	}
+
+	outcome, f := vault.ImportSkills(root, source, preview, category, unique)
+	if f != nil {
+		result.Failure = f
+		return result
+	}
+	result.Imported = outcome.Imported
+	for _, skip := range outcome.Skipped {
+		result.Skipped = append(result.Skipped, contract.SkillSkip{Name: skip.Name, Reason: skip.Reason})
+	}
+	if len(outcome.Imported) > 0 {
+		s.app.enqueueIndex(vaultID, []string{"skills/" + category})
+	}
+	return result
+}
+
+// maxImportNames caps one import request (legacy MAX_IMPORT_NAMES).
+const maxImportNames = 200
+
+// peekPickToken reads a token without consuming it (M15 may retry).
+func (a *App) peekPickToken(token string) (string, *contract.Failure) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	item, ok := a.picks[token]
+	if !ok || time.Now().After(item.expiresAt) {
+		return "", contract.Fail(contract.CodeInvalidInput, "技能来源已过期，请重新选择")
+	}
+	return item.path, nil
 }
 
 // CreateVault finishes the wizard.

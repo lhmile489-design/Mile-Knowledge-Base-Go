@@ -94,6 +94,34 @@ type PickFolderResult struct {
 	Failure     *Failure `json:"failure,omitempty"`
 }
 
+// PickSkillSourceResult is M14: the wizard's source step. Candidates are the
+// skills found one level under the picked folder (or the folder itself).
+type PickSkillSourceResult struct {
+	Cancelled  bool             `json:"cancelled"`
+	Token      string           `json:"token,omitempty"`
+	Candidates []SkillCandidate `json:"candidates"`
+	Failure    *Failure         `json:"failure,omitempty"`
+}
+
+// SkillCandidate is one importable skill.
+type SkillCandidate struct {
+	Name      string `json:"name"`
+	FileCount int    `json:"fileCount"`
+}
+
+// ImportSkillsResult is M15. Reason is exists | unknown | too-large | failed.
+type ImportSkillsResult struct {
+	Imported []string    `json:"imported"`
+	Skipped  []SkillSkip `json:"skipped"`
+	Failure  *Failure    `json:"failure,omitempty"`
+}
+
+// SkillSkip is one skill the import left alone.
+type SkillSkip struct {
+	Name   string `json:"name"`
+	Reason string `json:"reason"`
+}
+
 // ---- Tree and documents (API.md §4.2) ----
 
 // FileEntry is one row of the lazily loaded tree.
