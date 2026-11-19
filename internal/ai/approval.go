@@ -104,24 +104,27 @@ func grantKey(sessionID, path string) string { return sessionID + "\x00" + path 
 
 // AllowWrite asks for one file write and shows the diff preview on the card.
 // A nil preview is legal: the card then falls back to the one-line summary
-// (PRD FR-AI-PERM). yolo proceeds without a card.
+// (PRD FR-AI-PERM). yolo proceeds without a card. A write approval never
+// leaves a structural grant behind (D-012).
 func (m *ApprovalManager) AllowWrite(ctx context.Context, sessionID, path string, preview *contract.WritePreview) error {
-	return m.request(ctx, sessionID, path, "write", "write_note", "写入 "+path, preview)
+	return m.request(ctx, sessionID, path, "", "write_note", "写入 "+path, preview)
 }
 
-// AllowMutation asks for one structural change.
-func (m *ApprovalManager) AllowMutation(ctx context.Context, sessionID, path string) error {
-	return m.request(ctx, sessionID, path, "mutation", "mutate_notes", "变更 "+path, nil)
+// AllowMutation asks for one structural change; kind is the mutation kind the
+// card covers. The 60-second grant is bound to that kind, so a move approval
+// can never stand in for a permanent delete (D-012).
+func (m *ApprovalManager) AllowMutation(ctx context.Context, sessionID, path, kind string) error {
+	return m.request(ctx, sessionID, path, kind, "mutate_notes", "变更 "+path, nil)
 }
 
 // ConsumeFreshMutation spends the 60-second grant a permanent delete needs.
-// The grant must come from a card issued outside yolo mode.
+// The grant must come from a permanent-delete card issued outside yolo mode.
 func (m *ApprovalManager) ConsumeFreshMutation(ctx context.Context, sessionID, path string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	key := grantKey(sessionID, path)
 	found := m.grants[key]
-	if found == nil || found.kind != "mutation" || found.approvalAtIssue == ApprovalYolo || m.expired(found) {
+	if found == nil || found.kind != "permanentDelete" || found.approvalAtIssue == ApprovalYolo || m.expired(found) {
 		return &EngineError{Code: contract.CodePermissionDenied, Message: "永久删除需要本次单独确认"}
 	}
 	delete(m.grants, key)
@@ -168,7 +171,7 @@ func (m *ApprovalManager) request(ctx context.Context, sessionID, path, kind, to
 		if !approved {
 			return &EngineError{Code: contract.CodePermissionDenied, Message: "用户拒绝了这次操作"}
 		}
-		if kind == "mutation" {
+		if kind != "" {
 			m.mu.Lock()
 			m.grants[grantKey(sessionID, path)] = &grant{
 				path: path, kind: kind, approvalAtIssue: mode,
@@ -272,6 +275,6 @@ func (m *ApprovalManager) emitEvent(event PermEvent) {
 // Compile-time note: ApprovalManager satisfies the tool gate.
 var _ interface {
 	AllowWrite(context.Context, string, string, *contract.WritePreview) error
-	AllowMutation(context.Context, string, string) error
+	AllowMutation(context.Context, string, string, string) error
 	ConsumeFreshMutation(context.Context, string, string) error
 } = (*ApprovalManager)(nil)

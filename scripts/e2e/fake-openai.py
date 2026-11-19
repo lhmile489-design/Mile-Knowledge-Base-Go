@@ -15,6 +15,7 @@ block is DeepSeek shaped with no cost field, so the receipt must render
 
 import argparse
 import json
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 USAGE = {
@@ -28,6 +29,16 @@ USAGE = {
 WRITE_PATH = "raws/ac.md"
 WRITE_CONTENT = "# AC-M2\n\n由假供应商写入。\n"
 
+# The perf script asks for a long answer: 10k Chinese chars in 100 chunks with
+# a 40ms gap, so the window really streams for about four seconds.
+LONG_ANSWER_BASE = (
+    "知识库的整理原则是保留来源与上下文，先确认目录结构，再决定写入位置。"
+    "每条结论都应当能回溯到具体的文件和行号，无法回溯的内容要明确标注为推断。"
+    "批量修改之前先给出清单，等待确认后再执行；归档优先于删除，删除优先于永久删除。"
+)
+LONG_CHUNK_CHARS = 100
+LONG_CHUNK_GAP = 0.04
+
 
 def last_user_text(messages):
     for message in reversed(messages):
@@ -39,6 +50,8 @@ def last_user_text(messages):
 def plan(messages):
     text = last_user_text(messages)
     has_tool_result = any(message.get("role") == "tool" for message in messages)
+    if "长回答" in text:
+        return {"kind": "long"}
     if "写入" in text or "写文件" in text:
         if has_tool_result:
             return {"kind": "text", "text": "已写入 raws/ac.md，本次改动已记录。"}
@@ -84,7 +97,16 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.flush()
 
     def stream(self, answer):
-        if answer["kind"] == "tool":
+        if answer["kind"] == "long":
+            text = (LONG_ANSWER_BASE * 200)[:10_000]
+            for start in range(0, len(text), LONG_CHUNK_CHARS):
+                self.emit({"choices": [{"delta": {"content": text[start:start + LONG_CHUNK_CHARS]}}]})
+                time.sleep(LONG_CHUNK_GAP)
+            self.emit({
+                "choices": [{"delta": {}, "finish_reason": "stop"}],
+                "usage": USAGE,
+            })
+        elif answer["kind"] == "tool":
             arguments = json.dumps(
                 {"path": WRITE_PATH, "content": WRITE_CONTENT}, ensure_ascii=False
             )

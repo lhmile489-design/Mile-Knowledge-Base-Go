@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
@@ -139,5 +140,16 @@ func TestFetchModelsUsesStoredKey(t *testing.T) {
 	defer denied.Close()
 	if f := svc.FetchModels(ctx, "openai", denied.URL, "", ""); f.Failure == nil || f.Failure.Code != contract.CodePermissionDenied {
 		t.Fatalf("401: %+v", f)
+	}
+}
+
+func TestFetchModelsRejectsMalformedKey(t *testing.T) {
+	app, _, _ := mutationTestApp(t)
+	svc := NewSettingsService(app)
+	if r := svc.FetchModels(context.Background(), "openai", "https://x.test", "", "a\nb"); r.Failure == nil || r.Failure.Code != contract.CodeInvalidInput {
+		t.Fatalf("newline key: %+v", r)
+	}
+	if r := svc.FetchModels(context.Background(), "openai", "https://x.test", "", strings.Repeat("a", 4097)); r.Failure == nil || r.Failure.Code != contract.CodeInvalidInput {
+		t.Fatalf("oversized key: %+v", r)
 	}
 }

@@ -87,6 +87,26 @@ func (r *Registry) Find(agent, vaultID string) *Session {
 	return r.sessions[sessionKey(agent, vaultID)]
 }
 
+// AnyBusy reports whether any agent has a running turn for the vault. It
+// backs the M56 guard that refuses to switch the active conversation
+// mid-turn.
+func (r *Registry) AnyBusy(vaultID string) bool {
+	r.mu.Lock()
+	sessions := make([]*Session, 0, len(AgentIDs))
+	for _, agent := range AgentIDs {
+		if session, ok := r.sessions[sessionKey(agent, vaultID)]; ok {
+			sessions = append(sessions, session)
+		}
+	}
+	r.mu.Unlock()
+	for _, session := range sessions {
+		if session.BusyNow() {
+			return true
+		}
+	}
+	return false
+}
+
 // Reset drops the four agents' sessions for a vault (M43).
 func (r *Registry) Reset(vaultID string) {
 	r.mu.Lock()
@@ -124,6 +144,13 @@ func (r *Registry) CancelVault(vaultID string) {
 	for _, session := range targets {
 		session.Cancel()
 	}
+}
+
+// BusyNow reports whether a turn is running on this session.
+func (s *Session) BusyNow() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Busy
 }
 
 // Cancel aborts the running turn, if any.

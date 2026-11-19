@@ -354,11 +354,11 @@ func (rt *turnRuntime) sanitize(message string) string {
 
 // send sends one frame. A closed channel means the page stopped reading: the
 // turn is cancelled and no further frames are attempted.
-func (rt *turnRuntime) send(kind string, mutate func(*contract.StreamFrame)) {
+func (rt *turnRuntime) send(kind string, mutate func(*contract.StreamFrame)) bool {
 	rt.mu.Lock()
 	if rt.closed {
 		rt.mu.Unlock()
-		return
+		return false
 	}
 	rt.seq++
 	frame := contract.StreamFrame{Kind: kind, Seq: rt.seq, Agent: rt.agent, SessionID: rt.sessionID}
@@ -371,7 +371,9 @@ func (rt *turnRuntime) send(kind string, mutate func(*contract.StreamFrame)) {
 		rt.closed = true
 		rt.mu.Unlock()
 		rt.session.Cancel()
+		return false
 	}
+	return true
 }
 
 func (rt *turnRuntime) delta(kind, text string) {
@@ -482,7 +484,7 @@ func (rt *turnRuntime) onPermission(event ai.PermEvent) {
 	for _, option := range event.Options {
 		options = append(options, contract.PermissionOption{ID: option.ID, Label: option.Label})
 	}
-	rt.send("permission", func(frame *contract.StreamFrame) {
+	delivered := rt.send("permission", func(frame *contract.StreamFrame) {
 		frame.Permission = &contract.PermFrame{
 			RequestID: event.RequestID, ToolName: event.ToolName, Detail: event.Detail,
 			TargetPath: event.TargetPath, Preview: event.Preview, Approval: event.Approval,
@@ -490,7 +492,10 @@ func (rt *turnRuntime) onPermission(event ai.PermEvent) {
 		}
 	})
 	if event.Status == "pending" {
-		rt.service.rememberCard(event.RequestID, rt.manager)
+		// A card the frontend never received must not stay approvable.
+		if delivered {
+			rt.service.rememberCard(event.RequestID, rt.manager)
+		}
 	} else {
 		rt.service.forgetCard(event.RequestID)
 	}

@@ -29,7 +29,7 @@ func (g *fakeGate) AllowWrite(_ context.Context, _ string, path string, preview 
 	return nil
 }
 
-func (g *fakeGate) AllowMutation(_ context.Context, _ string, path string) error {
+func (g *fakeGate) AllowMutation(_ context.Context, _ string, path, _ string) error {
 	if g.denyMutation {
 		return errors.New("未获批准")
 	}

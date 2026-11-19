@@ -21,7 +21,7 @@ import (
 // turn loop so cancellation stops the turn; other errors become tool text.
 type ApprovalGate interface {
 	AllowWrite(ctx context.Context, sessionID, path string, preview *contract.WritePreview) error
-	AllowMutation(ctx context.Context, sessionID, path string) error
+	AllowMutation(ctx context.Context, sessionID, path, kind string) error
 	ConsumeFreshMutation(ctx context.Context, sessionID, path string) error
 }
 
@@ -435,7 +435,7 @@ func (r *AgentToolRunner) mutateNotes(ctx context.Context, raw string) (string, 
 	if guardPath == "" {
 		guardPath = target
 	}
-	if err := r.gate.AllowMutation(ctx, r.sessionID, guardPath); err != nil {
+	if err := r.gate.AllowMutation(ctx, r.sessionID, guardPath, kind); err != nil {
 		return gateError(err)
 	}
 	fresh := false

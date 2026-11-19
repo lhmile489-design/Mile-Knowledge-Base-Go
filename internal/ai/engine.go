@@ -145,7 +145,7 @@ func StreamChat(ctx context.Context, request ChatRequest, options StreamOptions,
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		return err
+		return redactKey(err, request.APIKey)
 	}
 	defer response.Body.Close()
 
@@ -225,4 +225,25 @@ func mapStreamError(err error) error {
 		return &EngineError{Code: contract.CodeProviderError, Message: provider.Error()}
 	}
 	return &EngineError{Code: contract.CodeProviderError, Message: err.Error()}
+}
+
+// redactKey replaces the exact key in an engine error before it reaches the
+// frames or the history. Providers sometimes echo the request back, and the
+// generic Redact patterns do not know this turn's key (models.go does the
+// same for fetchModels snippets).
+func redactKey(err error, key string) error {
+	if err == nil || key == "" {
+		return err
+	}
+	var engineErr *EngineError
+	if !errors.As(err, &engineErr) {
+		return err
+	}
+	replaced := strings.ReplaceAll(engineErr.Message, key, "<redacted>")
+	if replaced == engineErr.Message {
+		return err
+	}
+	clone := *engineErr
+	clone.Message = replaced
+	return &clone
 }

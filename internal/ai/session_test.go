@@ -92,3 +92,29 @@ func indexOf(haystack, needle string) int {
 	}
 	return -1
 }
+
+func TestRegistryAnyBusy(t *testing.T) {
+	registry := NewRegistry()
+	if registry.AnyBusy("v1") {
+		t.Fatal("an empty registry is busy")
+	}
+	session := registry.Get("curator", "v1")
+	if registry.AnyBusy("v1") {
+		t.Fatal("an idle session is busy")
+	}
+	session.mu.Lock()
+	session.Busy = true
+	session.mu.Unlock()
+	if !registry.AnyBusy("v1") {
+		t.Fatal("a running turn was not reported")
+	}
+	if registry.AnyBusy("v2") {
+		t.Fatal("another vault was reported busy")
+	}
+	session.mu.Lock()
+	session.Busy = false
+	session.mu.Unlock()
+	if registry.AnyBusy("v1") {
+		t.Fatal("a stopped turn is still busy")
+	}
+}

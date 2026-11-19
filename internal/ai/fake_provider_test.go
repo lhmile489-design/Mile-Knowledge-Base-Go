@@ -7,6 +7,7 @@ package ai
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -497,5 +498,60 @@ func TestFakeProviderTruncatedStream(t *testing.T) {
 	messages := session.Messages()
 	if len(messages) != 1 || messages[0].Role != "user" {
 		t.Fatalf("half answer entered history: %+v", messages)
+	}
+}
+
+func TestFakeProviderMissingKeyFailsLocally(t *testing.T) {
+	fake := newFakeOpenAI(t, func(w http.ResponseWriter, _ *http.Request, _ int, _ map[string]any) {
+		t.Errorf("a request went out without a key")
+		sseData(w, `{"choices":[{"delta":{"content":"不该到这里"}}]}`)
+		sseDone(w)
+	})
+	var log eventLog
+	deps := fake.deps(&fakeRunner{}, &log)
+	deps.Providers[0].APIKeyEnv = "MKB_TEST_KEY"
+	deps.Keys = NewMemoryKeyStore()
+	session := NewRegistry().Get("general", "v1")
+	reason, err := RunTurn(context.Background(), session, "你好", "", deps)
+	if err == nil || reason != "error" {
+		t.Fatalf("reason=%q err=%v", reason, err)
+	}
+	if fake.callCount() != 0 {
+		t.Fatalf("requests went out: %d", fake.callCount())
+	}
+	errorEvent, ok := log.first(EventError)
+	if !ok || !strings.Contains(errorEvent.Message, "还没有 API key") {
+		t.Fatalf("error event: %+v", log.all())
+	}
+}
+
+func TestFakeProviderTruncatesToolResultWithNote(t *testing.T) {
+	long := strings.Repeat("字", ToolResultMaxChars+25)
+	fake := newFakeOpenAI(t, func(w http.ResponseWriter, _ *http.Request, call int, _ map[string]any) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		if call == 1 {
+			sseData(w, `{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_t","type":"function","function":{"name":"read_note","arguments":"{}"}}]}}]}`)
+			sseData(w, `{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}`)
+		} else {
+			sseData(w, `{"choices":[{"delta":{"content":"收尾"}}]}`)
+			sseData(w, `{"choices":[{"delta":{},"finish_reason":"stop"}]}`)
+		}
+		sseDone(w)
+	})
+	var log eventLog
+	runner := &fakeRunner{run: func(context.Context, CompletedToolCall) (string, error) { return long, nil }}
+	session := NewRegistry().Get("general", "v1")
+	if reason, err := RunTurn(context.Background(), session, "读一下", "", fake.deps(runner, &log)); err != nil || reason != "end_turn" {
+		t.Fatalf("reason=%q err=%v", reason, err)
+	}
+	var toolText string
+	for _, message := range session.Messages() {
+		if message.Role == "tool" && message.Content != nil {
+			toolText = *message.Content
+		}
+	}
+	want := fmt.Sprintf("…（内容过长，已截断，共 %d 字符）", ToolResultMaxChars+25)
+	if !strings.Contains(toolText, want) {
+		t.Fatalf("tool result note missing: %q", toolText)
 	}
 }

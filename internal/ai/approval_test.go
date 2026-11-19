@@ -123,7 +123,7 @@ func TestApprovalYoloSkipsCard(t *testing.T) {
 	if err := h.manager.AllowWrite(context.Background(), "s1", "raws/a.md", nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := h.manager.AllowMutation(context.Background(), "s1", "raws/a.md"); err != nil {
+	if err := h.manager.AllowMutation(context.Background(), "s1", "raws/a.md", "permanentDelete"); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := h.last(); ok {
@@ -156,7 +156,7 @@ func TestWriteApprovalDoesNotGrantFreshMutation(t *testing.T) {
 func TestFreshMutationGrant(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
 	done := make(chan error, 1)
-	go func() { done <- h.manager.AllowMutation(context.Background(), "s1", "raws/a.md") }()
+	go func() { done <- h.manager.AllowMutation(context.Background(), "s1", "raws/a.md", "permanentDelete") }()
 	pending := h.waitPending(t)
 	if f := h.manager.Approve(pending.RequestID, "allow_once"); f != nil {
 		t.Fatal(f)
@@ -175,7 +175,7 @@ func TestFreshMutationGrant(t *testing.T) {
 func TestFreshMutationGrantExpires(t *testing.T) {
 	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
 	done := make(chan error, 1)
-	go func() { done <- h.manager.AllowMutation(context.Background(), "s1", "raws/a.md") }()
+	go func() { done <- h.manager.AllowMutation(context.Background(), "s1", "raws/a.md", "permanentDelete") }()
 	pending := h.waitPending(t)
 	_ = h.manager.Approve(pending.RequestID, "allow_once")
 	<-done
@@ -296,5 +296,22 @@ func TestIssuedCardKeepsItsMode(t *testing.T) {
 	}
 	if last, _ := h.last(); last.Approval != ApprovalAsk {
 		t.Fatalf("issued card mode changed: %+v", last)
+	}
+}
+
+func TestMutationGrantIsKindBound(t *testing.T) {
+	h := newHarness(t, map[string]string{"s1": ApprovalAsk})
+	done := make(chan error, 1)
+	go func() { done <- h.manager.AllowMutation(context.Background(), "s1", "raws/a.md", "move") }()
+	pending := h.waitPending(t)
+	if f := h.manager.Approve(pending.RequestID, "allow_once"); f != nil {
+		t.Fatal(f)
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	// A move approval must not stand in for the permanent-delete card (D-012).
+	if err := h.manager.ConsumeFreshMutation(context.Background(), "s1", "raws/a.md"); err == nil {
+		t.Fatal("a move approval satisfied a fresh permanent delete")
 	}
 }

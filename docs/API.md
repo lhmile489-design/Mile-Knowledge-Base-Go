@@ -583,7 +583,7 @@ type RetrievalItem struct {
 | `providers` M67 | — | `{providers: ProviderDraft[], credentials: [{envName, isSet}]}` —— **绝不含 key 值，连掩码都没有**。新版没有凭据文件（key 在 OS 凭据管理器），旧版的 `credentialsPath` 字段删除 | ipc.ts:611-620；appConfig.ts:116-119；D-011 |
 | `saveProviders` M68 | providers ≤32（保存路径上限，旧版 `validate.ts:618 MAX_PROVIDERS=32`；读取 providers.json 时另按 `ProviderStore.ts:36` 最多保留 50 条——两个数字都是旧版代码，Q1 已关闭）；每个过 `normalizeProviderDraft`：name 以字母数字开头 ≤64、kind ∈ openai\|anthropic、baseUrl http(s) host 非空 ≤512、models ≤32 各 ≤128 至少 1 个、apiKeyEnv 匹配 `^[A-Za-z_][A-Za-z0-9_]*$` ≤96 可空、contextWindow 正整数可选；名称忽略大小写去重 | 同上 | validate.ts:622-644；appConfig.ts:103-286 |
 | `setKey` M69 | envName ≤96 合法变量名；value ≤2560 字节（mygo `MaxSecretSize`）、**不含换行、不截断**（截断=存进永远失败的凭据） | 同 `providers` | validate.ts:646-669；secrets.go:58 |
-| `fetchModels` M70 | kind/baseUrl/apiKeyEnv 同 saveProviders 校验；`apiKey` 可选（刚粘贴未保存的 key）；10s 超时、响应 ≤2 MiB、最多 500 条排序返回 | `{models: string[]}` | validate.ts:675-699；FR-AI-PROV |
+| `fetchModels` M70 | kind/baseUrl/apiKeyEnv 同 saveProviders 校验；`apiKey` 可选（刚粘贴未保存的 key，≤4096 字节且不含换行，否则 `invalid-input`）；10s 超时、响应 ≤2 MiB、最多 500 条排序返回 | `{models: string[]}` | validate.ts:675-699；FR-AI-PROV |
 | `skillCatalog` M71 | — | `{skills: [{path, category, name}]}`；由 Go 读取索引（`skills/…/SKILL.md`，深度 ≥3，分类取第二段，名字优先索引标题、退回目录名，按分类与名字排序）；索引未打开时返回空数组 | ipc.ts:622-629 |
 | `recentDocuments` M72 | — | `{vaultId, documents: RecentDocument[]}`；已过滤掉暂时不存在的，但不回写删除 | ipc.ts:697-701；FR-OVW |
 | `noteDocumentOpened` M73 | 文件必须真实存在（防塞任意字符串） | 同上 | register.ts:589-593 |

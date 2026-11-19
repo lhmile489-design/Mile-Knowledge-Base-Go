@@ -130,6 +130,17 @@ func RunTurn(ctx context.Context, session *Session, userText, recap string, deps
 			apiKey = stored
 		}
 	}
+	// A provider that needs a key must fail locally, before any request goes
+	// out (the legacy engine throws here too, index.ts:467).
+	if provider.APIKeyEnv != "" && apiKey == "" {
+		name := provider.Name
+		if name == "" {
+			name = "模型服务"
+		}
+		message := "服务 " + name + " 还没有 API key：在设置的「模型服务」里填写"
+		deps.emit(TurnEvent{Kind: EventError, Message: message})
+		return "error", &EngineError{Code: contract.CodeProviderError, Message: message}
+	}
 
 	tail := make([]string, 0, len(deps.TailBlocks)+1)
 	if strings.TrimSpace(recap) != "" {
@@ -250,8 +261,8 @@ func RunTurn(ctx context.Context, session *Session, userText, recap string, deps
 				}
 				output = runErr.Error()
 			}
-			if len([]rune(output)) > ToolResultMaxChars {
-				output = string([]rune(output)[:ToolResultMaxChars])
+			if runes := []rune(output); len(runes) > ToolResultMaxChars {
+				output = string(runes[:ToolResultMaxChars]) + fmt.Sprintf("…（内容过长，已截断，共 %d 字符）", len(runes))
 			}
 			session.pushMessage(toolResult(call.ID, output))
 			deps.emit(TurnEvent{Kind: EventTool, ToolID: call.ID, ToolTitle: call.Name, ToolStatus: "completed", Detail: summarizeToolOutput(output)})

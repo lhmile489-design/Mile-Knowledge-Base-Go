@@ -132,7 +132,7 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | T17 | 设置页「模型服务」 | `src/components/settings/{SettingsPage,ModelServiceSection,ProviderForm}` | T01、T00 | 供应商列表/表单、拉模型、key 状态、空状态 | V-SET-PROV 全部通过；截图 41、49、50 | 已验证 |
 | T18 | 设置页「Agents」 | `src/components/settings/{AgentsSection,SteeringEditor}` | T02 | 模型/强度/模式/Skills 即时生效、steering 草稿与保存条、对比与恢复默认 | V-SET-AGT 全部通过；截图 51 | 已验证 |
 | T19 | 假供应商 e2e 与闭环验收 | `internal/ai/fake_provider_test.go`、`scripts/e2e/ac-m2.sh` | T03–T18 | 假 OpenAI 供应商、AC-M2 全流程、重启恢复 | AC-M2 全部通过（22/22） | 已验证 |
-| T20 | 性能复核与独立审查 | `scripts/e2e/perf-ai.sh`、本计划第 6 节 | T19 | 流式帧率、输入延迟 p90、历史首帧、消息虚拟化 | 指标有实测；**整体独立审查**（权限门重点） | 待做 |
+| T20 | 性能复核与独立审查 | `scripts/e2e/perf-ai.sh`、本计划第 6 节 | T19 | 流式帧率、输入延迟 p90、历史首帧、消息虚拟化 | 指标有实测；**整体独立审查**（权限门重点） | 已验证 |
 | T21 | 收尾 | README、CLAUDE.md、本计划 | T20 | 文档同步；推送前确认 | 用户确认后推送 | 待做 |
 
 依赖顺序 T00 → T01 → T02 → T03 → T04 → T05 → T06 → T07 → T08 → T09 → T10 → T11–T18 → T19 → T20 → T21，按「一次一个」串行。T07 只依赖 T03，排在 T06 之后只是为了让权限门专项审查（T05+T06）尽早做完。
@@ -306,7 +306,7 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | V-PROV-2 | 33 个供应商 | 保存 | 拒绝（保存上限 32） | Go |
 | V-PROV-3 | 文件含 60 条 | 读取 | 保留 50，其余截断 | Go |
 | V-PROV-4 | 没有任何可用供应商 | 打开对话 | 引擎 offline，原因如实；编辑器与检索照常 | e2e |
-| V-PROV-5 | 供应商需要 key 但未配置 | 发消息 | 回合报鉴权类错误，错误文字不含 key；界面提示去配置 | httptest + e2e |
+| V-PROV-5 | 供应商需要 key 但未配置 | 发消息 | 回合在本地报缺 key（不发出请求），错误文字不含 key；界面提示去配置 | httptest + e2e |
 | V-PROV-6 | 任意测试运行后 | 检查凭据管理器 | 应用自己服务名下没有新增或改动的凭据 | Go |
 | V-AGT-1 | 修改 steering 4001 字符 | 保存 | 截断并标「已截断」 | Go |
 | V-AGT-2 | 非法 effort/approval | 读取 | 归 auto / 降级 ask | Go |
@@ -347,14 +347,16 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 | V-SET-AGT-1 | 改 steering 不保存即离开 | 离开 | 草稿确认提示 | e2e |
 | AC-M2-1（本计划自定的闭环用例，PRD 无此编号） | 假供应商 | 配置 → 发消息 → 路由 → 流式 → 审批 → 收据 → 重启 → 搜索 | 每步与 PRD/截图一致 | e2e |
 
-性能（PRD 10.1；G-PERF 维持警告级）：
+性能（PRD 10.1；G-PERF 维持警告级；T20 实测 2026-11-19，脚本 `scripts/e2e/perf-ai.sh`）：
 
 | 指标 | 目标 | 新版实测 | 旧版基线 |
 | --- | --- | --- | --- |
-| 流式输出 | 60fps | 未测 | 单条 9832 字每帧 6.7–9.9ms；长会话未测 |
-| 输入框按键延迟 p90（50 轮流式期间） | ≤16ms | 未测 | 未测 |
-| 历史查看器（50 条长回答）首帧 | ≤100ms | 未测 | 172–189ms |
-| 消息列表虚拟化 | 60fps | 未测 | 未测 |
+| 流式输出 | 60fps | 562–574 帧，>20ms 0 帧，最大间隔 16.6ms（≈60fps；10k 字分 100 块、40ms 间隔） | 单条 9832 字每帧 6.7–9.9ms；长会话未测 |
+| 输入框按键延迟 p90（流式期间） | ≤16ms | p50 6.6–7.5ms，p90 8ms，最大 9.9ms（n=93–95；每 50ms 合成 keydown → 下一帧） | 未测 |
+| 历史查看器（50 条长回答）首帧 | ≤100ms | 62.4ms（点击 → 查看器内首个 `chat-answer`；50 轮 × 约 10k 字） | 172–189ms |
+| 消息列表虚拟化 | 60fps | 50 组中滚动 12 个位置最多渲染 9 项（可见约 5 + overscan 4） | 未测 |
+
+口径与替代：帧率用 `requestAnimationFrame` 采样、输入延迟用合成 `KeyboardEvent`（R-4 同款注入），两项在 WebView2 中都能真实注入（`visibilityState=visible`），未使用代理指标；50 条长回答样本先由假供应商真实流式生成一条 10k 字回答，再按 conversation jsonl 的真实事件格式复制成同一条对话的 50 轮（不跑 50 个真实回合，理由：时间与稳定性；渲染链路与真实数据一致）；查看器首帧包含 M51 读取与首帧渲染。
 
 ## 7. 协作、审查与执行方式
 
@@ -390,13 +392,14 @@ M0、M1 已完成。M2 为本计划。M3（其余设置、总览、技能导入�
 
 ### 下次会话先读
 
-- 当前阶段：T19 已完成并提交，等待亲测与放行 T20。
-- 下一个任务：用户放行后 T20（性能复核与整体独立审查）。
-- 工作区：`main` 领先 `origin/main`，本地提交自 `b5343e0` 起（v0.2、v0.3、审查修复、D-012、T07–T19）均未推送。
-- 待决事项：steering 默认文本在前端镜像了一份（无绑定暴露 DefaultAgentConfigs，需在 T20 核对一致性）；设置页仅 AI 分组；key 仅替换不删除；引擎离线口径；回放 Agent 标签近似；截图 34–46 视觉对照待用户；13 项手动确认；旧版性能基线；R-4 真实流式复测（T20）；`check:bindings` 是否进正式门禁（T20/T21）。
+- 当前阶段：T20 已完成并提交，等待亲测与放行 T21。
+- 下一个任务：用户放行后 T21（收尾：README、CLAUDE.md、本计划；推送前确认）。
+- 工作区：`main` 领先 `origin/main`，本地提交自 `b5343e0` 起（v0.2、v0.3、审查修复、D-012、T07–T20）均未推送。
+- 待决事项：设置页仅 AI 分组；key 仅替换不删除；引擎离线口径；回放 Agent 标签近似；截图 34–46 视觉对照待用户；13 项手动确认；旧版性能基线；R-4 真实供应商流式复测（需真实 key，用户环境）；move/copy 审批卡只显示单侧路径（信息完整性，留后续）；mutate Plan 期与执行期判定不对称（执行期兜底，留后续）；abort channel 路径的卡片失效无自动化用例（留后续）。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-19 | T20 完成（性能复核与整体独立审查） | `scripts/e2e/perf-ai.sh`：假供应商长回答（10k 字、100 块、40ms 间隔）+ rAF 帧采样 + 流式期间合成 keydown 延迟 + 50 轮长回答查看器首帧 + 虚拟化渲染计数；假供应商加「长回答」模式。实测（两次复跑一致）：流式 551–574 帧、>20ms 0 帧、最大 16.5–16.7ms；按键延迟 p50 6.6–7.8ms、p90 8ms、最大 9.9ms（n=92–95）；查看器首帧 62.4–62.8ms；50 组中最多渲染 9 项。整体独立审查三路（权限门与写路径 / key 与供应商 / 审批与契约）结论：A 通过（5 建议）、B 无阻断（2 需改 + 验证缺口）、C 2 阻断。**修复**：① 阻断 C-B1：`App.AgentBusy` 生产路径从未赋值 → 新增 `ai.Registry.AnyBusy`/`Session.BusyNow` 并在 `service.New` 接线（运行中 Activate 返回 invalid-input，回合回答不再可能写错对话），新增 `TestAgentBusyWiredAndBlocksActivate`、`TestRegistryAnyBusy`；② 阻断 C-B2：mutation grant 不区分操作 → `AllowMutation` 增加 kind、grant 按 kind 绑定、`ConsumeFreshMutation` 只接受 permanentDelete 卡（move 批准不再顶替删除），新增 `TestMutationGrantIsKindBound`；③ `rememberCard` 只在 pending 帧送达后登记（前端未收到的卡不可再被批准）；④ 缺 key 的回合在本地报「还没有 API key」且不发出请求（对齐旧版 index.ts:467，V-PROV-5 口径已更新），新增 `TestFakeProviderMissingKeyFailsLocally`；⑤ `FetchModels` 校验草稿 key（≤4096、禁换行，文案同旧版 validate.ts），新增 `TestFetchModelsRejectsMalformedKey`；⑥ 引擎错误消息替换本次 key（`redactKey`），新增 `TestStreamChatRedactsEchoedKey`；⑦ 工具结果截断追加「…（内容过长，已截断，共 N 字符）」（对齐旧版 kbTools.ts），新增 `TestFakeProviderTruncatesToolResultWithNote`；⑧ 历史栏两步确认 4 秒自动复位（PRD FR-AI-PERM）；⑨ steering 四段默认文本与 Go `DefaultAgentConfigs` 逐字比对一致；⑩ `check:bindings` 并入 `npm run test:web` 门禁。**记录为差异/待办**：move/copy 审批卡只显示单侧路径；写卡不登记 mutation grant（D-012 已确认）；执行-落盘 TOCTOU 与旧版等价；mutate 计划期未 canonical、执行期兜底；`in-progress` 为契约保留值；`seq` 前端不消费（Channel 已保证有序）；abort channel 路径的卡片失效无自动化用例 | `scripts/e2e/{perf-ai.sh,fake-openai.py}`、`internal/ai/{session.go,approval.go,loop.go,engine.go,approval_test.go,session_test.go,fake_provider_test.go,engine_test.go}`、`internal/service/{service.go,tools.go,agent_run.go,providers.go,providers_test.go,agent_run_test.go,tools_test.go}`、`src/components/chat/HistoryRail.tsx`、`package.json`、docs/PLAN-M2.md | `go test ./...` 484 项通过（+7）；`gofmt -l`、`go vet` 无输出；`vitest` 152 项通过；`npm run build:web` 成功；e2e 重建后 `bash scripts/e2e/ac-m2.sh` **pass=22 fail=0**；修复后 `perf-ai.sh` 复跑指标不退化 | R-4 真实供应商流式需真实 key（用户环境）；截图 34–46 视觉待用户；其余待办见恢复入口 | T21（待放行） |
 | 2026-11-19 | T19 完成（假供应商 e2e 与闭环验收） | `internal/ai/fake_provider_test.go`：可编程假 OpenAI 供应商（httptest，记录每次请求体）+ 8 项回合级测试——①流式与用量（reasoning/正文 chunk 序、DeepSeek hit/miss 归一、累计用量、请求带 stream/stream_options）；②两轮工具循环（第二次请求校验 assistant.tool_calls 两条 + `reasoning_content` 键 + 两条 tool 结果、工具按序执行、累计 20）；③审批允许（ask 发卡 → 允许 → 写入副作用一次 → pending/approved 事件、end_turn）；④审批拒绝（无副作用，工具结果含「用户拒绝了这次操作」）；⑤工具调用中取消（两个「已取消，未执行」、cancelled、无 error 事件）；⑥流式中途取消（历史只留 user，无半截回答）；⑦429 + Retry-After 重试（2 次请求、恢复且无 error 事件）；⑧半截流（报「完成前就结束」、不落半截回答）。`scripts/e2e/fake-openai.py`：127.0.0.1 本地假供应商（无 key、不写凭据）；按消息回「整理归档」类流式回答或 `write_note` 工具调用，DeepSeek 形状 usage 无费用字段。`scripts/e2e/ac-m2.sh`：真实窗口闭环 22 项断言——引擎 ready、路由预览 curator + 「发给 整理归档」、流式回答渲染、收据「本轮」与「未提供」（不是 $0.00）、审批卡（写入 + raws/ac.md）、允许后文件落盘、卡片随 Go 帧移除、历史搜索命中、重启后对话恢复、历史栏恢复打开、历史列表与搜索存活。前端 e2e 钩子：`agentStore`/`composerStore`/`historyStore` 挂 `window.__mkb*`（与既有 store 同模式）。**顺带修复 T15 缺陷**：历史栏开合此前「只写不读」——新增 `historyStore.hydrateOpen`（仅首次从 layout 恢复）并在 `ChatPane` 订阅 `settings.layout.agnesHistoryOpen` | `internal/ai/fake_provider_test.go`、`scripts/e2e/{fake-openai.py,ac-m2.sh}`、`src/stores/{agentStore,composerStore,historyStore}.ts`、`src/components/chat/ChatPane.tsx`、docs/PLAN-M2.md | `go test ./...` 477 项通过（+8）；`gofmt -l`、`go vet` 无输出；`vitest` 152 项通过；`npm run build:web` 成功；`check:bindings` 通过；`GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build` 后 `bash scripts/e2e/ac-m2.sh` **pass=22 fail=0** | 真实供应商流式（R-4）与截图 34–46 视觉仍待 T20/亲测 | T20（待放行） |
 | 2026-11-19 | T18 完成（设置页「Agents」） | `src/lib/agentDefaults.ts`：4 段内置 steering 原文（逐字镜像 Go `DefaultAgentConfigs`，4000 上限）+ `agentSettings.ts`（openai 模型去重、跟随默认标签、模型/审批 chips、脏草稿对比——缺保存值时以内置默认为准、steering 取值草稿→保存→默认）。`stores/settingsStore.ts`：加载 M62 + M71、草稿表、保存条（只保存脏项，经 M63）、即时 `patchAgent`（模型/强度/审批/Skills）并在每次变更后刷新对话会话、`toggleSkill`（M71 目录勾选）、离开守卫（requestLeave/resolveLeave，确认后丢弃草稿）。`AgentsSection.tsx`：4 个 Agent 卡片 tab（图标/名称/latin/审批与模型 chips）、边界说明 banner、运行行（模型下拉含「跟随默认（首个服务默认模型）」、强度禁用 D-002、执行模式即时）、Skills 勾选列表、底部保存条（列出脏 Agent + 放弃/保存）。`SteeringEditor.tsx`：草稿 textarea（maxLength 4000 + 计数）、「与默认对比」双栏对话框、「恢复默认」只改草稿。SettingsPage 启用 Agents 导航并以离开守卫拦截关闭/Escape/切到模型服务（确认后丢弃草稿）。**差异**：默认 steering 文本为前端镜像（无绑定可读，T20 核对）；`appConfigResetSteering`（M64）未使用——按 PRD「恢复默认只改草稿」，保存仍走 M63；强度控件禁用遵循 D-002 | `src/lib/{agentDefaults.ts,agentSettings.ts,agentSettings.test.ts,transport.ts}`、`src/stores/settingsStore.ts`、`src/components/settings/{AgentsSection,SteeringEditor,SettingsPage}.tsx`、`src/styles/settings.css` | `tsc --noEmit` 无错；`vitest` 152 项通过（+6）；`npm run build:web` 成功；`check:bindings` 通过；`go test ./...` 469 项通过 | 截图 51/54 视觉、即时生效与离开确认亲测待用户 | T19（待放行） |
 | 2026-11-19 | T17 完成（设置页「模型服务」） | `SettingsPage.tsx`：覆盖式设置壳层（TitleBar 保留；左侧导航只含 M2 的 AI 分组：模型服务 + Agents 占位；底部「当前知识库」；Escape 关闭），入口：左侧栏齿轮与会话信息「设置」。`ModelServiceSection.tsx`：空状态卡（标题/说明/「用 DeepSeek 预设」/「连接其他服务」/「API Key 存在哪里」折叠说明）；已连接列表（avatar 首两字、名称、类型、key 徽章 无需密钥/已保存/未保存、地址去协议、★ 默认模型、测试/编辑/删除，删除两步确认 600ms）；行内测试走 M70（复用已保存 key）。`ProviderForm.tsx`：名称/类型/Base URL/key 环境变量名/key（password，已保存时占位「留空不修改」，永不回显）/模型列表 textarea/「从服务拉取模型」（M70，可带未保存 key）/默认模型下拉/上下文窗口可选；保存先 M68 整单，若有新 key 再 M69 单次写入并如实提示「服务已保存但密钥失败」。`providerForm.ts` 纯函数（模型行解析去重、首字母、key 徽章、upsert、DeepSeek 预设与 Go `providers.go:494-501` 对齐、地址去协议）+ 5 组测试；transport 接入 M67/M68/M69/M70。**差异**：设置页其它分组（常规/分类与检索/关于）随后续里程碑；key 仅替换不删除（无绑定）；删除用两段式而非「⋯」菜单 | `src/components/settings/{SettingsPage,ModelServiceSection,ProviderForm}.tsx`、`src/lib/{providerForm.ts,providerForm.test.ts,transport.ts}`、`src/stores/appStore.ts`、`src/app/App.tsx`、`src/components/{VaultSidebar.tsx,chat/SessionInfo.tsx}`、`src/styles/{settings.css,main.css}` | `tsc --noEmit` 无错；`vitest` 146 项通过（+5）；`npm run build:web` 成功；`check:bindings` 通过；`go test ./...` 469 项不变 | 截图 41/49/50 视觉与真实拉模型/key 保存亲测待用户 | T18（待放行） |

@@ -76,6 +76,16 @@ func (s *SettingsService) SetKey(ctx context.Context, envName, value string) con
 // the stored one, matching the legacy handler.
 func (s *SettingsService) FetchModels(ctx context.Context, kind, baseURL, apiKeyEnv, apiKey string) contract.FetchModelsResult {
 	result := contract.FetchModelsResult{}
+	// The draft key never lands anywhere, but a malformed one must fail the
+	// same way the legacy validator did (validate.ts sanitizeFetchModels).
+	if len(apiKey) > 4096 {
+		result.Failure = contract.Fail(contract.CodeInvalidInput, "key 超长")
+		return result
+	}
+	if strings.ContainsAny(apiKey, "\r\n") {
+		result.Failure = contract.Fail(contract.CodeInvalidInput, "key 不能包含换行")
+		return result
+	}
 	key := strings.TrimSpace(apiKey)
 	if key == "" && apiKeyEnv != "" {
 		if stored, f := s.app.Keys.Get(apiKeyEnv); f == nil {

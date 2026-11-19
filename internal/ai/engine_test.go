@@ -250,3 +250,23 @@ func TestStreamChatRequestShape(t *testing.T) {
 	}
 	_ = fmt.Sprint()
 }
+
+func TestStreamChatRedactsEchoedKey(t *testing.T) {
+	key := "sk-echoed-abcdef"
+	server, _ := sseServer(t, func(w http.ResponseWriter, _ *http.Request, _ int) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = io.WriteString(w, "provider says: bad key "+key)
+	})
+	noRetry := 0
+	err := StreamChat(context.Background(), ChatRequest{BaseURL: server.URL, APIKey: key, Model: "m"},
+		StreamOptions{Client: server.Client(), MaxRetries: &noRetry}, func(StreamChunk) error { return nil })
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if strings.Contains(err.Error(), key) {
+		t.Fatalf("the key leaked into the error: %v", err)
+	}
+	if !strings.Contains(err.Error(), "<redacted>") {
+		t.Fatalf("the key was not replaced: %v", err)
+	}
+}

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MagnifyingGlass, PencilSimple, PushPin, Trash } from "@phosphor-icons/react";
 import { AGENT_META, isAgentId } from "../../lib/agentMeta";
 import { groupHistory, rowMeta } from "../../lib/conversationGroups";
@@ -6,6 +6,7 @@ import { useAppStore } from "../../stores/appStore";
 import { useHistoryStore } from "../../stores/historyStore";
 
 const CONFIRM_MIN_GAP_MS = 600;
+const CONFIRM_RESET_MS = 4000;
 
 /** History rail (T15): search, pinned/day groups, row actions and the footer.
  * Deleting and clearing need the two-step confirmation (600ms gap). */
@@ -26,6 +27,8 @@ export function HistoryRail({ vaultId }: { readonly vaultId: string | null }) {
   const [draft, setDraft] = useState("");
   const [armed, setArmed] = useState<Record<string, number | null>>({});
   const gates = useRef<Record<string, number | null>>({});
+  const mounted = useRef(true);
+  useEffect(() => () => { mounted.current = false; }, []);
 
   const groups = useMemo(() => groupHistory(index?.conversations ?? [], new Date()), [index]);
   const total = index?.conversations.length ?? 0;
@@ -40,6 +43,13 @@ export function HistoryRail({ vaultId }: { readonly vaultId: string | null }) {
     if (previous === null) {
       gates.current[key] = current;
       setArmed({ ...gates.current });
+      // PRD FR-AI-PERM: the armed state resets after four seconds.
+      window.setTimeout(() => {
+        if (mounted.current && gates.current[key] === current) {
+          gates.current[key] = null;
+          setArmed({ ...gates.current });
+        }
+      }, CONFIRM_RESET_MS);
       return false;
     }
     if (current - previous < CONFIRM_MIN_GAP_MS) return false;

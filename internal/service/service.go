@@ -115,6 +115,8 @@ func New(dataDir, legacyDir string) (*App, error) {
 	}
 	app.Vaults = vault.New(store)
 	app.Vaults.Load()
+	// M56: switching the active conversation is refused while a turn runs.
+	app.AgentBusy = app.Agents.AnyBusy
 	return app, nil
 }
 

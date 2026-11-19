@@ -298,3 +298,39 @@ func derefString(value *string) string {
 	}
 	return *value
 }
+
+func TestAgentBusyWiredAndBlocksActivate(t *testing.T) {
+	server := promptServer(t)
+	app, vaultID, _ := promptApp(t, server)
+	if app.AgentBusy == nil {
+		t.Fatal("AgentBusy is not wired")
+	}
+	svc := NewAgentService(app)
+	sink := newFakeSink()
+	done := make(chan struct{})
+	go func() {
+		_, _ = svc.prompt(context.Background(), "curator", vaultID, "写入一篇笔记", sink)
+		close(done)
+	}()
+	waitCard(t, sink)
+	if !app.AgentBusy(vaultID) {
+		t.Fatal("a running turn was not reported busy")
+	}
+	conversations := NewConversationService(app)
+	created := conversations.Create(vaultID)
+	if created.Failure != nil {
+		t.Fatalf("create: %+v", created.Failure)
+	}
+	result := conversations.Activate(vaultID, created.Conversation.ID)
+	if result.Failure == nil || result.Failure.Code != contract.CodeInvalidInput {
+		t.Fatalf("activate during a turn: %+v", result)
+	}
+	if err := svc.Cancel("curator"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("prompt did not stop")
+	}
+}
