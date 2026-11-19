@@ -763,3 +763,33 @@
   font-size: var(--text-meta);
   color: var(--raw-muted);
 }
+
+
+/* T07: about page bits. */
+.settings-steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+  line-height: 1.6;
+}
+
+.settings-storage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.settings-path {
+  word-break: break-all;
+}
+
+.settings-engine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

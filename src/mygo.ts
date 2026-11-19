@@ -4,6 +4,21 @@ import { bind, event, type Channel } from "mygo-runtime";
 
 // ---- Types ----
 
+/**
+ * AboutInfoResult is M74: the about & diagnostics page. Every display value
+ * here is already redacted (<vault>, <home>); the page never receives an
+ * absolute path (API §1, D-013).
+ */
+export interface AboutInfoResult {
+  version: string;
+  techStack: string;
+  engine: EngineStatus;
+  capabilities?: EngineCapabilities;
+  restartCount: number;
+  storage: StorageLocation[];
+  failure?: Failure;
+}
+
 /** ActionRecord is one executed (or skipped) action (API.md M30/M31). */
 export interface ActionRecord {
   id: string;
@@ -251,6 +266,12 @@ export interface ConversationSearchResult {
   vaultId: string;
   query: string;
   hits: ConversationSearchHit[];
+  failure?: Failure;
+}
+
+/** CopyStoragePathResult is M75 (Go writes the clipboard, D-013). */
+export interface CopyStoragePathResult {
+  ok: boolean;
   failure?: Failure;
 }
 
@@ -770,6 +791,14 @@ export interface StatusFrame {
   detail?: string;
 }
 
+/** StorageLocation is one row of M74's storage list. */
+export interface StorageLocation {
+  kind: string;
+  label: string;
+  display: string;
+  copyable: boolean;
+}
+
 /** StreamFrame is the M39 channel union (§6); the frontend narrows on Kind. */
 export interface StreamFrame {
   /** delta | thought | tool | permission | status | usage | turn-end | error */
@@ -982,6 +1011,8 @@ export const VaultService = {
 
 /** SettingsService binds the application settings. */
 export const SettingsService = {
+  /** AboutInfo returns the about page payload (M74). */
+  aboutInfo: bind<[], AboutInfoResult>("SettingsService.AboutInfo", () => []),
   /**
    * AppConfigGet returns the vault-level settings the UI reads (M62): display
    * aliases, the parsed category table and the four agents.
@@ -1005,6 +1036,11 @@ export const SettingsService = {
    * legacy writer (数据库设计 3.2, D-013).
    */
   appConfigSetCategories: bind<[string, CategoryConfig[]], AppConfigResult>("SettingsService.AppConfigSetCategories", (vaultID: string, categories: CategoryConfig[]) => [vaultID, categories]),
+  /**
+   * CopyStoragePath writes a real path to the system clipboard (M75). The
+   * credential store has no path to copy.
+   */
+  copyStoragePath: bind<[string], CopyStoragePathResult>("SettingsService.CopyStoragePath", (kind: string) => [kind]),
   /**
    * FetchModels asks a provider for its model list (M70). A draft key wins over
    * the stored one, matching the legacy handler.

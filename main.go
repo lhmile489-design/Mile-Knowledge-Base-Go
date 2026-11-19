@@ -40,6 +40,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// The about page reports the packaged version (M74); empty in dev builds.
+	app.Version = mygo.App.Version()
 
 	// Bind before Run: `mygo generate` enumerates the bindings the app makes at
 	// startup, so services registered later would be missing from the TS client.

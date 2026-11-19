@@ -62,6 +62,8 @@ type App struct {
 	// AgentBusy reports whether a turn is running for the vault (M56 guard,
 	// wired by the turn loop in T10).
 	AgentBusy func(vaultID string) bool
+	// Version is the packaged app version (M74); main.go fills it.
+	Version string
 
 	mu             sync.Mutex
 	win            *mygo.Window

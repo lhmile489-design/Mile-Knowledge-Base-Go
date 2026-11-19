@@ -8,6 +8,7 @@ import { useSettingsStore, type SettingsSection } from "../../stores/settingsSto
 import { TitleBar } from "../TitleBar";
 import { ModelServiceSection } from "./ModelServiceSection";
 import { AgentsSection } from "./AgentsSection";
+import { AboutSection } from "./AboutSection";
 import { CategoriesSection } from "./CategoriesSection";
 import { GeneralSection } from "./GeneralSection";
 import { SettingsSaveBar } from "./SettingsSaveBar";
@@ -222,6 +223,8 @@ export function SettingsPage() {
                 </p>
               </div>
             </div>
+          ) : section === "about" ? (
+            <AboutSection onClose={guardedClose} />
           ) : section === "categories" ? (
             <CategoriesSection onClose={guardedClose} />
           ) : section === "general" ? (

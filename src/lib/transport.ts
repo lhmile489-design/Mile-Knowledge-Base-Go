@@ -82,6 +82,8 @@ export const settingsApi = {
     guard(async () => unwrap(await SettingsService.appConfigPatchAliases(vaultId, patches))),
   appConfigSetCategories: (vaultId: string, categories: CategoryConfig[]) =>
     guard(async () => unwrap(await SettingsService.appConfigSetCategories(vaultId, categories))),
+  aboutInfo: () => guard(async () => unwrap(await SettingsService.aboutInfo())),
+  copyStoragePath: (kind: string) => guard(async () => unwrap(await SettingsService.copyStoragePath(kind))),
   providers: (vaultId: string) => guard(async () => unwrap(await SettingsService.providers(vaultId))),
   skillCatalog: (vaultId: string) => guard(async () => unwrap(await SettingsService.skillCatalog(vaultId))),
   saveProviders: (vaultId: string, providers: ProviderDraft[]) =>

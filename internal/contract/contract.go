@@ -122,6 +122,33 @@ type SkillSkip struct {
 	Reason string `json:"reason"`
 }
 
+// AboutInfoResult is M74: the about & diagnostics page. Every display value
+// here is already redacted (<vault>, <home>); the page never receives an
+// absolute path (API §1, D-013).
+type AboutInfoResult struct {
+	Version      string              `json:"version"`
+	TechStack    string              `json:"techStack"`
+	Engine       EngineStatus        `json:"engine"`
+	Capabilities *EngineCapabilities `json:"capabilities,omitempty"`
+	RestartCount int                 `json:"restartCount"`
+	Storage      []StorageLocation   `json:"storage"`
+	Failure      *Failure            `json:"failure,omitempty"`
+}
+
+// StorageLocation is one row of M74's storage list.
+type StorageLocation struct {
+	Kind     string `json:"kind"`
+	Label    string `json:"label"`
+	Display  string `json:"display"`
+	Copyable bool   `json:"copyable"`
+}
+
+// CopyStoragePathResult is M75 (Go writes the clipboard, D-013).
+type CopyStoragePathResult struct {
+	OK      bool     `json:"ok"`
+	Failure *Failure `json:"failure,omitempty"`
+}
+
 // ---- Tree and documents (API.md §4.2) ----
 
 // FileEntry is one row of the lazily loaded tree.
