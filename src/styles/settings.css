@@ -1,4 +1,4 @@
-/* Settings overlay (T17/T18). Only the AI sections exist in M2. */
+/* Settings overlay (T17/T18; shell and page save bar in M3 T04). */
 
 .settings-shell {
   height: 100%;
@@ -703,4 +703,56 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* T04: page-level save bar, saved notice and the no-vault / placeholder cards. */
+.settings-content-host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.settings-content-host > .settings-savebar {
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+}
+
+.settings-savebar-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-savebar-error {
+  color: var(--raw-danger, #b42318);
+  white-space: normal;
+}
+
+.settings-notice {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  z-index: 6;
+  padding: 4px 10px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--raw-card);
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+}
+
+.settings-no-vault {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-card);
+  color: var(--raw-muted);
+  font-size: var(--text-body-sm);
 }

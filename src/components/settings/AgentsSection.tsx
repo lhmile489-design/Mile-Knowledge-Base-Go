@@ -5,13 +5,13 @@ import { AGENT_IDS, AGENT_META, type AgentId } from "../../lib/agentMeta";
 import {
   approvalLabel,
   defaultModelLabel,
-  dirtyAgents,
   EFFORT_LABEL,
   EFFORT_LEVELS,
   modelChip,
   modelOptions,
   steeringText,
 } from "../../lib/agentSettings";
+import { steeringDrafts } from "../../lib/settingsDrafts";
 import {
   describeExecutionMode,
   EXECUTION_MODES,
@@ -32,8 +32,6 @@ export function AgentsSection({ vaultId, onClose }: { readonly vaultId: string; 
   const error = useSettingsStore((state) => state.error);
   const load = useSettingsStore((state) => state.load);
   const setDraft = useSettingsStore((state) => state.setDraft);
-  const discardDrafts = useSettingsStore((state) => state.discardDrafts);
-  const saveDrafts = useSettingsStore((state) => state.saveDrafts);
   const patchAgent = useSettingsStore((state) => state.patchAgent);
   const toggleSkill = useSettingsStore((state) => state.toggleSkill);
 
@@ -51,8 +49,7 @@ export function AgentsSection({ vaultId, onClose }: { readonly vaultId: string; 
   const agents = config?.agents ?? {};
   const current = agents[selected];
   const meta = AGENT_META[selected];
-  const draft = steeringText(drafts, agents, selected);
-  const dirty = dirtyAgents(drafts, agents);
+  const draft = steeringText(steeringDrafts(drafts), agents, selected);
   const models = modelOptions(providers);
   const defaultLabel = defaultModelLabel(providers);
   const mode = executionModeOfApproval(current?.approval);
@@ -233,21 +230,6 @@ export function AgentsSection({ vaultId, onClose }: { readonly vaultId: string; 
         ) : null}
       </div>
 
-      {dirty.length > 0 ? (
-        <div className="settings-savebar" role="status" data-testid="steering-savebar">
-          <span>
-            有未保存的改动：{dirty.map((id) => AGENT_META[id].name).join("、")} 的 steering
-          </span>
-          <div className="settings-savebar-actions">
-            <button type="button" className="btn line" onClick={discardDrafts}>
-              放弃
-            </button>
-            <button type="button" className="btn-primary" onClick={() => void saveDrafts(vaultId)}>
-              保存
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

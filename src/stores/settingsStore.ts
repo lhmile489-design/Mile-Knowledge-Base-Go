@@ -1,27 +1,46 @@
-// Settings page state for the Agents section (T18): the saved config, the
-// unsaved steering drafts, immediate patches and the leave guard.
+// Settings page state (M2 T18, M3 T04): the saved config, the shared draft
+// table, the page-level save bar and the leave guard. Every text control
+// writes a draft; saving is one explicit action (bar or Ctrl+S).
 import { create } from "zustand";
 import type { AgentConfig, AgentPatch, AppConfigResult, SkillEntry } from "../mygo";
 import type { AgentId } from "../lib/agentMeta";
-import { dirtyAgents } from "../lib/agentSettings";
+import { AGENT_IDS } from "../lib/agentMeta";
+import {
+  aliasDrafts,
+  applyAliasDrafts,
+  categoryAliasDraftId,
+  dirtyDraftIds,
+  MAX_CATEGORY_ALIAS,
+  overlongAliasDrafts,
+  steeringDraftId,
+  steeringDrafts,
+} from "../lib/settingsDrafts";
 import { settingsApi, TransportError } from "../lib/transport";
 import { useComposerStore } from "./composerStore";
 
-export type LeaveTarget = "close" | "model" | "agents";
+export type SettingsSection = "general" | "model" | "agents" | "categories" | "about";
+export type LeaveTarget = "close" | SettingsSection;
 
 interface SettingsState {
   config: AppConfigResult | null;
   skills: SkillEntry[];
-  drafts: Partial<Record<AgentId, string>>;
+  /** Draft text by id (steering:<agent> | category-alias:<dir>). */
+  drafts: Record<string, string>;
   error: string | null;
   leaveTarget: LeaveTarget | null;
+  saving: boolean;
+  notice: string | null;
 
   load(vaultId: string | null): Promise<void>;
+  /** Steering draft for one agent (the Agents section's text control). */
   setDraft(agent: AgentId, text: string): void;
+  /** Display-name draft for one directory (the categories table). */
+  setAliasDraft(directory: string, text: string): void;
   discardDrafts(): void;
   saveDrafts(vaultId: string | null): Promise<void>;
   patchAgent(vaultId: string | null, agent: AgentId, patch: AgentPatch): Promise<void>;
   toggleSkill(vaultId: string | null, agent: AgentId, path: string, checked: boolean): Promise<void>;
+  clearNotice(): void;
 
   /** Returns true when leaving may proceed; otherwise opens the guard. */
   requestLeave(target: LeaveTarget): boolean;
@@ -42,6 +61,8 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   drafts: {},
   error: null,
   leaveTarget: null,
+  saving: false,
+  notice: null,
 
   load: async (vaultId) => {
     if (!vaultId) {
@@ -59,29 +80,66 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     }
   },
 
-  setDraft: (agent, text) => set((state) => ({ drafts: { ...state.drafts, [agent]: text } })),
+  setDraft: (agent, text) =>
+    set((state) => ({ drafts: { ...state.drafts, [steeringDraftId(agent)]: text }, notice: null })),
 
-  discardDrafts: () => set({ drafts: {}, leaveTarget: null }),
+  setAliasDraft: (directory, text) =>
+    set((state) => ({
+      drafts: { ...state.drafts, [categoryAliasDraftId(directory)]: text },
+      notice: null,
+    })),
+
+  discardDrafts: () => set({ drafts: {}, leaveTarget: null, error: null }),
 
   saveDrafts: async (vaultId) => {
     if (!vaultId) return;
-    const { drafts, config } = get();
-    const dirty = dirtyAgents(drafts, config?.agents);
+    const { drafts, config, saving } = get();
+    if (saving) return;
+    const dirty = dirtyDraftIds(drafts, config);
     if (dirty.length === 0) {
       set({ drafts: {} });
       return;
     }
+    const overlong = overlongAliasDrafts(drafts);
+    if (overlong.length > 0) {
+      // 拒绝而不是截断：截断会让保存条永远亮着（旧版同样处理）。
+      set({ error: `显示名不能超过 ${MAX_CATEGORY_ALIAS} 个字符：${overlong.join("、")}` });
+      return;
+    }
+    set({ saving: true, error: null });
     try {
-      let latest: AppConfigResult | null = null;
-      for (const agent of dirty) {
-        const text = drafts[agent];
-        if (text === undefined) continue;
+      let latest: AppConfigResult | null = config;
+      const steering = steeringDrafts(drafts);
+      for (const agent of AGENT_IDS) {
+        const text = steering[agent];
+        if (text === undefined || !dirty.includes(steeringDraftId(agent))) continue;
         latest = await settingsApi.appConfigPatchAgent(vaultId, agent, { steering: text });
       }
-      set({ drafts: {}, config: latest ?? config, error: null });
+      const aliases = aliasDrafts(drafts);
+      const aliasDirty = Object.keys(aliases).some((directory) =>
+        dirty.includes(categoryAliasDraftId(directory)),
+      );
+      if (aliasDirty) {
+        const next = applyAliasDrafts(latest?.categories ?? [], drafts);
+        latest = await settingsApi.appConfigSetCategories(vaultId, next);
+      }
+      // 保存期间又被改动的草稿保留下来，不清掉。
+      set((state) => {
+        const remaining: Record<string, string> = {};
+        for (const [id, text] of Object.entries(state.drafts)) {
+          if (dirty.includes(id) && text === drafts[id]) continue;
+          remaining[id] = text;
+        }
+        return {
+          drafts: remaining,
+          config: latest ?? state.config,
+          saving: false,
+          notice: "已保存",
+        };
+      });
       void useComposerStore.getState().loadSession(vaultId);
     } catch (error) {
-      set({ error: errorText(error) });
+      set({ error: errorText(error), saving: false });
     }
   },
 
@@ -107,6 +165,8 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     await get().patchAgent(vaultId, agent, { skillPaths: next });
   },
 
+  clearNotice: () => set({ notice: null }),
+
   requestLeave: (target) => {
     if (!get().isDirty()) return true;
     set({ leaveTarget: target });
@@ -123,7 +183,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
 
   isDirty: () => {
     const { drafts, config } = get();
-    return dirtyAgents(drafts, config?.agents).length > 0;
+    return dirtyDraftIds(drafts, config).length > 0;
   },
 }));
 

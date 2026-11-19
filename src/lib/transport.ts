@@ -11,6 +11,7 @@ import {
   WindowService,
   events,
   type AgentPatch,
+  type CategoryConfig,
   type ProviderDraft,
   type ProvidersResult,
   type AppSettings,
@@ -79,6 +80,8 @@ export const settingsApi = {
     guard(async () => unwrap(await SettingsService.appConfigPatchAgent(vaultId, agent, patch))),
   appConfigPatchAliases: (vaultId: string, patches: Record<string, string | null>) =>
     guard(async () => unwrap(await SettingsService.appConfigPatchAliases(vaultId, patches))),
+  appConfigSetCategories: (vaultId: string, categories: CategoryConfig[]) =>
+    guard(async () => unwrap(await SettingsService.appConfigSetCategories(vaultId, categories))),
   providers: (vaultId: string) => guard(async () => unwrap(await SettingsService.providers(vaultId))),
   skillCatalog: (vaultId: string) => guard(async () => unwrap(await SettingsService.skillCatalog(vaultId))),
   saveProviders: (vaultId: string, providers: ProviderDraft[]) =>
