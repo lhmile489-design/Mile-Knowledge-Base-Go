@@ -386,6 +386,14 @@ def main():
             DRIVER.wait("!document.body.innerText.includes('未索引')", 30)
         except RuntimeError:
             log("  index still scanning; continuing")
+        if "--probe" in sys.argv:
+            log(str(DRIVER.js(
+                "JSON.stringify({inner: window.innerWidth,"
+                " shell: document.querySelector('.overview-shell') ? document.querySelector('.overview-shell').clientWidth : -1,"
+                " cols: getComputedStyle(document.querySelector('.overview-grid')).gridTemplateColumns,"
+                " container: getComputedStyle(document.querySelector('.overview-shell')).containerType, dirs: (window.__mkbTree.getState().nodes['']||[]).filter((e)=>e.kind==='directory').map((e)=>e.name)})"
+            )))
+            return 0
         DRIVER.wait("!!document.querySelector('.tree-scroll [role=treeitem], .tree-scroll .tree-row')", 30)
         step("10 overview light", lambda: DRIVER.wait("!!document.querySelector('[data-testid=\"overview-grid\"]')", 20), "10", "overview", theme="light")
         step("11 overview dark", lambda: (DRIVER.js("window.__mkbApp.getState().setTheme('dark')"), time.sleep(0.8)), "11", "overview-dark", theme="dark")
@@ -746,8 +754,13 @@ def main():
 
         log("== welcome phase")
         app.terminate()
-        time.sleep(1.5)
+        try:
+            app.wait(timeout=8)
+        except subprocess.TimeoutExpired:
+            pass
+        time.sleep(1.0)
         subprocess.run(["taskkill", "/F", "/IM", "Mile Knowledge Base.exe"], capture_output=True)
+        time.sleep(0.8)
         welcome_appdata = canon(tempfile.mkdtemp(prefix="mkb-visual-welcome-"))
         app = subprocess.Popen(
             [str(APP)],
@@ -771,8 +784,13 @@ def main():
 
         log("== no-provider phase")
         app.terminate()
-        time.sleep(1.5)
+        try:
+            app.wait(timeout=8)
+        except subprocess.TimeoutExpired:
+            pass
+        time.sleep(1.0)
         subprocess.run(["taskkill", "/F", "/IM", "Mile Knowledge Base.exe"], capture_output=True)
+        time.sleep(0.8)
         provider_file = Path(vault) / ".mile-kb" / "settings" / "providers.json"
         if provider_file.exists():
             provider_file.unlink()
@@ -783,6 +801,9 @@ def main():
         )
         DRIVER = Driver(PORT)
         DRIVER.connect(40)
+        time.sleep(2.0)
+        # 前面的阶段留下了对话历史，先开新对话，才能拍到空状态的总览。
+        DRIVER.js("void window.__mkbAgent.getState().newConversation(); true")
         DRIVER.wait("!!document.querySelector('[data-testid=\"overview-grid\"]')", 40)
         step("40 chat no provider", lambda: time.sleep(0.8), "40", "chat-no-provider")
         step(

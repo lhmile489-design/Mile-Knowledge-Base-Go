@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { CaretRight, Lock, PlugsConnected, Sparkle, Star, X } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { CaretRight, DotsThree, Lock, PlugsConnected, Sparkle, Star, X } from "@phosphor-icons/react";
 import type { ProviderDraft, ProvidersResult } from "../../mygo";
 import {
   DEEPSEEK_PRESET,
   keyBadge,
+  moveToFront,
   providerAddress,
   providerInitials,
 } from "../../lib/providerForm";
@@ -38,6 +39,25 @@ export function ModelServiceSection({
   const [testResults, setTestResults] = useState<Record<string, string>>({});
   const [armed, setArmed] = useState<{ key: string; at: number } | null>(null);
   const [errorLine, setErrorLine] = useState<string | null>(null);
+  const [menu, setMenu] = useState<string | null>(null);
+  const [keyEditor, setKeyEditor] = useState<{ name: string; envName: string } | null>(null);
+  const [keyValue, setKeyValue] = useState("");
+  const [keyBusy, setKeyBusy] = useState(false);
+
+  // 菜单：点外面或按 Esc 关闭（与旧版一致）。
+  useEffect(() => {
+    if (!menu) return;
+    const close = (): void => setMenu(null);
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") close();
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
 
   const providers = data?.providers ?? [];
   const credentials = data?.credentials ?? [];
@@ -77,6 +97,36 @@ export function ModelServiceSection({
     }
     setArmed({ key: provider.name, at: now });
     window.setTimeout(() => setArmed((current) => (current?.key === provider.name ? null : current)), 4000);
+  };
+
+  // 更多菜单：移到首位立即保存（旧版同），删除仍走 600ms 两步确认。
+  const moveProvider = async (index: number): Promise<void> => {
+    if (index <= 0) return;
+    setMenu(null);
+    setErrorLine(null);
+    try {
+      await settingsApi.saveProviders(vaultId, moveToFront(providers, index));
+      await reload();
+    } catch (err) {
+      setErrorLine(errorText(err));
+    }
+  };
+
+  const saveKey = async (): Promise<void> => {
+    if (!keyEditor) return;
+    setKeyBusy(true);
+    setErrorLine(null);
+    try {
+      const result = await settingsApi.setKey(keyEditor.envName, keyValue);
+      if (result.failure) throw new Error(result.failure.message);
+      setKeyEditor(null);
+      setKeyValue("");
+      await reload();
+    } catch (err) {
+      setErrorLine(errorText(err));
+    } finally {
+      setKeyBusy(false);
+    }
   };
 
   return (
@@ -194,6 +244,36 @@ export function ModelServiceSection({
                         {testText}
                       </div>
                     ) : null}
+                    {keyEditor?.name === provider.name && provider.apiKeyEnv ? (
+                      <div className="provider-key-editor" data-testid="provider-key-editor">
+                        <input
+                          type="password"
+                          className="field"
+                          value={keyValue}
+                          placeholder="粘贴新的 API Key"
+                          aria-label={`${provider.name} 新的 API Key`}
+                          onChange={(event) => setKeyValue(event.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          disabled={keyBusy || keyValue.trim() === ""}
+                          onClick={() => void saveKey()}
+                        >
+                          {keyBusy ? "保存中…" : "保存"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn line"
+                          onClick={() => {
+                            setKeyEditor(null);
+                            setKeyValue("");
+                          }}
+                        >
+                          取消
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="provider-actions">
                     <button
@@ -211,14 +291,58 @@ export function ModelServiceSection({
                     >
                       编辑
                     </button>
-                    <button
-                      type="button"
-                      className={`btn${deleting ? " settings-confirm" : ""}`}
-                      onClick={() => void deleteProvider(provider, index)}
-                      data-testid="provider-delete"
-                    >
-                      {deleting ? "确认删除" : "删除"}
-                    </button>
+                    <div className="provider-more">
+                      <button
+                        type="button"
+                        className="icon-button"
+                        aria-label="更多操作"
+                        aria-haspopup="menu"
+                        aria-expanded={menu === provider.name}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setMenu(menu === provider.name ? null : provider.name);
+                        }}
+                        data-testid="provider-more"
+                      >
+                        <DotsThree size={16} aria-hidden />
+                      </button>
+                      {menu === provider.name ? (
+                        <div className="provider-menu" role="menu" data-testid="provider-menu">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="provider-menu-item"
+                            disabled={!provider.apiKeyEnv}
+                            title={provider.apiKeyEnv ? undefined : "该服务不需要 API key"}
+                            onClick={() => {
+                              setKeyEditor({ name: provider.name, envName: provider.apiKeyEnv });
+                              setKeyValue("");
+                              setMenu(null);
+                            }}
+                          >
+                            更换 API Key
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="provider-menu-item"
+                            disabled={index === 0}
+                            onClick={() => void moveProvider(index)}
+                          >
+                            移到首位
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="provider-menu-item"
+                            onClick={() => void deleteProvider(provider, index)}
+                            data-testid="provider-delete"
+                          >
+                            {deleting ? "确认删除" : "删除"}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               );

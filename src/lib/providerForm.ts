@@ -58,3 +58,9 @@ export function upsertProvider(
 export function providerAddress(baseUrl: string): string {
   return baseUrl.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
 }
+
+/** Move one provider to the front (the more menu's "移到首位"). */
+export function moveToFront<T>(list: readonly T[], index: number): T[] {
+  if (index <= 0 || index >= list.length) return [...list];
+  return [list[index] as T, ...list.slice(0, index), ...list.slice(index + 1)];
+}

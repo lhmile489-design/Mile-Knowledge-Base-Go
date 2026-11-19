@@ -878,3 +878,54 @@
   font-size: var(--text-body-sm);
   color: var(--raw-muted);
 }
+
+/* T11: provider row more-menu and inline key editor. */
+.provider-more {
+  position: relative;
+}
+
+.provider-menu {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  z-index: 12;
+  display: flex;
+  min-width: 148px;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-control);
+  background: var(--raw-card);
+  box-shadow: var(--shadow-float);
+}
+
+.provider-menu-item {
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--raw-text);
+  font-size: var(--text-meta);
+  text-align: left;
+  cursor: pointer;
+}
+
+.provider-menu-item:hover:not(:disabled) {
+  background: var(--raw-raised);
+}
+
+.provider-menu-item:disabled {
+  color: var(--raw-faint);
+  cursor: default;
+}
+
+.provider-key-editor {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.provider-key-editor .field {
+  flex: 1;
+  min-width: 160px;
+}

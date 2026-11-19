@@ -3,6 +3,7 @@ import type { ProviderDraft } from "../mygo";
 import {
   DEEPSEEK_PRESET,
   keyBadge,
+  moveToFront,
   parseModelLines,
   providerAddress,
   providerInitials,
@@ -55,5 +56,19 @@ describe("provider form helpers", () => {
     expect(DEEPSEEK_PRESET.apiKeyEnv).toBe("DEEPSEEK_API_KEY");
     expect(DEEPSEEK_PRESET.models).toEqual(["deepseek-v4-flash", "deepseek-v4-pro"]);
     expect(providerAddress("https://api.deepseek.com/")).toBe("api.deepseek.com");
+  });
+});
+
+describe("moveToFront", () => {
+  it("moves the picked row to the head and keeps the rest in order", () => {
+    expect(moveToFront(["a", "b", "c"], 2)).toEqual(["c", "a", "b"]);
+    expect(moveToFront(["a", "b", "c"], 1)).toEqual(["b", "a", "c"]);
+  });
+
+  it("is a no-op for the head or an out-of-range index", () => {
+    const list = ["a", "b"];
+    expect(moveToFront(list, 0)).toEqual(list);
+    expect(moveToFront(list, 5)).toEqual(list);
+    expect(moveToFront(list, 0)).not.toBe(list);
   });
 });
