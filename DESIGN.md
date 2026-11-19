@@ -393,3 +393,45 @@
 | 无 | — | — | — | — |
 
 完成条件：本文件 9 项齐全，语义令牌两主题数值与旧版 tokens.css 一致（漂移项已标注），关键状态与适配规则可执行可验收；阶段 10 建立的 `src/styles/` 与本文件数值冲突时先澄清再改。
+
+
+## 11. R2 增补：技能浮层
+
+> 状态：用户 2026-11-20 审核通过（含毛玻璃修订）。页面结构与状态见 docs/UI设计稿.md 第 9 节，视觉稿 `design/r2/skills-panel.html`。本节只记新增的共用规则；能用已有原语的一律复用，下表列出的是新增组合。
+
+### 11.1 复用与新增
+
+| 部分 | 做法 |
+| --- | --- |
+| 标题栏「技能」按钮 | 新增：胶囊形，高 28，`--raw-raised` 底、`--text-body-sm` 600；打开时 `--raw-accent-soft` 底 + `--raw-accent` 字（`aria-expanded`）；角标 18px 胶囊，配色同 `.pill[data-tone='warn']`。必须带 `.no-drag` |
+| 浮层外壳 | 新增，**毛玻璃**（用户 2026-11-20 要求）：底色 `--raw-card` 62% 混透明，`backdrop-filter: blur(24px) saturate(1.5)`，1px `--raw-line` 75% 混透明、`--radius-panel`（16）、`--shadow-float` 加一道 `--glass-line` 顶部内高光，z-index 5。模糊只挂在**不滚动的外壳**上，滚动的是里面的主体，所以不违反 §5.6「滚动容器不用 blur」。浏览器不支持 `backdrop-filter` 时退回不透明 `--raw-card`。与现有 `.popover` 一样不读系统的「减少透明度」设置（本机就关着透明效果，读了用户就看不到）。结构是顶栏 / 滚动主体 / 底栏，顶栏与底栏 1px 发丝线（`--raw-line` 75% 混透明） |
+| 浮层内表面 | 卡片、工具行悬停、目标格、chip、选择区用局部变量 `--skm-surface`：浅色 `--raw-card` 70% 混透明，深色 `--raw-raised` 66% 混透明，让玻璃层次透出来；输入框、确认卡、确认卡内的条目保持不透明，保证读写区域稳定 |
+| 两页切换、显示方式、分发方式 | 复用 `.segmented`（分发方式用 `role="radiogroup"` + `aria-checked`） |
+| 技能卡片 | 新增 `.skm-card`：`--raw-sunken` 底、1px 线、`--radius-card`；悬停只换边框色到 `--raw-line-strong`，不抬起、不位移；选中是强调色边框 + 混 `--raw-accent-soft` 的底；「知识库有更新」染 warn 边（§8 状态色只染边） |
+| 工具筛选 chip | 新增 `.skm-chip`：高 28 胶囊，不用 `.chip`（那是等宽小字的证据 chip）；按下态 `aria-pressed`，强调色边 + `--raw-accent-soft` 底 |
+| 工具技能行 | 新增 `.skm-row`：高 40，5 列（图标 20 / 名称 / 路径 / 状态 150 / 操作 88）；行间发丝线，悬停行 `--raw-sunken` 底；操作按钮复用 `.icon-button`，平时隐藏、悬停或键盘聚焦本行时显示 |
+| 来源状态 | 复用 `.pill`：链接到知识库 = live；拷贝且知识库有更新 = warn；链接失效 = fault；链接到外部、独立、内置 = idle（内置带锁图标）。胶囊必须有文字，颜色不是唯一线索 |
+| 分发目标格 | 新增 `.skm-target`：`role="checkbox"`，勾选态强调色边 + `--raw-accent-soft` 底 + 右上角实心勾；禁用态 `--raw-sunken` 底、`aria-disabled`，说明文字写原因 |
+| 提示 | 警示 / 信息用行内卡片（warn / info 混色边），不用 Toast，与 §6 一致 |
+| 卸载确认 | 浮层内二级层：浮层主体上盖 40% `--raw-canvas` 遮罩加 `blur(6px)`，居中 540 宽不透明确认卡；危险按钮新增 `.btn-danger`（fault 45% 混线的边、10% 混卡片底、fault 字），按钮文字写数量 |
+| 主操作 | 复用 `.btn-primary`（每个视图最多一个），次要用 `.btn-quiet`，行内小按钮新增 `.btn-xs`（高 24） |
+
+### 11.2 品牌图标
+
+- 工具图标是各厂商的品牌 SVG，来自 skillkit（MIT），放在 `design/r2/agents/`，实施时移到 `src/assets/agents/`，同目录附 NOTICE（商标归各自所有者，D-014 第 4 条）。这是 §8「图标一律 Phosphor」的唯一例外，只用在表示「某个工具」的位置；其余图标（搜索、关闭、卸载、文件夹等）照旧用 Phosphor（原型里手绘的线条图标只是占位，实施时换成 Phosphor 对应项：Stack、MagnifyingGlass、SquaresFour、ListBullets、Plus、X、DotsThree、ArrowRight、Folder、Link、Trash、Tray、Check、Warning、Info、Globe、CaretLeft、Lock、ArrowCounterClockwise、GithubLogo、FileZip）。
+- 品牌图标只按 16 / 18 / 20px 显示，圆角 4px，不重新着色。深色主题下给 `img` 垫一块 `#e6e7ea` 浅底加 1px 内边距：Cursor、Grok、OpenCode 等是黑色单色图标，直接放在深底上看不见。这个浅底是例外，只用于第三方图标。
+- 没有图标的工具（MiniMax Code）用首字母占位：`--raw-raised` 底、`--raw-muted` 字。通用目录用 Phosphor Globe。
+
+### 11.3 交互与可访问性
+
+- 按钮 `aria-haspopup="dialog"` + `aria-expanded` + `aria-controls`；浮层 `role="dialog"` + `aria-label="技能"`，打开时焦点进入顶栏第一个控件，Tab 在浮层内循环，关闭后焦点回到按钮。
+- 卸载确认卡 `role="alertdialog"`，打开时焦点在「取消」上（危险操作不预选危险按钮）。
+- 两页切换支持 `←`/`→`；工具技能行的操作在键盘聚焦本行时可见，不能只靠悬停。
+- 角标有 `aria-label`（「N 项需要处理」）；状态胶囊有文字；分发目标格的状态写在格内说明文字里。
+- `prefers-reduced-motion` 时浮层展开不做位移与缩放，只做透明度。
+- 玻璃上的文字对比度（2026-11-20 按截图实测）：最弱的 `--raw-faint` 在 5 个视图 × 浅 / 深下最低 5.12:1，`--raw-muted` 最低 5.90:1，都高于 4.5:1。原型背后只有总览磁贴和正文；背后是深色大图之类的内容时没测过，实施时用真实工作台截图复测。
+- 浮层展开动效复用 §5.6 popover 的出现动画（透明度 `--dur`+`--ease`，`translateY(6px) scale(0.97)` → 无，走 `--dur-spring`+`--ease-spring`）。
+
+### 11.4 视觉验收
+
+R2 的视觉验收以 `design/r2/shots/` 的 18 张截图为基准，方法同 §9；允许差异：字体渲染、真实数据造成的数量与文字差异、原型中占位图标换成 Phosphor 后的形状差异。

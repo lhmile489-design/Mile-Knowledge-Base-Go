@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>R2 技能浮层原型</title>
+<!-- 令牌直接引用工程里的 tokens.css；其中的 Tailwind 专有指令浏览器会忽略，变量与原语类照常生效。 -->
+<link rel="stylesheet" href="../../src/styles/tokens.css">
+<style>
+  html, body { margin: 0; background: var(--raw-canvas); font-family: var(--font-ui); color: var(--raw-text); }
+  * { box-sizing: border-box; }
+  button { font-family: inherit; }
+
+  /* ---------- 原型外壳：仿真工作台，只为给浮层一个真实背景 ---------- */
+  .app { position: relative; width: 1440px; height: 900px; overflow: hidden; background: var(--raw-canvas);
+    display: grid; grid-template-rows: var(--titlebar-h) minmax(0, 1fr); }
+  .titlebar { display: flex; align-items: center; gap: 12px; padding-left: 12px; }
+  .titlebar .brand { display: flex; align-items: center; gap: 8px; font-size: var(--text-body); font-weight: 600; color: var(--raw-text); }
+  .titlebar .brand img { width: 18px; height: 18px; }
+  .titlebar .vault-tag { font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: .32em; color: var(--raw-faint); }
+  .titlebar .vault-name { flex: 1; min-width: 0; font-size: var(--text-body-sm); color: var(--raw-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .win { display: flex; }
+  .win span { width: 46px; height: 40px; display: grid; place-items: center; color: var(--raw-text); }
+  .grid { display: grid; grid-template-columns: 232px 8px minmax(480px, 1fr) 8px 560px; padding: 0 8px 8px; min-height: 0; }
+  .panel-body { padding: 14px; display: grid; gap: 10px; align-content: start; }
+  .ghost-row { height: 12px; border-radius: 6px; background: var(--raw-raised); }
+  .ghost-tile { height: 92px; border-radius: var(--radius-card); border: 1px solid var(--raw-line); background: var(--panel-card, var(--raw-card)); }
+  .agnes-head { display: flex; gap: 16px; align-items: center; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--raw-line); font-size: var(--text-body-sm); color: var(--raw-text); }
+  .composer { position: absolute; left: 16px; right: 16px; bottom: 16px; height: 150px; border: 1px solid var(--raw-line-strong); border-radius: var(--radius-card); background: var(--panel-card, var(--raw-card)); padding: 12px; font-size: var(--text-body-sm); color: var(--raw-faint); }
+  .tree-head { font-size: var(--text-caption); letter-spacing: .12em; color: var(--raw-faint); font-weight: 600; margin-top: 8px; }
+  .tree-row { display: flex; justify-content: space-between; font-size: var(--text-body); color: var(--raw-text); padding: 2px 4px; }
+  .tree-row em { font-style: normal; font-size: var(--text-caption); color: var(--raw-faint); }
+
+  /* ---------- 标题栏入口 ---------- */
+  .skm-trigger { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 9px; border: 0;
+    border-radius: var(--radius-pill); background: var(--raw-raised); color: var(--raw-text);
+    font-size: var(--text-body-sm); font-weight: 600; cursor: pointer;
+    transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+  .skm-trigger:hover { background: color-mix(in srgb, var(--raw-raised) 70%, var(--raw-line-strong)); }
+  .skm-trigger[aria-expanded='true'] { background: var(--raw-accent-soft); color: var(--raw-accent); }
+  .skm-trigger:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .skm-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: inline-grid; place-items: center;
+    background: color-mix(in srgb, var(--warn) 18%, var(--raw-card)); color: color-mix(in srgb, var(--warn) 78%, var(--raw-strong));
+    font-size: var(--text-caption); font-weight: 700; line-height: 1; }
+
+  /* ---------- 浮层 ---------- */
+  .skm-pop { position: absolute; z-index: 5; top: calc(var(--titlebar-h) + 6px); left: 372px; width: 760px; /* 右缘对齐「技能」按钮右缘，左缘不越过侧栏 */ height: 560px;
+    display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden;
+    /* 毛玻璃（用户 2026-11-20 要求）：模糊挂在不滚动的外壳上，滚动的是里面的 .skm-body。 */
+    --skm-surface: color-mix(in srgb, var(--raw-card) 70%, transparent);
+    --skm-line: color-mix(in srgb, var(--raw-line) 75%, transparent);
+    background: color-mix(in srgb, var(--raw-card) 62%, transparent);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid var(--skm-line); border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-float), inset 0 1px 0 var(--glass-line, transparent); }
+  [data-theme='dark'] .skm-pop { --skm-surface: color-mix(in srgb, var(--raw-raised) 66%, transparent); }
+  /* 不支持模糊时退回不透明底，避免文字压在透出的内容上。与现有 .popover 一致，不读「减少透明度」设置。 */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .skm-pop { background: var(--raw-card); } }
+
+  .skm-head { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 12px; border-bottom: 1px solid var(--skm-line); }
+  .skm-head .segmented-item .n { margin-left: 4px; font-weight: 500; color: var(--raw-faint); font-variant-numeric: tabular-nums; }
+  .skm-head .segmented-item[aria-selected='true'] .n { color: inherit; opacity: .75; }
+  .skm-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px;
+    border: 1px solid var(--raw-line-strong); border-radius: var(--radius-control); background: var(--raw-card); color: var(--raw-faint); font-size: var(--text-body-sm); }
+  .skm-search kbd { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); }
+  .skm-body { min-height: 0; overflow: auto; padding: 12px 14px 14px; }
+  .skm-foot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--skm-line); font-size: var(--text-body-sm); color: var(--raw-muted); }
+  .skm-foot .spacer { flex: 1; }
+  .ico { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico-sm { width: 14px; height: 14px; }
+  .tool-ico { width: 16px; height: 16px; border-radius: 4px; flex: none; display: block; }
+  /* 深色下品牌图标垫一块浅底：Cursor、Grok、OpenCode 等是黑色单色图标，直接放在深底上看不见。 */
+  [data-theme='dark'] img.tool-ico { background: #e6e7ea; padding: 1px; }
+  .tool-ico.letter { display: grid; place-items: center; background: var(--raw-raised); color: var(--raw-muted); font-size: 9px; font-weight: 700; }
+
+  /* 分组标题 */
+  .skm-group { display: flex; align-items: baseline; gap: 8px; margin: 14px 2px 8px; font-size: var(--text-meta); font-weight: 600; color: var(--raw-muted); }
+  .skm-group:first-child { margin-top: 2px; }
+  .skm-group .n { font-weight: 500; color: var(--raw-faint); }
+
+  /* 知识库技能卡片 */
+  .skm-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .skm-card { position: relative; display: grid; grid-template-rows: auto 1fr auto; gap: 6px; min-height: 112px; padding: 10px 12px;
+    background: var(--panel-card, var(--raw-card)); border: 1px solid var(--raw-line); border-radius: var(--radius-card);
+    transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease); }
+  .skm-pop .skm-card { background: var(--skm-surface); }
+  .skm-card:hover, .skm-card[data-hover] { border-color: var(--raw-line-strong); }
+  .skm-card[data-selected] { border-color: var(--raw-accent); background: color-mix(in srgb, var(--raw-accent-soft) 80%, transparent); }
+  .skm-card[data-tone='warn'] { border-color: color-mix(in srgb, var(--warn) 40%, var(--raw-line)); }
+  .skm-card .name { display: flex; align-items: center; gap: 6px; font-size: var(--text-body); font-weight: 600; color: var(--raw-strong); min-width: 0; }
+  .skm-card .name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-card .desc { font-size: var(--text-meta); line-height: 1.5; color: var(--raw-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .skm-card .meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .skm-card .stack { display: flex; }
+  .skm-card .stack img, .skm-card .stack .tool-ico { width: 18px; height: 18px; border: 2px solid var(--raw-card); border-radius: 6px; margin-left: -5px; background: var(--raw-card); }
+  .skm-card .stack > :first-child { margin-left: 0; }
+  .skm-card .meta .none { font-size: var(--text-meta); color: var(--raw-faint); }
+  .skm-card .meta .spacer { flex: 1; }
+  .skm-card .kebab { position: absolute; top: 6px; right: 6px; opacity: 0; }
+  .skm-card:hover .kebab, .skm-card[data-hover] .kebab { opacity: 1; }
+  .skm-card .check { position: absolute; top: 9px; right: 10px; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--raw-line-strong); background: var(--raw-card); display: grid; place-items: center; }
+  .skm-card[data-selected] .check { background: var(--raw-accent); border-color: var(--raw-accent); color: var(--raw-on-accent); }
+  .btn-xs { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: 1px solid var(--raw-line); border-radius: 8px;
+    background: var(--raw-card); color: var(--raw-text); font-size: var(--text-meta); font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-xs:hover { background: var(--raw-raised); }
+  .btn-xs[data-danger] { color: var(--fault); }
+
+  /* 工具筛选 chip 行 */
+  .skm-chips { display: flex; gap: 6px; overflow: hidden; padding: 10px 14px 0; mask-image: linear-gradient(90deg, #000 92%, transparent); }
+  .skm-chip { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 28px; padding: 0 10px 0 7px; border: 1px solid var(--raw-line);
+    border-radius: var(--radius-pill); background: var(--skm-surface); font-size: var(--text-meta); font-weight: 600; color: var(--raw-text); cursor: pointer; }
+  .skm-chip .n { color: var(--raw-faint); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .skm-chip[aria-pressed='true'] { border-color: var(--raw-accent); background: var(--raw-accent-soft); color: var(--raw-accent); }
+  .skm-chip[aria-pressed='true'] .n { color: inherit; opacity: .75; }
+
+  /* 工具技能列表 */
+  .skm-list { display: grid; }
+  .skm-row { display: grid; grid-template-columns: 20px minmax(120px, 190px) minmax(0, 1fr) 150px 88px; align-items: center; gap: 10px;
+    height: 40px; padding: 0 8px; border-radius: 8px; font-size: var(--text-body-sm); }
+  .skm-row + .skm-row { box-shadow: inset 0 1px 0 var(--skm-line); }
+  .skm-row:hover, .skm-row[data-hover] { background: var(--skm-surface); box-shadow: none; }
+  .skm-row:hover + .skm-row, .skm-row[data-hover] + .skm-row { box-shadow: none; }
+  .skm-row .nm { font-weight: 600; color: var(--raw-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-row .path { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-row > .pill { justify-self: start; }
+  .skm-row .acts { display: flex; gap: 2px; justify-content: flex-end; opacity: 0; }
+  .skm-row:hover .acts, .skm-row[data-hover] .acts { opacity: 1; }
+  .skm-row .icon-button { width: 26px; height: 26px; color: var(--raw-muted); }
+
+  /* 子视图头 */
+  .skm-sub { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--text-body); font-weight: 600; color: var(--raw-strong); }
+  .skm-sub .crumb { color: var(--raw-muted); font-weight: 500; }
+  .skm-label { margin: 14px 2px 8px; font-size: var(--text-meta); font-weight: 600; color: var(--raw-muted); display: flex; gap: 8px; align-items: baseline; }
+  .skm-label:first-child { margin-top: 0; }
+  .skm-label .hint { font-weight: 400; color: var(--raw-faint); }
+
+  /* 分发目标网格 */
+  .skm-targets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .skm-target { position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 8px; row-gap: 2px; align-items: center;
+    padding: 9px 10px; border: 1px solid var(--raw-line); border-radius: var(--radius-card); background: var(--skm-surface); cursor: pointer; text-align: left; }
+  .skm-target img, .skm-target .tool-ico { width: 20px; height: 20px; grid-row: span 2; }
+  .skm-target .t { font-size: var(--text-body-sm); font-weight: 600; color: var(--raw-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-target .s { font-size: var(--text-caption); color: var(--raw-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-target[aria-checked='true'] { border-color: var(--raw-accent); background: var(--raw-accent-soft); }
+  .skm-target[aria-checked='true'] .s { color: var(--raw-accent); }
+  .skm-target[aria-disabled='true'] { cursor: not-allowed; background: color-mix(in srgb, var(--raw-sunken) 60%, transparent); }
+  .skm-target[aria-disabled='true'] .t { color: var(--raw-muted); }
+  .skm-target[data-wide] { grid-column: span 2; }
+  .skm-target .tick { position: absolute; top: 8px; right: 8px; width: 16px; height: 16px; border-radius: 999px; display: grid; place-items: center;
+    border: 1.5px solid var(--raw-line-strong); background: var(--raw-card); }
+  .skm-target[aria-checked='true'] .tick { background: var(--raw-accent); border-color: var(--raw-accent); color: var(--raw-on-accent); }
+  .skm-target .readers { grid-column: 2; display: flex; gap: 3px; margin-top: 4px; }
+  .skm-target .readers img, .skm-target .readers .tool-ico { width: 14px; height: 14px; grid-row: auto; border-radius: 3px; }
+  .skm-more { margin-top: 8px; font-size: var(--text-meta); color: var(--raw-accent); font-weight: 600; background: none; border: 0; padding: 4px 2px; cursor: pointer; }
+
+  .skm-note { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; padding: 9px 12px; border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--raw-line)); background: color-mix(in srgb, var(--warn) 7%, var(--raw-card));
+    font-size: var(--text-meta); line-height: 1.55; color: var(--raw-text); }
+  .skm-note .ico { color: var(--warn); margin-top: 1px; }
+  .skm-note[data-tone='info'] { border-color: color-mix(in srgb, var(--info) 35%, var(--raw-line)); background: color-mix(in srgb, var(--info) 6%, var(--raw-card)); }
+  .skm-note[data-tone='info'] .ico { color: var(--info); }
+
+  /* 确认卡：浮层内的二级层 */
+  .skm-scrim { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; background: color-mix(in srgb, var(--raw-canvas) 40%, transparent);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .skm-confirm { width: 540px; display: grid; gap: 12px; padding: 16px; background: var(--raw-card); border: 1px solid var(--raw-line-strong);
+    border-radius: var(--radius-card); box-shadow: var(--shadow-float); }
+  .skm-confirm h3 { margin: 0; font-size: var(--text-body); color: var(--raw-strong); }
+  .skm-confirm .item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 2px 8px; padding: 9px 10px; border-radius: 10px; background: var(--raw-sunken); font-size: var(--text-body-sm); }
+  .skm-confirm .item .what { grid-column: 2; font-size: var(--text-meta); color: var(--raw-muted); line-height: 1.5; }
+  .skm-confirm .item .what code { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); }
+  .skm-confirm .row { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-danger { display: inline-flex; align-items: center; gap: 6px; padding: 0.3125rem 0.75rem; border-radius: var(--radius-control);
+    border: 1px solid color-mix(in srgb, var(--fault) 45%, var(--raw-line)); background: color-mix(in srgb, var(--fault) 10%, var(--raw-card));
+    color: var(--fault); font-size: var(--text-body); font-weight: 600; cursor: pointer; }
+
+  .skm-field { display: grid; gap: 6px; }
+  .skm-input { height: 32px; padding: 0 10px; border: 1px solid var(--raw-line-strong); border-radius: var(--radius-control); background: var(--raw-card);
+    font-size: var(--text-body-sm); color: var(--raw-text); display: flex; align-items: center; }
+  .skm-checkline { display: flex; gap: 8px; align-items: flex-start; font-size: var(--text-body-sm); color: var(--raw-text); line-height: 1.5; }
+  .skm-box { flex: none; width: 16px; height: 16px; margin-top: 2px; border-radius: 4px; border: 1.5px solid var(--raw-accent); background: var(--raw-accent); color: var(--raw-on-accent); display: grid; place-items: center; }
+
+  .skm-empty { height: 100%; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 24px; }
+  .skm-empty .big { width: 40px; height: 40px; border-radius: 12px; background: var(--raw-raised); color: var(--raw-muted); display: grid; place-items: center; }
+  .skm-empty h4 { margin: 0; font-size: var(--text-body); color: var(--raw-strong); }
+  .skm-empty p { margin: 0; max-width: 380px; font-size: var(--text-body-sm); line-height: 1.6; color: var(--raw-muted); }
+
+  .skm-source { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .skm-drop { display: grid; justify-items: center; gap: 8px; margin-top: 12px; padding: 22px; border: 1.5px dashed var(--raw-line-strong);
+    border-radius: var(--radius-card); background: var(--skm-surface); text-align: center; font-size: var(--text-body-sm); color: var(--raw-muted); }
+  .skm-log { display: grid; }
+  .skm-log .l { display: grid; grid-template-columns: 70px 20px minmax(0, 1fr) auto; gap: 10px; align-items: center; height: 36px; padding: 0 6px; font-size: var(--text-body-sm); }
+  .skm-log .l + .l { border-top: 1px solid var(--raw-line); }
+  .skm-log .time { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); }
+  .skm-log .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--raw-text); }
+  .skm-log .txt b { font-weight: 600; color: var(--raw-strong); }
+
+  /* 原型导航：截图时用 ?shot=1 隐藏 */
+  .proto-nav { position: fixed; right: 12px; bottom: 12px; z-index: 99; display: flex; flex-wrap: wrap; gap: 4px; max-width: 420px; padding: 8px;
+    background: var(--raw-card); border: 1px solid var(--raw-line); border-radius: 10px; box-shadow: var(--shadow-float); font-size: 12px; }
+  .proto-nav a { color: var(--raw-accent); text-decoration: none; padding: 2px 6px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const P = new URLSearchParams(location.search);
+const STATE = P.get('state') || 'kb';
+document.documentElement.dataset.theme = P.get('theme') === 'dark' ? 'dark' : 'light';
+
+const I = {
+  stack: '<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="18" r=".6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  x: '<path d="m6 6 12 12M18 6 6 18"/>',
+  dots: '<circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>',
+  send: '<path d="M5 12h12M13 6l6 6-6 6"/>',
+  folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  trash: '<path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l1 12a2 2 0 0 0 2 1.8h5a2 2 0 0 0 2-1.8l1-12M9 7V4.5h6V7"/>',
+  inbox: '<path d="M12 4v10M8 10l4 4 4-4"/><path d="M4 14v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  warn: '<path d="M12 4 2.8 19.5h18.4L12 4Z"/><path d="M12 10v4.5M12 17.3v.2"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.2"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.9 5.2 3.9 8.5s-1.3 6.1-3.9 8.5c-2.6-2.4-3.9-5.2-3.9-8.5S9.4 5.9 12 3.5Z"/>',
+  back: '<path d="M15 6 9 12l6 6"/>',
+  lock: '<rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  restore: '<path d="M5 12a7 7 0 1 0 2.1-5"/><path d="M5 4.5V8h3.5"/>',
+  github: '<path d="M9 19c-4 1.3-4-2-5.5-2.5M14.5 21v-3.4a3 3 0 0 0-.8-2.3c2.7-.3 5.5-1.3 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.3 4.3 0 0 0-.1-3.2s-1-.3-3.4 1.3a11.6 11.6 0 0 0-6 0C6 2.6 5 2.9 5 2.9a4.3 4.3 0 0 0-.1 3.2 4.6 4.6 0 0 0-1.3 3.2c0 4.6 2.8 5.7 5.5 6a3 3 0 0 0-.8 2.3V21"/>',
+  zip: '<path d="M7 3.5h7l4.5 4.5v12a.5.5 0 0 1-.5.5H7a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M11 6h1M11 9h1M11 12h1M10.5 15h2v3h-2z"/>',
+};
+const ico = (n, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
+
+const T = {
+  claude: ['Claude Code', 'claude-code'], codex: ['Codex', 'codex'], cursor: ['Cursor', 'cursor'], trae: ['Trae', 'trae'],
+  workbuddy: ['WorkBuddy', 'workbuddy'], qoder: ['Qoder', 'qoder'], grok: ['Grok Build', 'grok'], opencode: ['OpenCode', 'opencode'],
+  gemini: ['Gemini CLI', 'gemini'], antigravity: ['Antigravity', 'antigravity'], windsurf: ['Windsurf', 'windsurf'], augment: ['Augment', 'augment'],
+  codebuddy: ['CodeBuddy', 'codebuddy'], pi: ['Pi', 'pi'], kiro: ['Kiro', 'kiro'], hermes: ['Hermes', 'hermes'], openclaw: ['OpenClaw', 'openclaw'],
+  cline: ['Cline', 'cline'], warp: ['Warp', 'warp'], kimi: ['Kimi Code', 'kimi'], zcode: ['ZCode', 'zcode'], dsh: ['DeepSeek Harness', 'deepseek-harness'],
+  minimax: ['MiniMax Code', null],
+};
+const tico = (k, cls = 'tool-ico') => T[k][1]
+  ? `<img class="${cls}" src="agents/${T[k][1]}.svg" alt="">`
+  : `<span class="${cls} tool-ico letter">M</span>`;
+const pill = (tone, text, icon = '') => `<span class="pill" data-tone="${tone}">${icon ? ico(icon, 'ico-sm') : ''}${text}</span>`;
+
+/* ---------- 背景工作台 ---------- */
+function workbench(popover, open = true, badge = 2) {
+  const tree = [['技能 SKILLS', 'skills', 24], ['暂存 STAGING', 'Clippings', 1], ['项目 PROJECTS', 'projects', 2], ['工具 TOOLS', 'tools', 1], ['独立知识库 WIKI', 'AI Knowledge base', 1]]
+    .map(([h, n, c]) => `<div class="tree-head">${h}</div><div class="tree-row"><span>${n}</span><em>${c}</em></div>`).join('');
+  return `
+  <div class="app">
+    <header class="titlebar">
+      <div class="brand"><img src="../../resources/icon.png" alt="">Mile Knowledge Base<span class="vault-tag">VAULT</span></div>
+      <div class="vault-name">${STATE === 'novault' ? '未选择知识库' : '我的知识库'}</div>
+      <button class="skm-trigger" aria-expanded="${open}" aria-haspopup="dialog" aria-controls="skm-pop">${ico('stack')}技能${badge ? `<span class="skm-badge" aria-label="${badge} 项需要处理">${badge}</span>` : ''}</button>
+      <div class="segmented" role="tablist" aria-label="主题"><button class="segmented-item" aria-selected="${document.documentElement.dataset.theme === 'light'}">浅色</button><button class="segmented-item" aria-selected="${document.documentElement.dataset.theme === 'dark'}">深色</button><button class="segmented-item">系统</button></div>
+      <div class="win"><span>&#8211;</span><span>&#9633;</span><span>&#10005;</span></div>
+    </header>
+    <div class="grid">
+      <section class="workbench-panel" data-panel="sidebar"><div class="panel-body"><div class="skm-search" style="height:28px">${ico('search')}搜索<kbd>Ctrl P</kbd></div>${tree}</div></section>
+      <div></div>
+      <section class="workbench-panel" data-panel="agnes" style="position:relative">
+        <div class="agnes-head"><span>历史</span><span style="font-weight:600">Agnes</span><span style="margin-left:auto">会话信息</span><span>新对话</span></div>
+        <div class="panel-body" style="grid-template-columns:1fr 1fr">${['最近文档|首页.md · 知识库分类.md · 发布清单.md|span 2;height:150px','文档与索引|1 284 篇 · 已就绪|','技能分类|6 个分类 · 24 个技能|','健康|3 个未解析链接|','草稿|2 份|'].map(x=>{const [t,d,st]=x.split('|');return `<div class="ghost-tile" style="padding:12px;${st?'grid-column:'+st:''}"><div style="font-size:12px;font-weight:600;color:var(--raw-muted)">${t}</div><div style="margin-top:8px;font-size:${st?14:20}px;font-weight:600;color:var(--raw-strong)">${d}</div></div>`}).join('')}</div>
+        <div class="composer">说明你想做什么，系统会自动选择处理者…</div>
+      </section>
+      <div></div>
+      <section class="workbench-panel" data-panel="editor"><div class="panel-body"><div style="font-size:18px;font-weight:600;color:var(--raw-strong)">知识库分类</div>${Array.from({length:9},(_,i)=>`<div style="font-size:14px;line-height:1.7;color:var(--raw-text)">${['skills 放可复用的技能包，每个技能一个目录。','raws 是暂存区，剪藏和草稿先放这里。','projects 里是项目约束与交付记录。','tools 收集常用命令与脚本说明。','wiki 是独立维护的知识库。','归档区只读，整理完的内容移过去。','系统区由应用维护，Agent 不能写。','分类别名只影响显示，不改目录名。','进检索开关控制是否出现在搜索里。'][i]}</div>`).join('')}</div></section>
+    </div>
+    ${open ? `<div class="skm-pop" id="skm-pop" role="dialog" aria-label="技能">${popover}</div>` : ''}
+  </div>`;
+}
+
+function head(tab) {
+  const kb = tab === 'kb';
+  return `<div class="skm-head">
+    <div class="segmented" role="tablist" aria-label="技能视图">
+      <button class="segmented-item" role="tab" aria-selected="${kb}">知识库技能<span class="n">${STATE === 'novault' ? '' : 24}</span></button>
+      <button class="segmented-item" role="tab" aria-selected="${!kb}">工具技能<span class="n">712</span></button>
+    </div>
+    <div class="skm-search">${ico('search')}${kb ? '搜索名称或描述' : '搜索技能名'}</div>
+    ${kb ? `<div class="segmented" aria-label="显示方式"><button class="segmented-item" aria-selected="true" aria-label="网格">${ico('grid', 'ico-sm')}</button><button class="segmented-item" aria-label="列表">${ico('list', 'ico-sm')}</button></div>` : ''}
+    <button class="btn-quiet" style="padding:0.25rem 0.625rem">${ico('plus')}安装</button>
+    <button class="icon-button" aria-label="关闭">${ico('x')}</button>
+  </div>`;
+}
+
+/* ---------- 知识库技能 ---------- */
+const KB = [
+  ['前端', [
+    ['vue技能', 'Vue 3 选项式组件、生命周期与请求封装约定', ['claude', 'cursor', 'kiro'], 'link'],
+    ['frontend-design', '有辨识度的前端视觉方向：字体、配色与动效', ['claude', 'qoder'], 'link'],
+    ['dark-mode-design', '深色模式的层级、对比度与表面阶梯', ['codebuddy'], 'stale'],
+    ['react-best-practices', 'React 组件与性能的 70 条规则', [], 'none'],
+  ]],
+  ['后端', [
+    ['go-service', 'Go 服务的路径校验、文本读写与应用数据', ['claude', 'agents'], 'link'],
+    ['kb-index-sqlite', 'SQLite FTS5 检索索引、分词与链接图', ['claude'], 'link'],
+    ['api-design', '契约先行：接口文档与前端对接点', ['claude', 'kiro', 'qoder', 'cursor'], 'link'],
+  ]],
+  ['通用', [
+    ['systematic-debugging', '复现、定位、最小化、假设、验证、修复、回归', ['agents', 'claude', 'kiro'], 'link'],
+    ['writing-plans', '多步骤任务动手前的计划写法', [], 'none'],
+  ]],
+];
+const globeIco = `<span class="tool-ico" style="display:grid;place-items:center;background:var(--raw-raised);color:var(--raw-muted)">${ico('globe', 'ico-sm')}</span>`;
+function kbCard([name, desc, tools, st], i, opts = {}) {
+  const icons = tools.map(t => t === 'agents' ? globeIco : tico(t)).join('');
+  const status = st === 'stale' ? pill('warn', '知识库有更新') : st === 'none' ? '' : '';
+  const sel = opts.select ? (opts.selected.includes(name) ? ' data-selected' : '') : '';
+  return `<article class="skm-card"${st === 'stale' ? ' data-tone="warn"' : ''}${opts.hover === name ? ' data-hover' : ''}${sel}>
+    <div class="name"><span>${name}</span></div>
+    <div class="desc">${desc}</div>
+    <div class="meta">${tools.length ? `<span class="stack">${icons}</span>` : '<span class="none">未分发</span>'}${status}<span class="spacer"></span>${opts.select ? '' : `<button class="btn-xs">${ico('send', 'ico-sm')}分发</button>`}</div>
+    ${opts.select ? `<span class="check">${sel ? ico('check', 'ico-sm') : ''}</span>` : `<button class="icon-button kebab" aria-label="更多">${ico('dots')}</button>`}
+  </article>`;
+}
+function kbBody(opts = {}) {
+  return KB.map(([cat, items]) => `<div class="skm-group">${cat}<span class="n">${items.length}</span></div><div class="skm-cards">${items.map((it, i) => kbCard(it, i, opts)).join('')}</div>`).join('');
+}
+function kbFoot(select) {
+  if (select) return `<div class="skm-foot"><span>已选 3 个技能</span><button class="btn-xs">全选本组</button><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('send')}分发到…</button></div>`;
+  return `<div class="skm-foot"><span>24 个技能，已分发 17 个</span><span>·</span><span style="color:var(--warn)">1 个知识库有更新</span><span class="spacer"></span><button class="btn-xs">批量选择</button></div>`;
+}
+
+/* ---------- 工具技能 ---------- */
+const CHIPS = [['all', '全部', 712], ['agents', '通用目录', 24], ['kiro', null, 71], ['claude', null, 69], ['qoder', null, 65], ['codebuddy', null, 65], ['cursor', null, 62], ['trae', null, 48], ['codex', null, 47], ['windsurf', null, 44]];
+function chips(active = 'all') {
+  return `<div class="skm-chips" role="toolbar" aria-label="按工具筛选">${CHIPS.map(([k, label, n]) => {
+    const icon = k === 'all' ? '' : k === 'agents' ? globeIco : tico(k);
+    return `<button class="skm-chip" aria-pressed="${k === active}">${icon}${label || T[k][0]}<span class="n">${n}</span></button>`;
+  }).join('')}</div>`;
+}
+const ROWS = [
+  ['claude', 'vue技能', pill('live', '链接到知识库', 'link'), '~\\.claude\\skills\\vue技能 → 知识库/skills/前端/vue技能', ['open']],
+  ['claude', 'brainstorming', pill('idle', '链接到外部', 'link'), '→ ~\\.config\\magpie\\library\\skills\\brainstorming', ['adopt', 'del', 'open']],
+  ['claude', 'old-review', pill('fault', '链接失效'), '→ 知识库/skills/通用/old-review（不存在）', ['del']],
+  ['codebuddy', 'dark-mode-design', pill('warn', '拷贝 · 知识库有更新'), '~\\.codebuddy\\skills\\dark-mode-design', ['sync', 'del', 'open']],
+  ['cursor', 'caveman', pill('idle', '独立'), '~\\.cursor\\skills\\caveman', ['adopt', 'del', 'open']],
+  ['trae', 'office-docx', pill('idle', '内置', 'lock'), '~\\.trae\\builtin_skills\\office-docx', ['adopt', 'open']],
+  ['kiro', 'grill-me', pill('idle', '链接到外部', 'link'), '→ ~\\.agents\\skills\\grill-me', ['adopt', 'del', 'open']],
+  ['qoder', 'frontend-design', pill('live', '链接到知识库', 'link'), '~\\.qoder\\skills\\frontend-design → 知识库/skills/前端/frontend-design', ['open']],
+  ['agents', 'systematic-debugging', pill('live', '链接到知识库', 'link'), '~\\.agents\\skills\\systematic-debugging → 知识库/skills/通用/…', ['open']],
+  ['hermes', 'travel-planner', pill('idle', '独立'), '%LOCALAPPDATA%\\hermes\\skills\\travel-planner', ['adopt', 'del', 'open']],
+];
+const ACT = { open: ['folder', '打开所在目录'], adopt: ['inbox', '收进知识库'], del: ['trash', '卸载'], sync: ['restore', '重新分发'] };
+function toolRows(hover) {
+  return `<div class="skm-list">${ROWS.map(([t, nm, p, path, acts], i) => `<div class="skm-row"${i === hover ? ' data-hover' : ''}>
+    ${t === 'agents' ? globeIco : tico(t)}<span class="nm">${nm}</span><span class="path">${path}</span>${p}
+    <span class="acts">${acts.map(a => `<button class="icon-button" aria-label="${ACT[a][1]}" title="${ACT[a][1]}">${ico(ACT[a][0])}</button>`).join('')}</span>
+  </div>`).join('')}</div>`;
+}
+function toolsFoot() {
+  return `<div class="skm-foot"><span>检测到 18 个工具</span><span>·</span><button class="skm-more" style="margin:0;padding:0">显示未检测到的 6 个</button><span class="spacer"></span><span style="color:var(--fault)">1 个链接失效</span></div>`;
+}
+
+/* ---------- 分发 ---------- */
+function distribute() {
+  const tiles = [
+    ['claude', '已分发 · 联接', 'done'], ['kiro', '已分发 · 联接', 'done'], ['cursor', '已分发 · 联接', 'done'], ['qoder', '未分发', 'on'],
+    ['codebuddy', '未分发', 'on'], ['trae', '未分发', ''], ['windsurf', '也读通用目录', ''], ['cline', '未分发', ''],
+    ['workbuddy', '目标已存在（独立）', 'exists'], ['zcode', '未分发', ''], ['dsh', '也读通用目录', ''], ['hermes', '也读通用目录', ''],
+  ];
+  const readers = ['codex', 'cursor', 'gemini', 'windsurf', 'opencode', 'warp', 'kimi', 'dsh'].map(k => tico(k)).join('');
+  return `<div class="skm-head"><button class="icon-button" aria-label="返回">${ico('back')}</button>
+      <div class="skm-sub"><span class="crumb">知识库技能 /</span>分发「vue技能」</div><span style="flex:1"></span>
+      <button class="icon-button" aria-label="关闭">${ico('x')}</button></div>
+    <div class="skm-body">
+      <div class="skm-label">方式<span class="hint">联接：工具里看到的就是知识库那份，改一处全生效</span></div>
+      <div class="segmented" role="radiogroup" aria-label="分发方式"><button class="segmented-item" role="radio" aria-checked="true">目录联接（推荐）</button><button class="segmented-item" role="radio" aria-checked="false">拷贝</button></div>
+      <div class="skm-label">目标<span class="hint">只列本机检测到的工具</span></div>
+      <div class="skm-targets" role="group" aria-label="分发目标">
+        <button class="skm-target" data-wide aria-checked="true" role="checkbox">${globeIco.replace('tool-ico', 'tool-ico" style="width:20px;height:20px;grid-row:span 2;display:grid;place-items:center;background:var(--raw-raised);color:var(--raw-muted)')}<span class="t">通用目录 ~/.agents/skills</span><span class="s">本机 9 个工具会读</span><span class="readers">${readers}</span><span class="tick">${ico('check', 'ico-sm')}</span></button>
+        ${tiles.map(([k, s, st]) => `<button class="skm-target" role="checkbox" aria-checked="${st === 'on' || st === 'done'}"${st === 'exists' ? ' aria-disabled="true"' : ''}>${tico(k)}<span class="t">${T[k][0]}</span><span class="s">${s}</span>${st === 'exists' ? '' : `<span class="tick">${st === 'on' || st === 'done' ? ico('check', 'ico-sm') : ''}</span>`}</button>`).join('')}
+      </div>
+      <button class="skm-more">显示未检测到的工具（6）</button>
+      <div class="skm-note">${ico('warn')}<span>Cursor 也读通用目录。这个技能同时在两处，Cursor 可能加载两次，哪份生效以 Cursor 为准。</span></div>
+    </div>
+    <div class="skm-foot"><span>新增 3 处，保留已有 3 处</span><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('send')}分发</button></div>`;
+}
+
+/* ---------- 卸载确认 ---------- */
+function uninstall() {
+  return head('tools') + chips('claude') + `<div class="skm-body">${toolRows(-1)}</div>` + toolsFoot() + `
+  <div class="skm-scrim"><div class="skm-confirm" role="alertdialog" aria-label="确认卸载">
+    <h3>从 Claude Code 卸载 3 个技能</h3>
+    <div class="item">${ico('link')}<span><b>brainstorming</b> · 链接到外部</span><span class="what">只删除链接。目标 <code>~\\.config\\magpie\\library\\skills\\brainstorming</code> 不动。</span></div>
+    <div class="item">${ico('folder')}<span><b>caveman</b> · 独立</span><span class="what">整个目录移到备份区，可在操作记录里恢复。<br><code>%APPDATA%\\Mile Knowledge Base\\skill-backups\\2026-11-20T10-42\\claude\\caveman</code></span></div>
+    <div class="item">${ico('warn')}<span><b>old-review</b> · 链接失效</span><span class="what">只删除失效的链接。</span></div>
+    <div class="row"><button class="btn-quiet">取消</button><button class="btn-danger">${ico('trash')}卸载 3 个</button></div>
+  </div></div>`;
+}
+
+/* ---------- 收编 ---------- */
+function adopt() {
+  return `<div class="skm-head"><button class="icon-button" aria-label="返回">${ico('back')}</button>
+      <div class="skm-sub"><span class="crumb">工具技能 /</span>收进知识库「caveman」</div><span style="flex:1"></span>
+      <button class="icon-button" aria-label="关闭">${ico('x')}</button></div>
+    <div class="skm-body">
+      <div class="skm-label">在这些位置找到了同名技能<span class="hint">内容一致的可以一起换成链接</span></div>
+      <div class="skm-list">
+        <div class="skm-row">${tico('cursor')}<span class="nm">Cursor</span><span class="path">~\\.cursor\\skills\\caveman</span>${pill('idle', '内容一致 · 收编这份')}<span></span></div>
+        <div class="skm-row">${tico('claude')}<span class="nm">Claude Code</span><span class="path">~\\.claude\\skills\\caveman</span>${pill('idle', '内容一致')}<span></span></div>
+        <div class="skm-row">${tico('codex')}<span class="nm">Codex</span><span class="path">~\\.codex\\skills\\caveman</span>${pill('warn', '内容不同，单独处理')}<span></span></div>
+      </div>
+      <div class="skm-label">放到知识库的分类</div>
+      <div class="skm-field"><div class="skm-input">通用</div><span style="font-size:var(--text-meta);color:var(--raw-faint)">将复制到 知识库/skills/通用/caveman；目标已存在时不覆盖</span></div>
+      <div class="skm-label">之后</div>
+      <label class="skm-checkline"><span class="skm-box">${ico('check', 'ico-sm')}</span><span>把 Cursor、Claude Code 里的原目录换成指向知识库的链接<br><span style="color:var(--raw-faint);font-size:var(--text-meta)">原目录先移到备份区，可恢复。Codex 那份内容不同，不动。</span></span></label>
+    </div>
+    <div class="skm-foot"><span>写知识库 1 个目录，换链接 2 处</span><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('inbox')}收进知识库</button></div>`;
+}
+
+/* ---------- 安装 ---------- */
+function install() {
+  const src = (icon, t, s, on, off) => `<button class="skm-target" role="radio" aria-checked="${on}"${off ? ' aria-disabled="true"' : ''} style="grid-template-columns:20px minmax(0,1fr)"><span class="tool-ico" style="width:20px;height:20px;grid-row:span 2;display:grid;place-items:center;color:var(--raw-muted)">${ico(icon)}</span><span class="t">${t}</span><span class="s">${s}</span></button>`;
+  return `<div class="skm-head"><button class="icon-button" aria-label="返回">${ico('back')}</button>
+      <div class="skm-sub">安装技能</div><span style="flex:1"></span><button class="icon-button" aria-label="关闭">${ico('x')}</button></div>
+    <div class="skm-body">
+      <div class="skm-label">来源</div>
+      <div class="skm-source" role="radiogroup">${src('folder', '本地文件夹', '选一个技能或技能仓库目录', true)}${src('github', 'GitHub', '下个版本（M5）', false, true)}${src('zip', 'zip 文件', '下个版本（M5）', false, true)}</div>
+      <div class="skm-drop">${ico('folder')}<span>选一个含 <code style="font-family:var(--font-mono)">SKILL.md</code> 的目录，或它的上一层</span><button class="btn-quiet">选择文件夹…</button></div>
+      <div class="skm-label">最近记录<span class="hint">分发、卸载、收编、安装都记在这里</span></div>
+      <div class="skm-log">
+        <div class="l"><span class="time">10:42</span>${tico('claude')}<span class="txt">卸载 <b>caveman</b>（独立，已备份）</span><button class="btn-xs">${ico('restore', 'ico-sm')}恢复</button></div>
+        <div class="l"><span class="time">10:40</span>${tico('cursor')}<span class="txt">分发 <b>vue技能</b> · 联接</span><span></span></div>
+        <div class="l"><span class="time">09:15</span><span class="tool-ico letter">库</span><span class="txt">从文件夹安装 <b>dark-mode-design</b> 到 skills/前端</span><span></span></div>
+        <div class="l"><span class="time">昨天</span>${tico('codebuddy')}<span class="txt">分发 <b>dark-mode-design</b> · 拷贝（联接创建失败，已改用拷贝）</span><span></span></div>
+      </div>
+    </div>`;
+}
+
+/* ---------- 无知识库 ---------- */
+function novault() {
+  return head('kb') + `<div class="skm-body"><div class="skm-empty"><div class="big">${ico('stack')}</div><h4>还没有打开知识库</h4><p>打开一个知识库后才能管理知识库技能。工具技能不依赖知识库，切到「工具技能」可以查看和卸载。</p><button class="btn-quiet">打开知识库…</button></div></div><div class="skm-foot"><span>检测到 18 个工具</span></div>`;
+}
+
+const STATES = {
+  kb: () => workbench(head('kb') + `<div class="skm-body">${kbBody({ hover: 'go-service' })}</div>` + kbFoot()),
+  'kb-select': () => workbench(head('kb') + `<div class="skm-body">${kbBody({ select: true, selected: ['vue技能', 'react-best-practices', 'writing-plans'] })}</div>` + kbFoot(true)),
+  tools: () => workbench(head('tools') + chips('all') + `<div class="skm-body">${toolRows(1)}</div>` + toolsFoot()),
+  distribute: () => workbench(distribute()),
+  uninstall: () => workbench(uninstall()),
+  adopt: () => workbench(adopt()),
+  install: () => workbench(install()),
+  novault: () => workbench(novault(), true, 0),
+  closed: () => workbench('', false, 2),
+};
+document.getElementById('root').innerHTML = (STATES[STATE] || STATES.kb)();
+if (!P.get('shot')) {
+  const nav = document.createElement('nav'); nav.className = 'proto-nav';
+  nav.innerHTML = Object.keys(STATES).flatMap(s => [`<a href="?state=${s}">${s}</a>`, `<a href="?state=${s}&theme=dark">${s}·深</a>`]).join('');
+  document.body.appendChild(nav);
+}
+</script>
+</body>
+</html>

@@ -23,8 +23,8 @@
 | [CLAUDE.md](CLAUDE.md) | 唯一约束入口：执行规则、当前阶段、文档索引、Skills | 已填项目事实 |
 | [WORKFLOW.md](WORKFLOW.md) | 13 阶段流程、审核、完成标准 | 通用规范 |
 | [PRODUCT.md](PRODUCT.md) | 产品定位、用户、概念、长期边界 | 已确认 |
-| [docs/PRD.md](docs/PRD.md) | 重写版需求范围、规则与验收 | R1 已确认 v1.9；第 15 节 R2 技能管理已确认 v2.0，v2.1 按工具目录核实修订 |
-| [DESIGN.md](DESIGN.md) | 全局 UI 契约 | 已确认 v1.0 |
+| [docs/PRD.md](docs/PRD.md) | 重写版需求范围、规则与验收 | R1 已确认 v1.9；第 15 节 R2 技能管理已确认 v2.0（后续修订到 v2.2） |
+| [DESIGN.md](DESIGN.md) | 全局 UI 契约；第 11 节 R2 技能浮层 | 已确认 v1.0；第 11 节 2026-11-20 审核通过 |
 | [docs/技术设计.md](docs/技术设计.md) | 选型、架构、质量门禁；第 13 节 R2 工具目录核实 | 已确认 v1.0；第 13 节 2026-11-20 审核通过 |
 | [docs/API.md](docs/API.md) | Go 绑定与事件契约 | 已确认 v1.0 |
 | [docs/数据库设计.md](docs/数据库设计.md) | 本地数据与索引存储 | 已确认 v1.0 |
@@ -32,7 +32,7 @@
 | [docs/PLAN-M1.md](docs/PLAN-M1.md) | M1 实施计划、交接、验收与账本 | 已完成并推送（59a1076） |
 | [docs/PLAN-M2.md](docs/PLAN-M2.md) | M2 实施计划、交接、验收、性能与账本 | 已完成并推送（f6d663a） |
 | [docs/PLAN-M3.md](docs/PLAN-M3.md) | M3 实施计划、验收、性能与账本 | 已完成并推送（765f908） |
-| [docs/UI设计稿.md](docs/UI设计稿.md) 与 `design/baseline/` | 页面与状态清单、旧版截图基线 | 已确认 v1.0 |
+| [docs/UI设计稿.md](docs/UI设计稿.md) 与 `design/baseline/`、`design/r2/` | 页面与状态清单、旧版截图基线；第 9 节与 `design/r2/` 是 R2 技能浮层原型 | 已确认 v1.0；第 9 节 2026-11-20 审核通过 |
 | [docs/decisions.md](docs/decisions.md) | 重要取舍 | 按需记录 |
 | [docs/发布清单.md](docs/发布清单.md) | 发布与恢复验证 | 模板 |
 
