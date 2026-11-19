@@ -533,7 +533,23 @@ func (s *DocService) Tree(vaultID, path string) contract.TreeResult {
 	if f != nil {
 		return contract.TreeResult{Failure: f}
 	}
-	result, f := vault.ListDir(root, path, s.app.Vaults.Aliases(vaultID))
+	aliases := s.app.Vaults.Aliases(vaultID)
+	if path == "" {
+		// 分类里的显示名也参与树展示（旧版同一份显示名）；aliases.json 更具体，优先。
+		merged := make(map[string]string, len(aliases))
+		for key, value := range aliases {
+			merged[key] = value
+		}
+		for _, category := range vault.ReadCategories(root) {
+			if category.Alias == "" {
+				continue
+			}
+			// 分类里的显示名是用户在设置页维护的那一份，优先于 aliases.json。
+			merged[category.Directory] = category.Alias
+		}
+		aliases = merged
+	}
+	result, f := vault.ListDir(root, path, aliases)
 	if f != nil {
 		return contract.TreeResult{Failure: f}
 	}

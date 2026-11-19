@@ -54,6 +54,7 @@ export function OverviewGrid() {
   const reveal = useTreeStore((state) => state.reveal);
   const buckets = useAgentStore((state) => state.buckets);
   const openDoc = useDocStore((state) => state.open);
+  const activePath = useDocStore((state) => state.activePath);
   const enginePhase = useComposerStore((state) => state.session?.engine?.phase);
 
   useEffect(() => {
@@ -74,6 +75,13 @@ export function OverviewGrid() {
       offAudit();
     };
   }, [vaultId, load, scheduleLoad, setStatus]);
+
+  // 打开文档会更新最近列表（M73），但记录是读盘成功后才写的，晚一拍刷新。
+  useEffect(() => {
+    if (!vaultId || !activePath) return;
+    const timer = window.setTimeout(() => void load(vaultId), 600);
+    return () => window.clearTimeout(timer);
+  }, [activePath, vaultId, load]);
 
   const pending = pendingCount(buckets);
   const counts = healthCounts(health);

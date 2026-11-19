@@ -240,3 +240,26 @@ func TestCategoriesToggleReachesTheIndex(t *testing.T) {
 		t.Fatalf("after on = %d, want 2", hits)
 	}
 }
+
+func TestTreeUsesCategoryAlias(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	if err := os.MkdirAll(filepath.Join(root, "raws"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := vault.WriteCategories(root, []vault.Category{{Directory: "raws", Alias: "暂存区", Indexed: true}}); err != nil {
+		t.Fatal(err)
+	}
+	tree := NewDocService(app).Tree(vaultID, "")
+	if tree.Failure != nil {
+		t.Fatalf("tree: %+v", tree.Failure)
+	}
+	found := ""
+	for _, entry := range tree.Entries {
+		if entry.Path == "raws" {
+			found = entry.Alias
+		}
+	}
+	if found != "暂存区" {
+		t.Fatalf("raws alias = %q, want 暂存区", found)
+	}
+}

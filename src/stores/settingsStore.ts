@@ -18,6 +18,7 @@ import {
 } from "../lib/settingsDrafts";
 import { settingsApi, TransportError } from "../lib/transport";
 import { useComposerStore } from "./composerStore";
+import { useTreeStore } from "./treeStore";
 
 export type SettingsSection = "general" | "model" | "agents" | "categories" | "about";
 export type LeaveTarget = "close" | SettingsSection;
@@ -111,6 +112,8 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
         categories.filter(isMeaningfulCategory),
       );
       set({ config: result, error: null });
+      // 显示名参与侧栏展示：根层树要重读。
+      await useTreeStore.getState().invalidate([""]);
     } catch (error) {
       set({ error: errorText(error) });
     }
@@ -149,6 +152,8 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       if (aliasDirty) {
         const next = applyAliasDrafts(latest?.categories ?? [], drafts);
         latest = await settingsApi.appConfigSetCategories(vaultId, next);
+        // 分类显示名参与侧栏展示，根层树要重读。
+        await useTreeStore.getState().invalidate([""]);
       }
       // 保存期间又被改动的草稿保留下来，不清掉。
       set((state) => {
