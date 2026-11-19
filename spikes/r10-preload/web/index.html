@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<!-- 与生产完全相同的 CSP（vite.config.ts:8），用来验证宿主注入的 PreloadScript 是否受 script-src 'self' 限制。 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://kbimg.localhost; font-src 'self'; connect-src 'self' http://kbimg.localhost; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'" />
+<title>r10-preload</title>
+<!-- 与生产一样：同源文件、阻塞式，在 head 里早于正文。 -->
+<script src="/theme-init.js"></script>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div id="btn">执行计划</div>
+<p id="note">probe</p>
+<script src="/probe.js" defer></script>
+</body>
+</html>

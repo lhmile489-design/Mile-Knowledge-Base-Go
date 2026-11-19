@@ -1,0 +1,16 @@
+html { background: #eceef1; }
+body { margin: 24px; font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+#btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  /* 与 DESIGN.md 12.3 一致的按钮令牌；先给默认橙，再由 data-accent 覆盖。 */
+  background: #b95b1e;
+}
+[data-accent="orange"] #btn { background: #b95b1e; }
+[data-accent="blue"] #btn { background: #2563eb; color: #ffffff; }
+[data-accent="teal"] #btn { background: #0c857a; }
+[data-accent="custom"] #btn { background: var(--accent-custom, #7c3aed); }
