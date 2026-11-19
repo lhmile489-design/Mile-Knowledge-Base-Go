@@ -793,3 +793,88 @@
   align-items: center;
   gap: 10px;
 }
+
+/* T08: skill import wizard. The overlay starts below the title bar (legacy). */
+.skill-wizard-backdrop {
+  position: fixed;
+  top: var(--titlebar-h);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgb(10 12 16 / 0.28);
+}
+
+.skill-wizard {
+  display: flex;
+  width: min(640px, calc(100vw - 48px));
+  max-height: calc(100vh - var(--titlebar-h) - 48px);
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-card);
+  background: var(--raw-card);
+  box-shadow: var(--shadow-float);
+  outline: none;
+}
+
+.skill-wizard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.skill-wizard-step {
+  margin-left: 8px;
+  font-size: var(--text-caption);
+  font-weight: 500;
+  color: var(--raw-muted);
+}
+
+.skill-wizard-body {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.skill-wizard-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skill-wizard-list {
+  display: flex;
+  max-height: 280px;
+  flex-direction: column;
+  overflow-y: auto;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-control);
+}
+
+.skill-wizard-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.skill-wizard-done-list,
+.skill-wizard-skipped ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--text-body-sm);
+}
+
+.skill-wizard-skipped {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-body-sm);
+  color: var(--raw-muted);
+}

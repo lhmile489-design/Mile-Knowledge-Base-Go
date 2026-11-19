@@ -22,6 +22,7 @@ type AppState = {
   healthOpen: boolean;
   auditOpen: boolean;
   settingsOpen: boolean;
+  skillWizardOpen: boolean;
 
   boot: () => Promise<void>;
   refreshVaults: () => Promise<void>;
@@ -34,6 +35,8 @@ type AppState = {
   retryVault: (id: string) => Promise<void>;
   openSettings: () => void;
   closeSettings: () => void;
+  openSkillWizard: () => void;
+  closeSkillWizard: () => void;
   openHealth: () => void;
   toggleAudit: () => void;
   closeHealth: () => void;
@@ -57,6 +60,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   healthOpen: false,
   auditOpen: false,
   settingsOpen: false,
+  skillWizardOpen: false,
   bootError: null,
 
   boot: async () => {
@@ -136,6 +140,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+  openSkillWizard: () => set({ skillWizardOpen: true }),
+  closeSkillWizard: () => set({ skillWizardOpen: false }),
   openHealth: () => set({ healthOpen: true }),
   toggleAudit: () => set((state) => ({ auditOpen: !state.auditOpen })),
   closeHealth: () => set({ healthOpen: false }),

@@ -105,6 +105,9 @@ export const vaultApi = {
   pickFolder: () => guard(async () => unwrap(await VaultService.pickFolder())),
   createVault: (token: string, confirmNonEmpty: boolean) =>
     guard(async () => unwrap(await VaultService.createVault(token, confirmNonEmpty))),
+  pickSkillSource: () => guard(async () => unwrap(await VaultService.pickSkillSource())),
+  importSkills: (vaultId: string, token: string, category: string, names: string[]) =>
+    guard(async () => unwrap(await VaultService.importSkills(vaultId, token, category, names))),
 };
 
 export const docApi = {
