@@ -174,6 +174,7 @@
 - 代价与风险：与旧版存在一处用户可见差异：先批准一次写入、再在同一路径发起永久删除时，新版仍会弹卡。删除路径比旧版多一次确认，方向更安全。
 - 受影响：docs/PRD.md（FR-AI-PERM，v1.8 与 `mutate_notes` 行）、docs/PLAN-M2.md 账本、internal/ai/approval.go（现实现无需改动，`kind == "mutation"` 才登记 grant）。
 - 正文同步情况：已回写 PRD 与 PLAN。
+- 附录（2026-11-19，T20 整体审查修复）：grant 进一步按变更 kind 绑定——`AllowMutation` 带 kind，`ConsumeFreshMutation` 只接受 `kind=permanentDelete` 的卡，move/copy 等其它结构变更的批准也不能顶替永久删除。D-012 的「只认变更审批卡」据此收窄为「只认永久删除的变更审批卡」。受影响：internal/ai/approval.go、internal/service/tools.go、internal/ai/approval_test.go（`TestMutationGrantIsKindBound`）。
 
 ## 单条模板
 

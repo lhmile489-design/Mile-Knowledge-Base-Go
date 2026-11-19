@@ -1,7 +1,7 @@
 # Mile Knowledge Base（Go 重构版）
 
-> 状态：M1 已完成（T00–T14）。应用现在能做：打开知识库、文件树与树的增删改/拖放、阅读/源码/分栏、编辑保存与冲突、外部改动同步、SQLite 全文检索与搜索面板、三层链接解析与反向链接、健康检查、变更计划与事务、操作日志与恢复、来源追踪与一键同步、图片粘贴上传。M2（AI）尚未制定计划。
-> 更新日期：2026-11-18
+> 状态：M2 已完成（T00–T21）。应用现在能做：打开知识库、文件树与树的增删改/拖放、阅读/源码/分栏、编辑保存与冲突、外部改动同步、SQLite 全文检索与搜索面板、三层链接解析与反向链接、健康检查、变更计划与事务、操作日志与恢复、来源追踪与一键同步、图片粘贴上传；以及内置 AI 助手：模型服务与 key 管理、4 个 Agent 与 steering、自动路由与改派、流式回答与工具审批、对话历史与搜索、用量收据、设置页「模型服务」「Agents」两节。M2 的提交在本地 `main`，推送待确认。
+> 更新日期：2026-11-19
 
 ## 1. 这是什么
 
@@ -23,13 +23,14 @@
 | [CLAUDE.md](CLAUDE.md) | 唯一约束入口：执行规则、当前阶段、文档索引、Skills | 已填项目事实 |
 | [WORKFLOW.md](WORKFLOW.md) | 13 阶段流程、审核、完成标准 | 通用规范 |
 | [PRODUCT.md](PRODUCT.md) | 产品定位、用户、概念、长期边界 | 已确认 |
-| [docs/PRD.md](docs/PRD.md) | 重写版需求范围、规则与验收 | 已确认 v1.5 |
+| [docs/PRD.md](docs/PRD.md) | 重写版需求范围、规则与验收 | 已确认 v1.8 |
 | [DESIGN.md](DESIGN.md) | 全局 UI 契约 | 已确认 v1.0 |
 | [docs/技术设计.md](docs/技术设计.md) | 选型、架构、质量门禁 | 已确认 v1.0 |
 | [docs/API.md](docs/API.md) | Go 绑定与事件契约 | 已确认 v1.0 |
 | [docs/数据库设计.md](docs/数据库设计.md) | 本地数据与索引存储 | 已确认 v1.0 |
 | [docs/PLAN-M0.md](docs/PLAN-M0.md) | M0 实施计划 + M1–M3 粗粒度路线图 + 会话恢复 | 已完成并推送（39041a0） |
-| [docs/PLAN-M1.md](docs/PLAN-M1.md) | M1 实施计划、交接、验收与账本 | 已完成，推送待确认 |
+| [docs/PLAN-M1.md](docs/PLAN-M1.md) | M1 实施计划、交接、验收与账本 | 已完成并推送（59a1076） |
+| [docs/PLAN-M2.md](docs/PLAN-M2.md) | M2 实施计划、交接、验收、性能与账本 | 已完成，推送待确认 |
 | [docs/UI设计稿.md](docs/UI设计稿.md) 与 `design/baseline/` | 页面与状态清单、旧版截图基线 | 已确认 v1.0 |
 | [docs/decisions.md](docs/decisions.md) | 重要取舍 | 按需记录 |
 | [docs/发布清单.md](docs/发布清单.md) | 发布与恢复验证 | 模板 |
@@ -40,7 +41,7 @@
 | --- | --- |
 | `E:\WebApp\Mile-Project\Mile-Knowledge-Base-master` | 旧版源码、DESIGN.md、单测与真窗口验证脚本，是功能与 UI 一致性的对照基线 |
 | `E:\WebApp\Mile-Project\Mile-Typora` | 已跑通的 mygo v0.9.0 + React 19 项目，用作工程配置参考 |
-| `C:\Users\LHmile\go\pkg\mod\github.com\egoist\mygo@v0.9.0\docs\` | mygo 锁定版本的官方文档 |
+| `C:\Users\LHmile\go\pkg\mod\github.com\egoist\mygo@v0.10.0\docs\` | mygo 锁定版本的官方文档 |
 
 ## 4. 开发环境（2026-11-18 本机实测）
 
@@ -55,24 +56,22 @@
 
 ## 5. 运行与验证入口
 
-工程尚未建立，以下命令都还没有。
-
 | 命令标识 | 操作 | 实际命令或脚本入口 | 前置条件与验证状态 |
 | --- | --- | --- | --- |
-| 安装依赖 | 安装前端依赖 | `bun install` | 已验证（2026-11-18） |
-| 本地启动 | 开发模式 | `bun run dev`（端口 5274，自定义协议 kbimg） | 已验证 |
+| 安装依赖 | 安装前端依赖 | `bun install` | 已验证 |
+| 本地启动 | 开发模式 | `bun run dev`（端口 5274，自定义协议 kbimg；AI 功能需先在设置里配置供应商与 key） | 已验证 |
 | 类型检查 | `tsc --noEmit` | `bun run typecheck` | 已验证 |
-| 前端单测 | Vitest | `bun run test:web` | 已验证（58 项，含与 Go 索引的跨语言分词对拍） |
-| Go 测试 | 单元测试 | `bun run test:go` / `bun run test:go-race` / `bun run lint:go` | 已验证（vault 等全绿） |
+| 前端门禁 | 绑定对拍 + Vitest | `bun run test:web`（先 `check:bindings`，再 vitest） | 已验证（2026-11-19：绑定对拍通过、152 项） |
+| Go 测试 | 单元测试与静态检查 | `bun run test:go` / `bun run lint:go`；格式另跑 `gofmt -l .` | 已验证（2026-11-19：484 项，17 包；vet 与 gofmt 无输出） |
+| 竞态检测 | `go test -race` | `bun run test:go-race` | 未验证（需要 cgo，本机未跑；不在常规门禁内） |
 | 模糊测试 | 路径与渲染（`FuzzValidateRel`、`FuzzRender`） | `bun run test:fuzz`（`scripts/test-fuzz.sh`，每个目标默认 60s，`FUZZ_TIME=3s` 可缩短） | 已验证（2026-11-18：正向通过；故意失败的对照返回非零） |
-| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`；`E2E_SKIP_BUILD=1` 跳过构建） | 已验证（2026-11-18：ac-m0 15/15 且退出码 0；故意失败的对照返回非零） |
-| M1 验收 | 检索 / 树操作 / 日志恢复 / 重启 | `bash scripts/e2e/ac-m1.sh` | 已验证 16/16 |
+| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m2；`E2E_SKIP_BUILD=1` 跳过构建） | 三个脚本分别验证过（ac-m0 15/15、ac-m1 16/16、ac-m2 22/22）；M2 后未整体重跑 |
+| M2 验收 | 假供应商闭环（不写凭据管理器） | `bash scripts/e2e/ac-m2.sh`（需要先做 e2e 构建；自带假供应商） | 已验证 22/22（2026-11-19） |
 | 新旧版兼容 | 事务与 provenance 字节互通 | `bash scripts/compat/legacy-compat.sh`（需要旧版仓库与 bun，只读复制到临时目录） | 已验证 7/7 |
+| M0 性能 | 冷启动 / 大库 / 滚动 / 外部改动 | `bash scripts/e2e/perf.sh` | 已验证（见 docs/PLAN-M0.md §6） |
 | M1 性能 | 冷启动 / 索引 / 检索 p95 / 批量改动 | `bash scripts/e2e/perf-m1.sh` | 已验证（见 docs/PLAN-M1.md §6.0） |
+| M2 性能 | 流式帧率 / 输入延迟 / 历史首帧 / 消息虚拟化 | `bash scripts/e2e/perf-ai.sh`（假供应商；需要先做 e2e 构建） | 已验证（见 docs/PLAN-M2.md §6） |
 | M2 冒烟 | Secrets 与系统代理能力 | `go run ./spikes/t00-smoke` | 已验证（Secrets 存取/超长拒绝/删除；netproxy 回环直连） |
-| M2 单元测试 | AI 引擎、工具、上下文、对话历史 | `go test ./internal/ai/... ./internal/conversation/...` | 占位：T01 起逐步建立 |
-| M2 验收 | 假供应商闭环 | `bash scripts/e2e/ac-m2.sh` | 占位：T19 建立 |
-| 性能 | 冷启动 / 大库 / 滚动 / 外部改动 | `bash scripts/e2e/perf.sh` | 已验证（见 docs/PLAN-M0.md §6） |
-| 构建 | 生产安装包 | `bun run build`（产物 `build/windows-amd64/`） | 已验证 |
+| 构建 | 生产构建 | `bun run build`（产物 `build/windows-amd64/`） | 已验证 |
 
-工程建立后给技术设计中的每个质量门禁分配稳定的命令标识，并在此表或项目脚本中写入真实命令。不要把旧版或 Mile-Typora 的命令未经验证就填成可用。
+门禁阈值与例外以 docs/技术设计.md 第 10 节为准；上表是实际命令入口，未经验证的不写成可用。
