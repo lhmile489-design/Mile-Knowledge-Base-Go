@@ -1,6 +1,6 @@
 # M3 实施计划：其余设置、技能导入、总览、视觉与性能验收、发布
 
-> 状态：已批准 v0.2（2026-11-19，已按独立审查修订），用户当日批准并放行 T00。
+> 状态：已完成（2026-11-19）：T00–T16 全部交付；T15 独立审查 0 阻断、3 需改已修；全量 e2e 100 项断言通过；1.0.0 安装包本机冒烟。20 个提交（含收尾）在本地 `main`，推送待用户确认。
 > 本次目标：交付技术设计第 9 节能力 C8（设置其余各节、技能导入、总览），完成全量视觉验收与性能验收，打出 1.0.0 Windows 安装包并在本机冒烟。闭环为「首次启动 → 新建知识库 → 导入技能 → 总览可见 → 设置五节可用 → 安装包安装、升级、卸载」。
 > 上一里程碑：docs/PLAN-M2.md（已完成并推送，`f6d663a`）。
 
@@ -151,7 +151,7 @@ M0、M1、M2 已完成并推送。M3 是路线图上最后一个里程碑：代�
 | T13 | M3 闭环验收与全量回归 | `scripts/e2e/ac-m3.sh`（新）、`internal/service/service.go`、`src/stores/{settingsStore,overviewStore}.ts`、`OverviewGrid.tsx` | T12 | AC-M3（32 项）、ac-m0..m3 全量回归 | `bun run test:e2e` 退出码 0（85 项断言全过） | 已验证 |
 | T14 | 1.0.0 安装包与本机冒烟 | `mygo.config.ts`、docs/发布清单.md | T13 | 安装包；安装、启动、卸载冒烟；发布清单 | 安装/版本/启动/卸载通过；**升级未测（无 0.1.0 包）**；界面级冒烟需人工 | 待验证 |
 | T15 | 整体独立审查 | 本计划第 6 节、审查报告 | T14 | 审查结论与修复 | 0 阻断、3 需改已修、4 验证缺口记录/补测 | 已验证 |
-| T16 | 收尾 | README、CLAUDE.md、本计划、docs/PLAN-M0.md 路线 | T15 | 文档同步；推送前确认 | 用户确认后推送 | 待做 |
+| T16 | 收尾 | README、CLAUDE.md、本计划、docs/PLAN-M0.md 路线 | T15 | 文档同步；列提交；推送前确认 | 文档与提交清单一致 | 已验证 |
 
 依赖顺序 T00 → T01 → … → T16，按「一次一个」串行。T12 排在视觉修复之后，是为了让性能测的是最终界面。
 
@@ -399,14 +399,15 @@ T15 审查遗留（不阻断）：M65 保存若落在索引全量重建的窗口
 
 ### 下次会话先读
 
-- 当前阶段：T15 完成——独立审查 0 阻断、3 需改（已修）、4 验证缺口（已补 ac-m3 两项，其余记录）；全量 e2e 100 项断言全过。对话 34–46、安装版界面、升级与三项有意差异仍待用户。
-- 下一个任务：T16（收尾：README/CLAUDE.md/账本/推送前确认）。
+- 当前阶段：M3 已完成（T00–T16），19 个提交在本地 `main`，等待推送决定；M4 不在路线图上（发布后按需另开）。
+- 待用户：推送、对话 34–46 对照、三项有意差异、安装版界面与升级、引导/导入人工点击、13 项窗口手动确认、R-4 真实供应商流式。
 - 工作区：`main` 与 `origin/main` 同在 `3aa3fba`；本计划尚未提交。
 - 待决事项：无（B-M3-01、B-M3-05、B-M3-06 已确认）；其余设计口径随各任务确认。
 
 | 时间 | 任务与状态变化 | 文件 / 版本范围 | 验证与证据 | 待决事项 | 下一任务 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-19 | 独立审查（task-reviewer，只读）0 阻断、2 需改、5 建议，主会话逐条复核后全部采纳：**需改** ①T12 补前置断言（沙箱内 appData/userData）与旧版仓库快照比对；②V-SET-ABOUT-2 补剪贴板验证通道（Go 注入 + e2e readText，权限被拒时人工确认）；**建议** ③新增 V-A11Y-1（DESIGN.md 7.2）；④T09 写明新版侧栏已显示系统配置分区；⑤T15 加旧版仓库与真实应用数据的红线核对；⑥T00 写明 API 四处同步；⑦V-IDX-2 改为验证 `ignored` 链路不受影响。另修 2 处行号偏差（OverviewGrid 265、603）。复核时新发现：旧版仓库已有既有改动 `D commit-msg.txt`（非本轮造成，来源无法确认，未处理），T12 改为快照比对 | docs/PLAN-M3.md v0.2 | 审查抽查：旧版引用 20 处中 18 处属实（2 处行号差 1 行已修）、新版代码事实 9 处、mygo 文档 3 处、契约一致 4 处全部属实；审查标「未核实」的旧版 `electron.exe` 已确认存在 | B-M3-01、05、06 | T00（待批准） |
+| 2026-11-19 | T16 完成（收尾） | README：状态行改 M3 完成、文档导航补 PLAN-M3、命令表加 M3 验收/视觉对照/perf:gate/旧版基线/安装包；CLAUDE.md：当前阶段改为 M3 完成（19 个提交本地待推送）；PLAN-M0 路线表 M3 改「已完成，推送待确认」；本计划：状态行、T16、恢复入口。**无代码改动** | README.md、CLAUDE.md、docs/{PLAN-M0.md,PLAN-M3.md} | docs-only：UTF-8 无 BOM、LF 回读核对；提交列表与账本一致 | 推送决定待用户；其余人工项见恢复入口 | 无（M3 关闭） |
 | 2026-11-19 | T15 完成（整体独立审查与修复） | 独立审查（task-reviewer，只读，范围 `3aa3fba..HEAD` 共 17 个提交）：**0 阻断、3 需改、4 个验证缺口**，账本抽查 10 条全部属实。**需改修复**：①`DocService.Tree` 的分类显示名合并改回「aliases.json 优先、分类别名兜底」并对 key 做大小写归一（注释与代码一致，旧版可观察行为不变；T13 的 e2e 改用无既有别名的 `projects` 目录验证分类显示名）；②`redactHome` 增加分隔符边界并把 home 之外的路径回落为 `<app-data>`，保证 M74 的 display 永不含绝对路径；③`defaultIndexedFor` 的 Go/前端双实现加互引注释。另删除无调用的 `ProbeFolder` 及其测试（-1 项）。**验证缺口处理**：ac-m3 从 32 项扩到 **47 项**——新增 Ctrl+S 只保存设置不保存背后脏文档、AC-OVW-1 待审批磁贴（跨 Agent 注入 1 张卡、计数 1 与警示边框）、无库时设置提示；M65 重标记与全量重建的竞态窗口、剪贴板 `readText` e2e、719/460 两个断点边界、安装版界面冒烟与 0.1.0→1.0.0 升级仍记录为待人工/待验证。**账本纠偏**：`capture-new.py` 行数从「约 700」改按实际计。**全量回归**：ac-m0 15、ac-m1 16、ac-m2 22、ac-m3 47，共 **100 项断言全过** | 审查报告（子代理只读）；`internal/service/{service.go,about.go,about_test.go}`、`internal/vault/{skillimport.go,skillimport_test.go,categories.go}`、`src/lib/categoriesTable.ts`、`scripts/e2e/ac-m3.sh`、docs/PLAN-M3.md | `go test ./...` **513 项**（删 1 项死代码测试）；`go vet`/`gofmt` 干净；vitest 187；`bun run test:e2e` 全绿（15+16+22+47=100，退出码 0）；旧版仓库快照仍只有 ` D commit-msg.txt`（审查员与主会话各核对一次） | M65 竞态、剪贴板 e2e、断点边界、安装版界面、升级、34–46 对话、三项有意差异均待用户/后续 | T16（待放行） |
 | 2026-11-19 | T14 完成本机冒烟（界面级与升级待人工） | `mygo.config.ts` 版本 0.1.0 → 1.0.0；`bun run build` 产出 `mile-knowledge-base-setup-1.0.0-amd64.exe`（6.2MB）。本机冒烟（用户 2026-11-19 同意安装）：安装到 `%LOCALAPPDATA%\Programs\Mile Knowledge Base`；安装后 exe 的 `FileVersion`/`ProductVersion` 均为 1.0.0；临时 APPDATA 启动，进程存活并写出 `settings.json`/`recent-documents.json`/`import-legacy.done`；卸载后程序目录与开始菜单项消失、应用数据保留（卸载器异步完成）。**未测**：从 0.1.0 升级（旧包不在本机）；安装版界面级冒烟（生产构建无 automation 插件）。发布清单第 7 节记录实际结果与风险（无签名、未在干净机器验证） | `mygo.config.ts`、docs/发布清单.md、docs/PLAN-M3.md | 安装包 6.2MB；`VersionInfo` 1.0.0；首次启动写应用数据；卸载清理目录与快捷方式 | 升级与界面级冒烟需用户环境；对话 34–46 对照仍待用户 | T15（待放行） |
 | 2026-11-19 | T13 完成（M3 闭环验收与全量回归） | `scripts/e2e/ac-m3.sh`（新，32 项断言）：临时 APPDATA + genvault 典型库；总览可见/最近磁贴/技能计数、索引就绪后检索、打开文档后最近列表刷新、设置五节逐个打开、关于页版本、主题切换即时生效、分类显示名走草稿+保存条并落到侧栏、进检索关→无 raws 命中/开→恢复、重启后主题与显示名保持。**修复两个真实缺口**：①分类「显示名」此前只写 categories.json、不进侧栏——`DocService.Tree` 现把分类显示名并入根层别名（用户维护的那份优先于 aliases.json），新增 `TestTreeUsesCategoryAlias`；②打开文档后总览最近列表不刷新——概览监听 `activePath` 并在 600ms 后重读（等 noteOpened 落盘）。设置页保存别名后主动重读根层树。**全量 e2e**：ac-m0 15/15、ac-m1 16/16、ac-m2 22/22、ac-m3 32/32，共 85 项断言、退出码 0。**未自动化**：引导建库与导入技能的真实点击（系统原生对话框），由 T03/T08 单测与截图覆盖，保留为人工项 | `scripts/e2e/ac-m3.sh`、`internal/service/{service.go,appconfig_test.go}`、`src/stores/settingsStore.ts`、`src/components/overview/OverviewGrid.tsx`、docs/PLAN-M3.md | `bun run test:e2e` 全绿（85/85，退出码 0）；`go test ./...` 全绿；`go vet`/`gofmt` 干净；vitest 187 项；`check:bindings` 通过 | 引导/导入的人工点击与 34–46 对话对照仍待用户 | T14（待放行） |

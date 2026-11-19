@@ -1,6 +1,6 @@
 # Mile Knowledge Base（Go 重构版）
 
-> 状态：M2 已完成（T00–T21）。应用现在能做：打开知识库、文件树与树的增删改/拖放、阅读/源码/分栏、编辑保存与冲突、外部改动同步、SQLite 全文检索与搜索面板、三层链接解析与反向链接、健康检查、变更计划与事务、操作日志与恢复、来源追踪与一键同步、图片粘贴上传；以及内置 AI 助手：模型服务与 key 管理、4 个 Agent 与 steering、自动路由与改派、流式回答与工具审批、对话历史与搜索、用量收据、设置页「模型服务」「Agents」两节。M2 已推送到 `origin/main`（`f6d663a`）。
+> 状态：M3 已完成（T00–T16）。应用现在能做：打开知识库、文件树与树的增删改/拖放、阅读/源码/分栏、编辑保存与冲突、外部改动同步、SQLite 全文检索与搜索面板、三层链接解析与反向链接、健康检查、变更计划与事务、操作日志与恢复、来源追踪与一键同步、图片粘贴上传；以及内置 AI 助手：模型服务与 key 管理、4 个 Agent 与 steering、自动路由与改派、流式回答与工具审批、对话历史与搜索、用量收据、设置页「模型服务」「Agents」两节；M3 补齐设置五节、技能导入向导、总览 9 块磁贴、全量视觉与性能验收，并打出 1.0.0 安装包（本机冒烟通过）。M3 的提交在本地 `main`，推送待确认。
 > 更新日期：2026-11-19
 
 ## 1. 这是什么
@@ -31,7 +31,7 @@
 | [docs/PLAN-M0.md](docs/PLAN-M0.md) | M0 实施计划 + M1–M3 粗粒度路线图 + 会话恢复 | 已完成并推送（39041a0） |
 | [docs/PLAN-M1.md](docs/PLAN-M1.md) | M1 实施计划、交接、验收与账本 | 已完成并推送（59a1076） |
 | [docs/PLAN-M2.md](docs/PLAN-M2.md) | M2 实施计划、交接、验收、性能与账本 | 已完成并推送（f6d663a） |
-| [docs/PLAN-M3.md](docs/PLAN-M3.md) | M3 实施计划：其余设置、技能导入、总览、视觉与性能验收、发布 | 已批准 v0.2，执行中（T00） |
+| [docs/PLAN-M3.md](docs/PLAN-M3.md) | M3 实施计划、验收、性能与账本 | 已完成，推送待确认 |
 | [docs/UI设计稿.md](docs/UI设计稿.md) 与 `design/baseline/` | 页面与状态清单、旧版截图基线 | 已确认 v1.0 |
 | [docs/decisions.md](docs/decisions.md) | 重要取舍 | 按需记录 |
 | [docs/发布清单.md](docs/发布清单.md) | 发布与恢复验证 | 模板 |
@@ -72,6 +72,11 @@
 | M0 性能 | 冷启动 / 大库 / 滚动 / 外部改动 | `bash scripts/e2e/perf.sh` | 已验证（见 docs/PLAN-M0.md §6） |
 | M1 性能 | 冷启动 / 索引 / 检索 p95 / 批量改动 | `bash scripts/e2e/perf-m1.sh` | 已验证（见 docs/PLAN-M1.md §6.0） |
 | M2 性能 | 流式帧率 / 输入延迟 / 历史首帧 / 消息虚拟化 | `bash scripts/e2e/perf-ai.sh`（假供应商；需要先做 e2e 构建） | 已验证（见 docs/PLAN-M2.md §6） |
+| M3 验收 | 总览、设置五节、主题与分类持久化、进检索、重启 | `bash scripts/e2e/ac-m3.sh`（需要 e2e 构建） | 已验证 47/47 |
+| M3 视觉对照 | 49 张新版截图 + 本地并排对照页 | `python -I scripts/visual/capture-new.py`（生成物在 `design/compare/`，已 gitignore） | 已验证（见 docs/PLAN-M3.md §6） |
+| 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical --input <json>` | 已接入（阻断，正反对照通过） |
+| 旧版性能基线 | 只读运行旧版 Electron 测冷启动与检索 | `bash scripts/perf-legacy/bench.sh typical\|big` | 已验证（见 docs/PLAN-M3.md §6） |
+| 安装包 | 1.0.0 NSIS 安装包 | `bun run build`（产物 `build/windows-amd64/mile-knowledge-base-setup-1.0.0-amd64.exe`） | 本机安装/启动/卸载冒烟通过；升级未测 |
 | M2 冒烟 | Secrets 与系统代理能力 | `go run ./spikes/t00-smoke` | 已验证（Secrets 存取/超长拒绝/删除；netproxy 回环直连） |
 | 构建 | 生产构建 | `bun run build`（产物 `build/windows-amd64/`） | 已验证 |
 
