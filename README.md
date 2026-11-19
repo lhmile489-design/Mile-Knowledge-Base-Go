@@ -31,6 +31,7 @@
 | [docs/PLAN-M0.md](docs/PLAN-M0.md) | M0 实施计划 + M1–M3 粗粒度路线图 + 会话恢复 | 已完成并推送（39041a0） |
 | [docs/PLAN-M1.md](docs/PLAN-M1.md) | M1 实施计划、交接、验收与账本 | 已完成并推送（59a1076） |
 | [docs/PLAN-M2.md](docs/PLAN-M2.md) | M2 实施计划、交接、验收、性能与账本 | 已完成并推送（f6d663a） |
+| [docs/PLAN-M3.md](docs/PLAN-M3.md) | M3 实施计划：其余设置、技能导入、总览、视觉与性能验收、发布 | 已批准 v0.2，执行中（T00） |
 | [docs/UI设计稿.md](docs/UI设计稿.md) 与 `design/baseline/` | 页面与状态清单、旧版截图基线 | 已确认 v1.0 |
 | [docs/decisions.md](docs/decisions.md) | 重要取舍 | 按需记录 |
 | [docs/发布清单.md](docs/发布清单.md) | 发布与恢复验证 | 模板 |
