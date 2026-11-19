@@ -10,13 +10,14 @@
     "build:web": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test:web": "npm run check:bindings && vitest run",
-  "check:bindings": "node scripts/check-bindings.mjs",
+    "check:bindings": "node scripts/check-bindings.mjs",
     "test:go": "go test ./...",
     "test:go-race": "go test -race ./internal/...",
     "lint:go": "go vet ./...",
     "test:fuzz": "bash scripts/test-fuzz.sh",
     "test:e2e": "bash scripts/test-e2e.sh",
-    "bench": "go test -run=^$ -bench=. -benchtime=1x ./internal/..."
+    "bench": "go test -run=^$ -bench=. -benchtime=1x ./internal/...",
+    "perf:gate": "python -I scripts/perf-gate.py"
   },
   "dependencies": {
     "@codemirror/commands": "6.11.1",
