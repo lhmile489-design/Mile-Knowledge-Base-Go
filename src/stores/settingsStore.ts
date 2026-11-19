@@ -2,7 +2,8 @@
 // table, the page-level save bar and the leave guard. Every text control
 // writes a draft; saving is one explicit action (bar or Ctrl+S).
 import { create } from "zustand";
-import type { AgentConfig, AgentPatch, AppConfigResult, SkillEntry } from "../mygo";
+import type { AgentConfig, AgentPatch, AppConfigResult, CategoryConfig, SkillEntry } from "../mygo";
+import { isMeaningfulCategory } from "../lib/categoriesTable";
 import type { AgentId } from "../lib/agentMeta";
 import { AGENT_IDS } from "../lib/agentMeta";
 import {
@@ -36,6 +37,10 @@ interface SettingsState {
   setDraft(agent: AgentId, text: string): void;
   /** Display-name draft for one directory (the categories table). */
   setAliasDraft(directory: string, text: string): void;
+  /** Drop one alias draft (used when a leftover configuration is cleared). */
+  clearAliasDraft(directory: string): void;
+  /** Immediate category save for the include-in-search switch (M65). */
+  setCategories(vaultId: string | null, categories: CategoryConfig[]): Promise<void>;
   discardDrafts(): void;
   saveDrafts(vaultId: string | null): Promise<void>;
   patchAgent(vaultId: string | null, agent: AgentId, patch: AgentPatch): Promise<void>;
@@ -88,6 +93,28 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       drafts: { ...state.drafts, [categoryAliasDraftId(directory)]: text },
       notice: null,
     })),
+
+  clearAliasDraft: (directory) =>
+    set((state) => {
+      const id = categoryAliasDraftId(directory);
+      if (!(id in state.drafts)) return {};
+      const next = { ...state.drafts };
+      delete next[id];
+      return { drafts: next };
+    }),
+
+  setCategories: async (vaultId, categories) => {
+    if (!vaultId) return;
+    try {
+      const result = await settingsApi.appConfigSetCategories(
+        vaultId,
+        categories.filter(isMeaningfulCategory),
+      );
+      set({ config: result, error: null });
+    } catch (error) {
+      set({ error: errorText(error) });
+    }
+  },
 
   discardDrafts: () => set({ drafts: {}, leaveTarget: null, error: null }),
 

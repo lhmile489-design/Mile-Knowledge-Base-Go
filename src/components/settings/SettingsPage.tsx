@@ -8,6 +8,7 @@ import { useSettingsStore, type SettingsSection } from "../../stores/settingsSto
 import { TitleBar } from "../TitleBar";
 import { ModelServiceSection } from "./ModelServiceSection";
 import { AgentsSection } from "./AgentsSection";
+import { CategoriesSection } from "./CategoriesSection";
 import { GeneralSection } from "./GeneralSection";
 import { SettingsSaveBar } from "./SettingsSaveBar";
 
@@ -47,6 +48,7 @@ export function SettingsPage() {
   const error = useSettingsStore((state) => state.error);
   const notice = useSettingsStore((state) => state.notice);
   const clearNotice = useSettingsStore((state) => state.clearNotice);
+  const loadConfig = useSettingsStore((state) => state.load);
   const discardDrafts = useSettingsStore((state) => state.discardDrafts);
   const saveDrafts = useSettingsStore((state) => state.saveDrafts);
   const [data, setData] = useState<ProvidersResult | null>(null);
@@ -67,6 +69,11 @@ export function SettingsPage() {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  // The whole settings page shares one config load (steering + categories).
+  useEffect(() => {
+    if (vaultId) void loadConfig(vaultId);
+  }, [vaultId, loadConfig]);
 
   // 「已保存」两秒后自动消失（旧版 2000ms）。
   useEffect(() => {
@@ -215,6 +222,8 @@ export function SettingsPage() {
                 </p>
               </div>
             </div>
+          ) : section === "categories" ? (
+            <CategoriesSection onClose={guardedClose} />
           ) : section === "general" ? (
             <GeneralSection onClose={guardedClose} />
           ) : section === "model" ? (

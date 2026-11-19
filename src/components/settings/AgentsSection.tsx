@@ -30,7 +30,6 @@ export function AgentsSection({ vaultId, onClose }: { readonly vaultId: string; 
   const skills = useSettingsStore((state) => state.skills);
   const drafts = useSettingsStore((state) => state.drafts);
   const error = useSettingsStore((state) => state.error);
-  const load = useSettingsStore((state) => state.load);
   const setDraft = useSettingsStore((state) => state.setDraft);
   const patchAgent = useSettingsStore((state) => state.patchAgent);
   const toggleSkill = useSettingsStore((state) => state.toggleSkill);
@@ -39,12 +38,12 @@ export function AgentsSection({ vaultId, onClose }: { readonly vaultId: string; 
   const [providers, setProviders] = useState<ProviderDraft[]>([]);
 
   useEffect(() => {
-    void load(vaultId);
+    // 配置由设置页统一加载（T04），这里只需要供应商列表。
     settingsApi
       .providers(vaultId)
       .then((result) => setProviders(result.providers))
       .catch(() => setProviders([]));
-  }, [vaultId, load]);
+  }, [vaultId]);
 
   const agents = config?.agents ?? {};
   const current = agents[selected];
