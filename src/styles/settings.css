@@ -756,3 +756,10 @@
   color: var(--raw-muted);
   font-size: var(--text-body-sm);
 }
+
+/* T05: read-only widths row in 常规. */
+.settings-widths {
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}

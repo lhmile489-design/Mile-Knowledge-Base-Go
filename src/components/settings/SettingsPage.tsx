@@ -8,6 +8,7 @@ import { useSettingsStore, type SettingsSection } from "../../stores/settingsSto
 import { TitleBar } from "../TitleBar";
 import { ModelServiceSection } from "./ModelServiceSection";
 import { AgentsSection } from "./AgentsSection";
+import { GeneralSection } from "./GeneralSection";
 import { SettingsSaveBar } from "./SettingsSaveBar";
 
 interface SectionMeta {
@@ -36,7 +37,7 @@ export function SettingsPage() {
   const vaultId = useAppStore((state) => state.activeVaultId);
   const vaults = useAppStore((state) => state.vaults);
   const vault = vaults.find((item) => item.id === vaultId);
-  const [section, setSection] = useState<SettingsSection>("model");
+  const [section, setSection] = useState<SettingsSection>("general");
   const requestLeave = useSettingsStore((state) => state.requestLeave);
   const resolveLeave = useSettingsStore((state) => state.resolveLeave);
   const leaveTarget = useSettingsStore((state) => state.leaveTarget);
@@ -214,6 +215,8 @@ export function SettingsPage() {
                 </p>
               </div>
             </div>
+          ) : section === "general" ? (
+            <GeneralSection onClose={guardedClose} />
           ) : section === "model" ? (
             <ModelServiceSection vaultId={vaultId} data={data} error={providersError} reload={reload} onClose={guardedClose} />
           ) : section === "agents" ? (
