@@ -171,3 +171,72 @@ func TestAliasPatchRejectsBadKeys(t *testing.T) {
 		t.Fatalf("failure = %+v", got.Failure)
 	}
 }
+
+func TestCategoriesToggleReachesTheIndex(t *testing.T) {
+	root := t.TempDir()
+	for _, item := range []struct{ rel, body string }{
+		{"projects/p.md", "# 项目\n\n项目专用词。\n"},
+		{"raws/r.md", "# 原始\n\n项目专用词。\n"},
+	} {
+		full := filepath.Join(root, filepath.FromSlash(item.rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(item.body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	app, err := New(t.TempDir(), filepath.Join(t.TempDir(), "legacy"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, f := app.Vaults.Register(root)
+	if f != nil {
+		t.Fatalf("register: %+v", f)
+	}
+	app.startIndex(v.ID)
+	t.Cleanup(func() { app.indexStop(v.ID, false) })
+	waitPhase(t, app, v.ID, "ready")
+	indexSvc := NewIndexService(app)
+	settings := NewSettingsService(app)
+	ctx := context.Background()
+
+	search := func() int {
+		result := indexSvc.Search(ctx, contract.SearchQuery{VaultID: v.ID, Text: "项目专用词", Limit: 10})
+		if result.Failure != nil {
+			t.Fatalf("search: %+v", result.Failure)
+		}
+		return len(result.Hits)
+	}
+	if hits := search(); hits != 2 {
+		t.Fatalf("before = %d, want 2", hits)
+	}
+
+	off := settings.AppConfigSetCategories(ctx, v.ID, []contract.CategoryConfig{
+		{Directory: "projects", Indexed: false},
+	})
+	if off.Failure != nil {
+		t.Fatalf("set: %+v", off.Failure)
+	}
+	if hits := search(); hits != 1 {
+		t.Fatalf("after off = %d, want 1", hits)
+	}
+
+	// 关闭/重开索引后仍然生效（构建时读 categories.json）。
+	app.indexStop(v.ID, false)
+	app.startIndex(v.ID)
+	waitPhase(t, app, v.ID, "ready")
+	if hits := search(); hits != 1 {
+		t.Fatalf("after restart = %d, want 1", hits)
+	}
+
+	on := settings.AppConfigSetCategories(ctx, v.ID, []contract.CategoryConfig{
+		{Directory: "projects", Indexed: true},
+	})
+	if on.Failure != nil {
+		t.Fatalf("set on: %+v", on.Failure)
+	}
+	if hits := search(); hits != 2 {
+		t.Fatalf("after on = %d, want 2", hits)
+	}
+}

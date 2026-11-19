@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS documents (
   size         INTEGER NOT NULL,
   ignored      INTEGER NOT NULL DEFAULT 0,   -- system area
   body_indexed INTEGER NOT NULL DEFAULT 1,   -- 0 = path only (binary/oversize)
+  search_excluded INTEGER NOT NULL DEFAULT 0, -- user turned the directory out of search (D-013)
   updated_at   TEXT NOT NULL,
   token_count  INTEGER NOT NULL DEFAULT 0   -- sum of the five token columns (M25 tokenCount)
 );

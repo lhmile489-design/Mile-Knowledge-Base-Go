@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 )
 
 // Update applies the directories reported by the file watcher: files that
@@ -21,6 +22,7 @@ func Update(ctx context.Context, s *Store, root string, dirs []string, progress 
 	}
 
 	selected := normaliseDirs(dirs)
+	excluded := excludedTopLevel(vault.ReadCategories(root))
 
 	// The disk side: every file under the selected directories.
 	fresh := map[string]entry{}
@@ -79,7 +81,7 @@ func Update(ctx context.Context, s *Store, root string, dirs []string, progress 
 		}
 
 		for _, e := range upserts {
-			if _, _, err := indexEntry(ctx, tx, e); err != nil {
+			if _, _, err := indexEntry(ctx, tx, e, excluded); err != nil {
 				return err
 			}
 			status.Scanned++

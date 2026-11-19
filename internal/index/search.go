@@ -130,6 +130,9 @@ func searchWhere(tokens []string, filters contract.SearchFilters) (string, []any
 	where := `doc_fts MATCH ?`
 	args := []any{strings.Join(quoted, " OR ")}
 
+	// A directory the user turned out of search never matches, whatever the
+	// other filters say (D-013).
+	where += ` AND d.search_excluded = 0`
 	if !filters.IncludeSystem {
 		where += ` AND d.ignored = 0`
 	}

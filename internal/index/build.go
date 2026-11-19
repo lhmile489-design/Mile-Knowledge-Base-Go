@@ -80,6 +80,7 @@ func Build(ctx context.Context, s *Store, root string, progress func(Status)) er
 		return err
 	}
 
+	excluded := excludedTopLevel(vault.ReadCategories(root))
 	status := Status{Phase: "scanning"}
 	batch := make([]entry, 0, BatchSize)
 
@@ -89,7 +90,7 @@ func Build(ctx context.Context, s *Store, root string, progress func(Status)) er
 		}
 		if err := s.withTx(ctx, func(tx *sql.Tx) error {
 			for _, e := range batch {
-				_, skipped, err := indexEntry(ctx, tx, e)
+				_, skipped, err := indexEntry(ctx, tx, e, excluded)
 				if err != nil {
 					return err
 				}
@@ -232,13 +233,15 @@ func walkVault(realRoot, rel string, seen map[string]bool, emit func(entry) erro
 
 // indexEntry writes one document and returns its token count. skipped counts
 // files whose body was not read (binary, invalid UTF-8 or oversize).
-func indexEntry(ctx context.Context, tx *sql.Tx, e entry) (tokens int, skipped bool, err error) {
+func indexEntry(ctx context.Context, tx *sql.Tx, e entry, excluded map[string]bool) (tokens int, skipped bool, err error) {
 	top := e.rel
 	if at := strings.IndexByte(top, '/'); at >= 0 {
 		top = top[:at]
 	}
 	area := vault.AreaFor(top)
 	ignored := area == vault.AreaSystem
+	// The system area stays out of search regardless of the toggle (D-013).
+	searchExcluded := !ignored && excluded[strings.ToLower(top)]
 
 	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(e.rel), "."))
 	name := e.rel
@@ -275,16 +278,17 @@ func indexEntry(ctx context.Context, tx *sql.Tx, e entry) (tokens int, skipped b
 
 	var rowid int64
 	err = tx.QueryRowContext(ctx, `
-		INSERT INTO documents(path, title, area, tags, extension, mtime_ms, size, ignored, body_indexed, updated_at, token_count)
-		VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO documents(path, title, area, tags, extension, mtime_ms, size, ignored, body_indexed, search_excluded, updated_at, token_count)
+		VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(path) DO UPDATE SET
 		  title = excluded.title, area = excluded.area, tags = excluded.tags,
 		  extension = excluded.extension, mtime_ms = excluded.mtime_ms, size = excluded.size,
 		  ignored = excluded.ignored, body_indexed = excluded.body_indexed,
+		  search_excluded = excluded.search_excluded,
 		  updated_at = excluded.updated_at, token_count = excluded.token_count
 		RETURNING rowid`,
 		e.rel, title, area, tags, ext, e.mtimeMs, e.size, boolInt(ignored), boolInt(bodyIndexed),
-		time.Now().UTC().Format(time.RFC3339), tokens).Scan(&rowid)
+		boolInt(searchExcluded), time.Now().UTC().Format(time.RFC3339), tokens).Scan(&rowid)
 	if err != nil {
 		return 0, false, err
 	}

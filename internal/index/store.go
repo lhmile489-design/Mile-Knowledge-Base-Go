@@ -17,7 +17,7 @@ import (
 // SchemaVersion is the version this build understands. A database written by a
 // newer build (or an unreadable one) is deleted and rebuilt: the index is
 // derived data (docs/数据库设计.md §4.5, §8).
-const SchemaVersion = 1
+const SchemaVersion = 2
 
 //go:embed migrations/*.sql
 var migrations embed.FS

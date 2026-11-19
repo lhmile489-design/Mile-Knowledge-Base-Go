@@ -46,7 +46,36 @@ func (s *SettingsService) AppConfigSetCategories(ctx context.Context, vaultID st
 		return result
 	}
 	result.Categories = toContractCategories(vault.ReadCategories(root))
+	s.retagSearchExclusions(vaultID, result.Categories)
 	return result
+}
+
+// retagSearchExclusions applies the include-in-search toggle to an already
+// open index (M65, D-013). A closed index picks the setting up on its next
+// build or update, so this is best-effort: a failure is reported as a notice
+// and never turns a saved categories file into an error.
+func (s *SettingsService) retagSearchExclusions(vaultID string, categories []contract.CategoryConfig) {
+	handle := s.app.indexHandle(vaultID)
+	if handle == nil {
+		return
+	}
+	handle.mu.Lock()
+	store := handle.store
+	handle.mu.Unlock()
+	if store == nil {
+		return
+	}
+	dirs := make([]string, 0, len(categories))
+	for _, item := range categories {
+		if !item.Indexed {
+			dirs = append(dirs, item.Directory)
+		}
+	}
+	if err := store.SetSearchExclusions(context.Background(), dirs); err != nil {
+		_ = AppNotice.Emit(s.app.Window(), contract.AppNoticeEvent{Text: "更新检索范围失败：" + err.Error(), Level: "warn"})
+		return
+	}
+	s.app.emitIndexStatus(handle)
 }
 
 func toContractCategories(list []vault.Category) []contract.CategoryConfig {
