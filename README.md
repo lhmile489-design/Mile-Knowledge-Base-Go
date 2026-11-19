@@ -23,9 +23,9 @@
 | [CLAUDE.md](CLAUDE.md) | 唯一约束入口：执行规则、当前阶段、文档索引、Skills | 已填项目事实 |
 | [WORKFLOW.md](WORKFLOW.md) | 13 阶段流程、审核、完成标准 | 通用规范 |
 | [PRODUCT.md](PRODUCT.md) | 产品定位、用户、概念、长期边界 | 已确认 |
-| [docs/PRD.md](docs/PRD.md) | 重写版需求范围、规则与验收 | 已确认 v1.9 |
+| [docs/PRD.md](docs/PRD.md) | 重写版需求范围、规则与验收 | R1 已确认 v1.9；第 15 节 R2 技能管理已确认 v2.0，v2.1 按工具目录核实修订 |
 | [DESIGN.md](DESIGN.md) | 全局 UI 契约 | 已确认 v1.0 |
-| [docs/技术设计.md](docs/技术设计.md) | 选型、架构、质量门禁 | 已确认 v1.0 |
+| [docs/技术设计.md](docs/技术设计.md) | 选型、架构、质量门禁；第 13 节 R2 工具目录核实 | 已确认 v1.0；第 13 节 2026-11-20 审核通过 |
 | [docs/API.md](docs/API.md) | Go 绑定与事件契约 | 已确认 v1.0 |
 | [docs/数据库设计.md](docs/数据库设计.md) | 本地数据与索引存储 | 已确认 v1.0 |
 | [docs/PLAN-M0.md](docs/PLAN-M0.md) | M0 实施计划 + M1–M3 粗粒度路线图 + 会话恢复 | 已完成并推送（39041a0） |
@@ -42,6 +42,7 @@
 | --- | --- |
 | `E:\WebApp\Mile-Project\Mile-Knowledge-Base-master` | 旧版源码、DESIGN.md、单测与真窗口验证脚本，是功能与 UI 一致性的对照基线 |
 | `E:\WebApp\Mile-Project\Mile-Typora` | 已跑通的 mygo v0.9.0 + React 19 项目，用作工程配置参考 |
+| `E:\WebApp\Mile-Project\skillkit-main` | 开源技能管理工具 skillkit（MIT，desktop 0.8.1），R2 技能管理的参考实现 |
 | `C:\Users\LHmile\go\pkg\mod\github.com\egoist\mygo@v0.10.0\docs\` | mygo 锁定版本的官方文档 |
 
 ## 4. 开发环境（2026-11-18 本机实测）
