@@ -221,3 +221,8 @@ export function currentEffort(session: AgentListResult | null): string {
 }
 
 export { HEIGHT_MAX, HEIGHT_MIN, HEIGHT_STEP };
+
+// E2E hook (AC-M2): sends go through the same composer the UI uses.
+if (typeof window !== "undefined") {
+  (window as unknown as { __mkbComposer?: unknown }).__mkbComposer = useComposerStore;
+}

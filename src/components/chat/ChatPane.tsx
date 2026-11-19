@@ -15,6 +15,7 @@ import { SessionInfo } from "./SessionInfo";
 /** The Agnes chat panel: header, history rail, messages, composer, viewer. */
 export function ChatPane() {
   const vaultId = useAppStore((state) => state.activeVaultId);
+  const historyOpen = useAppStore((state) => state.settings?.layout?.agnesHistoryOpen);
   const setVault = useAgentStore((state) => state.setVault);
   const restoreNote = useHistoryStore((state) => state.restoreNote);
   const viewerOpen = useHistoryStore((state) => state.viewer !== null);
@@ -23,6 +24,10 @@ export function ChatPane() {
   useEffect(() => {
     setVault(vaultId);
   }, [vaultId, setVault]);
+
+  useEffect(() => {
+    useHistoryStore.getState().hydrateOpen(historyOpen);
+  }, [historyOpen]);
 
   useEffect(() => {
     void useHistoryStore.getState().refresh(vaultId);

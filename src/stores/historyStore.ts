@@ -33,6 +33,7 @@ interface HistoryState {
   toggleRail(): void;
   refresh(vaultId: string | null): Promise<void>;
   setSearch(vaultId: string | null, text: string): void;
+  hydrateOpen(open: boolean | undefined): void;
   openViewer(vaultId: string | null, id: string): Promise<void>;
   closeViewer(): void;
   continueConversation(vaultId: string | null): Promise<void>;
@@ -47,6 +48,9 @@ interface HistoryState {
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 const restoredFor = new Set<string>();
+// The rail's open state comes from the saved layout once; a later toggle must
+// not be overwritten when the layout object is refreshed.
+let openHydrated = false;
 
 function conversationTitle(index: ConversationIndex | null, id: string): ConversationMeta | null {
   return index?.conversations.find((item) => item.id === id) ?? null;
@@ -92,6 +96,12 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     const next = !get().open;
     set({ open: next });
     void useAppStore.getState().setLayout({ agnesHistoryOpen: next });
+  },
+
+  hydrateOpen: (open) => {
+    if (openHydrated || typeof open !== "boolean") return;
+    openHydrated = true;
+    set({ open });
   },
 
   refresh: async (vaultId) => {
@@ -227,3 +237,8 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     await get().refresh(vaultId);
   },
 }));
+
+// E2E hook (AC-M2): the acceptance script reads the rail and searches.
+if (typeof window !== "undefined") {
+  (window as unknown as { __mkbHistory?: unknown }).__mkbHistory = useHistoryStore;
+}

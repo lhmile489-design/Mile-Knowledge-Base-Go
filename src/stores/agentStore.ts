@@ -169,3 +169,8 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
     return null;
   },
 }));
+
+// E2E hook (AC-M2): the acceptance script drives the chat through the store.
+if (typeof window !== "undefined") {
+  (window as unknown as { __mkbAgent?: unknown }).__mkbAgent = useAgentStore;
+}
