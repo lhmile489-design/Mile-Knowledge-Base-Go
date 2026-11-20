@@ -84,7 +84,7 @@
 | T03 | 令牌拆分与 12 套配色 | `src/styles/*.css`、`scripts/visual/capture-new.py` | T02 | 29 处改名、按钮与发送按钮改按钮令牌；默认橙；V-ACC-TOK 通过（含靛下逐像素比对） | 待验证（门禁已过，待用户验收） |
 | T04 | 首帧链路 | `main.go`、`public/theme-init.js`、`src/stores/appStore.ts`、`src/lib/accent.ts` | T00、T01、T02、T03 | V-ACC-BOOT 通过 | 待验证（门禁已过，待用户验收） |
 | T05 | 标题栏色点与色板 | `src/components/TitleBar.tsx`、`src/components/AccentPicker.tsx`（新）、`src/styles/accent-picker.css`（新） | T04 | 交互与可访问性按 UI 稿 10.1、DESIGN.md 12；单测与构建通过 | 待验证（门禁已过，待用户验收） |
-| T06 | 设置页「主题色」一行 | `src/components/settings/GeneralSection.tsx` | T05 | 与色板同步；单测与构建通过 | 待做 |
+| T06 | 设置页「主题色」一行 | `src/components/settings/GeneralSection.tsx`、`src/components/AccentOptions.tsx`（新）、`src/lib/useResolvedTheme.ts`（新）、`src/styles/accent-picker.css` | T05 | 与色板同步；单测与构建通过 | 待验证（门禁已过，待用户验收） |
 | T07 | 验收与全量回归 | `scripts/e2e/ac-m35.sh`（新）、`scripts/e2e/accent-contrast.js`（新） | T06 | AC-ACC-1–6 与真实组件对比度检查通过；`bun run test:e2e` 全过；冷启动性能不劣于 M3 | 待做 |
 | T08 | 视觉重拍 | `scripts/visual/capture-new.py`、`design/r2/shots/`、`design/r2/shots-accent/` | T07 | 靛下 R1 对照无回归；6 预设 × 浅 / 深真实界面截图；技能浮层 18 张按橙重拍 | 待做 |
 | T09 | 版本与安装包（按 B-M35-01） | `mygo.config.ts`、docs/发布清单.md | T08 | 见 B-M35-01；安装动作执行前再单独确认 | 待做 |
@@ -168,6 +168,7 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 ### T06 设置页「主题色」一行
 
 - GeneralSection 的「主题」下加一行，复用 T05 的色块与自定义组件；选择即生效、不进保存条（与主题切换一致）；与标题栏色板读同一个 store。
+- 完成后：色块与自定义输入抽成 `AccentOptions`，标题栏浮层与设置页共用，`testIdPrefix` 区分两处的测试钩子；解析后的深 / 浅色统一走 `useResolvedTheme`，系统切换时色块勾选的前景色跟着变。设置页这一行用 `variant="inline"`，宽 336px，窄内容区随 `setting-row` 的容器查询换到标签下方。
 
 ### T07 验收与全量回归
 
@@ -245,6 +246,7 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 获批 | — | 自查见第 10 节 | T00 已放行 |
 | 2026-11-20 | T00 | 完成：方案成立，A-1–A-4 全过 | 见下 | RESULT.md；技术设计 14.3 | 用户已验收并放行 T01 |
+| 2026-11-20 | T06 | 完成：常规「外观」新增「主题色」一行，与标题栏色板共用抽出的 `AccentOptions`（6 色块、自定义输入、「实际使用」提示），两处读同一个 store、选择即生效、不进保存条。3 项新测试（行内 6 色块与选中态、标题栏色点同步换色、自定义带缓存），全套 216 项通过；真机核对浅色 / 深色 / 自定义三态与色板回归，设置文件存下自定义色及其缓存 | 见下 | `tsc`、Vitest 216 项、e2e 构建 + 真机截图 | 等待放行 T07 |
 | 2026-11-20 | T05 | 完成：标题栏色点（含 `aria-label`/`aria-expanded`/`aria-haspopup`）与色板浮层；6 个色块 radiogroup、方向键移动、Enter 选择、勾选色块用各自前景色；自定义输入带校验、「实际使用」提示与预览点；Esc/点外面关闭并还焦点。5 项组件测试、全套 213 项通过；真机截图核对浅色/深色/自定义三态，修了自定义行被挤成一列的问题 | 见下 | `tsc`、Vitest 213 项、e2e 构建 + 截图 | 等待放行 T06 |
 | 2026-11-20 | T04 | 完成：Go 经 `Page.PreloadScript` 注入设置里的主题色；`theme-init.js` 首帧读值（预设设 `data-accent`，自定义写 20 个内联变量）；`appStore` 载入 / 设置变化时应用，切换走 `setAccent`：先换色、再 patch（自定义补算缓存），失败回滚并提示。实测：预设蓝注入 `blue`、计算值 `#2563eb`、截图 423 个蓝色像素；自定义黄 `data-accent=custom`、内联变量 `#999900`、按钮 `#7a7a00` | 见下 | `tsc`、Vitest 208 项；Go build/vet | 等待放行 T05 |
 | 2026-11-20 | T03 | 完成：新增 accent.css（12 预设 + custom 映射）、令牌拆分、27 处文字改名、按钮组；靛下与「改动前同一份构建」逐像素比对：50 张里 26 张完全相同、橙色像素 0、橙靛互换 0，其余差异为时间文本与运行态（强度选择、最近文档顺序）。过程中修了两处：主题缩略图不再覆盖强调色；截图脚本注入后等一次重绘 | 见下 | 两次 e2e 构建 + 50 张对照；`build:web` | 等待放行 T04 |

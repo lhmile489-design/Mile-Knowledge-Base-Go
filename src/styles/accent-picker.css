@@ -38,6 +38,19 @@
   color: var(--raw-muted);
 }
 
+/* 色块与自定义输入：标题栏浮层和设置页共用同一套（UI设计稿 10.1–10.2）。 */
+.accent-options {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* 设置页里内联展示：占标签右侧，窄内容区时整行换到下方（setting-row 的容器查询）。 */
+.accent-options[data-variant='inline'] {
+  width: 336px;
+  max-width: 100%;
+}
+
 .accent-swatches {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

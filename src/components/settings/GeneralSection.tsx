@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { Check, X } from "@phosphor-icons/react";
 import { nextOption } from "../../lib/radioGroup";
+import { useResolvedTheme } from "../../lib/useResolvedTheme";
 import { useAppStore, type ThemeMode } from "../../stores/appStore";
+import { AccentOptions } from "../AccentOptions";
 import { SettingGroup, SettingRow } from "./SettingRow";
 
 const THEME_MODES: readonly ThemeMode[] = ["light", "dark", "system"];
@@ -42,28 +44,6 @@ function ThemeThumb({ mode }: { readonly mode: ThemeMode }) {
       )}
     </span>
   );
-}
-
-/** The theme that is actually in effect right now (system follows the OS). */
-function useResolvedTheme(mode: ThemeMode): "light" | "dark" {
-  const resolve = (): "light" | "dark" => {
-    if (mode !== "system") return mode;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  };
-  const [resolved, setResolved] = useState<"light" | "dark">(resolve);
-  useEffect(() => {
-    if (mode !== "system") {
-      setResolved(mode);
-      return;
-    }
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = (): void => setResolved(media.matches ? "dark" : "light");
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
-  return resolved;
 }
 
 function asTheme(value: string | undefined): ThemeMode {
@@ -155,6 +135,11 @@ export function GeneralSection({ onClose }: { readonly onClose: () => void }) {
                 })}
               </div>
             </SettingRow>
+            <SettingRow
+              label="主题色"
+              help="按钮、选中态、链接与焦点环都跟着变；与标题栏的色点是同一份设置"
+              control={<AccentOptions variant="inline" testIdPrefix="settings-accent" />}
+            />
           </SettingGroup>
 
           <SettingGroup
