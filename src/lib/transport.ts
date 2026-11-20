@@ -59,9 +59,13 @@ import {
   type SkillToolRef,
   type SkillLogRecord,
   type SkillLogResult,
+  type KbSkill,
+  type KbSkillDistribution,
+  type SkillPreviewItem,
 } from "../mygo";
 
 export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
+export type { SkillUninstallResult, SkillRestoreResult, SkillBackup, SkillBackupsResult, SkillAdoptResult, SkillToolRef, SkillLogRecord, SkillLogResult, KbSkill, KbSkillDistribution, SkillPreviewItem };
 
 export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 

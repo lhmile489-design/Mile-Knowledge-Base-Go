@@ -3,6 +3,10 @@ import { Plus, X } from "@phosphor-icons/react";
 import { useAppStore } from "../../stores/appStore";
 import { useSkillsStore } from "../../stores/skillsStore";
 import { totals } from "../../lib/skillsView";
+import { useDocStore } from "../../stores/docStore";
+import { useTreeStore } from "../../stores/treeStore";
+import { KbSkillsPage } from "./KbSkillsPage";
+import { DistributeDialog } from "./DistributeDialog";
 
 type Page = "kb" | "tools";
 
@@ -18,6 +22,7 @@ export function SkillsPanel() {
   const scan = useSkillsStore((state) => state.scan);
   const tools = useSkillsStore((state) => state.tools);
   const [page, setPage] = useState<Page>("kb");
+  const [distributePaths, setDistributePaths] = useState<string[] | null>(null);
   const [box, setBox] = useState<{ right: number; width: number; height: number } | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -142,25 +147,20 @@ export function SkillsPanel() {
         <div className="skills-body scroll-y" data-testid="skills-body">
           {page === "kb" ? (
             vaultId ? (
-              counts.kb === 0 ? (
-                <p className="skills-empty">知识库里还没有技能。</p>
-              ) : (
-                <div className="skills-groups">
-                  {scan?.kb.map((group) => (
-                    <section key={group.category} className="skills-group" data-testid={`skills-group-${group.category}`}>
-                      <h3 className="skills-group-title">{group.category}</h3>
-                      <ul className="skills-list">
-                        {group.skills.map((skill) => (
-                          <li key={skill.path} className="skills-row">
-                            <span className="skills-name">{skill.name}</span>
-                            <span className="skills-desc">{skill.description}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  ))}
-                </div>
-              )
+              <KbSkillsPage
+                groups={scan?.kb ?? []}
+                tools={tools}
+                onOpenSkill={(path) => {
+                  void useDocStore.getState().open(vaultId, `${path}/SKILL.md`);
+                  close();
+                }}
+                onLocate={(path) => {
+                  void useTreeStore.getState().reveal(path);
+                  close();
+                }}
+                onDistribute={(paths) => setDistributePaths(paths)}
+                onInstall={() => openWizard()}
+              />
             ) : (
               <div className="skills-empty">
                 <p>还没有打开知识库。</p>
@@ -191,6 +191,20 @@ export function SkillsPanel() {
             </div>
           )}
         </div>
+
+        {distributePaths && vaultId ? (
+          <DistributeDialog
+            vaultId={vaultId}
+            skills={(scan?.kb ?? [])
+              .flatMap((group) => group.skills)
+              .filter((skill) => distributePaths.includes(skill.path))}
+            tools={tools}
+            onClose={() => setDistributePaths(null)}
+            onDone={() => {
+              void useSkillsStore.getState().loadScan(vaultId);
+            }}
+          />
+        ) : null}
 
         <footer className="skills-foot">
           <span data-testid="skills-status">

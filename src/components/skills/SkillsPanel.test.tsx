@@ -138,8 +138,8 @@ describe("skills panel shell", () => {
     });
     renderShell();
     fireEvent.click(screen.getByTestId("open-skills"));
-    expect(screen.getByTestId("skills-group-前端")).toBeTruthy();
-    expect(screen.getByText("vue")).toBeTruthy();
+    expect(screen.getByTestId("kb-group-前端")).toBeTruthy();
+    expect(screen.getByTestId("kb-card-vue")).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: /工具技能/ }));
     expect(screen.getByTestId("skills-tool-claude-code")).toBeTruthy();
   });

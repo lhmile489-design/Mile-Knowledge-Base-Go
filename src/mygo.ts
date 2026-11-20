@@ -447,6 +447,16 @@ export interface KbSkill {
   description: string;
   path: string;
   category: string;
+  distributed?: KbSkillDistribution[];
+}
+
+/** KbSkillDistribution is one tool this knowledge-base skill reached (M78). */
+export interface KbSkillDistribution {
+  toolId: string;
+  /** link | copy */
+  mode: string;
+  /** copies only */
+  sync?: string;
 }
 
 /** LayoutSettings mirrors the persisted workbench geometry. */

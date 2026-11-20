@@ -1114,12 +1114,20 @@ type SkillTool struct {
 	Enabled    bool     `json:"enabled"`           // MiniMax Code defaults to false
 }
 
+// KbSkillDistribution is one tool this knowledge-base skill reached (M78).
+type KbSkillDistribution struct {
+	ToolID string `json:"toolId"`
+	Mode   string `json:"mode"`           // link | copy
+	Sync   string `json:"sync,omitempty"` // copies only
+}
+
 // KbSkill is one knowledge-base skill in the scan result.
 type KbSkill struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Path        string `json:"path"`
-	Category    string `json:"category"`
+	Name        string                `json:"name"`
+	Description string                `json:"description"`
+	Path        string                `json:"path"`
+	Category    string                `json:"category"`
+	Distributed []KbSkillDistribution `json:"distributed,omitempty"`
 }
 
 // ToolSkill is one skill found in a tool directory (FR-SKM-SCAN).

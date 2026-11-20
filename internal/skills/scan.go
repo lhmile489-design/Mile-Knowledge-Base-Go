@@ -190,7 +190,7 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, di
 				default:
 					if dist, ok := matchDistribution(dists, dir); ok {
 						skill.Origin = "copied"
-						skill.Sync = copySyncState(opts, dist, dir)
+						skill.Sync = CopySyncState(opts.VaultRoot, dist, dir)
 					} else {
 						skill.Origin = "independent"
 					}
@@ -243,16 +243,17 @@ func matchDistribution(dists []Distribution, dir string) (Distribution, bool) {
 	return Distribution{}, false
 }
 
-// copySyncState compares the copy against its recorded baseline and the
-// knowledge base (FR-SKM-DIST; R-9 C16).
-func copySyncState(opts ScanOptions, dist Distribution, dir string) string {
+// CopySyncState compares a copy against its recorded baseline and the
+// knowledge base (FR-SKM-DIST; R-9 C16). The service reuses it for the
+// knowledge-base card's status.
+func CopySyncState(vaultRoot string, dist Distribution, dir string) string {
 	toolHash, err := TreeHash(dir)
 	if err != nil {
 		return "missing"
 	}
 	kbHash := ""
-	if opts.VaultRoot != "" && dist.SkillPath != "" {
-		if hash, err := TreeHash(filepath.Join(opts.VaultRoot, filepath.FromSlash(dist.SkillPath))); err == nil {
+	if vaultRoot != "" && dist.SkillPath != "" {
+		if hash, err := TreeHash(filepath.Join(vaultRoot, filepath.FromSlash(dist.SkillPath))); err == nil {
 			kbHash = hash
 		}
 	}

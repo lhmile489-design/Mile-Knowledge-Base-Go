@@ -101,7 +101,7 @@ func (s *SkillService) distributeOptions(ctx context.Context, vaultID, skillPath
 		}
 	}
 	state := skills.LoadState(s.statePath())
-	_, refs, _ := s.kbSkills(ctx, vaultID)
+	_, refs, _ := s.kbSkills(ctx, vaultID, state.Distributions)
 	distributedTo := func(otherPath, toolID string) bool {
 		for _, dist := range state.Distributions {
 			if dist.VaultID == vaultID && dist.SkillPath == otherPath && dist.ToolID == toolID {

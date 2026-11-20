@@ -101,8 +101,8 @@ func (s *SkillService) startBackgroundScan(vaultID, cachePath string) {
 func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.SkillScan {
 	detector := s.detector()
 	tools := detector.Detect()
-	kb, refs, root := s.kbSkills(ctx, vaultID)
 	state := skills.LoadState(filepath.Join(s.app.DataDir, "skills", "state.json"))
+	kb, refs, root := s.kbSkills(ctx, vaultID, state.Distributions)
 	groups, warnings := skills.ScanTools(skills.ScanOptions{
 		VaultID:       vaultID,
 		VaultRoot:     root,
@@ -121,7 +121,7 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 
 // kbSkills reads the knowledge-base skills from the index (FR-SKM-SCAN); the
 // description comes from the SKILL.md frontmatter.
-func (s *SkillService) kbSkills(ctx context.Context, vaultID string) ([]contract.SkillCategory, []skills.KbSkillRef, string) {
+func (s *SkillService) kbSkills(ctx context.Context, vaultID string, distributions []skills.Distribution) ([]contract.SkillCategory, []skills.KbSkillRef, string) {
 	empty := []contract.SkillCategory{}
 	if vaultID == "" {
 		return empty, nil, ""
@@ -158,6 +158,16 @@ func (s *SkillService) kbSkills(ctx context.Context, vaultID string) ([]contract
 			Description: skills.SkillDescription(filepath.Join(root, filepath.FromSlash(dir))),
 			Path:        dir,
 			Category:    entry.Category,
+		}
+		for _, dist := range distributions {
+			if dist.VaultID != vaultID || dist.SkillPath != dir {
+				continue
+			}
+			out := contract.KbSkillDistribution{ToolID: dist.ToolID, Mode: dist.Mode}
+			if dist.Mode == "copy" {
+				out.Sync = skills.CopySyncState(root, dist, dist.TargetPath)
+			}
+			skill.Distributed = append(skill.Distributed, out)
 		}
 		if _, ok := byCategory[entry.Category]; !ok {
 			order = append(order, entry.Category)

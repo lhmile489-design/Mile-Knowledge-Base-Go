@@ -875,7 +875,10 @@ type SkillTool = {
 type SkillOrigin = 'linked' | 'link-broken' | 'copied' | 'independent' | 'builtin' | 'external-link';
 type SkillSync = 'in-sync' | 'vault-updated' | 'tool-updated' | 'both-updated' | 'missing';
 
-type KbSkill = { name: string; description: string; path: string; category: string };
+type KbSkill = {
+  name: string; description: string; path: string; category: string;
+  distributed?: { toolId: string; mode: 'link' | 'copy'; sync?: SkillSync }[]; // 卡片上的已分发工具
+};
 type ToolSkill = {
   name: string; description: string; path: string; toolId: string;
   origin: SkillOrigin; sync?: SkillSync;
