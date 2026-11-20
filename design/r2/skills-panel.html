@@ -195,6 +195,36 @@
   .skm-log .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--raw-text); }
   .skm-log .txt b { font-weight: 600; color: var(--raw-strong); }
 
+  /* M5：GitHub / zip 安装与更新 */
+  .skm-urlrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 12px; }
+  .skm-urlrow .skm-input { font-family: var(--font-mono); font-size: var(--text-meta); }
+  .skm-urlrow + .hintline { margin: 6px 2px 0; font-size: var(--text-caption); color: var(--raw-faint); }
+  .skm-origin { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 12px; padding: 9px 12px; border-radius: var(--radius-card);
+    border: 1px solid var(--raw-line); background: var(--skm-surface); font-size: var(--text-body-sm); color: var(--raw-text); }
+  .skm-origin b { color: var(--raw-strong); font-weight: 600; }
+  .skm-origin code { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); }
+  .skm-cands { display: grid; }
+  .skm-cand { display: grid; grid-template-columns: 18px minmax(0, 150px) minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 40px; padding: 4px 10px;
+    border-radius: 8px; font-size: var(--text-body-sm); cursor: pointer; }
+  .skm-cand + .skm-cand { box-shadow: inset 0 1px 0 var(--skm-line); }
+  .skm-cand .nm { font-weight: 600; color: var(--raw-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-cand .ds { color: var(--raw-muted); font-size: var(--text-meta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-cand .ds code { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); margin-right: 6px; }
+  .skm-cand[aria-disabled='true'] { cursor: not-allowed; }
+  .skm-cand[aria-disabled='true'] .nm { color: var(--raw-muted); }
+  .skm-box[data-off] { background: var(--raw-card); border-color: var(--raw-line-strong); }
+  .skm-box[data-dis] { background: var(--raw-sunken); border-color: var(--raw-line); }
+  .skm-progress { height: 4px; margin-top: 10px; border-radius: 999px; background: var(--raw-sunken); overflow: hidden; }
+  .skm-progress > i { display: block; height: 100%; width: 62%; border-radius: inherit; background: var(--raw-accent-btn); }
+  .skm-note[data-tone='fault'] { border-color: color-mix(in srgb, var(--fault) 40%, var(--raw-line)); background: color-mix(in srgb, var(--fault) 6%, var(--raw-card)); }
+  .skm-note[data-tone='fault'] .ico { color: var(--fault); }
+  .skm-diff { display: grid; margin-top: 4px; }
+  .skm-diff .d { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; height: 32px; padding: 0 8px; font-size: var(--text-body-sm); }
+  .skm-diff .d + .d { border-top: 1px solid var(--raw-line); }
+  .skm-diff .d code { font-family: var(--font-mono); font-size: var(--text-meta); color: var(--raw-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-diff .d .sz { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); }
+  .skm-card .src { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-caption); color: var(--raw-faint); }
+
   /* 原型导航：截图时用 ?shot=1 隐藏 */
   .proto-nav { position: fixed; right: 12px; bottom: 12px; z-index: 99; display: flex; flex-wrap: wrap; gap: 4px; max-width: 420px; padding: 8px;
     background: var(--raw-card); border: 1px solid var(--raw-line); border-radius: 10px; box-shadow: var(--shadow-float); font-size: 12px; }
@@ -433,6 +463,147 @@ function install() {
     </div>`;
 }
 
+/* ---------- M5：GitHub / zip 安装 ---------- */
+function srcTile(icon, t, s, on) {
+  return `<button class="skm-target" role="radio" aria-checked="${on}" style="grid-template-columns:20px minmax(0,1fr)"><span class="tool-ico" style="width:20px;height:20px;grid-row:span 2;display:grid;place-items:center;color:var(--raw-muted)">${ico(icon)}</span><span class="t">${t}</span><span class="s">${s}</span></button>`;
+}
+function installHead() {
+  return `<div class="skm-head"><button class="icon-button" aria-label="返回">${ico('back')}</button>
+      <div class="skm-sub">安装技能</div><span style="flex:1"></span><button class="icon-button" aria-label="关闭">${ico('x')}</button></div>`;
+}
+function sources(active) {
+  return `<div class="skm-label">来源</div>
+      <div class="skm-source" role="radiogroup">${srcTile('folder', '本地文件夹', '选一个技能或技能仓库目录', active === 'folder')}${srcTile('github', 'GitHub', '仓库地址或 owner/repo', active === 'github')}${srcTile('zip', 'zip 文件', '本机的 .zip 压缩包', active === 'zip')}</div>`;
+}
+const CANDS = [
+  ['pdf', 'skills/pdf', '读取、合并、拆分与填写 PDF 表单', 'on', '14 个文件 · 1.2 MB'],
+  ['docx', 'skills/docx', '创建与编辑 Word 文档，保留修订', 'on', '22 个文件 · 3.4 MB'],
+  ['xlsx', 'skills/xlsx', '表格读写、公式与图表', 'off', '18 个文件 · 2.1 MB'],
+  ['frontend-design', 'skills/frontend-design', '知识库已有同名技能（skills/前端/frontend-design）', 'dis', '已存在'],
+  ['big-dataset', 'skills/big-dataset', '超过单个技能上限（2000 个文件 / 50 MiB）', 'dis', '61 MB'],
+];
+function candRows() {
+  return `<div class="skm-cands" role="group" aria-label="候选技能">${CANDS.map(([n, p, d, st, sz]) => `<div class="skm-cand" role="checkbox" aria-checked="${st === 'on'}"${st === 'dis' ? ' aria-disabled="true"' : ''}>
+    <span class="skm-box"${st === 'off' ? ' data-off' : st === 'dis' ? ' data-dis' : ''}>${st === 'on' ? ico('check', 'ico-sm') : ''}</span>
+    <span class="nm">${n}</span><span class="ds"><code>${p}</code>${d}</span>${st === 'dis' && sz === '已存在' ? pill('idle', '已存在') : st === 'dis' ? pill('warn', '过大') : `<span class="sz" style="font-family:var(--font-mono);font-size:var(--text-caption);color:var(--raw-faint)">${sz}</span>`}
+  </div>`).join('')}</div>`;
+}
+function targetSwitch(kb) {
+  return `<div class="skm-label">装到哪里<span class="hint">${kb ? '知识库里的技能之后可以分发到各个工具' : '直接拷贝进工具目录，之后可在工具技能页检查更新'}</span></div>
+      <div class="segmented" role="radiogroup" aria-label="安装目标"><button class="segmented-item" role="radio" aria-checked="${kb}">装进知识库</button><button class="segmented-item" role="radio" aria-checked="${!kb}">直接装进工具</button></div>`;
+}
+function installGithub() {
+  return installHead() + `<div class="skm-body">
+      ${sources('github')}
+      <div class="skm-urlrow"><div class="skm-input">anthropics/skills</div><button class="btn-quiet">${ico('github')}读取</button></div>
+      <div class="hintline">支持 https://github.com/owner/repo、带 /tree/分支/子目录 的地址，或 owner/repo。只匿名访问 GitHub，每小时约 60 次请求。</div>
+      <div class="skm-origin">${ico('github')}<b>anthropics/skills</b><span>分支 main</span><code>提交 3f2a9c1</code><span style="color:var(--raw-faint)">找到 5 个技能</span></div>
+      <div class="skm-label">选择要安装的技能<span class="hint">向下找 3 层，跳过点号目录与 node_modules</span></div>
+      ${candRows()}
+      ${targetSwitch(true)}
+      <div class="skm-label">分类</div>
+      <div class="skm-field"><div class="skm-input">文档</div><span style="font-size:var(--text-meta);color:var(--raw-faint)">将复制到 知识库/skills/文档/；目标已存在时跳过，不覆盖</span></div>
+    </div>
+    <div class="skm-foot"><span>已选 2 个 · 写入知识库 2 个目录</span><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('inbox')}安装 2 个</button></div>`;
+}
+function installTools() {
+  const tiles = [['claude', '未安装', 'on'], ['cursor', '目标已存在（独立）', 'exists'], ['kiro', '未安装', 'on'], ['qoder', '未安装', ''], ['codebuddy', '未安装', ''], ['trae', '未安装', ''], ['windsurf', '未安装', ''], ['dsh', '未安装', '']];
+  return installHead() + `<div class="skm-body">
+      ${sources('github')}
+      <div class="skm-origin">${ico('github')}<b>anthropics/skills</b><span>分支 main</span><code>提交 3f2a9c1</code><span style="color:var(--raw-faint)">已选 pdf、docx</span></div>
+      ${targetSwitch(false)}
+      <div class="skm-label">目标工具<span class="hint">同名规则同分发：目标已存在默认跳过，选「覆盖」会先备份</span></div>
+      <div class="skm-targets" role="group" aria-label="安装目标">
+        ${tiles.map(([k, s, st]) => `<button class="skm-target" role="checkbox" aria-checked="${st === 'on'}">${tico(k)}<span class="t">${T[k][0]}</span><span class="s">${s}</span>${st === 'exists' ? '<span class="tick" style="width:auto;padding:0 6px;font-size:var(--text-caption);font-weight:600;color:var(--raw-muted)">覆盖</span>' : `<span class="tick">${st === 'on' ? ico('check', 'ico-sm') : ''}</span>`}</button>`).join('')}
+      </div>
+      <div class="skm-note" data-tone="info">${ico('info')}<span>直接装进工具的是拷贝，不经过知识库，也不会出现在知识库技能页。想多个工具共用一份，选「装进知识库」后再分发。</span></div>
+    </div>
+    <div class="skm-foot"><span>2 个技能 × 2 个工具，新增 4 处</span><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('inbox')}安装</button></div>`;
+}
+function installZip() {
+  return installHead() + `<div class="skm-body">
+      ${sources('zip')}
+      <div class="skm-drop">${ico('zip')}<span>选一个 <code style="font-family:var(--font-mono)">.zip</code> 文件；整包不超过 200 MiB，里面含 <code style="font-family:var(--font-mono)">SKILL.md</code> 的目录会列为候选</span><button class="btn-quiet">选择 zip 文件…</button></div>
+      <div class="skm-label">正在读取<span class="hint">company-skills.zip</span></div>
+      <div class="skm-progress" role="progressbar" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100" aria-label="解压进度"><i></i></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:var(--text-meta);color:var(--raw-muted)"><span>解压中 · 31 / 50 MB</span><span class="spacer" style="flex:1"></span><button class="btn-xs">取消</button></div>
+    </div>`;
+}
+function installError() {
+  return installHead() + `<div class="skm-body">
+      ${sources('zip')}
+      <div class="skm-drop">${ico('zip')}<span>company-skills.zip</span><button class="btn-quiet">换一个文件…</button></div>
+      <div class="skm-note" data-tone="fault">${ico('warn')}<span><b>压缩包里有不安全的路径，整包已拒绝。</b><br><code style="font-family:var(--font-mono);font-size:var(--text-caption)">../evil/SKILL.md</code> 指向压缩包外面。知识库、工具目录和临时区都没有写入任何文件。</span></div>
+      <div class="skm-label" style="margin-top:18px">其他会整包拒绝的情况</div>
+      <div style="font-size:var(--text-meta);line-height:1.7;color:var(--raw-muted)">绝对路径或盘符、解压后超过 200 MiB、两个条目只差大小写、Windows 保留名（如 CON）。符号链接不算错误，直接跳过并在结果里列出。</div>
+    </div>`;
+}
+
+/* ---------- M5：更新状态 ---------- */
+const KB_M5 = [
+  ['文档', [
+    ['pdf', '读取、合并、拆分与填写 PDF 表单', ['claude'], 'gh-update'],
+    ['docx', '创建与编辑 Word 文档，保留修订', ['claude', 'cursor'], 'gh-both'],
+    ['xlsx', '表格读写、公式与图表', [], 'gh-ok'],
+  ]],
+  ['前端', [
+    ['vue技能', 'Vue 3 选项式组件、生命周期与请求封装约定', ['claude', 'cursor', 'kiro'], 'link'],
+    ['dark-mode-design', '深色模式的层级、对比度与表面阶梯', ['codebuddy'], 'stale'],
+  ]],
+];
+function kbCardM5([name, desc, tools, st]) {
+  const icons = tools.map(t => t === 'agents' ? globeIco : tico(t)).join('');
+  const status = st === 'stale' ? pill('warn', '知识库有更新') : st === 'gh-update' ? pill('warn', 'GitHub 有更新', 'github') : st === 'gh-both' ? pill('warn', '两边都改了', 'github') : '';
+  const gh = st.startsWith('gh') ? `<span class="src">${ico('github', 'ico-sm')}anthropics/skills</span>` : '';
+  const tone = st === 'stale' || st === 'gh-update' || st === 'gh-both';
+  return `<article class="skm-card"${tone ? ' data-tone="warn"' : ''}>
+    <div class="name"><span>${name}</span></div>
+    <div class="desc">${desc}</div>
+    <div class="meta">${tools.length ? `<span class="stack">${icons}</span>` : '<span class="none">未分发</span>'}${status}${!status ? gh : ''}<span class="spacer"></span>${st === 'gh-update' ? `<button class="btn-xs">${ico('restore', 'ico-sm')}更新</button>` : `<button class="btn-xs">${ico('send', 'ico-sm')}分发</button>`}</div>
+    <button class="icon-button kebab" aria-label="更多">${ico('dots')}</button>
+  </article>`;
+}
+function kbUpdate() {
+  const body = KB_M5.map(([cat, items]) => `<div class="skm-group">${cat}<span class="n">${items.length}</span></div><div class="skm-cards">${items.map(kbCardM5).join('')}</div>`).join('');
+  return head('kb') + `<div class="skm-body">${body}</div>` +
+    `<div class="skm-foot"><span>5 个技能</span><span>·</span><span style="color:var(--warn)">1 个 GitHub 有更新 · 1 个两边都改了</span><span class="spacer"></span><span style="color:var(--raw-faint)">12 分钟前检查过</span><button class="btn-xs">${ico('restore', 'ico-sm')}检查更新</button></div>`;
+}
+function updatePreview() {
+  const files = [['修改', 'SKILL.md', '4.2 KB'], ['修改', 'reference/forms.md', '9.8 KB'], ['新增', 'scripts/fill_form.py', '6.1 KB'], ['新增', 'scripts/assets/fields.png', '38 KB'], ['删除', 'reference/old-api.md', '移到回收站']];
+  return `<div class="skm-head"><button class="icon-button" aria-label="返回">${ico('back')}</button>
+      <div class="skm-sub"><span class="crumb">知识库技能 /</span>更新「pdf」</div><span style="flex:1"></span>
+      <button class="icon-button" aria-label="关闭">${ico('x')}</button></div>
+    <div class="skm-body">
+      <div class="skm-origin">${ico('github')}<b>anthropics/skills</b><code>skills/pdf</code><span>main</span><code>3f2a9c1 → 8b1d004</code><span style="color:var(--raw-faint)">本地没有改过</span></div>
+      <div class="skm-label">会改动的文件<span class="hint">5 项，知识库 skills/文档/pdf</span></div>
+      <div class="skm-diff">${files.map(([k, f, s]) => `<div class="d">${pill(k === '删除' ? 'fault' : k === '新增' ? 'live' : 'idle', k)}<code>${f}</code><span class="sz">${s}</span></div>`).join('')}</div>
+      <div class="skm-note" data-tone="info">${ico('info')}<span>点「生成变更计划」后，主界面会出现计划卡；确认后才写入知识库。写入经过事务，可以在操作日志里恢复。已分发成拷贝的工具会显示「知识库有更新」。</span></div>
+    </div>
+    <div class="skm-foot"><span>修改 2 · 新增 2 · 删除 1</span><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('send')}生成变更计划</button></div>`;
+}
+const ROWS_M5 = [
+  ['claude', 'pdf', pill('warn', 'GitHub 有更新', 'github'), '~\\.claude\\skills\\pdf · anthropics/skills', ['update', 'del', 'open']],
+  ['cursor', 'docx', pill('warn', '两边都改了', 'github'), '~\\.cursor\\skills\\docx · anthropics/skills', ['del', 'open']],
+  ['kiro', 'xlsx', pill('idle', 'GitHub · 最新', 'github'), '~\\.kiro\\skills\\xlsx · anthropics/skills', ['adopt', 'del', 'open']],
+  ['claude', 'vue技能', pill('live', '链接到知识库', 'link'), '~\\.claude\\skills\\vue技能 → 知识库/skills/前端/vue技能', ['open']],
+  ['cursor', 'caveman', pill('idle', '独立'), '~\\.cursor\\skills\\caveman', ['adopt', 'del', 'open']],
+];
+function toolsUpdate() {
+  const acts = { ...ACT, update: ['restore', '更新'] };
+  const list = `<div class="skm-list">${ROWS_M5.map(([t, nm, p, path, a], i) => `<div class="skm-row"${i === 0 ? ' data-hover' : ''}>
+    ${tico(t)}<span class="nm">${nm}</span><span class="path">${path}</span>${p}
+    <span class="acts">${a.map(x => `<button class="icon-button" aria-label="${acts[x][1]}" title="${acts[x][1]}">${ico(acts[x][0])}</button>`).join('')}</span>
+  </div>`).join('')}</div>`;
+  return head('tools') + chips('all') + `<div class="skm-body">${list}</div>` +
+    `<div class="skm-foot"><span>检测到 18 个工具</span><span>·</span><span style="color:var(--warn)">1 个 GitHub 有更新</span><span class="spacer"></span><span style="color:var(--raw-faint)">12 分钟前检查过</span><button class="btn-xs">${ico('restore', 'ico-sm')}检查更新</button></div>` + `
+  <div class="skm-scrim"><div class="skm-confirm" role="alertdialog" aria-label="确认更新">
+    <h3>更新 Claude Code 里的 pdf</h3>
+    <div class="item">${ico('github')}<span><b>anthropics/skills</b> · skills/pdf · 3f2a9c1 → 8b1d004</span><span class="what">修改 2 个文件、新增 2 个、删除 1 个。本地没有改过。</span></div>
+    <div class="item">${ico('folder')}<span><b>原目录先备份</b></span><span class="what">整个目录移到备份区，可在操作记录里恢复。<br><code>%APPDATA%\\Mile Knowledge Base\\skills\\backups\\b-3c9e…</code></span></div>
+    <div class="row"><button class="btn-quiet">取消</button><button class="btn-primary">${ico('restore')}更新</button></div>
+  </div></div>`;
+}
+
 /* ---------- 无知识库 ---------- */
 function novault() {
   return head('kb') + `<div class="skm-body"><div class="skm-empty"><div class="big">${ico('stack')}</div><h4>还没有打开知识库</h4><p>打开一个知识库后才能管理知识库技能。工具技能不依赖知识库，切到「工具技能」可以查看和卸载。</p><button class="btn-quiet">打开知识库…</button></div></div><div class="skm-foot"><span>检测到 18 个工具</span></div>`;
@@ -446,6 +617,13 @@ const STATES = {
   uninstall: () => workbench(uninstall()),
   adopt: () => workbench(adopt()),
   install: () => workbench(install()),
+  'install-github': () => workbench(installGithub()),
+  'install-tools': () => workbench(installTools()),
+  'install-zip': () => workbench(installZip()),
+  'install-error': () => workbench(installError()),
+  'kb-update': () => workbench(kbUpdate()),
+  'update-preview': () => workbench(updatePreview()),
+  'tools-update': () => workbench(toolsUpdate()),
   novault: () => workbench(novault(), true, 0),
   closed: () => workbench('', false, 2),
 };

@@ -439,6 +439,24 @@
 R2 的视觉验收以 `design/r2/shots/` 的 18 张截图为基准，方法同 §9；允许差异：字体渲染、真实数据造成的数量与文字差异、原型中占位图标换成 Phosphor 后的形状差异。
 
 
+### 11.5 M5 增补：安装来源与更新（草稿，待审核）
+
+页面结构与状态见 docs/UI设计稿.md 9.4。新增的组合都在浮层内，沿用 11.1 的表面与线条规则：
+
+| 部分 | 做法 |
+| --- | --- |
+| 地址输入行 | 新增 `.skm-urlrow`：输入框（等宽字、`--text-meta`）+ 次要按钮「读取」，两列网格，间距 8 |
+| 来源条 | 新增 `.skm-origin`：`--skm-surface` 底、1px 线、`--radius-card`；GitHub 图标 + 粗体仓库名 + 分支 + 等宽短 SHA（`--raw-faint`）+ 说明 |
+| 候选列表 | 新增 `.skm-cand`：4 列（复选框 18 / 名称 150 / 路径与描述 / 大小或原因）；行高 ≥ 40；行间发丝线；整行 `role="checkbox"`；禁用行名称降为 `--raw-muted`，右侧用 `.pill` 写原因（已存在 = idle，过大 = warn） |
+| 复选框 | 复用 11.1 的 `.skm-box`；未选是卡片底 + `--raw-line-strong` 边，禁用是 `--raw-sunken` 底 |
+| 进度条 | 新增 `.skm-progress`：高 4 胶囊，轨道 `--raw-sunken`，填充 `--raw-accent-btn`；`prefers-reduced-motion` 时不做宽度过渡 |
+| 错误卡 | `.skm-note` 增加 `data-tone="fault"`：fault 40% 混线的边、6% 混卡片底、fault 图标；正文第一句加粗写结论 |
+| 文件差异 | 新增 `.skm-diff`：3 列（变动胶囊 52 / 等宽路径 / 大小）；修改 = idle，新增 = live，删除 = fault |
+| GitHub 状态胶囊 | 复用 `.pill`，带 Phosphor GithubLogo：有更新、两边都改了 = warn；最新、本地改过 = idle；检查失败 = fault。卡片染边规则同「知识库有更新」 |
+| 卡片来源 | `.skm-card .src`：`--text-caption`、`--raw-faint`，GitHub 图标 + `owner/repo`，只在没有状态胶囊时显示 |
+
+对比度：新增文字都使用 11.3 已实测的 `--raw-faint` / `--raw-muted` / 胶囊配色，没有新的前景色；实施后按 11.4 用真实截图复测。
+
 ## 12. R2 增补：主题色
 
 > 状态：用户 2026-11-20 审核通过。需求见 PRD 第 16 节（FR-ACCENT），入口见 docs/UI设计稿.md 第 10 节。本节修改 §3.1 的强调色定义：强调色从「单一靛蓝」变为「可选，默认橙色」，其余原则不变。

@@ -75,6 +75,9 @@ type LoadResult struct {
 | `skill-conflict` | 技能名冲突或目标已存在、恢复时原位置被占用（detail 给出另一处位置） | 用户改名/处理后 | 名称或目标冲突 | 新增（FR-SKM-DIST/UNINST，§12） |
 | `skill-protected` | 内置技能不可卸载/覆盖，或工具未启用 | 否 | 内置技能只读 | 新增（FR-SKM-UNINST，§12） |
 | `backup-missing` | 备份已被清理或记录不可恢复 | 否 | 备份不存在 | 新增（FR-SKM-UNINST，§12） |
+| `network-failure` | 连不上 GitHub（DNS、TLS、超时、5xx），detail 写类别 | 是 | 网络错误，检查网络或代理后重试 | 新增（FR-SKM-SRC，§13，M5 草稿） |
+| `rate-limited` | GitHub 匿名额度用完（403/429 且剩余 0），detail 带重置时间 | 重置后 | GitHub 额度已用完，几点后再试 | 新增（FR-SKM-SRC/UPD，§13，M5 草稿） |
+| `unsafe-archive` | 压缩包含不安全路径（`..`、绝对路径、盘符、保留名、大小写冲突），整包拒绝；detail 给出第一个违规条目 | 否 | 压缩包不安全，已拒绝 | 新增（FR-SKM-SRC，§13，M5 草稿） |
 
 ### 1.4 通用入参校验规则（所有方法）
 
@@ -203,6 +206,15 @@ type LoadResult struct {
 | M85 | `SkillService.backups()` | Skills | FR-SKM-UNINST（Q-SKM-3） | `Backups(ctx) (*SkillBackupsResult, error)` | — |
 | M86 | `SkillService.cleanBackups(ids)` | Skills | FR-SKM-UNINST（Q-SKM-3） | `CleanBackups(ctx, ids []string) (*SkillBackupsResult, error)` | `invalid-input`、`io-failure` |
 | M87 | `SkillService.reveal(toolId, path)` | Skills | FR-SKM-PANEL | `Reveal(ctx, toolId, path string) contract.Failure` | `invalid-input`、`not-found`、`io-failure` |
+| M88 | `SkillService.readGithub(vaultId, input)` | Skills | FR-SKM-SRC | `ReadGithub(ctx, vaultId, input string) (*SkillStageResult, error)` | `invalid-input`、`not-found`、`network-failure`、`rate-limited`、`unsafe-archive`、`too-large` |
+| M89 | `SkillService.pickZip(vaultId)` | Skills | FR-SKM-SRC | `PickZip(ctx, vaultId string) (*SkillStageResult, error)` | `unsafe-archive`、`too-large`、`io-failure` |
+| M90 | `SkillService.installPreview(vaultId, stageId, ids, target)` | Skills | FR-SKM-SRC | `InstallPreview(ctx, ...) (*SkillPreviewResult, error)` | `invalid-input`、`not-found`、`skill-conflict` |
+| M91 | `SkillService.install(vaultId, stageId, ids, target)` | Skills | FR-SKM-SRC | `Install(ctx, ...) (*SkillOpResult, error)` | `invalid-input`、`not-found`、`skill-conflict`、`skill-protected`、`io-failure` |
+| M92 | `SkillService.discardStage(stageId)` | Skills | FR-SKM-SRC | `DiscardStage(ctx, stageId string) contract.Failure` | `invalid-input` |
+| M93 | `SkillService.checkUpdates(vaultId, force)` | Skills | FR-SKM-UPD | `CheckUpdates(ctx, vaultId string, force bool) (*SkillUpdateCheckResult, error)` | `invalid-input` |
+| M94 | `SkillService.updatePreview(vaultId, target)` | Skills | FR-SKM-UPD | `UpdatePreview(ctx, vaultId string, target SkillUpdateTarget) (*SkillUpdatePreviewResult, error)` | `invalid-input`、`not-found`、`network-failure`、`rate-limited`、`unsafe-archive`、`too-large`、`skill-conflict` |
+| M95 | `SkillService.confirmKbUpdate(vaultId, stageId)` | Skills | FR-SKM-UPD | `ConfirmKbUpdate(ctx, vaultId, stageId string) (*SkillConfirmUpdateResult, error)` | `invalid-input`、`not-found`、`revision-mismatch` |
+| M96 | `SkillService.updateTool(stageId)` | Skills | FR-SKM-UPD | `UpdateTool(ctx, stageId string) (*SkillOpResult, error)` | `invalid-input`、`not-found`、`skill-conflict`、`skill-protected`、`io-failure` |
 
 共 86 个绑定方法；M19 是协议端点（§5），不在绑定方法内。
 
@@ -222,7 +234,8 @@ type LoadResult struct {
 | E09 | `context-changed` | Go → 前端 | `SharedContext` | 共享上下文变化（pin/task/文档状态） | FR-AI-CTX；旧版 `context:changed` |
 | E10 | `engine-status` | Go → 前端 | `EngineStatus`（M38 同一定义：`{phase, message?, capabilities?}`） | 引擎未配置/就绪/出错（原 sidecar 状态） | FR-AI-ENG；旧版 `sidecar` 事件 |
 | E11 | `app-notice` | Go → 前端 | `{text, level}` | 不阻断的提示（设置导入失败、监听降级等） | 新增（FR-SET 提示、R-1 降级提示） |
-| E12 | `skills-changed` | Go → 前端 | `{sequence}` | 后台扫描完成或技能操作完成 | M76–M86；FR-SKM-SCAN/LOG |
+| E12 | `skills-changed` | Go → 前端 | `{sequence}` | 后台扫描完成或技能操作完成 | M76–M86；FR-SKM-SCAN/LOG；M5 起也在更新检查完成、安装完成后发 |
+| E13 | `skill-stage-progress` | Go → 前端 | `{requestId, phase, received, total?}` | 下载或解包进行中，最多每 200 ms 一帧 | M88、M89、M94；FR-SKM-SRC |
 
 共 1 个 Channel 参数 + 11 个定向事件。引擎流式帧、审批卡、用量、工具调用都走 C01 Channel 的 `StreamFrame` 联合（§6），不另立事件——只有跨调用持久的状态（索引、日志、设置、上下文）才用 Event。
 
@@ -419,7 +432,7 @@ type LoadResult struct {
 #### M29 `plan(request)` — 生成变更计划
 
 - `origin` 接受 `user` 与 4 个 Agent id；Agent 计划在生成时与执行时各过一次 `internal/policy` 权限门（系统区与点号目录一律 `permission-denied`，`permanentDelete` 另需新鲜批准），用户计划不受该门约束。
-- 入参 `PlanRequest{vaultId, origin, actions: MutationAction[]}`；`MutationAction{id, kind, source?, target?, expectedSourceRevision?, expectedTargetRevision?, text?, reason}`（mutation.ts:34-44）。`kind ∈ create|createDirectory|edit|move|copy|archive|trash|permanentDelete`；`origin ∈ user|curator|scout|distiller|general`。
+- 入参 `PlanRequest{vaultId, origin, actions: MutationAction[]}`；`MutationAction{id, kind, source?, target?, expectedSourceRevision?, expectedTargetRevision?, text?, reason}`（mutation.ts:34-44）。`kind ∈ create|createDirectory|edit|move|copy|archive|trash|permanentDelete|importFile`（`importFile` 是 M5 新增，只允许 `origin=user`，形状与规则见 §13.4）；`origin ∈ user|curator|scout|distiller|general`。
 - Go 侧校验（validate.ts:202-276）：`actions` 非空 ≤500（mutation.ts:116）；每条 `id` ≤128、`reason` ≤500、source/target 过路径校验、expectedRevision ≥0 整数；`risk` 由 Go 用 `assessRisk` 计算**不采信前端传的等级**（含 permanentDelete 或 >20 项 → high；含破坏性 → medium）。
 - 出参 `PlanResult{plan?: MutationPlan, failure?}`；目标已存在一律拒绝（唯一例外：只改大小写的重命名，`name-conflict`）（FR-MUT）。
 
@@ -960,3 +973,96 @@ E12 `skills-changed` 在扫描完成与每次操作完成后发；前端重新�
 - Go 单元测试：路径守卫（`..`、绝对路径、UNC、点号、保留名、链接父目录）、同名冲突、联接失败退回拷贝、删链接不跟随（目标哈希不变）、恢复冲突、备份清理后 `restorable=false`、M76 探测注入表。
 - e2e：AC-SKM-1–11、19（假用户目录/假 PATH/假注册表，不碰真实工具目录）。
 - 未验证：真实工具目录对联接的兼容性（技术设计 13.5 第 3 条），M4 人工项，执行前单独征得用户同意。
+
+## 13. R2 增补：安装来源与更新（M5）
+
+> 状态：草稿，待用户审核（随 docs/PLAN-M5.md v0.1）。需求见 PRD 第 15 节 FR-SKM-SRC / FR-SKM-UPD；实现见技术设计第 16 节；存储见数据库设计 3.8 与 4.6；界面见 docs/UI设计稿.md 9.4。
+
+### 13.1 类型
+
+```ts
+type SkillOrigin = { owner: string; repo: string; ref: string; path: string; commit: string };  // path 是仓库内子路径，'' 表示仓库根
+type SkillStageCandidate = {
+  id: string;                 // 暂存内相对路径，作为勾选的 key
+  name: string;               // 目录名，单段
+  description: string;        // SKILL.md frontmatter 的 description，最多 200 字符
+  files: number; bytes: number;
+  state: 'ok' | 'exists' | 'too-large' | 'duplicate' | 'invalid-name';
+  existing?: string;          // state=exists 时：已存在的位置（脱敏）
+};
+type SkillStage = {
+  stageId: string;            // s-<12 hex>
+  kind: 'github' | 'zip';
+  origin?: SkillOrigin;       // 只有 github
+  label: string;              // 'owner/repo' 或 zip 文件名
+  candidates: SkillStageCandidate[];
+  skipped: { path: string; reason: 'symlink' | 'special' }[];
+  expiresAt: string;          // 30 分钟后
+};
+type SkillStageResult = { stage?: SkillStage; cancelled?: boolean; failure?: Failure };
+type SkillInstallTarget =
+  | { kind: 'kb'; category: string }
+  | { kind: 'tools'; targets: SkillDistributeTarget[] };     // 同 §12 的分发目标（含 allowOverwrite）
+type SkillRemote = SkillOrigin & {
+  pathCommit: string; installedAt: string;
+  updateState: 'up-to-date' | 'update-available' | 'both-changed' | 'local-modified' | 'unchecked' | 'error';
+  latestPathCommit?: string; checkedAt?: string; error?: string;
+};
+// KbSkill 与 ToolSkill（§12.1）各加可选字段 remote?: SkillRemote
+type SkillUpdateCheckResult = { checkedAt: string; checking: boolean; groups: number; unchecked: number; rateLimitResetAt?: string };
+type SkillUpdateTarget = { kind: 'kb'; skillPath: string } | { kind: 'tool'; toolId: string; path: string };   // path 是 §12.3 的 wire spec
+type SkillUpdateFile = { path: string; change: 'added' | 'modified' | 'removed'; bytes: number; binary: boolean };
+type SkillUpdatePreviewResult = {
+  stageId?: string; from?: string; to?: string;    // 旧 / 新 pathCommit
+  files: SkillUpdateFile[];
+  plan?: MutationPlan;                             // 只有 kind=kb：Go 生成、origin=user 的变更计划
+  backupPath?: string;                             // 只有 kind=tool
+  failure?: Failure;
+};
+type SkillConfirmUpdateResult = { updated: boolean; failure?: Failure };
+```
+
+### 13.2 方法
+
+| 方法 | 入参 | 出参 | 说明 |
+| --- | --- | --- | --- |
+| M88 `readGithub` | `vaultId`（可为空串）、`input` | `SkillStageResult` | 解析地址 → 取提交 → 下载 → 解包 → 定位候选；可用 AbortSignal 取消，取消返回 `cancelled` 并删暂存；进度走 E13 |
+| M89 `pickZip` | `vaultId`（可为空串） | `SkillStageResult` | 原生对话框选 `.zip`；用户取消返回 `cancelled`；其余同 M88 |
+| M90 `installPreview` | `vaultId`、`stageId`、`ids[]`、`target` | `{items: SkillPreviewItem[]}` | 同 M78：逐项列出目标、已存在、冲突、覆盖备份位置；不写盘 |
+| M91 `install` | 同 M90 | `{items: SkillOpItem[]}` | 执行；逐项结果；装进知识库不覆盖；装进工具按分发规则；GitHub 来源写来源记录；完成后删暂存、记日志、发 E12 |
+| M92 `discardStage` | `stageId` | `Failure` | 用户返回或关闭时删暂存；不存在也算成功 |
+| M93 `checkUpdates` | `vaultId`（可为空串）、`force` | `SkillUpdateCheckResult` | 不到 60 分钟且 `force=false` 直接返回缓存；否则后台检查并置 `checking=true`，完成后发 E12，结果并入 M77 的 `remote` |
+| M94 `updatePreview` | `vaultId`、`target` | `SkillUpdatePreviewResult` | 下载新版本到暂存并比较；本地改过返回 `skill-conflict`（「两边都改了」）；`kb` 返回变更计划，前端交给计划卡确认、M30 执行 |
+| M95 `confirmKbUpdate` | `vaultId`、`stageId` | `SkillConfirmUpdateResult` | M30 执行完成后调用：知识库技能哈希等于暂存版本才更新来源记录（`updated=true`）；不等返回 `updated=false` + `revision-mismatch` |
+| M96 `updateTool` | `stageId` | `{items: SkillOpItem[]}` | 工具技能：原目录移入备份区再替换；失败移回；记日志 |
+
+### 13.3 校验与错误
+
+- `input`：去掉首尾空白后 ≤ 300 字符；只接受 `https://github.com/<o>/<r>[.git][/tree/<ref>[/<path>]]` 与 `<o>/<r>`；`owner`、`repo` 只含字母数字、`-`、`_`、`.`，≤ 100；`ref` 与 `path` 逐段过单段规则（不以点开头、无 `..`、无保留名）；其他主机、`http://`、带查询串的地址一律 `invalid-input`。
+- `stageId`：`s-` + 12 位十六进制；不存在或已过期 → `not-found`（提示重新读取）。
+- `ids[]`：1–50 个，必须是该暂存候选里的 `id` 且 `state='ok'`；否则该项 `skipped`（原因写明），不整体失败。
+- `target.category`：单段，规则同 FR-SKILL。
+- 网络：§1.3 的 `network-failure` / `rate-limited` / `not-found`；任何失败都不写知识库与工具目录，暂存删除（AC-SKM-14）。
+- 压缩包：不安全条目 → `unsafe-archive`；超过 200 MiB → `too-large`（`Limit` 字段写 200 MiB）。
+- 来源记录与更新只处理 GitHub 来源；zip 安装的技能没有 `remote`。
+
+### 13.4 M29 新增动作 `importFile`
+
+```ts
+type ImportFileAction = MutationAction & {
+  kind: 'importFile';
+  target: string;                 // 知识库相对路径
+  stageId: string; stagePath: string; stageHash: string;   // 暂存区里的文件与它的 sha256
+  expectedTargetRevision?: number; // target 已存在时必填（替换）
+};
+```
+
+- 只允许 `origin=user`：Agent 计划里出现 → `permission-denied`（生成时与执行时各查一次）。
+- 生成时校验：`target` 过路径校验与系统区禁写；`stagePath` 解析到 `skills/tmp/<stageId>/root/` 内部；文件存在且 ≤ 50 MiB。
+- 执行时再校验 sha256 = `stageHash`；不等或暂存已过期 → 该项失败（`not-found`），后续项按 M30 规则 `skipped`。
+- 替换已有文件属于破坏性操作：进事务、保存原内容，可从操作日志恢复；风险等级口径同 `edit`。
+
+### 13.5 验证
+
+- Go 单元测试：地址解析（3 种输入与非法输入）、假 GitHub（`httptest`）上的默认分支 / 提交 / 下载 / 404 / 额度 / 超时 / 跨主机重定向、恶意压缩包整包拒绝且无残留、候选定位（3 层、50 个上限、重复名、过大）、来源记录稳定序列化、更新判定 5 种状态、`importFile` 的 Agent 拒绝与哈希校验与事务恢复、M95 哈希不等不写记录。
+- e2e：AC-SKM-12–16，`SKILLS_FAKE_GITHUB` 指向本地假服务（只在 e2e 构建读取）。
