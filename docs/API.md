@@ -902,7 +902,7 @@ type SkillScan = {
 | M79 `distribute` | 同上 + 每目标的 `allowOverwrite` | `{items: SkillOpItem[]}` | 执行；逐项结果，部分失败不整体回滚 |
 | M80 `uninstallPreview` | `toolId`、`path` | `{kind, target?, backupPath?, affectedTools[]}` | `kind = link/copy/independent`；通用目录卸载时 `affectedTools` 列出读者 |
 | M81 `uninstall` | `toolId`、`path` | `{items: SkillOpItem[]}` | 链接只删链接；拷贝/独立先移备份；内置拒绝 |
-| M82 `adopt` | `toolId`、`path`、`category`、`linkBack`、`extras[]` | `{vaultPath, linked, backupIds[]}` | 复制进知识库；`linkBack` 时原目录备份后换链；`extras` 是同内容的其他工具副本 |
+| M82 `adopt` | `vaultId`、`toolId`、`path`、`category`、`linkBack`、`extras[]` | `{vaultPath, linked, backupIds[], warnings[]}` | 复制进知识库；`linkBack` 时原目录备份后换链；`extras` 是同内容的其他工具副本 |
 | M83 `restore` | `backupId` | `{restoredTo: string}` | 恢复到原位置；原位置被占用返回 `skill-conflict` |
 | M84 `log` | `limit`（默认 50，≤200） | `{records: SkillLogRecord[]}` | 最近操作记录，按时间倒序 |
 | M85 `backups` | — | `{items: SkillBackup[]}` | 备份列表（大小、时间、是否可恢复） |
@@ -930,6 +930,7 @@ type SkillLogRecord = {
   backupId?: string; restorable: boolean; error?: string;
 };
 type SkillBackup = { id, toolId, originalPath, kind: 'uninstall'|'overwrite'|'adopt', createdAt, size, files, restorable };
+type SkillToolRef = { toolId: string; path: string };            // M82 extras：内容相同的其他工具副本
 ```
 
 ### 12.3 校验与错误

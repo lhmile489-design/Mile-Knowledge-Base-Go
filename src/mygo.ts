@@ -801,6 +801,15 @@ export interface SharedContextResult {
   failure?: Failure;
 }
 
+/** SkillAdoptResult is M82. */
+export interface SkillAdoptResult {
+  vaultPath: string;
+  linked: boolean;
+  backupIds?: string[];
+  warnings?: string[];
+  failure?: Failure;
+}
+
 /** SkillBackup is one entry of skills/backups (Q-SKM-3). */
 export interface SkillBackup {
   id: string;
@@ -945,6 +954,12 @@ export interface SkillTool {
   official: boolean;
   /** MiniMax Code defaults to false */
   enabled: boolean;
+}
+
+/** SkillToolRef is one extra tool copy of the same skill (M82 extras). */
+export interface SkillToolRef {
+  toolId: string;
+  path: string;
 }
 
 /** SkillToolScan groups tool skills by tool. */
@@ -1477,6 +1492,8 @@ export const ConversationService = {
  * background refresh and E12. Write operations arrive in T05–T08.
  */
 export const SkillService = {
+  /** Adopt is M82. */
+  adopt: bind<[string, string, string, string, boolean, SkillToolRef[]], SkillAdoptResult>("SkillService.Adopt", (vaultID: string, toolID: string, rel: string, category: string, linkBack: boolean, extras: SkillToolRef[]) => [vaultID, toolID, rel, category, linkBack, extras]),
   /** Backups is M85. */
   backups: bind<[], SkillBackupsResult>("SkillService.Backups", () => []),
   /** CleanBackups is M86. */

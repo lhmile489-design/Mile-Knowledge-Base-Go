@@ -1251,6 +1251,7 @@ type SkillAdoptResult struct {
 	VaultPath string   `json:"vaultPath"`
 	Linked    bool     `json:"linked"`
 	BackupIDs []string `json:"backupIds,omitempty"`
+	Warnings  []string `json:"warnings,omitempty"`
 	Failure   *Failure `json:"failure,omitempty"`
 }
 
@@ -1276,4 +1277,10 @@ type SkillBackupsResult struct {
 type SkillDistributeTarget struct {
 	TargetID       string `json:"targetId"`
 	AllowOverwrite bool   `json:"allowOverwrite,omitempty"`
+}
+
+// SkillToolRef is one extra tool copy of the same skill (M82 extras).
+type SkillToolRef struct {
+	ToolID string `json:"toolId"`
+	Path   string `json:"path"`
 }

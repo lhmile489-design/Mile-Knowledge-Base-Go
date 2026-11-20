@@ -214,3 +214,53 @@ func TestSkillServiceUninstallAndBackups(t *testing.T) {
 		t.Fatalf("builtin preview = %+v", builtin)
 	}
 }
+
+func TestSkillServiceAdoptMergesIdenticalTools(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	home := t.TempDir()
+	writeFile := func(rel, body string) {
+		t.Helper()
+		full := filepath.Join(home, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeFile(".local/bin/claude.cmd", "@echo off")
+	writeFile(".local/bin/cursor.cmd", "@echo off")
+	writeFile(".claude/skills/foo/SKILL.md", "# foo\n")
+	writeFile(".cursor/skills/foo/SKILL.md", "# foo\n")
+	svc := NewSkillService(app)
+	svc.detector = func() *skills.Detector {
+		return &skills.Detector{
+			Home: home, LocalAppData: filepath.Join(home, "AppData", "Local"),
+			UserProgramFiles: filepath.Join(home, "Programs"),
+			CLIDirs:          []string{filepath.Join(home, ".local", "bin")},
+		}
+	}
+	result := svc.Adopt(context.Background(), vaultID, "claude-code", "foo", "分类", true,
+		[]contract.SkillToolRef{{ToolID: "cursor", Path: "foo"}})
+	if result.Failure != nil || !result.Linked || len(result.Warnings) != 0 || len(result.BackupIDs) != 2 {
+		t.Fatalf("adopt = %+v", result)
+	}
+	target := filepath.Join(root, "skills", "分类", "foo")
+	if body, err := os.ReadFile(filepath.Join(target, "SKILL.md")); err != nil || string(body) != "# foo\n" {
+		t.Fatalf("vault copy: %q %v", body, err)
+	}
+	for _, toolDir := range []string{".claude/skills/foo", ".cursor/skills/foo"} {
+		full := filepath.Join(home, filepath.FromSlash(toolDir))
+		kind, linkedTo, err := skills.Classify(full)
+		if err != nil || kind != skills.KindJunction || linkedTo != target {
+			t.Fatalf("%s = %q %q %v", toolDir, kind, linkedTo, err)
+		}
+	}
+	mismatch := svc.Adopt(context.Background(), vaultID, "claude-code", "foo", "分类", true,
+		[]contract.SkillToolRef{{ToolID: "cursor", Path: "foo"}})
+	if mismatch.Failure == nil || mismatch.Failure.Code != contract.CodeSkillConflict {
+		t.Fatalf("second adopt = %+v", mismatch)
+	}
+	// The tool copies are links now, so a second adopt must not see a
+	// mismatch either way; the conflict above is about the vault target.
+}

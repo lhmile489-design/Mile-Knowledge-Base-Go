@@ -55,6 +55,8 @@ import {
   type SkillRestoreResult,
   type SkillBackup,
   type SkillBackupsResult,
+  type SkillAdoptResult,
+  type SkillToolRef,
 } from "../mygo";
 
 export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
@@ -127,6 +129,8 @@ export const skillsApi = {
   restore: (backupId: string) => guard(async () => unwrap(await SkillService.restore(backupId))),
   backups: () => guard(async () => unwrap(await SkillService.backups())),
   cleanBackups: (ids: string[]) => guard(async () => unwrap(await SkillService.cleanBackups(ids))),
+  adopt: (vaultId: string, toolId: string, path: string, category: string, linkBack: boolean, extras: SkillToolRef[]) =>
+    guard(async () => unwrap(await SkillService.adopt(vaultId, toolId, path, category, linkBack, extras))),
 };
 
 export const vaultApi = {
