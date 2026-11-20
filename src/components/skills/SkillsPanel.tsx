@@ -55,6 +55,14 @@ export function SkillsPanel() {
     first?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        // A subview (distribute/uninstall/adopt/wizard) handles its own Esc.
+        if (
+          document.querySelector(
+            '[data-testid="distribute-dialog"], [data-testid="uninstall-dialog"], [data-testid="adopt-dialog"], [data-testid="skill-wizard"]',
+          )
+        ) {
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
         close();

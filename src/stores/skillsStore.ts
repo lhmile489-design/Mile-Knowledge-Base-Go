@@ -62,3 +62,8 @@ export const useSkillsStore = create<SkillsState>((set) => ({
 
   applyScan: (scan) => set({ scan }),
 }));
+
+// E2E hook: the same store the panel uses.
+if (typeof window !== "undefined") {
+  (window as unknown as { __mkbSkills?: unknown }).__mkbSkills = useSkillsStore;
+}

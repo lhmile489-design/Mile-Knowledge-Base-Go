@@ -51,11 +51,13 @@ export function ToolSkillsPage({
   const visible = (tool: SkillTool) => {
     if (tool.id === "agents") return true;
     if (showHidden) return true;
-    return tool.enabled && (tool.status === "detected" || countOf(tool.id) > 0);
+    // Undetected tools stay folded even when their leftover directory still
+    // holds skills (UI 稿 9.2: 默认折叠).
+    return tool.enabled && tool.status === "detected";
   };
   const chips = useMemo(() => tools.filter(visible), [tools, groups, showHidden]);
   const hiddenCount = tools.filter(
-    (tool) => tool.id !== "agents" && !(tool.enabled && (tool.status === "detected" || countOf(tool.id) > 0)),
+    (tool) => tool.id !== "agents" && !(tool.enabled && tool.status === "detected"),
   ).length;
   const detectedCount = tools.filter((tool) => tool.id !== "agents" && tool.status === "detected").length;
 
@@ -184,7 +186,7 @@ export function ToolSkillsPage({
                       className="icon-button"
                       aria-label={`收进知识库 ${skill.name}`}
                       onClick={() => setAdopt(skill)}
-                      data-testid={`tool-adopt-${skill.name}`}
+                      data-testid={`tool-adopt-${skill.name}-${toolId}`}
                     >
                       <Archive size={14} aria-hidden />
                     </button>

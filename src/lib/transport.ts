@@ -222,6 +222,7 @@ export { events };
 // E2E hook: the transport surface the probes drive (same calls the UI makes).
 if (typeof window !== "undefined") {
   (window as unknown as { __mkbApi?: unknown }).__mkbApi = {
+    skills: skillsApi,
     mutation: mutationApi,
     doc: docApi,
     index: indexApi,

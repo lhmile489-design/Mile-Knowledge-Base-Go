@@ -92,7 +92,7 @@ describe("ToolSkillsPage", () => {
     const onResult = vi.fn();
     render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={onChanged} onResult={onResult} />);
     expect(screen.queryByTestId("tool-uninstall-builtin-one")).toBeNull();
-    fireEvent.click(screen.getByTestId("tool-adopt-builtin-one"));
+    fireEvent.click(screen.getByTestId("tool-adopt-builtin-one-agents"));
     fireEvent.change(screen.getByTestId("adopt-category"), { target: { value: "分类" } });
     expect((screen.getByTestId("adopt-linkback") as HTMLInputElement).disabled).toBe(true);
     fireEvent.click(screen.getByTestId("adopt-submit"));

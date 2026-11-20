@@ -189,7 +189,10 @@ func ExecuteDistribute(opts DistributeOptions) ([]contract.SkillOpItem, []Distri
 				items = append(items, item)
 				continue
 			}
-			if err := createLink(targetDir, opts.SourceDir); err != nil {
+			if junctionFailureForced() {
+				mode = "copy"
+				detail = "联接创建失败，已改用拷贝"
+			} else if err := createLink(targetDir, opts.SourceDir); err != nil {
 				mode = "copy"
 				detail = "联接创建失败，已改用拷贝"
 			}
