@@ -552,8 +552,20 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  padding: 1px 6px;
+  border: 1px solid var(--raw-line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--raw-card);
   color: var(--raw-muted);
+  font-family: var(--font-ui);
   font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.skills-target-overwrite[data-checked='true'] {
+  border-color: var(--raw-accent);
+  background: var(--raw-accent-soft);
+  color: var(--raw-accent-text);
 }
 
 .skills-subview-foot {
