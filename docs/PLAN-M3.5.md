@@ -85,7 +85,7 @@
 | T04 | 首帧链路 | `main.go`、`public/theme-init.js`、`src/stores/appStore.ts`、`src/lib/accent.ts` | T00、T01、T02、T03 | V-ACC-BOOT 通过 | 待验证（门禁已过，待用户验收） |
 | T05 | 标题栏色点与色板 | `src/components/TitleBar.tsx`、`src/components/AccentPicker.tsx`（新）、`src/styles/accent-picker.css`（新） | T04 | 交互与可访问性按 UI 稿 10.1、DESIGN.md 12；单测与构建通过 | 待验证（门禁已过，待用户验收） |
 | T06 | 设置页「主题色」一行 | `src/components/settings/GeneralSection.tsx`、`src/components/AccentOptions.tsx`（新）、`src/lib/useResolvedTheme.ts`（新）、`src/styles/accent-picker.css` | T05 | 与色板同步；单测与构建通过 | 待验证（门禁已过，待用户验收） |
-| T07 | 验收与全量回归 | `scripts/e2e/ac-m35.sh`（新）、`scripts/e2e/accent-contrast.js`（新） | T06 | AC-ACC-1–6 与真实组件对比度检查通过；`bun run test:e2e` 全过；冷启动性能不劣于 M3 | 待做 |
+| T07 | 验收与全量回归 | `scripts/e2e/ac-m35.sh`（新）、`scripts/e2e/accent-contrast.js`（新） | T06 | AC-ACC-1–6 与真实组件对比度检查通过；`bun run test:e2e` 全过；冷启动性能不劣于 M3 | 待验证（门禁已过，待用户验收） |
 | T08 | 视觉重拍 | `scripts/visual/capture-new.py`、`design/r2/shots/`、`design/r2/shots-accent/` | T07 | 靛下 R1 对照无回归；6 预设 × 浅 / 深真实界面截图；技能浮层 18 张按橙重拍 | 待做 |
 | T09 | 版本与安装包（按 B-M35-01） | `mygo.config.ts`、docs/发布清单.md | T08 | 见 B-M35-01；安装动作执行前再单独确认 | 待做 |
 | T10 | 整体审查（按 B-M35-02） | 审查报告、本计划第 6 节 | T09 | 阻断项为 0，需改项已修或经用户接受 | 待做 |
@@ -175,6 +175,15 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 - `scripts/e2e/ac-m35.sh`：临时 APPDATA；AC-ACC-1、2、4、5 自动化；AC-ACC-6 交给 T08。
 - `scripts/e2e/accent-contrast.js`：经 automation `eval` 在真实窗口里，对 6 预设 × 浅 / 深逐套切换，取主按钮、发送按钮、选中分段项、链接、选中树行、复选框的计算后颜色，按 DESIGN.md 12.3 的标准断言（AC-ACC-3）。
 - 全量：`bun run test:e2e`（ac-m0..m3 加 ac-m35）退出码 0；`bash scripts/e2e/perf.sh` 冷启动与 M3 实测比较，结果走 `perf:gate`。
+- 实现口径（完成后补记）：
+  - AC-ACC-1 在全新 APPDATA（无设置文件、无知识库）上读默认橙：`data-accent`、`--raw-accent` / `--raw-accent-btn` / `--focus` 与欢迎页真实 `.btn-accent` 的底色和前景（按解析后的浅 / 深取 DESIGN 12.3 的值）。第一帧的直接证据沿用 T00 的 A-3（第一次 rAF 已是注入色 + 截图像素），e2e 只验证启动后的取值。
+  - AC-ACC-2 从色板选蓝，查「立即」生效与设置页同步，重启后再查；设置文件里是 `{preset:"blue"}`。
+  - AC-ACC-3 的页面脚本先在工作台采样（选中分段项、选中树行文字、正文链接、发送按钮、真实样式类 `.btn-accent`），再在设置 → 分类与检索采样打开状态的开关滑块与强调底；每套切换后等 150ms 过渡结束再读计算色。树行 2px 指示条不采样：选中态同时有背景、字重与 `aria-selected`，指示条是装饰性强化，不适用 12.3 的「填充与卡片」口径。
+  - AC-ACC-4 在设置页输入 `#ffff00`：提示「实际使用 #999900（浅色）」，文件保留输入值与缓存，重启后仍为首帧自定义色。
+  - AC-ACC-5 把设置文件的 `accent` 改成乱码字符串：启动回落为橙、无 fault 提示，设置页仍能重选绿色并写回。
+  - 脚本启动前检查是否已有应用实例在运行，只结束自己启动的进程；不触碰真实 APPDATA。
+- 实测（2026-11-20）：`ac-m35.sh` 37/37（全新安装 5 项、AC-ACC-2 8 项、AC-ACC-3、AC-ACC-4 6 项、AC-ACC-5 6 项）；`accent-contrast.js` 72 个样本，最低值 文字 5.26、按钮 4.51、填充 3.06，全部达标；全量 `bun run test:e2e` 137 项断言（ac-m0 15、ac-m1 16、ac-m2 22、ac-m3 47、ac-m35 37）全部 fail=0；`perf.sh` 典型冷启动 918ms、大库 771ms（M1/M3 基线 910–1101ms / 1093ms），`perf:gate --kind typical` 通过；scroll 与 1000 文件外部改动长任务均为 0。`typical_reader_ms` 沿用脚本既有空值（M0 已记「读模式单独计时未做」）。
+- 首轮全量 e2e 在 AC-ACC-2 点蓝前偶发一次 `missing`：popover 容器已出现、色块尚未提交；脚本改为等 6 个 radio 就绪再点击，复跑通过。
 
 ### T08 视觉重拍
 
@@ -246,6 +255,7 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 获批 | — | 自查见第 10 节 | T00 已放行 |
 | 2026-11-20 | T00 | 完成：方案成立，A-1–A-4 全过 | 见下 | RESULT.md；技术设计 14.3 | 用户已验收并放行 T01 |
+| 2026-11-20 | T07 | 完成：新增 `scripts/e2e/ac-m35.sh`（全新 APPDATA 的默认橙与欢迎页主按钮；色板选蓝立即生效、设置页同步、重启保留；自定义 `#ffff00` 保存输入值与缓存并重启生效；`accent` 乱码回落橙、无报错、可重选绿）与 `scripts/e2e/accent-contrast.js`（6 预设 × 浅 / 深，72 个真实组件样本）。全量 `bun run test:e2e`：ac-m0 15、ac-m1 16、ac-m2 22、ac-m3 47、ac-m35 37，全部 fail=0；对比度最低 文字 5.26、按钮 4.51、填充 3.06；冷启动典型 918ms、大库 771ms（基线 910–1101 / 1093），`perf:gate` 通过。首轮全量在点蓝前偶发一次 `missing`，等 6 个色块就绪后复跑通过 | 见下 | 两轮全量 e2e、单跑 ac-m35、perf.sh + perf:gate | 等待放行 T08 |
 | 2026-11-20 | T06 | 完成：常规「外观」新增「主题色」一行，与标题栏色板共用抽出的 `AccentOptions`（6 色块、自定义输入、「实际使用」提示），两处读同一个 store、选择即生效、不进保存条。3 项新测试（行内 6 色块与选中态、标题栏色点同步换色、自定义带缓存），全套 216 项通过；真机核对浅色 / 深色 / 自定义三态与色板回归，设置文件存下自定义色及其缓存 | 见下 | `tsc`、Vitest 216 项、e2e 构建 + 真机截图 | 等待放行 T07 |
 | 2026-11-20 | T05 | 完成：标题栏色点（含 `aria-label`/`aria-expanded`/`aria-haspopup`）与色板浮层；6 个色块 radiogroup、方向键移动、Enter 选择、勾选色块用各自前景色；自定义输入带校验、「实际使用」提示与预览点；Esc/点外面关闭并还焦点。5 项组件测试、全套 213 项通过；真机截图核对浅色/深色/自定义三态，修了自定义行被挤成一列的问题 | 见下 | `tsc`、Vitest 213 项、e2e 构建 + 截图 | 等待放行 T06 |
 | 2026-11-20 | T04 | 完成：Go 经 `Page.PreloadScript` 注入设置里的主题色；`theme-init.js` 首帧读值（预设设 `data-accent`，自定义写 20 个内联变量）；`appStore` 载入 / 设置变化时应用，切换走 `setAccent`：先换色、再 patch（自定义补算缓存），失败回滚并提示。实测：预设蓝注入 `blue`、计算值 `#2563eb`、截图 423 个蓝色像素；自定义黄 `data-accent=custom`、内联变量 `#999900`、按钮 `#7a7a00` | 见下 | `tsc`、Vitest 208 项；Go build/vet | 等待放行 T05 |
