@@ -141,7 +141,7 @@ describe("skills panel shell", () => {
     expect(screen.getByTestId("kb-group-前端")).toBeTruthy();
     expect(screen.getByTestId("kb-card-vue")).toBeTruthy();
     fireEvent.click(screen.getByRole("tab", { name: /工具技能/ }));
-    expect(screen.getByTestId("skills-tool-claude-code")).toBeTruthy();
+    expect(screen.getByTestId("tool-skill-vue-claude-code")).toBeTruthy();
   });
 
   it("explains the no-vault state on the knowledge-base page", () => {

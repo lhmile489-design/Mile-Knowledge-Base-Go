@@ -111,6 +111,14 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 		Tools:         tools,
 		Distributions: state.Distributions,
 	})
+	// Tool paths never leave Go unredacted (API §1, §12).
+	for i := range groups {
+		for j := range groups[i].Skills {
+			skill := &groups[i].Skills[j]
+			skill.Path = redactToolPath(skill.Path, detector)
+			skill.Target = redactToolPath(skill.Target, detector)
+		}
+	}
 	cachedAt := s.now().UTC().Format(time.RFC3339)
 	scan := contract.SkillScan{CachedAt: cachedAt, Kb: kb, Tools: groups, Warnings: warnings}
 	if err := skills.SaveScanCache(s.cachePath(), scan, cachedAt); err != nil {

@@ -591,3 +591,141 @@
   justify-content: flex-end;
   margin-top: 14px;
 }
+
+/* ---------- 工具技能页（M4 T11；UI 稿 tools-*） ---------- */
+.tool-skills {
+  display: grid;
+  gap: 10px;
+}
+
+.tool-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.skm-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-pill);
+  background: var(--raw-raised);
+  color: var(--raw-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+
+.skm-chip[aria-selected='true'] {
+  border-color: var(--raw-accent);
+  background: var(--raw-accent-soft);
+  color: var(--raw-accent-text);
+  font-weight: 600;
+}
+
+.tool-chip-count {
+  color: var(--raw-muted);
+  font-size: var(--text-caption);
+}
+
+.tool-rows {
+  display: grid;
+}
+
+.tool-row {
+  display: grid;
+  grid-template-columns: 20px minmax(120px, 180px) minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 8px;
+  border-bottom: 1px solid var(--raw-line);
+  font-size: var(--text-body-sm);
+}
+
+.tool-row:last-child {
+  border-bottom: 0;
+}
+
+.tool-row-name {
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--raw-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-row-path {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-row-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.skills-dialog-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  overflow: auto;
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.skills-dialog-line {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  color: var(--raw-muted);
+  line-height: 1.5;
+}
+
+.skills-dialog-line[data-tone='fault'] {
+  color: var(--fault);
+}
+
+.skills-dialog-field {
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}
+
+.skills-dialog-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.btn-danger {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--fault) 45%, var(--raw-line));
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--fault) 10%, var(--raw-card));
+  color: var(--fault);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fault) 16%, var(--raw-card));
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

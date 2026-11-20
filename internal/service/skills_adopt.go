@@ -91,6 +91,7 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 		toolID string
 		dir    string
 	}
+	var skipped []string
 	resolvedExtras := make([]extra, 0, len(extras))
 	for _, ref := range extras {
 		otherTool, otherDir, f := s.resolveAnyToolSkill(ref.ToolID, ref.Path)
@@ -101,7 +102,9 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 			continue
 		}
 		if hash, err := skills.TreeHash(otherDir); err != nil || hash != sourceHash {
-			return contract.SkillAdoptResult{Failure: contract.Fail(contract.CodeInvalidInput, "其他工具里的内容不一致")}
+			// Different content is skipped, not merged (PRD: 内容不同则分开).
+			skipped = append(skipped, otherTool.ID+" 内容不一致，未合并")
+			continue
 		}
 		resolvedExtras = append(resolvedExtras, extra{toolID: otherTool.ID, dir: otherDir})
 	}
@@ -117,6 +120,7 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 		return contract.SkillAdoptResult{Failure: contract.Fail(contract.CodeIOFailure, "收编失败："+err.Error())}
 	}
 	out := contract.SkillAdoptResult{VaultPath: "skills/" + category + "/" + name, Linked: result.Linked}
+	out.Warnings = append(out.Warnings, skipped...)
 	if result.BackupID != "" {
 		out.BackupIDs = append(out.BackupIDs, result.BackupID)
 	}

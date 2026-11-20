@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -174,4 +175,20 @@ func backupContract(meta skills.BackupMeta, detector *skills.Detector) contract.
 		Files:        meta.Files,
 		Restorable:   true,
 	}
+}
+
+// Reveal opens Explorer at a tool skill directory (M87). The path is resolved
+// through the same guard as removal; nothing is written.
+func (s *SkillService) Reveal(ctx context.Context, toolID, rel string) contract.Failure {
+	_, abs, f := s.resolveAnyToolSkill(toolID, rel)
+	if f != nil {
+		return *f
+	}
+	if _, err := os.Stat(abs); err != nil {
+		return *contract.Fail(contract.CodeNotFound, "技能不存在")
+	}
+	if err := exec.Command("explorer.exe", abs).Start(); err != nil {
+		return *contract.Fail(contract.CodeIOFailure, "打开目录失败")
+	}
+	return contract.Failure{}
 }

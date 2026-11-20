@@ -1092,6 +1092,8 @@ export interface ToolSkill {
   sync?: string;
   /** redacted target of a link */
   target?: string;
+  /** copied: the vault skill it came from */
+  sourcePath?: string;
   builtin?: boolean;
 }
 
@@ -1545,6 +1547,11 @@ export const SkillService = {
   registry: bind<[], SkillRegistryResult>("SkillService.Registry", () => []),
   /** Restore is M83. */
   restore: bind<[string], SkillRestoreResult>("SkillService.Restore", (backupID: string) => [backupID]),
+  /**
+   * Reveal opens Explorer at a tool skill directory (M87). The path is resolved
+   * through the same guard as removal; nothing is written.
+   */
+  reveal: bind<[string, string], Failure>("SkillService.Reveal", (toolID: string, rel: string) => [toolID, rel]),
   /** Scan is M77: cached-first with a background refresh (API.md §12.2). */
   scan: bind<[string], SkillScanResult>("SkillService.Scan", (vaultID: string) => [vaultID]),
   /** Uninstall is M81. */

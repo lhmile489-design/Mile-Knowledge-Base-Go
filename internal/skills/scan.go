@@ -190,6 +190,7 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, di
 				default:
 					if dist, ok := matchDistribution(dists, dir); ok {
 						skill.Origin = "copied"
+						skill.SourcePath = dist.SkillPath
 						skill.Sync = CopySyncState(opts.VaultRoot, dist, dir)
 					} else {
 						skill.Origin = "independent"

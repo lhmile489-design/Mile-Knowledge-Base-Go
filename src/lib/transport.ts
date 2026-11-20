@@ -62,10 +62,13 @@ import {
   type KbSkill,
   type KbSkillDistribution,
   type SkillPreviewItem,
+  type SkillToolScan,
+  type SkillUninstallPreview,
 } from "../mygo";
 
 export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
 export type { SkillUninstallResult, SkillRestoreResult, SkillBackup, SkillBackupsResult, SkillAdoptResult, SkillToolRef, SkillLogRecord, SkillLogResult, KbSkill, KbSkillDistribution, SkillPreviewItem };
+export type { SkillToolScan, SkillUninstallPreview };
 
 export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
@@ -138,6 +141,7 @@ export const skillsApi = {
   adopt: (vaultId: string, toolId: string, path: string, category: string, linkBack: boolean, extras: SkillToolRef[]) =>
     guard(async () => unwrap(await SkillService.adopt(vaultId, toolId, path, category, linkBack, extras))),
   log: (limit = 50) => guard(async () => unwrap(await SkillService.log(limit))),
+  reveal: (toolId: string, path: string) => guard(async () => SkillService.reveal(toolId, path)),
 };
 
 export const vaultApi = {

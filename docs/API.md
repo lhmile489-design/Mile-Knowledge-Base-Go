@@ -202,8 +202,9 @@ type LoadResult struct {
 | M84 | `SkillService.log(limit)` | Skills | FR-SKM-LOG | `Log(ctx, limit int) (*SkillLogResult, error)` | `invalid-input` |
 | M85 | `SkillService.backups()` | Skills | FR-SKM-UNINST（Q-SKM-3） | `Backups(ctx) (*SkillBackupsResult, error)` | — |
 | M86 | `SkillService.cleanBackups(ids)` | Skills | FR-SKM-UNINST（Q-SKM-3） | `CleanBackups(ctx, ids []string) (*SkillBackupsResult, error)` | `invalid-input`、`io-failure` |
+| M87 | `SkillService.reveal(toolId, path)` | Skills | FR-SKM-PANEL | `Reveal(ctx, toolId, path string) contract.Failure` | `invalid-input`、`not-found`、`io-failure` |
 
-共 85 个绑定方法；M19 是协议端点（§5），不在绑定方法内。
+共 86 个绑定方法；M19 是协议端点（§5），不在绑定方法内。
 
 ### 2.3 Channel 与事件目录
 
@@ -883,6 +884,7 @@ type ToolSkill = {
   name: string; description: string; path: string; toolId: string;
   origin: SkillOrigin; sync?: SkillSync;
   target?: string;            // 链接到知识库 / 外部时的目标（脱敏）
+  sourcePath?: string;        // 拷贝：来源的知识库技能路径
   builtin?: boolean;          // 内置技能（不可卸载/覆盖）
 };
 
@@ -910,6 +912,7 @@ type SkillScan = {
 | M84 `log` | `limit`（默认 50，≤200） | `{records: SkillLogRecord[]}` | 最近操作记录，按时间倒序 |
 | M85 `backups` | — | `{items: SkillBackup[]}` | 备份列表（大小、时间、是否可恢复） |
 | M86 `cleanBackups` | `ids[]` | `{items: SkillBackup[]}` | 删除选中的备份；对应记录改为不可恢复 |
+| M87 `reveal` | `toolId`、`path` | `Failure` | 在资源管理器打开工具技能目录；只读 |
 
 ```ts
 type SkillPreviewItem = {

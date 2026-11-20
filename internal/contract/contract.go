@@ -1136,9 +1136,10 @@ type ToolSkill struct {
 	Description string `json:"description"`
 	Path        string `json:"path"`
 	ToolID      string `json:"toolId"`
-	Origin      string `json:"origin"`           // linked | link-broken | copied | independent | builtin | external-link
-	Sync        string `json:"sync,omitempty"`   // in-sync | vault-updated | tool-updated | both-updated | missing
-	Target      string `json:"target,omitempty"` // redacted target of a link
+	Origin      string `json:"origin"`               // linked | link-broken | copied | independent | builtin | external-link
+	Sync        string `json:"sync,omitempty"`       // in-sync | vault-updated | tool-updated | both-updated | missing
+	Target      string `json:"target,omitempty"`     // redacted target of a link
+	SourcePath  string `json:"sourcePath,omitempty"` // copied: the vault skill it came from
 	Builtin     bool   `json:"builtin,omitempty"`
 }
 

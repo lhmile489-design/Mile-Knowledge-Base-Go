@@ -7,6 +7,7 @@ import { useDocStore } from "../../stores/docStore";
 import { useTreeStore } from "../../stores/treeStore";
 import { KbSkillsPage } from "./KbSkillsPage";
 import { DistributeDialog } from "./DistributeDialog";
+import { ToolSkillsPage } from "./ToolSkillsPage";
 
 type Page = "kb" | "tools";
 
@@ -170,25 +171,14 @@ export function SkillsPanel() {
               </div>
             )
           ) : (
-            <div className="skills-tools">
-              {tools.filter((tool) => tool.enabled).map((tool) => {
-                const group = scan?.tools.find((item) => item.toolId === tool.id);
-                const count = group?.skills.length ?? 0;
-                return (
-                  <div key={tool.id} className="skills-tool-row" data-testid={`skills-tool-${tool.id}`}>
-                    <span className="skills-tool-name">{tool.name}</span>
-                    <span className="pill" data-tone={tool.status === "detected" ? "live" : "idle"}>
-                      {tool.status === "detected"
-                        ? "已检测到"
-                        : tool.status === "leftover"
-                          ? "未检测到（有残留目录）"
-                          : "未检测到"}
-                    </span>
-                    <span className="skills-tool-count">{count} 个技能</span>
-                  </div>
-                );
-              })}
-            </div>
+            <ToolSkillsPage
+              vaultId={vaultId}
+              groups={scan?.tools ?? []}
+              tools={tools}
+              onChanged={() => {
+                if (vaultId) void useSkillsStore.getState().loadScan(vaultId);
+              }}
+            />
           )}
         </div>
 
