@@ -49,6 +49,16 @@ export function SkillsPanel() {
     return () => window.removeEventListener("resize", compute);
   }, [open]);
 
+  // A panel opened without a vault never fetched the registry; do it here so
+  // the tools page works everywhere (PRD FR-SKM-PANEL).
+  useEffect(() => {
+    if (!open) return;
+    if (useSkillsStore.getState().tools.length === 0) {
+      void useSkillsStore.getState().refresh(vaultId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, vaultId]);
+
   useEffect(() => {
     if (!open) return;
     const first = panelRef.current?.querySelector<HTMLElement>("[data-skills-tab]");

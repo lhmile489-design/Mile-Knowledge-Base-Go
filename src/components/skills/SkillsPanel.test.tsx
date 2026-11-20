@@ -144,12 +144,13 @@ describe("skills panel shell", () => {
     expect(screen.getByTestId("tool-skill-vue-claude-code")).toBeTruthy();
   });
 
-  it("explains the no-vault state on the knowledge-base page", () => {
+  it("explains the no-vault state and still loads the tool registry", async () => {
     useAppStore.setState({ activeVaultId: "" });
     renderShell();
     fireEvent.click(screen.getByTestId("open-skills"));
     expect(screen.getByText("还没有打开知识库。")).toBeTruthy();
     expect(screen.getByRole("button", { name: "打开知识库…" })).toBeTruthy();
+    await waitFor(() => expect(registry).toHaveBeenCalled());
   });
 });
 

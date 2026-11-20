@@ -14,9 +14,9 @@ export function SkillButton() {
   const scan = useSkillsStore((state) => state.scan);
 
   // The badge needs a scan; the first one is cached-first and cheap, and a
-  // vault switch invalidates the knowledge-base half.
+  // vault switch invalidates the knowledge-base half. Without a vault the
+  // tools half still loads (PRD FR-SKM-PANEL: 无库时工具页照常可用).
   useEffect(() => {
-    if (!vaultId) return;
     void useSkillsStore.getState().refresh(vaultId);
   }, [vaultId]);
 
