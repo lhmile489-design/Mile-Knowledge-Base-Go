@@ -72,6 +72,9 @@ type LoadResult struct {
 | `provider-error` | 供应商请求失败（网络、限流、5xx、鉴权） | 视 detail（自动重试中或已耗尽） | 供应商错误 + 脱敏原因 | 新增（FR-AI-ENG/PROV） |
 | `approval-expired` | 审批卡已失效（回合取消、引擎重启、超时） | 否 | 审批已失效 | 新增（FR-AI-PERM） |
 | `secret-unavailable` | 系统加密不可用 / 凭据管理器失败 | 否 | 系统加密不可用 | 新增（FR-AI-PROV，mygo `ErrUnsupported`） |
+| `skill-conflict` | 技能名冲突或目标已存在、恢复时原位置被占用（detail 给出另一处位置） | 用户改名/处理后 | 名称或目标冲突 | 新增（FR-SKM-DIST/UNINST，§12） |
+| `skill-protected` | 内置技能不可卸载/覆盖，或工具未启用 | 否 | 内置技能只读 | 新增（FR-SKM-UNINST，§12） |
+| `backup-missing` | 备份已被清理或记录不可恢复 | 否 | 备份不存在 | 新增（FR-SKM-UNINST，§12） |
 
 ### 1.4 通用入参校验规则（所有方法）
 
@@ -105,6 +108,7 @@ type LoadResult struct {
 | `AgentService` | 4 个 Agent 会话、流式回合、审批、路由预览、共享上下文 | `engine`/`agent` | FR-AI-* 全部 |
 | `ConversationService` | 对话历史 CRUD、搜索、导出、接着问激活 | `conversation`/`appdata` | FR-AI-HIST |
 | `SettingsService` | 应用设置、布局、主题、供应商、API key、分类/别名、最近文档、旧版导入 | `settings`/`appdata` | FR-SET、FR-AI-PROV、FR-OVW（最近文档） |
+| `SkillService` | 工具注册表与探测、两套技能扫描、分发/卸载/收编、备份与恢复、操作记录、清理备份 | `skills` | FR-SKM-TOOL/DETECT/SCAN/DIST/UNINST/ADOPT/LOG（M4） |
 
 ### 2.2 接口目录（绑定方法）
 
@@ -187,8 +191,19 @@ type LoadResult struct {
 | M73 | `SettingsService.noteDocumentOpened(vaultId, path)` | Settings | FR-OVW | `NoteDocumentOpened(ctx, ...) (*RecentDocumentsResult, error)` | `not-found`、`invalid-input` |
 | M74 | `SettingsService.aboutInfo()` | Settings | FR-SET | `AboutInfo(ctx) (*AboutInfoResult, error)` | `io-failure` |
 | M75 | `SettingsService.copyStoragePath(kind)` | Settings | FR-SET | `CopyStoragePath(ctx, kind string) (*CopyStoragePathResult, error)` | `invalid-input`、`unsupported`（credentials）、`io-failure` |
+| M76 | `SkillService.registry()` | Skills | FR-SKM-TOOL/DETECT | `Registry(ctx) (*SkillRegistryResult, error)` | — |
+| M77 | `SkillService.scan(vaultId)` | Skills | FR-SKM-SCAN | `Scan(ctx, vaultId string) (*SkillScanResult, error)` | `invalid-input` |
+| M78 | `SkillService.distributePreview(vaultId, skillPath, targets, mode)` | Skills | FR-SKM-DIST | `DistributePreview(ctx, ...) (*SkillPreviewResult, error)` | `invalid-input`、`not-found`、`skill-conflict` |
+| M79 | `SkillService.distribute(vaultId, skillPath, targets, mode)` | Skills | FR-SKM-DIST | `Distribute(ctx, ...) (*SkillOpResult, error)` | `invalid-input`、`not-found`、`skill-conflict`、`skill-protected`、`io-failure` |
+| M80 | `SkillService.uninstallPreview(toolId, path)` | Skills | FR-SKM-UNINST | `UninstallPreview(ctx, ...) (*SkillUninstallPreview, error)` | `invalid-input`、`not-found`、`skill-protected` |
+| M81 | `SkillService.uninstall(toolId, path)` | Skills | FR-SKM-UNINST | `Uninstall(ctx, ...) (*SkillOpResult, error)` | `invalid-input`、`not-found`、`skill-protected`、`io-failure` |
+| M82 | `SkillService.adopt(toolId, path, category, linkBack, extras)` | Skills | FR-SKM-ADOPT | `Adopt(ctx, ...) (*SkillAdoptResult, error)` | `invalid-input`、`not-found`、`skill-conflict`、`too-large`、`io-failure` |
+| M83 | `SkillService.restore(backupId)` | Skills | FR-SKM-UNINST/LOG | `Restore(ctx, backupId string) (*SkillRestoreResult, error)` | `invalid-input`、`backup-missing`、`skill-conflict`、`io-failure` |
+| M84 | `SkillService.log(limit)` | Skills | FR-SKM-LOG | `Log(ctx, limit int) (*SkillLogResult, error)` | `invalid-input` |
+| M85 | `SkillService.backups()` | Skills | FR-SKM-UNINST（Q-SKM-3） | `Backups(ctx) (*SkillBackupsResult, error)` | — |
+| M86 | `SkillService.cleanBackups(ids)` | Skills | FR-SKM-UNINST（Q-SKM-3） | `CleanBackups(ctx, ids []string) (*SkillBackupsResult, error)` | `invalid-input`、`io-failure` |
 
-共 74 个绑定方法；M19 是协议端点（§5），不在绑定方法内。
+共 85 个绑定方法；M19 是协议端点（§5），不在绑定方法内。
 
 ### 2.3 Channel 与事件目录
 
@@ -206,6 +221,7 @@ type LoadResult struct {
 | E09 | `context-changed` | Go → 前端 | `SharedContext` | 共享上下文变化（pin/task/文档状态） | FR-AI-CTX；旧版 `context:changed` |
 | E10 | `engine-status` | Go → 前端 | `EngineStatus`（M38 同一定义：`{phase, message?, capabilities?}`） | 引擎未配置/就绪/出错（原 sidecar 状态） | FR-AI-ENG；旧版 `sidecar` 事件 |
 | E11 | `app-notice` | Go → 前端 | `{text, level}` | 不阻断的提示（设置导入失败、监听降级等） | 新增（FR-SET 提示、R-1 降级提示） |
+| E12 | `skills-changed` | Go → 前端 | `{sequence}` | 后台扫描完成或技能操作完成 | M76–M86；FR-SKM-SCAN/LOG |
 
 共 1 个 Channel 参数 + 11 个定向事件。引擎流式帧、审批卡、用量、工具调用都走 C01 Channel 的 `StreamFrame` 联合（§6），不另立事件——只有跨调用持久的状态（索引、日志、设置、上下文）才用 Event。
 
@@ -765,6 +781,7 @@ type PermissionOption struct {
 | `context-changed` | `SharedContext` | 上下文快照变化 | 同上 | 按 snapshotId upsert |
 | `engine-status` | `EngineStatus`（`{phase:'starting'\|'ready'\|'offline', message?, capabilities?}`，定义见 M38） | 引擎未配置/就绪/出错切换 | 同上 | 更新引擎状态胶囊与可用性 |
 | `app-notice` | `{text, level:'info'\|'warn'\|'error'}` | 不阻断提示（旧版导入失败、监听降级 HintsOnly、设置损坏备份 `.corrupt`） | 同上 | 行内 `role=status` 提示卡（无全局 Toast，PRD §8） |
+| `skills-changed` | `{sequence}` | 后台扫描完成或技能操作完成 | 同上 | 刷新浮层两页与角标；进行中的视图不打断 |
 
 `vault-changed` 的外部修改检测链路（F，与旧版等价）：前端收到事件后刷新 `directories` 列出的目录层；随后对每个**已打开标签**，若其父目录在 `directories` 中，则调 `DocService.read` 重读，用返回的 `revision` 与当前 `baseRevision` 比对——干净文档直接跟随磁盘采用新快照，有未保存修改的文档只缓存磁盘版本并在保存时（或立即）提示「磁盘有新版本」（旧版 `vaultStore.ts:340-361` `refreshDirectories` + `documentStore.ts:185-196` `noteExternalChange`）。选择「前端逐个比对」而不是在事件载荷里附受影响文档列表：与旧版行为完全等价（旧版也是广播目录 → 前端判断重读），且不引入「事件载荷必须知道哪些文档打开着」的前端状态反向依赖。
 
@@ -833,3 +850,104 @@ type AccentSetting =
 - Go 单元测试：上表每一行各一条，再加「非法 patch 不改动已保存的值」；
 - 前端：`src/lib/accent.ts` 的 12 套预设快照（DESIGN.md 12.3）与自定义色边界用例；
 - e2e：AC-ACC-1、2、5（PRD 16.7）。
+
+## 12. R2 增补：技能管理（M4）
+
+> 状态：草稿，待用户审核。需求见 PRD 第 15 节（M4 范围）；实现见技术设计第 15 节；存储见数据库设计 4.6；界面见 docs/UI设计稿.md 第 9 节与 DESIGN.md 第 11 节。
+
+### 12.1 类型
+
+```ts
+type SkillToolStatus = 'detected' | 'leftover' | 'missing';
+
+type SkillTool = {
+  id: string;                 // 稳定 id：agon 约定，如 'claude-code'、'deepseek-harness'、'agents'
+  name: string;
+  iconKey: string;            // 品牌图标文件名；无图标用首字母，通用目录用 'globe'
+  installDir?: string;        // 安装目录（脱敏，~ 开头），只用于显示与目标校验的展示
+  scanDirs: string[];         // 只扫描目录（脱敏）
+  readers: string[];          // 会读通用目录的工具 id（技术设计 13.1）
+  status: SkillToolStatus;    // 已检测到 / 未检测到但有目录 / 未检测到
+  official: boolean;          // 官方未核实的工具为 false（Trae、ZCode）
+  enabled: boolean;           // MiniMax Code 默认 false
+};
+
+type SkillOrigin = 'linked' | 'link-broken' | 'copied' | 'independent' | 'builtin' | 'external-link';
+type SkillSync = 'in-sync' | 'vault-updated' | 'tool-updated' | 'both-updated' | 'missing';
+
+type KbSkill = { name: string; description: string; path: string; category: string };
+type ToolSkill = {
+  name: string; description: string; path: string; toolId: string;
+  origin: SkillOrigin; sync?: SkillSync;
+  target?: string;            // 链接到知识库 / 外部时的目标（脱敏）
+  builtin?: boolean;          // 内置技能（不可卸载/覆盖）
+};
+
+type SkillScan = {
+  cachedAt: string;           // 缓存结果时间；浮层先显示它
+  scanning: boolean;          // 后台扫描进行中
+  kb: { category: string; skills: KbSkill[] }[];
+  tools: { toolId: string; skills: ToolSkill[] }[];
+  warnings?: { toolId?: string; text: string }[];   // 扫描降级、目录不可读
+};
+```
+
+### 12.2 方法
+
+| 方法 | 入参 | 返回 | 语义 |
+| --- | --- | --- | --- |
+| M76 `registry` | — | `{tools: SkillTool[]}` | 内置注册表加探测结果；不写盘 |
+| M77 `scan` | `vaultId`（可为空串） | `SkillScan` | 触发后台扫描；先返回缓存并置 `scanning=true`，完成后发 E12。无活动库时 `kb=[]` |
+| M78 `distributePreview` | `vaultId`、`skillPath`、`targets[]`、`mode` | `{items: SkillPreviewItem[]}` | 校验目标、冲突、重复加载、覆盖备份位置；不写盘 |
+| M79 `distribute` | 同上 + 每目标的 `allowOverwrite` | `{items: SkillOpItem[]}` | 执行；逐项结果，部分失败不整体回滚 |
+| M80 `uninstallPreview` | `toolId`、`path` | `{kind, target?, backupPath?, affectedTools[]}` | `kind = link/copy/independent`；通用目录卸载时 `affectedTools` 列出读者 |
+| M81 `uninstall` | `toolId`、`path` | `{items: SkillOpItem[]}` | 链接只删链接；拷贝/独立先移备份；内置拒绝 |
+| M82 `adopt` | `toolId`、`path`、`category`、`linkBack`、`extras[]` | `{vaultPath, linked, backupIds[]}` | 复制进知识库；`linkBack` 时原目录备份后换链；`extras` 是同内容的其他工具副本 |
+| M83 `restore` | `backupId` | `{restoredTo: string}` | 恢复到原位置；原位置被占用返回 `skill-conflict` |
+| M84 `log` | `limit`（默认 50，≤200） | `{records: SkillLogRecord[]}` | 最近操作记录，按时间倒序 |
+| M85 `backups` | — | `{items: SkillBackup[]}` | 备份列表（大小、时间、是否可恢复） |
+| M86 `cleanBackups` | `ids[]` | `{items: SkillBackup[]}` | 删除选中的备份；对应记录改为不可恢复 |
+
+```ts
+type SkillPreviewItem = {
+  targetId: string; toolId: string; name: string;
+  action: 'create' | 'exists' | 'overwrite' | 'conflict' | 'duplicate' | 'protected';
+  targetPath: string;         // 脱敏展示
+  backupPath?: string;        // overwrite 时的备份位置
+  detail?: string;            // 例如另一处同名技能的位置
+};
+type SkillOpItem = {
+  targetId: string; toolId: string;
+  result: 'linked' | 'copied' | 'skipped' | 'failed';
+  detail?: string; backupId?: string;
+};
+type SkillLogRecord = {
+  id: string; at: string;
+  op: 'distribute' | 'uninstall' | 'overwrite' | 'adopt' | 'restore' | 'clean';
+  skill: string; toolId?: string; location: string;
+  mode?: 'link' | 'copy' | 'copy-adopt';
+  result: 'ok' | 'partial' | 'failed';
+  backupId?: string; restorable: boolean; error?: string;
+};
+type SkillBackup = { id, toolId, originalPath, kind: 'uninstall'|'overwrite'|'adopt', createdAt, size, files, restorable };
+```
+
+### 12.3 校验与错误
+
+- `toolId`：注册表内的 id；`path`：工具目录内的相对路径，1–2 段，单段规则同 FR-SKILL（≤80、不以点开头、无保留名、无 `..`）；`skillPath`：`skills/<分类>/<技能>`，分类与技能各一段；`category`：单段。
+- 所有预览与执行都在服务端重新解析路径到登记目录内部（技术设计 15.3）；前端传绝对路径一律 `invalid-input`。
+- 目标已存在且未选覆盖：跳过而不是失败（`skipped`，detail 写原因）；选了覆盖但目标是内置：`skill-protected`。
+- 名称冲突（知识库内跨分类同名）：预览返回 `conflict` 并带另一处位置；执行返回 `skill-conflict`。
+- 恢复时原位置被占用：`skill-conflict`，不覆盖。
+- 备份已清理：`backup-missing`。
+- 部分失败：执行方法返回成功结果列表，逐项 `failed` 带原因；不抛整体错误（与分发/卸载的多目标任务一致）。
+
+### 12.4 事件与前端动作
+
+E12 `skills-changed` 在扫描完成与每次操作完成后发；前端重新拉 M77（缓存新鲜时不重复扫）并刷新角标。浮层打开时若缓存超过 10 分钟，后台再扫一次。
+
+### 12.5 验证
+
+- Go 单元测试：路径守卫（`..`、绝对路径、UNC、点号、保留名、链接父目录）、同名冲突、联接失败退回拷贝、删链接不跟随（目标哈希不变）、恢复冲突、备份清理后 `restorable=false`、M76 探测注入表。
+- e2e：AC-SKM-1–11、19（假用户目录/假 PATH/假注册表，不碰真实工具目录）。
+- 未验证：真实工具目录对联接的兼容性（技术设计 13.5 第 3 条），M4 人工项，执行前单独征得用户同意。
