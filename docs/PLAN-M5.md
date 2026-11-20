@@ -46,7 +46,7 @@
 | 编号 | 目标 | 修改范围 | 依赖 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | T00 | 契约落盘 | 技术设计 §16、API §13、数据库设计 3.8/4.6、UI 稿 9.4、DESIGN 11.5、本计划；`internal/contract` | 用户批准本计划 | 按批准意见定稿、去掉草稿标记；新类型、3 个错误码、E13、`importFile` 常量与 `SKILLS_FAKE_GITHUB` 进入 contract | 待验证（门禁已过，待用户验收） |
-| T01 | 地址解析与 GitHub 客户端 | `internal/skills/{ghref,github}.go`、测试 | T00 | 3 种输入与非法输入；默认分支 / 头部 / 子目录提交 / 下载；404、额度、超时、跨主机重定向全部用 `httptest` 覆盖 | 待做 |
+| T01 | 地址解析与 GitHub 客户端 | `internal/skills/{ghref,github}.go`、测试 | T00 | 3 种输入与非法输入；默认分支 / 头部 / 子目录提交 / 下载；404、额度、超时、跨主机重定向全部用 `httptest` 覆盖 | 待验证（门禁已过，待用户验收） |
 | T02 | 安全解包与暂存区 | `internal/skills/{unpack,stage}.go`、测试 | T01 | tar.gz 与 zip；技术设计 16.3 七条不变量各有测试；违规整包拒绝后暂存目录不存在；过期、上限 3 个、启动清空 | 待做 |
 | T03 | 候选定位 | `internal/skills/candidates.go`、`internal/vault/skillimport.go`（扩展任意深度）、测试 | T02 | 3 层、跳过点号与 node_modules、50 个上限、重复名、过大、非法名、已存在 | 待做 |
 | T04 | 来源记录与扫描合并 | `internal/skills/sources.go`、`scan.go`、测试 | T03 | A 区稳定序列化（与 provenance 同规则）、B 区读写、坏条目丢弃；扫描结果带 `remote` | 待做 |
@@ -131,6 +131,7 @@
 
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-21 | T01 | 完成：`ghref.go`（3 种输入、owner/repo 字符集、ref 单段、path ≤8 段、`.git` 与尾斜杠、其他主机与 http/查询串/凭据拒绝）；`github.go`（匿名客户端：默认分支、`application/vnd.github.sha` 取头部、`commits?path=` 取子目录最近提交、codeload 下载钉在提交上、系统代理、跨主机重定向白名单、网络错误重试 1 次、404 → not-found、403/429 且剩余 0 → rate-limited 带重置时间、15s/120s 超时、200 MiB 流式上限）；`github_e2e.go` / `github_prod.go` 提供 `SKILLS_FAKE_GITHUB`（仅 e2e 读取）。测试 9 项 + e2e/prod 各 1 项。API §13.3 与 技术设计 16.9 补 ref 单段说明 | 见下 | `go test ./internal/skills/`（普通与 e2e 构建）、`go test ./...`、vet/gofmt、tsc/bindings/Vitest | 等待放行 T02 |
 | 2026-11-21 | T00 | 完成：技术设计 §16、API §13（含 §1.3 三个错误码、§2.2 M88–M96、§2.3 E13、M29 的 `importFile`）、数据库设计 3.8 与 4.6 增补、UI 稿 9.4、DESIGN 11.5、本计划去掉草稿标记并写「用户 2026-11-21 审核通过」；PRD 与 D-016 同步。`internal/contract` 新增：3 个错误码、`EnvSkillsFakeGithub`、`MutImportFile` 与 MutationAction 的 stageId/stagePath/stageHash、`KbSkill.remote`/`ToolSkill.remote`、§13.1 的 11 个类型与 E13 事件；`mygo generate` 重写绑定 | 见下 | `go build ./...`、`gofmt`、`go vet`、`bun run generate`、`bun run check:bindings`、`bun run typecheck`、Vitest 全量 | 已放行 T01 |
 | 2026-11-21 | 计划 | v0.1 草案；同时起草技术设计 §16、API §13、数据库设计 3.8/4.6 增补、UI 稿 9.4、DESIGN 11.5、原型 7 个状态与 14 张截图；PRD v2.4 关闭 Q-SKM-1/2/5 | 见下 | 自查见第 9 节；原型截图 14 张、无脚本错误、无横向溢出 | 用户 2026-11-21 批准，放行 T00 |
 

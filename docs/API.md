@@ -1038,7 +1038,7 @@ type SkillConfirmUpdateResult = { updated: boolean; failure?: Failure };
 
 ### 13.3 校验与错误
 
-- `input`：去掉首尾空白后 ≤ 300 字符；只接受 `https://github.com/<o>/<r>[.git][/tree/<ref>[/<path>]]` 与 `<o>/<r>`；`owner`、`repo` 只含字母数字、`-`、`_`、`.`，≤ 100；`ref` 与 `path` 逐段过单段规则（不以点开头、无 `..`、无保留名）；其他主机、`http://`、带查询串的地址一律 `invalid-input`。
+- `input`：去掉首尾空白后 ≤ 300 字符；只接受 `https://github.com/<o>/<r>[.git][/tree/<ref>[/<path>]]` 与 `<o>/<r>`；`owner`、`repo` 只含字母数字、`-`、`_`、`.`，≤ 100；`ref` 取 `/tree/` 后的第一段，`ref` 与 `path` 逐段过单段规则（不以点开头、无 `..`、无保留名），`path` 最多 8 段；含斜杠的分支名请改用仓库地址（走默认分支）。其他主机、`http://`、带查询串的地址一律 `invalid-input`。
 - `stageId`：`s-` + 12 位十六进制；不存在或已过期 → `not-found`（提示重新读取）。
 - `ids[]`：1–50 个，必须是该暂存候选里的 `id` 且 `state='ok'`；否则该项 `skipped`（原因写明），不整体失败。
 - `target.category`：单段，规则同 FR-SKILL。
