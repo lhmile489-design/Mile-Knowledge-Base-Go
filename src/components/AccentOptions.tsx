@@ -6,6 +6,7 @@ import {
   PRESET_LABEL,
   PRESET_NAMES,
   deriveAccent,
+  isNearGray,
   type AccentPresetName,
 } from "../lib/accent";
 import { nextOption } from "../lib/radioGroup";
@@ -15,17 +16,24 @@ import { useAppStore } from "../stores/appStore";
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 const INVALID_HINT = "请输入 #RRGGBB 格式，例如 #2563eb。当前颜色不变。";
 
-type Hint = { tone: "error" | "adjusted" | "same"; text: string } | null;
+type Hint = { tone: "error" | "adjusted" | "same" | "gray"; text: string } | null;
 
-/** The custom-color hint: an error, the adjusted color, or "as typed". */
+/** The custom-color hint: an error, the adjusted color, or "as typed"; a
+ * near-gray input also warns that the selected state may be hard to tell
+ * (DESIGN.md 12.4). */
 function hintFor(draft: string): Hint {
   if (draft.length === 0) return null;
   if (!HEX_RE.test(draft)) return { tone: "error", text: INVALID_HINT };
+  const gray = isNearGray(draft) ? "颜色太接近灰色，选中态可能不明显。" : "";
   try {
     const used = deriveAccent(draft).light.accent;
-    return used.toLowerCase() === draft.toLowerCase()
-      ? { tone: "same", text: "与输入一致。" }
-      : { tone: "adjusted", text: `实际使用 ${used}（浅色），为了让文字和按钮看得清做了调整。` };
+    if (used.toLowerCase() === draft.toLowerCase()) {
+      return gray ? { tone: "gray", text: gray } : { tone: "same", text: "与输入一致。" };
+    }
+    return {
+      tone: gray ? "gray" : "adjusted",
+      text: `实际使用 ${used}（浅色），为了让文字和按钮看得清做了调整。${gray}`,
+    };
   } catch {
     return { tone: "error", text: INVALID_HINT };
   }

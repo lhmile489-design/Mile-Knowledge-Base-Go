@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,6 +26,90 @@ func testTokens() contract.AccentTokens {
 		Accent: "#b95b1e", Hover: "#a6521b", Active: "#944918", Soft: "#fceee5",
 		Text: "#aa541c", Btn: "#b95b1e", BtnHover: "#a6521b", BtnActive: "#944918",
 		OnAccent: "#ffffff", Focus: "#e87226",
+	}
+}
+
+// T10 审查需改 2：accent 对象里其他版本写的键，读写往返后仍在。
+func TestAccentUnknownFieldsPreserved(t *testing.T) {
+	dir := writeSettings(t, `{
+  "version": 1,
+  "theme": "light",
+  "closeBehavior": "ask",
+  "accent": {"preset": "blue", "futureX": 1, "future": {"a": true}},
+  "layout": {"sidebarWidth": 240, "docWidth": 500, "docCollapsed": false, "sidebarCollapsed": false,
+    "agnesControlsCollapsed": false, "agnesHistoryOpen": true, "agnesComposerHeight": 120},
+  "recentVaults": []
+}
+`)
+	s, f := Open(dir, "")
+	if f != nil {
+		t.Fatal(f)
+	}
+	if got := s.Get().Accent.Preset; got != "blue" {
+		t.Fatalf("accent = %q, want blue", got)
+	}
+	theme := "dark"
+	if _, f := s.Patch(contract.SettingsPatch{Theme: &theme}); f != nil {
+		t.Fatal(f)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, FileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Accent map[string]json.RawMessage `json:"accent"`
+	}
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := doc.Accent["futureX"]; !ok {
+		t.Error("unknown accent key futureX was dropped on save")
+	}
+	if _, ok := doc.Accent["future"]; !ok {
+		t.Error("unknown accent key future was dropped on save")
+	}
+	if string(doc.Accent["preset"]) != `"blue"` {
+		t.Errorf("preset = %s, want \"blue\"", doc.Accent["preset"])
+	}
+}
+
+// T10 审查需改 3：API 11.2 的多余字段必须整条拒绝，不能静默接受。
+func TestAccentPatchRejectsUnknownFields(t *testing.T) {
+	s := open(t, "")
+	var patch contract.SettingsPatch
+	if err := json.Unmarshal([]byte(`{"accent":{"preset":"blue","extra":1}}`), &patch); err != nil {
+		t.Fatal(err)
+	}
+	if !patch.HasUnknownAccentFields() {
+		t.Fatal("unknown accent field was not flagged")
+	}
+	if _, f := s.Patch(patch); f == nil || f.Code != contract.CodeInvalidInput {
+		t.Fatalf("want invalid-input, got %+v", f)
+	}
+	if got := s.Get().Accent.Preset; got != "orange" {
+		t.Fatalf("accent changed to %q after a rejected patch", got)
+	}
+
+	var cachePatch contract.SettingsPatch
+	if err := json.Unmarshal([]byte(`{"accent":{"preset":"custom","hex":"#123456","cache":{"light":{},"dark":{},"extra":1}}}`), &cachePatch); err != nil {
+		t.Fatal(err)
+	}
+	if !cachePatch.HasUnknownAccentFields() {
+		t.Fatal("unknown cache field was not flagged")
+	}
+
+	var okPatch contract.SettingsPatch
+	if err := json.Unmarshal([]byte(`{"accent":{"preset":"teal"}}`), &okPatch); err != nil {
+		t.Fatal(err)
+	}
+	if okPatch.HasUnknownAccentFields() {
+		t.Fatal("clean patch was flagged")
+	}
+	if _, f := s.Patch(okPatch); f != nil {
+		t.Fatal(f)
+	}
+	if got := s.Get().Accent.Preset; got != "teal" {
+		t.Fatalf("accent = %q, want teal", got)
 	}
 }
 

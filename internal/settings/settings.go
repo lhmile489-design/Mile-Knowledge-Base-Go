@@ -67,11 +67,12 @@ type Store struct {
 	dir       string
 	legacyDir string
 
-	mu        sync.Mutex
-	settings  contract.AppSettings
-	unknown   map[string]any
-	recent    map[string][]contract.RecentDocument
-	recentRaw map[string]any
+	mu          sync.Mutex
+	settings    contract.AppSettings
+	unknown     map[string]any
+	accentExtra map[string]json.RawMessage
+	recent      map[string][]contract.RecentDocument
+	recentRaw   map[string]any
 }
 
 // Open loads the files (or defaults). legacyDir is the old Electron userData
@@ -247,6 +248,9 @@ func (s *Store) Patch(p contract.SettingsPatch) (contract.AppSettings, *contract
 		next.Layout = clampLayout(*p.Layout)
 	}
 	if p.Accent != nil {
+		if p.HasUnknownAccentFields() {
+			return s.settings, contract.Fail(contract.CodeInvalidInput, "主题色值不合法")
+		}
 		accent, ok := validateAccentPatch(p.Accent)
 		if !ok {
 			return s.settings, contract.Fail(contract.CodeInvalidInput, "主题色值不合法")
@@ -342,10 +346,25 @@ func (s *Store) load() *contract.Failure {
 	}
 	parsed := shadow.AppSettings
 	parsed.Accent = contract.AccentSetting{Preset: AccentDefault}
+	s.accentExtra = nil
 	if len(shadow.Accent) > 0 {
 		var a contract.AccentSetting
 		if err := json.Unmarshal(shadow.Accent, &a); err == nil {
 			parsed.Accent = a
+			// accent 对象里本版本不认识的键原样留着（与顶层未知字段同一规则）。
+			var raw map[string]json.RawMessage
+			if err := json.Unmarshal(shadow.Accent, &raw); err == nil {
+				for k, v := range raw {
+					switch k {
+					case "preset", "hex", "cache":
+					default:
+						if s.accentExtra == nil {
+							s.accentExtra = map[string]json.RawMessage{}
+						}
+						s.accentExtra[k] = v
+					}
+				}
+			}
 		}
 	}
 	known := map[string]bool{"version": true, "theme": true, "closeBehavior": true, "accent": true, "layout": true, "recentVaults": true, "lastVaultId": true}
@@ -393,6 +412,24 @@ func (s *Store) backupCorrupt(path string) {
 	_ = os.Rename(path, fmt.Sprintf("%s.%s.corrupt", path, ts))
 }
 
+// accentPayload keeps unknown keys that another version wrote inside the
+// accent object (same rule as the top-level Unknown map).
+func (s *Store) accentPayload() any {
+	if len(s.accentExtra) == 0 {
+		return s.settings.Accent
+	}
+	merged := map[string]any{}
+	if b, err := json.Marshal(s.settings.Accent); err == nil {
+		_ = json.Unmarshal(b, &merged)
+	}
+	for k, v := range s.accentExtra {
+		if _, ok := merged[k]; !ok {
+			merged[k] = v
+		}
+	}
+	return merged
+}
+
 func (s *Store) saveLocked() *contract.Failure {
 	payload := map[string]any{}
 	for k, v := range s.unknown {
@@ -401,7 +438,7 @@ func (s *Store) saveLocked() *contract.Failure {
 	payload["version"] = Version
 	payload["theme"] = s.settings.Theme
 	payload["closeBehavior"] = s.settings.CloseBehavior
-	payload["accent"] = s.settings.Accent
+	payload["accent"] = s.accentPayload()
 	payload["layout"] = s.settings.Layout
 	payload["recentVaults"] = s.settings.RecentVaults
 	if s.settings.LastVaultID != "" {

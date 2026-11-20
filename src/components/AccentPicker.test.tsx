@@ -79,6 +79,14 @@ describe("AccentPicker", () => {
     expect(document.activeElement).toBe(dot);
   });
 
+  it("warns when the custom color is close to gray", () => {
+    render(<AccentPicker />);
+    fireEvent.click(screen.getByTestId("accent-dot"));
+    const input = screen.getByTestId("accent-hex");
+    fireEvent.change(input, { target: { value: "#8a8b8c" } });
+    expect(screen.getByTestId("accent-hint").textContent).toContain("颜色太接近灰色");
+  });
+
   it("rejects a malformed hex without calling the host", () => {
     render(<AccentPicker />);
     fireEvent.click(screen.getByTestId("accent-dot"));

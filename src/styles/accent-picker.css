@@ -162,3 +162,8 @@
 .accent-note[data-tone='error'] {
   color: var(--fault);
 }
+
+/* 近灰提示：不是错误，用警示色区分于普通说明（DESIGN.md 12.4）。 */
+.accent-note[data-tone='gray'] {
+  color: var(--warn);
+}

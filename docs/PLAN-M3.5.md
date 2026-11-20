@@ -88,7 +88,7 @@
 | T07 | 验收与全量回归 | `scripts/e2e/ac-m35.sh`（新）、`scripts/e2e/accent-contrast.js`（新） | T06 | AC-ACC-1–6 与真实组件对比度检查通过；`bun run test:e2e` 全过；冷启动性能不劣于 M3 | 待验证（门禁已过，待用户验收） |
 | T08 | 视觉重拍 | `scripts/visual/capture-new.py`、`design/r2/shots/`、`design/r2/shots-accent/` | T07 | 靛下 R1 对照无回归；6 预设 × 浅 / 深真实界面截图；技能浮层 18 张按橙重拍 | 待验证（门禁已过，待用户验收） |
 | T09 | 版本与安装包（按 B-M35-01） | `mygo.config.ts`、docs/发布清单.md | T08 | 见 B-M35-01；安装动作执行前再单独确认 | 待验证（门禁已过，待用户验收） |
-| T10 | 整体审查（按 B-M35-02） | 审查报告、本计划第 6 节 | T09 | 阻断项为 0，需改项已修或经用户接受 | 待做 |
+| T10 | 整体审查（按 B-M35-02） | 审查报告、本计划第 6 节 | T09 | 阻断项为 0，需改项已修或经用户接受 | 待验证（门禁已过，待用户验收） |
 | T11 | 收尾 | README、CLAUDE.md、本计划、docs/PLAN-M0.md 路线 | T10 | 文档同步；列提交；推送前询问用户 | 待做 |
 
 依赖顺序 T00 → T11，串行。T01 与 T02 互不依赖，但仍按「一次一个」分开放行。
@@ -201,6 +201,17 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 - T09 实测（2026-11-20）：版本 1.1.0；`bun run build` 产出 setup-1.1.0（6.7MB）与 exe（19.6MB），版本信息核对为 1.1.0。经用户确认后，`/S` 静默覆盖安装到 `%LOCALAPPDATA%\Programs`，安装目录 exe 变为 1.1.0。升级冒烟用临时 APPDATA：1.0.0 生成的设置改为 `theme: dark`、`sidebarWidth: 260`，升级后深色与 260 保留、默认橙生效，临时设置新增 `accent`（记录与细节见 docs/发布清单.md 第 8 节）。
 - T09 插曲：冒烟期间出现一个不是本会话启动的 1.1.0 实例，写入了真实 `settings.json`（新增默认 `accent`）并刷新会话索引；设置项与库完整，会话与检索数据未变；该实例被本会话误结束，已在发布清单记录并向用户说明。
 
+### T10 整体独立审查（task-reviewer，2026-11-20）
+
+- 范围：`origin/main..HEAD` 17 个提交（T00–T09 + 文档 / spike）；审查代理只读、未修改仓库。它本地复跑 `go test`（526）、Vitest（216）、`tsc`、`check:bindings`、gofmt / vet，并逐值比对 12 套预设与 DESIGN 12.3。
+- 结论：阻断 0，需改 4，建议 3。需改项全部修复，建议项保留并记录理由。
+- 需改 1（近灰提示未接入 UI，DESIGN 12.4）：`AccentOptions.hintFor` 调用 `isNearGray`，灰色输入显示「颜色太接近灰色，选中态可能不明显。」（`data-tone='gray'`，警示色）；新增 1 项组件测试。
+- 需改 2（accent 对象内未知键丢失）：`Store` 读入时收集 accent 里不认识的键，保存时与规范值合并写回；新增 `TestAccentUnknownFieldsPreserved`。
+- 需改 3（M61 多余字段未拒绝，API 11.2 漂移）：`contract.SettingsPatch` 自定义 `UnmarshalJSON` 标记 accent / cache 内的未知键，`Store.Patch` 返回 `invalid-input`；新增 `TestAccentPatchRejectsUnknownFields`。
+- 需改 4（DESIGN §3.1 强调色表仍是靛蓝）：改为橙色默认，补文字令牌与按钮令牌一族，并指向 §12。
+- 建议项保留：`tokensFor` / `accentCssVars` 仅测试使用（保留作公共 API）；`--raw-accent-btn-active` 暂无消费者（沿用 M3 前按下态只做 transform）；自定义色失焦不提交（与原型一致）。三条均不改。
+- 审查无法复现的部分：真实窗口的 e2e / 性能数字与 T09 安装包；修复后由本会话重跑全量 e2e 复核：137 项断言全过（ac-m0 15、ac-m1 16、ac-m2 22、ac-m3 47、ac-m35 37），EXIT=0；生产 1.1.0 构建随后重建（e2e 构建会覆盖同目录产物）。
+
 ## 6. 验证与验收
 
 | 编号 | 给定条件 | 操作 | 预期结果 | 方式 |
@@ -210,11 +221,11 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 | V-ACC-GO-3 | `custom` 的 `cache.dark` 缺一个键 | 读取 | 保留 `preset` 与 `hex`，丢掉 `cache` | Go |
 | V-ACC-GO-4 | patch `{preset:"teal",hex:"#123456"}` | 保存 | 存 `{preset:"teal"}` | Go |
 | V-ACC-GO-5 | patch `{preset:"custom",hex:"#FFFF00"}` | 保存 | 存小写 `#ffff00` | Go |
-| V-ACC-GO-6 | patch 非法（未知预设、`hex` 格式错、`cache` 值非法） | 保存 | `invalid-input`，已保存的值不变，同一 patch 里的 `theme` 也不生效 | Go |
-| V-ACC-GO-7 | 带 `accent` 的文件 | 用不认识 `accent` 的代码路径读写（模拟 1.0.0） | 写回后 `accent` 原样保留 | Go |
+| V-ACC-GO-6 | patch 非法（未知预设、`hex` 格式错、`cache` 值非法、accent / cache 内的多余字段） | 保存 | `invalid-input`，已保存的值不变，同一 patch 里的 `theme` 也不生效 | Go |
+| V-ACC-GO-7 | 带 `accent` 的文件（含 accent 内的未知键） | 用不认识 `accent` 的代码路径读写（模拟 1.0.0） | 写回后 `accent` 与其中的未知键原样保留 | Go |
 | V-ACC-ALG-1 | 6 个预设 | 快照 | 与 DESIGN.md 12.3 逐值相同 | vitest |
 | V-ACC-ALG-2 | 12 套配色 | 对比度 | 全部满足 DESIGN.md 12.3 的标准 | vitest |
-| V-ACC-ALG-3 | `#ffff00`、`#000000`、`#ffffff`、`#808080` | `deriveAccent` | 满足对比度标准；灰色有标记 | vitest |
+| V-ACC-ALG-3 | `#ffff00`、`#000000`、`#ffffff`、`#808080` | `deriveAccent` 与色板 | 满足对比度标准；灰色有 `isNearGray` 标记，色板提示「颜色太接近灰色，选中态可能不明显」 | vitest |
 | V-ACC-TOK-1 | 选「靛」 | 49 张 R1 截图 | 与 M3 截图逐像素一致；不一致的逐张说明 | 脚本 + 人工 |
 | V-ACC-TOK-2 | 代码库 | 搜 `color:\s*var\(--(raw|color)-accent\)` | 0 处 | 脚本 |
 | V-ACC-BOOT-1 | 设置为蓝 | 冷启动截第一帧 | 主按钮已是蓝 | e2e（AC-ACC-1 / 2） |
@@ -261,6 +272,7 @@ T01 实现中补充的两处（已在契约范围内，未改契约）：
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 获批 | — | 自查见第 10 节 | T00 已放行 |
 | 2026-11-20 | T00 | 完成：方案成立，A-1–A-4 全过 | 见下 | RESULT.md；技术设计 14.3 | 用户已验收并放行 T01 |
+| 2026-11-20 | T10 | 完成：task-reviewer 独立只读审查（17 个提交）→ 阻断 0、需改 4、建议 3。4 项需改全部修复：近灰提示接入色板（DESIGN 12.4）、accent 内未知键读写保留、M61 拒绝 accent / cache 多余字段（API 11.2）、DESIGN §3.1 强调色表改橙色默认。修复后 Go 528、Vitest 217、tsc / bindings 通过；全量 e2e 137 项断言全过（15/16/22/47/37）；生产 1.1.0 构建已恢复 | 见下 | 审查报告、Go / Vitest / tsc、全量 e2e | 等待放行 T11 |
 | 2026-11-20 | T09 | 完成：版本 1.1.0，生产构建产出 setup-1.1.0（6.7MB）与 exe（19.6MB）；本机 1.0.0 → 1.1.0 静默覆盖安装，安装目录 exe 版本核对为 1.1.0；升级冒烟（临时 APPDATA）保留深色主题与左栏 260、默认橙生效。冒烟期间一个非本会话启动的实例写入真实设置（新增默认 accent），数据完整；该实例被误结束，已在发布清单与本节记录 | 见下 | 安装包构建与版本核对、升级截图、临时设置文件 | 等待放行 T10 |
 | 2026-11-20 | T08 | 完成：`capture-new.py` 加 `--accent`（兼容旧环境变量），靛下重跑 50 个状态全部成功；与 M3 截图比较，真实差异只有标题栏色点与设置常规页「主题色」行，其余为抗锯齿、运行态与 175% 缩放的重采样差异。真实界面 6 预设 × 浅 / 深总览 12 张 + 设置常规 1 张；技能浮层原型改用文字 / 按钮令牌，按默认橙重拍 18 张 | 见下 | `capture-new.py --accents`、`--accent indigo`、Playwright 重拍、逐张像素比较 | 等待放行 T09 |
 | 2026-11-20 | T07 | 完成：新增 `scripts/e2e/ac-m35.sh`（全新 APPDATA 的默认橙与欢迎页主按钮；色板选蓝立即生效、设置页同步、重启保留；自定义 `#ffff00` 保存输入值与缓存并重启生效；`accent` 乱码回落橙、无报错、可重选绿）与 `scripts/e2e/accent-contrast.js`（6 预设 × 浅 / 深，72 个真实组件样本）。全量 `bun run test:e2e`：ac-m0 15、ac-m1 16、ac-m2 22、ac-m3 47、ac-m35 37，全部 fail=0；对比度最低 文字 5.26、按钮 4.51、填充 3.06；冷启动典型 918ms、大库 771ms（基线 910–1101 / 1093），`perf:gate` 通过。首轮全量在点蓝前偶发一次 `missing`，等 6 个色块就绪后复跑通过 | 见下 | 两轮全量 e2e、单跑 ac-m35、perf.sh + perf:gate | 等待放行 T08 |

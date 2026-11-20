@@ -5,6 +5,8 @@
 // Field names follow docs/API.md; JSON tags are the wire contract.
 package contract
 
+import "encoding/json"
+
 // Failure is the predictable-failure arm of a result union. Go methods return
 // these instead of Go errors for anything the UI can act on (API.md §1.2).
 type Failure struct {
@@ -277,6 +279,60 @@ type SettingsPatch struct {
 	CloseBehavior *string         `json:"closeBehavior,omitempty"`
 	Accent        *AccentSetting  `json:"accent,omitempty"`
 	Layout        *LayoutSettings `json:"layout,omitempty"`
+
+	accentUnknown bool
+}
+
+// HasUnknownAccentFields reports whether the wire payload carried keys inside
+// "accent" or its "cache" that this version does not know. API.md §11.2 makes
+// those an invalid-input instead of silently dropping them.
+func (p *SettingsPatch) HasUnknownAccentFields() bool { return p.accentUnknown }
+
+// UnmarshalJSON records unknown accent keys; every other field decodes as
+// before.
+func (p *SettingsPatch) UnmarshalJSON(data []byte) error {
+	var wire struct {
+		Theme         *string         `json:"theme"`
+		CloseBehavior *string         `json:"closeBehavior"`
+		Accent        json.RawMessage `json:"accent"`
+		Layout        *LayoutSettings `json:"layout"`
+	}
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return err
+	}
+	p.Theme, p.CloseBehavior, p.Layout = wire.Theme, wire.CloseBehavior, wire.Layout
+	p.Accent = nil
+	p.accentUnknown = false
+	if len(wire.Accent) == 0 || string(wire.Accent) == "null" {
+		return nil
+	}
+	var a AccentSetting
+	if err := json.Unmarshal(wire.Accent, &a); err != nil {
+		return err
+	}
+	p.Accent = &a
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(wire.Accent, &keys); err == nil {
+		for k := range keys {
+			if k != "preset" && k != "hex" && k != "cache" {
+				p.accentUnknown = true
+			}
+		}
+	}
+	var cache struct {
+		Cache json.RawMessage `json:"cache"`
+	}
+	if err := json.Unmarshal(wire.Accent, &cache); err == nil && len(cache.Cache) > 0 && string(cache.Cache) != "null" {
+		var sides map[string]json.RawMessage
+		if err := json.Unmarshal(cache.Cache, &sides); err == nil {
+			for k := range sides {
+				if k != "light" && k != "dark" {
+					p.accentUnknown = true
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // SettingsResult wraps the current settings.

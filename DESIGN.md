@@ -69,12 +69,14 @@
 | `--warn` | `#92400e` | `#fbbf24` | 同上 |
 | `--fault` | `#b91c1c` | `#f87171` | 同上 |
 | `--idle` | `#6b7280` | `#8b8f98` | 同上 |
-| `--raw-accent` | `#4f46e5` | `#8b8ff8` | 强调色：只表达交互 |
-| `--raw-accent-hover` | `#4338ca` | `#a2a5fa` | 悬停 |
-| `--raw-accent-active` | `#3730a3` | `#7579ec` | 按压 |
-| `--raw-accent-soft` | `#ebeafd` | `#2a2b45` | 选中行底、菜单选中项 |
+| `--raw-accent` | `#e87226` | `#fa8234` | 强调色：只表达交互；其余预设与自定义见 §12 |
+| `--raw-accent-hover` | `#d16722` | `#fb914c` | 悬停（不带文字的元素） |
+| `--raw-accent-active` | `#ba5b1e` | `#dc722e` | 按压（不带文字的元素） |
+| `--raw-accent-soft` | `#fceee5` | `#4d3426` | 选中行底、菜单选中项 |
+| --raw-accent-text | `#aa541c` | `#fa8234` | 强调色文字（卡片 / 画布 / 软底上 ≥4.5:1） |
+| `--raw-accent-btn` 一族（`-hover` / `-active`） | `#ba5b1e` / `#a7521b` / `#954918` | `#fa8234` / `#fb914c` / `#dc722e` | 带文字的强调底：主按钮、发送按钮、选中勾、开关底 |
 | `--raw-on-accent`（`--text-on-accent` 别名） | `#ffffff` | `#111214` | 强调色上的前景 |
-| `--focus` | `#4f46e5` | `#8b8ff8` | 焦点环 |
+| `--focus` | `#e87226` | `#fa8234` | 焦点环 |
 | `--shadow-panel` | `0 4px 14px rgb(20 22 28/.06)` | `none` | 面板阴影；`--shadow-lift-lg` 为别名 |
 | `--shadow-float` | `0 16px 40px rgb(20 22 28/.16)` | `0 16px 40px rgb(0 0 0/.5)` | 浮层阴影 |
 | `--glass` | `rgb(255 255 255/.72)` | `rgb(28 30 34/.72)` | 浮层毛玻璃底 |
