@@ -111,8 +111,9 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 		Tools:         tools,
 		Distributions: state.Distributions,
 	})
-	scan := contract.SkillScan{Kb: kb, Tools: groups, Warnings: warnings}
-	if err := skills.SaveScanCache(s.cachePath(), scan, s.now().UTC().Format(time.RFC3339)); err != nil {
+	cachedAt := s.now().UTC().Format(time.RFC3339)
+	scan := contract.SkillScan{CachedAt: cachedAt, Kb: kb, Tools: groups, Warnings: warnings}
+	if err := skills.SaveScanCache(s.cachePath(), scan, cachedAt); err != nil {
 		scan.Warnings = append(scan.Warnings, contract.SkillScanWarning{Text: "扫描缓存写入失败：" + err.Error()})
 	}
 	return scan

@@ -8,7 +8,6 @@ import { HealthPanel } from "./HealthPanel";
 import { MutationPlanCard } from "./MutationPlanCard";
 import { RestorePreviewCard } from "./RestorePreviewCard";
 import { ChatPane } from "./chat/ChatPane";
-import { SkillImportWizard } from "./SkillImportWizard";
 import { useDocStore } from "../stores/docStore";
 import { events } from "../lib/transport";
 import { useAppStore } from "../stores/appStore";
@@ -218,7 +217,6 @@ export function Workbench() {
       <HealthPanel />
       <MutationPlanCard />
       <RestorePreviewCard />
-      <SkillImportWizard />
     </div>
   );
 }

@@ -136,15 +136,20 @@ export function OverviewGrid() {
           </span>
         </section>
 
-        <section className="overview-tile" data-testid="overview-skills">
+        <button
+          type="button"
+          className="overview-tile overview-button"
+          data-testid="overview-skills"
+          onClick={() => useAppStore.getState().openSkillsPanel()}
+        >
           <span className="overview-title">技能分类</span>
           <span className="overview-main">{skillCategories}</span>
           <span className="overview-line">
             {rootEntries?.some((entry) => entry.name === "skills") === false
               ? "没有 skills 目录"
-              : "来自文件系统扫描"}
+              : "打开技能浮层"}
           </span>
-        </section>
+        </button>
 
         <button
           type="button"

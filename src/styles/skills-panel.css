@@ -1,0 +1,210 @@
+/* Skills panel (M4; UI 稿 9.1, DESIGN.md 11.1). Glass shell on a fixed layer
+   under the title bar; only the shell is blurred, the body scrolls. */
+.skills-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+}
+
+/* The title bar stays interactive: clicking anywhere else closes the panel. */
+.skills-backdrop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: var(--titlebar-h);
+}
+
+.skills-panel {
+  position: absolute;
+  top: calc(var(--titlebar-h) + 6px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-panel, 16px);
+  /* WebView2 实测 backdrop-filter 不生效（computed 为 none），按 DESIGN 11.1
+     的退化分支用不透明卡片底；能模糊的浏览器上仍保留 blur。 */
+  background: var(--raw-card);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow:
+    var(--shadow-float),
+    inset 0 1px 0 var(--glass-line);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .skills-panel {
+    background: var(--raw-card);
+  }
+}
+
+.skills-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--raw-line) 75%, transparent);
+}
+
+.skills-tabs {
+  flex: none;
+}
+
+.skills-count {
+  margin-left: 4px;
+  color: var(--raw-muted);
+  font-weight: 500;
+}
+
+.skills-install {
+  margin-left: auto;
+}
+
+.skills-body {
+  overflow: auto;
+  padding: 12px;
+}
+
+.skills-groups {
+  display: grid;
+  gap: 14px;
+}
+
+.skills-group-title {
+  margin: 0 0 6px;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--raw-muted);
+}
+
+.skills-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skills-row {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-control);
+  background: var(--raw-sunken);
+}
+
+.skills-name {
+  overflow: hidden;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  color: var(--raw-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-desc {
+  overflow: hidden;
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-tools {
+  display: grid;
+}
+
+.skills-tool-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 90px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--raw-line);
+}
+
+.skills-tool-row:last-child {
+  border-bottom: 0;
+}
+
+.skills-tool-name {
+  overflow: hidden;
+  font-size: var(--text-body-sm);
+  color: var(--raw-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-tool-count {
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+  text-align: right;
+}
+
+.skills-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 40px 16px;
+  font-size: var(--text-body-sm);
+  color: var(--raw-muted);
+  text-align: center;
+}
+
+.skills-foot {
+  padding: 8px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--raw-line) 75%, transparent);
+  font-size: var(--text-meta);
+  color: var(--raw-faint);
+}
+
+/* Title-bar pill (DESIGN.md 11.1). */
+.skill-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--raw-raised);
+  color: var(--raw-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.skill-button:hover {
+  background: color-mix(in srgb, var(--raw-raised) 70%, var(--raw-line-strong));
+}
+
+.skill-button[aria-expanded='true'] {
+  background: var(--raw-accent-soft);
+  color: var(--raw-accent-text);
+}
+
+.skill-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.skill-badge {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--warn) 18%, var(--raw-card));
+  color: color-mix(in srgb, var(--warn) 70%, var(--raw-text));
+  font-size: var(--text-caption);
+  font-weight: 700;
+  line-height: 1;
+}

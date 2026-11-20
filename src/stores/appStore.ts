@@ -25,6 +25,7 @@ type AppState = {
   healthTab: HealthTab;
   auditOpen: boolean;
   settingsOpen: boolean;
+  skillsPanelOpen: boolean;
   skillWizardOpen: boolean;
 
   boot: () => Promise<void>;
@@ -39,6 +40,8 @@ type AppState = {
   retryVault: (id: string) => Promise<void>;
   openSettings: () => void;
   closeSettings: () => void;
+  openSkillsPanel: () => void;
+  closeSkillsPanel: () => void;
   openSkillWizard: () => void;
   closeSkillWizard: () => void;
   openHealth: (tab?: HealthTab) => void;
@@ -65,6 +68,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   healthTab: "unresolvedLinks",
   auditOpen: false,
   settingsOpen: false,
+  skillsPanelOpen: false,
   skillWizardOpen: false,
   bootError: null,
 
@@ -174,6 +178,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+  openSkillsPanel: () => set({ skillsPanelOpen: true }),
+  closeSkillsPanel: () => set({ skillsPanelOpen: false }),
   openSkillWizard: () => set({ skillWizardOpen: true }),
   closeSkillWizard: () => set({ skillWizardOpen: false }),
   openHealth: (tab) => set({ healthOpen: true, healthTab: tab ?? "unresolvedLinks" }),

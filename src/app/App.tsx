@@ -3,6 +3,8 @@ import { Workbench } from "../components/Workbench";
 import { SettingsPage } from "../components/settings/SettingsPage";
 import { WelcomeView } from "../components/WelcomeView";
 import { NoticeStack } from "../components/NoticeStack";
+import { SkillImportWizard } from "../components/SkillImportWizard";
+import { SkillsPanel } from "../components/skills/SkillsPanel";
 import { useAppStore } from "../stores/appStore";
 
 export function App() {
@@ -34,6 +36,8 @@ export function App() {
   return (
     <>
       {settingsOpen ? <SettingsPage /> : activeVaultId ? <Workbench /> : <WelcomeView />}
+      <SkillsPanel />
+      <SkillImportWizard />
       <NoticeStack />
     </>
   );

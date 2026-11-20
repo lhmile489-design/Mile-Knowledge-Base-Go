@@ -52,7 +52,7 @@
 | T06 | 卸载与备份 | `internal/skills/{backup,uninstall}.go`、M80/M81/M83/M85/M86 | T05 | 链接只删链接；拷贝移备份；恢复冲突；清理后不可恢复 | 待验证（门禁已过，待用户验收） |
 | T07 | 收编 | `internal/skills/adopt.go`、M82 | T06 | 复制进知识库；换链前备份；多工具同内容合并 | 待验证（门禁已过，待用户验收） |
 | T08 | 操作记录 | `internal/skills/log.go`、M84 | T07 | 每次操作与恢复各一条；坏行跳过 | 待验证（门禁已过，待用户验收） |
-| T09 | 浮层外壳 | `src/components/skills/`（新）、标题栏、侧栏、总览磁贴 | T04 | 开关/角标/Esc/焦点/层级/无库；移除侧栏导入入口 | 待做 |
+| T09 | 浮层外壳 | `src/components/skills/`（新）、标题栏、侧栏、总览磁贴 | T04 | 开关/角标/Esc/焦点/层级/无库；移除侧栏导入入口 | 待验证（门禁已过，待用户验收） |
 | T10 | 知识库页 | `src/components/skills/KbSkillsPage.tsx`（新） | T09 | 分组卡片、搜索、网格/列表、批量选择、分发入口 | 待做 |
 | T11 | 工具页 | `src/components/skills/ToolSkillsPage.tsx`（新） | T09 | chip、行、状态胶囊、行内操作、卸载/收编确认卡 | 待做 |
 | T12 | 安装视图 | `src/components/skills/InstallView.tsx`（新） | T09 | 本地文件夹向导迁移；最近记录与恢复 | 待做 |
@@ -130,6 +130,7 @@ M4 实测后按 G-PERF 阻断口径校准，超目标先报告再决定。
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 草案 | — | 自查见第 9 节 | 用户 2026-11-20 批准，B-M4-01–03 按建议执行，放行 T00 |
+| 2026-11-20 | T09 | 完成：标题栏「技能」胶囊（角标 = 有更新的拷贝 + 失效链接，打开态强调色）与浮层外壳（标题栏下 6px、右缘对齐按钮、760×560、窄窗收缩、不越侧栏；两个标签页 + 安装入口 + 关闭；Esc/点外面/再点按钮关闭，焦点进入首个控件、Tab 循环、关闭还焦点；无库空状态带「打开知识库…」）；侧栏「导入技能」入口移除、向导改挂 App 并从浮层打开；总览「技能分类」磁贴可点开浮层；`skillsView` 的角标/计数纯函数；`scan` 首次同步扫描补 `cachedAt`。真机发现 WebView2 的 backdrop-filter 计算值为 none，按 DESIGN 11.1 退化分支用不透明卡片底。新增前端 5 项测试 | 见下 | Vitest 227 项、`tsc`、`check:bindings`、Go 570 项、真机截图（浅色知识库页/工具页） | 等待放行 T10 |
 | 2026-11-20 | T08 | 完成：`skills/log.go`（追加式 log.jsonl、坏行与空行跳过、最新在前、restorable 由备份是否仍存在推导）；服务 M84（limit 1–200，Location 脱敏）；分发/覆盖、卸载、恢复、收编、清理备份都写一条记录（分发按每个目标一条，跳过的不记）；恢复后旧记录的 restorable 自动变 false。新增 Go 3 项测试（2 项 skills + 1 项 service） | 见下 | `go test ./...` 570 项、Vitest 222 项、`tsc`、`check:bindings`、vet/gofmt | 等待放行 T09 |
 | 2026-11-20 | T07 | 完成：`skills/adopt.go`（复制进知识库、不覆盖已有目标；可选换链：先备份原目录再建联接，失败时恢复原目录并保留知识库副本）；服务 M82（vaultId + 工具/路径/分类/换链/同内容 extras；内置目录可收编；FR-SKILL 的文件数与大小上限；extras 内容哈希必须一致；每个工具独立换链，失败进 warnings；清缓存发 E12）。契约补 `SkillToolRef` 与 `SkillAdoptResult.warnings`；API §12.2 的 M82 补 vaultId。新增 Go 4 项测试（3 项 skills + 1 项 service 验证两工具同内容合并） | 见下 | `go test ./...` 567 项、Vitest 222 项、`tsc`、`check:bindings`、vet/gofmt | 等待放行 T08 |
 | 2026-11-20 | T06 | 完成：`skills/uninstall.go`（卸载预览按 Classify 判 link/copy/independent；链接只删链接、目录先移备份；恢复冲突不覆盖、坏 id/已清理返回 backup-missing；列表按时间倒序、清理后不可恢复）；服务 M80/M81/M83/M85/M86（工具与内置目录解析、内置技能拒绝、共享目录卸载列出受影响工具、切除对应分发记录、清缓存发 E12、路径脱敏）；备份列表与设置页数据就绪。API §12.2 补 `removed` 结果值。新增 Go 5 项测试（4 项 skills + 1 项 service） | 见下 | `go test ./...` 563 项、Vitest 222 项、`tsc`、`check:bindings`、vet/gofmt | 等待放行 T07 |

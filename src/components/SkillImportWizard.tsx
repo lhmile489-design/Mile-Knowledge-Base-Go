@@ -53,7 +53,7 @@ export function SkillImportWizard() {
       event.stopPropagation();
       closeWizard();
       window.requestAnimationFrame(() =>
-        document.querySelector<HTMLButtonElement>('[data-testid="open-skill-import"]')?.focus(),
+        document.querySelector<HTMLButtonElement>('[data-testid="open-skills"]')?.focus(),
       );
     };
     document.addEventListener("keydown", onKeyDown, true);

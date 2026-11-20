@@ -9,7 +9,6 @@ import {
   GearSix,
   MagnifyingGlass,
   PencilSimple,
-  PuzzlePiece,
   Tag,
   Trash,
 } from "@phosphor-icons/react";
@@ -378,17 +377,6 @@ export function VaultSidebar() {
         >
           <ClockCounterClockwise size={13} aria-hidden />
           <span>操作日志</span>
-        </button>
-        <button
-          type="button"
-          className="vault-sidebar-foot-btn"
-          onClick={() => useAppStore.getState().openSkillWizard()}
-          disabled={!vaultId}
-          title="导入技能"
-          data-testid="open-skill-import"
-        >
-          <PuzzlePiece size={13} aria-hidden />
-          <span>导入技能</span>
         </button>
       </div>
     </div>
