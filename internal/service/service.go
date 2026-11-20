@@ -40,6 +40,8 @@ var (
 	AppConfigChanged    = mygo.NewEvent[contract.AppConfigChangedEvent]("app-config-changed")
 	ContextChanged      = mygo.NewEvent[contract.SharedContext]("context-changed")
 	EngineStatusEvent   = mygo.NewEvent[contract.EngineStatus]("engine-status")
+	// E12 (API.md §2.3, §12).
+	SkillsChanged = mygo.NewEvent[contract.SkillsChangedEvent]("skills-changed")
 )
 
 // App holds the shared state of the running application.

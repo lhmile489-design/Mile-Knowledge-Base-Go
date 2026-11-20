@@ -58,6 +58,7 @@ func main() {
 	mutations := service.NewMutationService(app)
 	agents := service.NewAgentService(app)
 	conversations := service.NewConversationService(app)
+	skillSvc := service.NewSkillService(app)
 	mygo.Bind(vaults)
 	mygo.Bind(settingsSvc)
 	mygo.Bind(docs)
@@ -67,6 +68,7 @@ func main() {
 	mygo.Bind(mutations)
 	mygo.Bind(agents)
 	mygo.Bind(conversations)
+	mygo.Bind(skillSvc)
 
 	// Schemes must be registered before the windows that use them.
 	if err := mygo.Protocol.HandleFunc("kbimg", service.ImageHandler(app)); err != nil {

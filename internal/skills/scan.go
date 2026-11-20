@@ -70,6 +70,12 @@ func ScanTools(opts ScanOptions) ([]contract.SkillToolScan, []contract.SkillScan
 			dir     string
 			builtin bool
 		}, 0, len(tool.ScanDirs)+len(tool.BuiltinDirs))
+		if tool.InstallDir != "" {
+			targets = append(targets, struct {
+				dir     string
+				builtin bool
+			}{tool.InstallDir, false})
+		}
 		for _, dir := range tool.ScanDirs {
 			targets = append(targets, struct {
 				dir     string
@@ -171,7 +177,7 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, di
 			default:
 				skill.Origin = "external-link"
 			}
-			skill.Description = readSkillDescription(dir)
+			skill.Description = SkillDescription(dir)
 			skills = append(skills, skill)
 			return
 		case KindDir:
@@ -188,7 +194,7 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, di
 						skill.Origin = "independent"
 					}
 				}
-				skill.Description = readSkillDescription(dir)
+				skill.Description = SkillDescription(dir)
 				skills = append(skills, skill)
 			}
 		default:
@@ -264,9 +270,9 @@ func copySyncState(opts ScanOptions, dist Distribution, dir string) string {
 	}
 }
 
-// readSkillDescription reads the frontmatter description of SKILL.md /
+// SkillDescription reads the frontmatter description of SKILL.md /
 // AGENTS.md (first 4 KiB, 技术设计 15.3).
-func readSkillDescription(dir string) string {
+func SkillDescription(dir string) string {
 	for _, name := range []string{"SKILL.md", "AGENTS.md"} {
 		body, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {

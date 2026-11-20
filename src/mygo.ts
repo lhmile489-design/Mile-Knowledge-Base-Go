@@ -441,6 +441,14 @@ export interface KbHealthReport {
   failure?: Failure;
 }
 
+/** KbSkill is one knowledge-base skill in the scan result. */
+export interface KbSkill {
+  name: string;
+  description: string;
+  path: string;
+  category: string;
+}
+
 /** LayoutSettings mirrors the persisted workbench geometry. */
 export interface LayoutSettings {
   sidebarWidth: number;
@@ -805,6 +813,12 @@ export interface SkillCatalogResult {
   failure?: Failure;
 }
 
+/** SkillCategory groups knowledge-base skills by category. */
+export interface SkillCategory {
+  category: string;
+  skills: KbSkill[];
+}
+
 /** SkillEntry is one assignable skill (M71). */
 export interface SkillEntry {
   path: string;
@@ -812,10 +826,71 @@ export interface SkillEntry {
   name: string;
 }
 
+/** SkillRegistryResult is M76. */
+export interface SkillRegistryResult {
+  tools: SkillTool[];
+  failure?: Failure;
+}
+
+/** SkillScan is the M77 payload: cached first, refreshed in the background. */
+export interface SkillScan {
+  cachedAt: string;
+  scanning: boolean;
+  kb: SkillCategory[];
+  tools: SkillToolScan[];
+  warnings?: SkillScanWarning[];
+}
+
+/** SkillScanResult is M77. */
+export interface SkillScanResult {
+  scan: SkillScan;
+  failure?: Failure;
+}
+
+/** SkillScanWarning is a degraded scan step (unreadable dir, cache rebuilt). */
+export interface SkillScanWarning {
+  toolId?: string;
+  text: string;
+}
+
 /** SkillSkip is one skill the import left alone. */
 export interface SkillSkip {
   name: string;
   reason: string;
+}
+
+/**
+ * SkillTool is one entry of the built-in tool registry plus its detection
+ * result (FR-SKM-TOOL/DETECT; paths are already redacted for display).
+ */
+export interface SkillTool {
+  /** stable id, e.g. "claude-code", "agents" */
+  id: string;
+  /** display name */
+  name: string;
+  /** brand svg key; "globe" for the shared dir, "" for a letter placeholder */
+  iconKey: string;
+  installDir?: string;
+  scanDirs: string[];
+  /** tools that read the shared ~/.agents/skills */
+  readers?: string[];
+  /** detected | leftover | missing */
+  status: string;
+  /** false = official support not verified */
+  official: boolean;
+  /** MiniMax Code defaults to false */
+  enabled: boolean;
+}
+
+/** SkillToolScan groups tool skills by tool. */
+export interface SkillToolScan {
+  toolId: string;
+  skills: ToolSkill[];
+}
+
+/** SkillsChangedEvent is E12: background scan or skill operation finished. */
+export interface SkillsChangedEvent {
+  sequence: number;
 }
 
 /** StatusFrame is a turn-phase or retry hint (§6). */
@@ -874,6 +949,21 @@ export interface ToolCallFrame {
   /** pending | in-progress | completed | failed */
   status: string;
   detail?: string;
+}
+
+/** ToolSkill is one skill found in a tool directory (FR-SKM-SCAN). */
+export interface ToolSkill {
+  name: string;
+  description: string;
+  path: string;
+  toolId: string;
+  /** linked | link-broken | copied | independent | builtin | external-link */
+  origin: string;
+  /** in-sync | vault-updated | tool-updated | both-updated | missing */
+  sync?: string;
+  /** redacted target of a link */
+  target?: string;
+  builtin?: boolean;
 }
 
 /** TransactionSummary is one transaction row in the audit panel. */
@@ -1301,6 +1391,18 @@ export const ConversationService = {
   search: bind<[string, string], ConversationSearchResult>("ConversationService.Search", (vaultID: string, query: string) => [vaultID, query]),
 } as const;
 
+/**
+ * SkillService is the binding layer of R2 skill management (M4, API.md §12).
+ * T04 wires the read side: the tool registry (M76) and the scan (M77), with a
+ * background refresh and E12. Write operations arrive in T05–T08.
+ */
+export const SkillService = {
+  /** Registry is M76: the built-in tools plus detection, with redacted paths. */
+  registry: bind<[], SkillRegistryResult>("SkillService.Registry", () => []),
+  /** Scan is M77: cached-first with a background refresh (API.md §12.2). */
+  scan: bind<[string], SkillScanResult>("SkillService.Scan", (vaultID: string) => [vaultID]),
+} as const;
+
 // ---- Events ----
 
 /** Events sent by the Go side. Subscribe with `events.name.on(listener)`. */
@@ -1318,4 +1420,6 @@ export const events = {
   appConfigChanged: event<AppConfigChangedEvent>("app-config-changed"),
   contextChanged: event<SharedContext>("context-changed"),
   engineStatus: event<EngineStatus>("engine-status"),
+  /** E12 (API.md §2.3, §12). */
+  skillsChanged: event<SkillsChangedEvent>("skills-changed"),
 } as const;

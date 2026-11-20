@@ -6,6 +6,7 @@ import {
   IndexService,
   MutationService,
   RenderService,
+  SkillService,
   SettingsService,
   VaultService,
   WindowService,
@@ -40,7 +41,16 @@ import {
   type TreeResult,
   type VaultListResult,
   type WriteOutcome,
+  type SkillScan,
+  type SkillScanResult,
+  type SkillRegistryResult,
+  type SkillTool,
+  type SkillCategory,
+  type ToolSkill,
+  type SkillsChangedEvent,
 } from "../mygo";
+
+export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent };
 
 export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
@@ -94,6 +104,11 @@ export const settingsApi = {
     guard(async () => SettingsService.fetchModels(kind, baseUrl, apiKeyEnv, apiKey)),
   patch: (patch: Parameters<typeof SettingsService.patch>[0]) =>
     guard(async () => unwrap(await SettingsService.patch(patch))),
+};
+
+export const skillsApi = {
+  registry: () => guard(async () => unwrap(await SkillService.registry())),
+  scan: (vaultId: string) => guard(async () => unwrap(await SkillService.scan(vaultId))),
 };
 
 export const vaultApi = {

@@ -1077,6 +1077,11 @@ type StreamFrame struct {
 	Finish     bool           `json:"finish,omitempty"`
 }
 
+// SkillsChangedEvent is E12: background scan or skill operation finished.
+type SkillsChangedEvent struct {
+	Sequence int64 `json:"sequence"`
+}
+
 // ConversationChangedEvent is E07.
 type ConversationChangedEvent struct {
 	VaultID string `json:"vaultId"`
