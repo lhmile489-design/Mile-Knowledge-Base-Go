@@ -1,23 +1,26 @@
 package skills
 
 // Tool is one built-in registry entry (技术设计 13.2, FR-SKM-TOOL). Path
-// templates use "~" (the user profile) and "%LOCALAPPDATA%"; ScanRelative
-// entries are relative to the detected install location (ZCode, MiniMax).
-// A trailing "*" in ScanRelative marks one directory level to expand.
+// templates use "~" (the user profile) and "%LOCALAPPDATA%"; ScanRelative and
+// BuiltinRelative entries are relative to the detected install location
+// (ZCode, MiniMax). Builtin dirs hold read-only skills shipped with the tool
+// (PRD FR-SKM-SCAN). A "*" segment marks one directory level to expand.
 type Tool struct {
-	ID           string
-	Name         string
-	IconKey      string
-	Shared       bool // the shared ~/.agents/skills entry
-	InstallDir   string
-	ScanDirs     []string
-	ScanRelative []string
-	Readers      []string // shared entry: tools that read ~/.agents/skills
-	Official     bool
-	Enabled      bool
-	CLIs         []string
-	Uninstall    []string // DisplayName prefixes in the uninstall registry
-	KnownExes    []string // relative paths under UserProgramFiles
+	ID              string
+	Name            string
+	IconKey         string
+	Shared          bool // the shared ~/.agents/skills entry
+	InstallDir      string
+	ScanDirs        []string
+	ScanRelative    []string
+	BuiltinDirs     []string
+	BuiltinRelative []string
+	Readers         []string // shared entry: tools that read ~/.agents/skills
+	Official        bool
+	Enabled         bool
+	CLIs            []string
+	Uninstall       []string // DisplayName prefixes in the uninstall registry
+	KnownExes       []string // relative paths under UserProgramFiles
 }
 
 // sharedReaders are the tools whose official docs read ~/.agents/skills
@@ -53,7 +56,7 @@ var Registry = []Tool{
 	},
 	{
 		ID: "trae", Name: "Trae", IconKey: "trae",
-		InstallDir: "~/.trae/skills", ScanDirs: []string{"~/.trae/builtin_skills"},
+		InstallDir: "~/.trae/skills", BuiltinDirs: []string{"~/.trae/builtin_skills"},
 		Official: false, Enabled: true, // 官方页面未读到，按本机证据启用
 		Uninstall: []string{"TRAE"},
 	},
@@ -74,7 +77,7 @@ var Registry = []Tool{
 	},
 	{
 		ID: "grok", Name: "Grok Build", IconKey: "grok",
-		InstallDir: "~/.grok/skills", ScanDirs: []string{"~/.grok/bundled/skills"},
+		InstallDir: "~/.grok/skills", BuiltinDirs: []string{"~/.grok/bundled/skills"},
 		Official: true, Enabled: true,
 		CLIs: []string{"grok"},
 	},
@@ -91,9 +94,10 @@ var Registry = []Tool{
 	},
 	{
 		ID: "antigravity", Name: "Antigravity", IconKey: "antigravity",
-		InstallDir: "~/.gemini/config/skills",
-		ScanDirs:   []string{"~/.gemini/antigravity/skills", "~/.gemini/antigravity/builtin/skills"},
-		Official:   true, Enabled: true,
+		InstallDir:  "~/.gemini/config/skills",
+		ScanDirs:    []string{"~/.gemini/antigravity/skills"},
+		BuiltinDirs: []string{"~/.gemini/antigravity/builtin/skills"},
+		Official:    true, Enabled: true,
 		Uninstall: []string{"Antigravity"},
 	},
 	{
@@ -151,7 +155,7 @@ var Registry = []Tool{
 	},
 	{
 		ID: "zcode", Name: "ZCode", IconKey: "zcode",
-		InstallDir: "~/.zcode/skills", ScanRelative: []string{`resources\glm\packages\*\skills`},
+		InstallDir: "~/.zcode/skills", BuiltinRelative: []string{`resources\glm\packages\*\skills`},
 		Official: false, Enabled: true, // 官方文档未查到，本机证据
 		Uninstall: []string{"ZCode"}, KnownExes: []string{`ZCode\ZCode.exe`},
 	},
@@ -162,8 +166,8 @@ var Registry = []Tool{
 	},
 	{
 		ID: "minimax-code", Name: "MiniMax Code", IconKey: "", // letter placeholder
-		ScanRelative: []string{`resources\resources\daemon\skills`},
-		Official:     false, Enabled: false, // 官方未核实，默认不启用
+		BuiltinRelative: []string{`resources\resources\daemon\skills`},
+		Official:        false, Enabled: false, // 官方未核实，默认不启用
 		KnownExes: []string{`MiniMax Code\MiniMax Code.exe`},
 	},
 }

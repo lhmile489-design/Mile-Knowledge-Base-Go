@@ -250,7 +250,8 @@ func TestRegistryShape(t *testing.T) {
 		if tool.Name == "" {
 			t.Fatalf("%s has no name", tool.ID)
 		}
-		if !tool.Shared && tool.InstallDir == "" && len(tool.ScanDirs) == 0 && len(tool.ScanRelative) == 0 {
+		if !tool.Shared && tool.InstallDir == "" && len(tool.ScanDirs) == 0 &&
+			len(tool.ScanRelative) == 0 && len(tool.BuiltinDirs) == 0 && len(tool.BuiltinRelative) == 0 {
 			t.Fatalf("%s has no directory at all", tool.ID)
 		}
 		for _, reader := range tool.Readers {
@@ -321,11 +322,11 @@ func TestDetectEvidenceAndStates(t *testing.T) {
 		t.Fatalf("shared = %q, want detected", got)
 	}
 	zcode := detectByID(tools, "zcode")
-	if zcode.Status != StatusDetected || len(zcode.ScanDirs) == 0 {
-		t.Fatalf("zcode = %+v, want detected with scan dirs", zcode)
+	if zcode.Status != StatusDetected || len(zcode.BuiltinDirs) == 0 {
+		t.Fatalf("zcode = %+v, want detected with builtin dirs", zcode)
 	}
-	if !strings.Contains(zcode.ScanDirs[len(zcode.ScanDirs)-1], "resources") {
-		t.Fatalf("zcode scan dirs = %v", zcode.ScanDirs)
+	if !strings.Contains(zcode.BuiltinDirs[len(zcode.BuiltinDirs)-1], "resources") {
+		t.Fatalf("zcode builtin dirs = %v", zcode.BuiltinDirs)
 	}
 }
 

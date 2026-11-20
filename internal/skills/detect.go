@@ -37,16 +37,17 @@ type Detector struct {
 
 // DetectedTool is one registry row plus its resolved paths and status.
 type DetectedTool struct {
-	ID         string
-	Name       string
-	IconKey    string
-	Shared     bool
-	Status     string
-	InstallDir string
-	ScanDirs   []string
-	Readers    []string
-	Official   bool
-	Enabled    bool
+	ID          string
+	Name        string
+	IconKey     string
+	Shared      bool
+	Status      string
+	InstallDir  string
+	ScanDirs    []string
+	BuiltinDirs []string
+	Readers     []string
+	Official    bool
+	Enabled     bool
 }
 
 // NewSystemDetector reads the real machine, or the fake environment in an
@@ -157,10 +158,16 @@ func (d *Detector) detect(tool Tool) DetectedTool {
 	for _, template := range tool.ScanDirs {
 		scan = append(scan, d.ExpandPath(template))
 	}
+	builtin := make([]string, 0, len(tool.BuiltinDirs)+len(tool.BuiltinRelative))
+	for _, template := range tool.BuiltinDirs {
+		builtin = append(builtin, d.ExpandPath(template))
+	}
 	if install != "" {
 		for _, rel := range tool.ScanRelative {
-			// ZCode's packages\<*>\skills keeps the "*" for the scanner (T03).
 			scan = append(scan, filepath.Join(install, strings.ReplaceAll(rel, `\`, string(filepath.Separator))))
+		}
+		for _, rel := range tool.BuiltinRelative {
+			builtin = append(builtin, filepath.Join(install, strings.ReplaceAll(rel, `\`, string(filepath.Separator))))
 		}
 	}
 	status := StatusMissing
@@ -171,7 +178,7 @@ func (d *Detector) detect(tool Tool) DetectedTool {
 	case d.hasEvidence(tool):
 		status = StatusDetected
 	default:
-		for _, path := range append(scan, install) {
+		for _, path := range append(append(scan, builtin...), install) {
 			if path != "" && !strings.Contains(path, "*") && pathExists(path) {
 				status = StatusLeftover
 				break
@@ -180,7 +187,7 @@ func (d *Detector) detect(tool Tool) DetectedTool {
 	}
 	return DetectedTool{
 		ID: tool.ID, Name: tool.Name, IconKey: tool.IconKey, Shared: tool.Shared,
-		Status: status, InstallDir: install, ScanDirs: scan, Readers: tool.Readers,
+		Status: status, InstallDir: install, ScanDirs: scan, BuiltinDirs: builtin, Readers: tool.Readers,
 		Official: tool.Official, Enabled: tool.Enabled,
 	}
 }
