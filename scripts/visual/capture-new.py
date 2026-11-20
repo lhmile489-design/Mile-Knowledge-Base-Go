@@ -8,6 +8,7 @@ each shot with the legacy baseline. Only read-only access to the legacy repo.
 
 Usage (from the repo root):
   python -I scripts/visual/capture-new.py [--port 18431] [--provider-port 18432]
+  python -I scripts/visual/capture-new.py --accent indigo   # R2 T08 对照
 """
 
 import base64
@@ -27,8 +28,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / "build" / "windows-amd64" / "Mile Knowledge Base.exe"
 OUT = ROOT / "design" / "compare" / "new"
-# 设了就把每个状态都切到这个主题色再截图（R2 T03 的靛色回归对照用）。
-ACCENT = os.environ.get("CAPTURE_ACCENT", "")
+# 设了就把每个状态都切到这个主题色再截图（R2 T03 / T08 的靛色回归对照用）。
+# 可用 --accent <preset> 或环境变量 CAPTURE_ACCENT。
+ACCENT = ""
 BASELINE = ROOT / "design" / "baseline"
 MANIFEST = BASELINE / "manifest.json"
 
@@ -45,6 +47,7 @@ def arg(name, default):
 
 PORT = int(arg("--port", PORT))
 PROVIDER_PORT = int(arg("--provider-port", PROVIDER_PORT))
+ACCENT = os.environ.get("CAPTURE_ACCENT", "") or arg("--accent", "")
 
 
 def log(message):
@@ -269,6 +272,8 @@ def shot(entry_id, name, note="", status="captured", theme=None):
     try:
         if status == "captured":
             if ACCENT:
+                # 走真实路径（store → CSS），设置页的色块勾选也跟着变；再直接写一次属性兜底。
+                DRIVER.js("window.__mkbApp.getState().setAccent({ preset: " + json.dumps(ACCENT) + " }); true")
                 DRIVER.js("document.documentElement.dataset.accent = " + json.dumps(ACCENT) + "; true")
                 time.sleep(0.3)  # 等一次重绘，否则截到的是换色前的帧
             png = DRIVER.capture()
@@ -391,6 +396,33 @@ def main():
             DRIVER.wait("!document.body.innerText.includes('未索引')", 30)
         except RuntimeError:
             log("  index still scanning; continuing")
+        if "--accents" in sys.argv:
+            # T08：6 个预设 × 浅 / 深 的真实界面总览，加一张设置 → 常规。
+            accents_dir = ROOT / "design" / "r2" / "shots-accent"
+            accents_dir.mkdir(parents=True, exist_ok=True)
+            for preset in ("orange", "indigo", "blue", "green", "teal", "violet"):
+                for theme in ("light", "dark"):
+                    DRIVER.js(
+                        "window.__mkbApp.getState().setAccent({ preset: %s });"
+                        " window.__mkbApp.getState().setTheme(%s); true"
+                        % (json.dumps(preset), json.dumps(theme))
+                    )
+                    time.sleep(0.9)
+                    png = DRIVER.capture()
+                    name = f"real-overview-{preset}-{theme}.png"
+                    (accents_dir / name).write_bytes(png)
+                    log(f"  [captured] {name}")
+            DRIVER.js(
+                "window.__mkbApp.getState().setAccent({ preset: 'orange' });"
+                " window.__mkbApp.getState().setTheme('light'); true"
+            )
+            DRIVER.js("window.__mkbApp.getState().openSettings(); true")
+            DRIVER.wait("!!document.querySelector('[data-testid=\"settings-appearance\"]')", 10)
+            time.sleep(0.6)
+            (accents_dir / "real-settings-light.png").write_bytes(DRIVER.capture())
+            log("  [captured] real-settings-light.png")
+            return 0
+
         if "--probe" in sys.argv:
             log(str(DRIVER.js(
                 "JSON.stringify({inner: window.innerWidth,"

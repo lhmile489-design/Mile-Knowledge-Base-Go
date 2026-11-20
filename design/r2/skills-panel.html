@@ -36,7 +36,7 @@
     font-size: var(--text-body-sm); font-weight: 600; cursor: pointer;
     transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
   .skm-trigger:hover { background: color-mix(in srgb, var(--raw-raised) 70%, var(--raw-line-strong)); }
-  .skm-trigger[aria-expanded='true'] { background: var(--raw-accent-soft); color: var(--raw-accent); }
+  .skm-trigger[aria-expanded='true'] { background: var(--raw-accent-soft); color: var(--raw-accent-text); }
   .skm-trigger:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .skm-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: inline-grid; place-items: center;
     background: color-mix(in srgb, var(--warn) 18%, var(--raw-card)); color: color-mix(in srgb, var(--warn) 78%, var(--raw-strong));
@@ -99,7 +99,7 @@
   .skm-card .kebab { position: absolute; top: 6px; right: 6px; opacity: 0; }
   .skm-card:hover .kebab, .skm-card[data-hover] .kebab { opacity: 1; }
   .skm-card .check { position: absolute; top: 9px; right: 10px; width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--raw-line-strong); background: var(--raw-card); display: grid; place-items: center; }
-  .skm-card[data-selected] .check { background: var(--raw-accent); border-color: var(--raw-accent); color: var(--raw-on-accent); }
+  .skm-card[data-selected] .check { background: var(--raw-accent-btn); border-color: var(--raw-accent-btn); color: var(--raw-on-accent); }
   .btn-xs { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: 1px solid var(--raw-line); border-radius: 8px;
     background: var(--raw-card); color: var(--raw-text); font-size: var(--text-meta); font-weight: 600; cursor: pointer; white-space: nowrap; }
   .btn-xs:hover { background: var(--raw-raised); }
@@ -110,7 +110,7 @@
   .skm-chip { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 28px; padding: 0 10px 0 7px; border: 1px solid var(--raw-line);
     border-radius: var(--radius-pill); background: var(--skm-surface); font-size: var(--text-meta); font-weight: 600; color: var(--raw-text); cursor: pointer; }
   .skm-chip .n { color: var(--raw-faint); font-weight: 500; font-variant-numeric: tabular-nums; }
-  .skm-chip[aria-pressed='true'] { border-color: var(--raw-accent); background: var(--raw-accent-soft); color: var(--raw-accent); }
+  .skm-chip[aria-pressed='true'] { border-color: var(--raw-accent); background: var(--raw-accent-soft); color: var(--raw-accent-text); }
   .skm-chip[aria-pressed='true'] .n { color: inherit; opacity: .75; }
 
   /* 工具技能列表 */
@@ -142,16 +142,16 @@
   .skm-target .t { font-size: var(--text-body-sm); font-weight: 600; color: var(--raw-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .skm-target .s { font-size: var(--text-caption); color: var(--raw-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .skm-target[aria-checked='true'] { border-color: var(--raw-accent); background: var(--raw-accent-soft); }
-  .skm-target[aria-checked='true'] .s { color: var(--raw-accent); }
+  .skm-target[aria-checked='true'] .s { color: var(--raw-accent-text); }
   .skm-target[aria-disabled='true'] { cursor: not-allowed; background: color-mix(in srgb, var(--raw-sunken) 60%, transparent); }
   .skm-target[aria-disabled='true'] .t { color: var(--raw-muted); }
   .skm-target[data-wide] { grid-column: span 2; }
   .skm-target .tick { position: absolute; top: 8px; right: 8px; width: 16px; height: 16px; border-radius: 999px; display: grid; place-items: center;
     border: 1.5px solid var(--raw-line-strong); background: var(--raw-card); }
-  .skm-target[aria-checked='true'] .tick { background: var(--raw-accent); border-color: var(--raw-accent); color: var(--raw-on-accent); }
+  .skm-target[aria-checked='true'] .tick { background: var(--raw-accent-btn); border-color: var(--raw-accent-btn); color: var(--raw-on-accent); }
   .skm-target .readers { grid-column: 2; display: flex; gap: 3px; margin-top: 4px; }
   .skm-target .readers img, .skm-target .readers .tool-ico { width: 14px; height: 14px; grid-row: auto; border-radius: 3px; }
-  .skm-more { margin-top: 8px; font-size: var(--text-meta); color: var(--raw-accent); font-weight: 600; background: none; border: 0; padding: 4px 2px; cursor: pointer; }
+  .skm-more { margin-top: 8px; font-size: var(--text-meta); color: var(--raw-accent-text); font-weight: 600; background: none; border: 0; padding: 4px 2px; cursor: pointer; }
 
   .skm-note { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; padding: 9px 12px; border-radius: var(--radius-card);
     border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--raw-line)); background: color-mix(in srgb, var(--warn) 7%, var(--raw-card));
@@ -178,7 +178,7 @@
   .skm-input { height: 32px; padding: 0 10px; border: 1px solid var(--raw-line-strong); border-radius: var(--radius-control); background: var(--raw-card);
     font-size: var(--text-body-sm); color: var(--raw-text); display: flex; align-items: center; }
   .skm-checkline { display: flex; gap: 8px; align-items: flex-start; font-size: var(--text-body-sm); color: var(--raw-text); line-height: 1.5; }
-  .skm-box { flex: none; width: 16px; height: 16px; margin-top: 2px; border-radius: 4px; border: 1.5px solid var(--raw-accent); background: var(--raw-accent); color: var(--raw-on-accent); display: grid; place-items: center; }
+  .skm-box { flex: none; width: 16px; height: 16px; margin-top: 2px; border-radius: 4px; border: 1.5px solid var(--raw-accent-btn); background: var(--raw-accent-btn); color: var(--raw-on-accent); display: grid; place-items: center; }
 
   .skm-empty { height: 100%; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 24px; }
   .skm-empty .big { width: 40px; height: 40px; border-radius: 12px; background: var(--raw-raised); color: var(--raw-muted); display: grid; place-items: center; }
@@ -198,7 +198,7 @@
   /* 原型导航：截图时用 ?shot=1 隐藏 */
   .proto-nav { position: fixed; right: 12px; bottom: 12px; z-index: 99; display: flex; flex-wrap: wrap; gap: 4px; max-width: 420px; padding: 8px;
     background: var(--raw-card); border: 1px solid var(--raw-line); border-radius: 10px; box-shadow: var(--shadow-float); font-size: 12px; }
-  .proto-nav a { color: var(--raw-accent); text-decoration: none; padding: 2px 6px; }
+  .proto-nav a { color: var(--raw-accent-text); text-decoration: none; padding: 2px 6px; }
 </style>
 </head>
 <body>
