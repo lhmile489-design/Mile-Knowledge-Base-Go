@@ -50,7 +50,7 @@
 | T02 | 安全解包与暂存区 | `internal/skills/{unpack,stage}.go`、测试 | T01 | tar.gz 与 zip；技术设计 16.3 七条不变量各有测试；违规整包拒绝后暂存目录不存在；过期、上限 3 个、启动清空 | 待验证（门禁已过，待用户验收） |
 | T03 | 候选定位 | `internal/skills/candidates.go`、`internal/vault/skillimport.go`（扩展任意深度）、测试 | T02 | 3 层、跳过点号与 node_modules、50 个上限、重复名、过大、非法名、已存在 | 待验证（门禁已过，待用户验收） |
 | T04 | 来源记录与扫描合并 | `internal/skills/sources.go`、`scan.go`、测试 | T03 | A 区稳定序列化（与 provenance 同规则）、B 区读写、坏条目丢弃；扫描结果带 `remote` | 待验证（门禁已过，待用户验收） |
-| T05 | 读取与暂存服务 | `internal/service/skills_install.go`（新）、M88/M89/M92、E13、transport | T04 | 读 GitHub、选 zip、取消即删暂存、进度事件节流；`mygo generate` | 待做 |
+| T05 | 读取与暂存服务 | `internal/service/skills_install.go`（新）、M88/M89/M92、E13、transport | T04 | 读 GitHub、选 zip、取消即删暂存、进度事件节流；`mygo generate` | 待验证（门禁已过，待用户验收） |
 | T06 | 安装服务 | 同上、M90/M91 | T05 | 装进知识库不覆盖；装进工具按分发规则与备份；来源记录、日志、E12 | 待做 |
 | T07 | 变更计划 `importFile` | `internal/mutation/{plan,execute}.go`、`internal/policy`、测试 | T04 | 只允许 user；Agent 生成与执行两处拒绝；暂存解析与哈希校验；替换进事务且可恢复 | 待做 |
 | T08 | 更新检测 | `internal/skills/update.go`、`internal/service/skills_update.go`（新）、M93 | T04、T05 | 60 分钟缓存与 force；分组去重、单轮 40 组上限、额度用完停下；5 种状态；完成发 E12 | 待做 |
@@ -131,6 +131,7 @@
 
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-21 | T05 | 完成：`skills_install.go`（M88 `readGithub`：解析 → 取提交 → 下载到暂存 → 解包 → 删压缩包 → 候选 + treeHashes；M89 `pickZip`：原生对话框过滤 `*.zip`，取消返回 cancelled；M92 `discardStage`；取消时删暂存并返回 cancelled；E13 进度按 200 ms 节流，requestId 用输入的短哈希）；`SkillService` 新增可注入的 githubClient 与 openDialog（测试用）；`SkillStageProgress` 事件注册；`StageMeta.pathCommit`；transport 暴露 readGithub/pickZip/discardStage；数据库设计 4.6 与 API §13.1 补 `capped` 与 pathCommit。测试 8 项（读 GitHub 成功/坏输入/取消/404、丢弃、进度、zip 成功/取消） | 见下 | `go test ./internal/service/`、`go test -count=1 ./...`、vet/gofmt、bun generate、tsc、bindings、Vitest | 等待放行 T06 |
 | 2026-11-21 | T04 | 完成：`sources.go`（A 区 `.mile-kb/skill-sources.json`：版本 1、records 按 skillPath 的 UTF-8 字节序、键序固定、2 空格 + 换行、不转义 HTML、原子写；未知版本只读不写并报 unsupported；坏条目丢弃并 warning；按 skillPath 合并/删除。B 区 `skills/sources.json`：`g-<12 hex>`、按 targetPath 合并、损坏改名 `.corrupt-<时间>` 后从空开始）。`AttachKbRemotes` / `toolRemoteFor` 给扫描结果补 `remote`（基线哈希不符 → `local-modified`，否则 `unchecked`，远端检查留给 T08）；`ScanOptions.ToolSources` 与 `ScanTools` 合并工具来源；服务 `kbSkills` 读 A 区并附加、`runScan` 传 B 区。数据库设计 3.8 补「字节序排序」澄清。测试 5 项 | 见下 | `go test ./internal/skills/`（65 项）、`go test -count=1 ./...`、vet/gofmt、tsc/bindings | 等待放行 T05 |
 | 2026-11-21 | T03 | 完成：`candidates.go`（根目录自身有 SKILL.md 即单技能，名字取 frontmatter `name`，否则用仓库名；否则向下 3 层找，跳过点号与 node_modules、不进入重解析点、不钻进已识别的技能目录；按相对路径排序；状态 ok/exists/too-large/duplicate/invalid-name；50 个上限并标 truncated；文件数与字节按 FR-SKILL 上限截停）；`vault.ImportSkills` 支持任意深度候选并校验来源相对路径（拒绝 `..`、绝对、盘符、点号开头），源码路径必须解析到来源根内。测试 6 项 | 见下 | `go test ./internal/skills/ ./internal/vault/`（101 项）、`go test -count=1 ./...`、vet/gofmt、e2e 构建 | 等待放行 T04 |
 | 2026-11-21 | T02 | 完成：`unpack.go`（tar.gz 去顶层目录；zip 先验中央目录再解压；`..`/绝对路径/盘符/保留名/末尾点或空格/大小写重名整包拒绝并删暂存根；符号链接与特殊文件跳过并记录；解开后 200 MiB 与 20000 条目上限，按实际字节计数；单段 ≤255）；`stage.go`（`s-<12 hex>`、30 分钟 TTL、最多 3 个按目录时间淘汰、`meta.json` 原子写与 treeHashes、过期即删、`CleanAll`）。测试 9 项覆盖七条不变量与暂存生命周期 | 见下 | `go test ./internal/skills/`（普通与 e2e）、`go test -count=1 ./...`、vet/gofmt | 等待放行 T03 |

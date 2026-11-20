@@ -42,6 +42,8 @@ var (
 	EngineStatusEvent   = mygo.NewEvent[contract.EngineStatus]("engine-status")
 	// E12 (API.md §2.3, §12).
 	SkillsChanged = mygo.NewEvent[contract.SkillsChangedEvent]("skills-changed")
+	// E13 (API.md §2.3, §13): download and unpack progress, ≤ 1 frame / 200 ms.
+	SkillStageProgress = mygo.NewEvent[contract.SkillStageProgressEvent]("skill-stage-progress")
 )
 
 // App holds the shared state of the running application.

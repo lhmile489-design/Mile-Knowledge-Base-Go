@@ -916,6 +916,17 @@ export interface SkillOpResult {
   failure?: Failure;
 }
 
+/** SkillOrigin is where a skill came from in a GitHub repository. */
+export interface SkillOrigin {
+  owner: string;
+  repo: string;
+  ref: string;
+  /** repository sub-path; "" means the repository root */
+  path: string;
+  /** head commit the download was pinned to */
+  commit: string;
+}
+
 /** SkillPreviewItem is one target of a distribute preview (M78). */
 export interface SkillPreviewItem {
   targetId: string;
@@ -988,6 +999,53 @@ export interface SkillScanWarning {
 /** SkillSkip is one skill the import left alone. */
 export interface SkillSkip {
   name: string;
+  reason: string;
+}
+
+/** SkillStage is the M88/M89 answer: a staged download and its candidates. */
+export interface SkillStage {
+  stageId: string;
+  /** github | zip */
+  kind: string;
+  origin?: SkillOrigin;
+  label: string;
+  candidates: SkillStageCandidate[];
+  skipped?: SkillStageSkip[];
+  expiresAt: string;
+}
+
+/** SkillStageCandidate is one skill found inside a staged download. */
+export interface SkillStageCandidate {
+  id: string;
+  name: string;
+  description: string;
+  files: number;
+  bytes: number;
+  /** ok | exists | too-large | duplicate | invalid-name */
+  state: string;
+  existing?: string;
+}
+
+/** SkillStageProgressEvent is E13: download/unpack progress (≤ 1 frame / 200 ms). */
+export interface SkillStageProgressEvent {
+  requestId: string;
+  /** resolving | downloading | unpacking | scanning */
+  phase: string;
+  received: number;
+  total?: number;
+}
+
+/** SkillStageResult is M88/M89. */
+export interface SkillStageResult {
+  stage?: SkillStage;
+  cancelled?: boolean;
+  failure?: Failure;
+}
+
+/** SkillStageSkip is one entry the unpacker refused to create. */
+export interface SkillStageSkip {
+  path: string;
+  /** symlink | special */
   reason: string;
 }
 
@@ -1564,6 +1622,8 @@ export const SkillService = {
   backups: bind<[], SkillBackupsResult>("SkillService.Backups", () => []),
   /** CleanBackups is M86. */
   cleanBackups: bind<[string[]], SkillBackupsResult>("SkillService.CleanBackups", (ids: string[]) => [ids]),
+  /** DiscardStage is M92: the page drops a stage when the user backs out. */
+  discardStage: bind<[string], Failure>("SkillService.DiscardStage", (stageID: string) => [stageID]),
   /** Distribute is M79. */
   distribute: bind<[string, string, SkillDistributeTarget[], string], SkillOpResult>("SkillService.Distribute", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
   /** DistributePreview is M78. */
@@ -1573,6 +1633,13 @@ export const SkillService = {
    * page and restorable recomputed from the backup area.
    */
   log: bind<[number], SkillLogResult>("SkillService.Log", (limit: number) => [limit]),
+  /** PickZip is M89: the same pipeline for a local .zip file. */
+  pickZip: bind<[string], SkillStageResult>("SkillService.PickZip", (vaultID: string) => [vaultID]),
+  /**
+   * ReadGithub is M88: parse the address, fetch the repository, unpack it into a
+   * staging area and list the skills the user can pick (FR-SKM-SRC).
+   */
+  readGithub: bind<[string, string], SkillStageResult>("SkillService.ReadGithub", (vaultID: string, input: string) => [vaultID, input]),
   /** Registry is M76: the built-in tools plus detection, with redacted paths. */
   registry: bind<[], SkillRegistryResult>("SkillService.Registry", () => []),
   /** Restore is M83. */
@@ -1609,4 +1676,6 @@ export const events = {
   engineStatus: event<EngineStatus>("engine-status"),
   /** E12 (API.md §2.3, §12). */
   skillsChanged: event<SkillsChangedEvent>("skills-changed"),
+  /** E13 (API.md §2.3, §13): download and unpack progress, ≤ 1 frame / 200 ms. */
+  skillStageProgress: event<SkillStageProgressEvent>("skill-stage-progress"),
 } as const;

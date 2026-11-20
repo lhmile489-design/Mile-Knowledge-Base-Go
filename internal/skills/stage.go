@@ -35,6 +35,7 @@ type StageMeta struct {
 	Kind       string                `json:"kind"` // github | zip
 	Origin     *contract.SkillOrigin `json:"origin,omitempty"`
 	Label      string                `json:"label"`
+	PathCommit string                `json:"pathCommit,omitempty"`
 	CreatedAt  string                `json:"createdAt"`
 	ExpiresAt  string                `json:"expiresAt"`
 	TreeHashes map[string]string     `json:"treeHashes,omitempty"`
@@ -151,6 +152,9 @@ func (s *StageStore) Sweep() {
 		}
 	}
 }
+
+// SaveMeta rewrites meta.json (used after the path commit is resolved).
+func (stage Stage) SaveMeta() *contract.Failure { return stage.save() }
 
 // SetTreeHashes records candidate hashes for the later update preview.
 func (stage Stage) SetTreeHashes(hashes map[string]string) *contract.Failure {

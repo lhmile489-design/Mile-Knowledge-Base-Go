@@ -996,7 +996,7 @@ type SkillStage = {
   origin?: SkillOrigin;       // 只有 github
   label: string;              // 'owner/repo' 或 zip 文件名
   candidates: SkillStageCandidate[];
-  skipped: { path: string; reason: 'symlink' | 'special' }[];
+  skipped: { path: string; reason: 'symlink' | 'special' | 'capped' }[];  // capped = 候选超过 50 个，其余未列出
   expiresAt: string;          // 30 分钟后
 };
 type SkillStageResult = { stage?: SkillStage; cancelled?: boolean; failure?: Failure };

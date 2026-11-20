@@ -64,11 +64,20 @@ import {
   type SkillPreviewItem,
   type SkillToolScan,
   type SkillUninstallPreview,
+  type SkillStageResult,
+  type SkillStage,
+  type SkillStageCandidate,
+  type SkillStageSkip,
+  type SkillOrigin,
+  type SkillRemote,
+  type SkillStageProgressEvent,
 } from "../mygo";
 
 export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
 export type { SkillUninstallResult, SkillRestoreResult, SkillBackup, SkillBackupsResult, SkillAdoptResult, SkillToolRef, SkillLogRecord, SkillLogResult, KbSkill, KbSkillDistribution, SkillPreviewItem };
 export type { SkillToolScan, SkillUninstallPreview };
+export type { SkillStageResult, SkillStage, SkillStageCandidate, SkillStageSkip, SkillOrigin, SkillRemote };
+export type { SkillStageProgressEvent };
 
 export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
@@ -142,6 +151,9 @@ export const skillsApi = {
     guard(async () => unwrap(await SkillService.adopt(vaultId, toolId, path, category, linkBack, extras))),
   log: (limit = 50) => guard(async () => unwrap(await SkillService.log(limit))),
   reveal: (toolId: string, path: string) => guard(async () => SkillService.reveal(toolId, path)),
+  readGithub: (vaultId: string, input: string) => guard(async () => unwrap(await SkillService.readGithub(vaultId, input))),
+  pickZip: (vaultId: string) => guard(async () => unwrap(await SkillService.pickZip(vaultId))),
+  discardStage: (stageId: string) => guard(async () => SkillService.discardStage(stageId)),
 };
 
 export const vaultApi = {

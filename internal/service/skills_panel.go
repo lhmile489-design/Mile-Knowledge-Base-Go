@@ -11,23 +11,40 @@ import (
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/ai"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/skills"
+
+	"github.com/egoist/mygo"
 )
 
 // SkillService is the binding layer of R2 skill management (M4, API.md §12).
 // T04 wires the read side: the tool registry (M76) and the scan (M77), with a
 // background refresh and E12. Write operations arrive in T05–T08.
 type SkillService struct {
-	app      *App
-	mu       sync.Mutex
-	scanning bool
-	seq      int64
-	now      func() time.Time
-	detector func() *skills.Detector
+	app          *App
+	mu           sync.Mutex
+	scanning     bool
+	seq          int64
+	now          func() time.Time
+	detector     func() *skills.Detector
+	githubClient func(version string) *skills.GithubClient
+	openDialog   func(ctx context.Context, title string, extensions []string) ([]string, error)
 }
 
 // NewSkillService wires the service; tests replace detector and now.
 func NewSkillService(app *App) *SkillService {
-	return &SkillService{app: app, now: time.Now, detector: skills.NewSystemDetector}
+	return &SkillService{
+		app:          app,
+		now:          time.Now,
+		detector:     skills.NewSystemDetector,
+		githubClient: func(version string) *skills.GithubClient { return skills.NewGithubClient(version) },
+		openDialog: func(ctx context.Context, title string, extensions []string) ([]string, error) {
+			return mygo.Dialog.Open(mygo.OpenDialogOptions{
+				Parent:    mygo.CallerWindow(ctx),
+				Title:     title,
+				Directory: false,
+				Filters:   []mygo.FileFilter{{Name: "zip 文件", Extensions: extensions}},
+			})
+		},
+	}
 }
 
 func (s *SkillService) cachePath() string {
