@@ -75,20 +75,22 @@ describe("ToolSkillsPage", () => {
 
   it("uninstalls a link after the confirmation card", async () => {
     const onChanged = vi.fn();
-    render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={onChanged} />);
+    const onResult = vi.fn();
+    render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={onChanged} onResult={onResult} />);
     fireEvent.click(screen.getByTestId("tool-uninstall-go"));
     await waitFor(() => expect(uninstallPreview).toHaveBeenCalledWith("agents", "go"));
     await waitFor(() => expect(screen.getByTestId("uninstall-target").textContent).toContain("<vault>/skills/后端/go"));
     fireEvent.click(screen.getByTestId("uninstall-confirm"));
     await waitFor(() => expect(uninstall).toHaveBeenCalledWith("agents", "go"));
-    await waitFor(() => expect(screen.getByTestId("uninstall-result").textContent).toContain("已删除链接"));
-    fireEvent.click(screen.getByTestId("uninstall-done"));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+    expect((onResult.mock.calls[0]?.[0] as string[]).join(" ")).toContain("已删除链接");
     expect(onChanged).toHaveBeenCalled();
   });
 
   it("adopts a builtin skill without link-back and passes same-name extras", async () => {
     const onChanged = vi.fn();
-    render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={onChanged} />);
+    const onResult = vi.fn();
+    render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={onChanged} onResult={onResult} />);
     expect(screen.queryByTestId("tool-uninstall-builtin-one")).toBeNull();
     fireEvent.click(screen.getByTestId("tool-adopt-builtin-one"));
     fireEvent.change(screen.getByTestId("adopt-category"), { target: { value: "分类" } });
@@ -101,8 +103,8 @@ describe("ToolSkillsPage", () => {
     expect(args[2]).toBe("builtin-one");
     expect(args[3]).toBe("分类");
     expect(args[4]).toBe(false);
-    await waitFor(() => expect(screen.getByTestId("adopt-result").textContent).toContain("skills/分类/builtin-one"));
-    fireEvent.click(screen.getByTestId("adopt-done"));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+    expect((onResult.mock.calls[0]?.[0] as string[]).join(" ")).toContain("skills/分类/builtin-one");
     expect(onChanged).toHaveBeenCalled();
   });
 
@@ -110,5 +112,30 @@ describe("ToolSkillsPage", () => {
     render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "打开所在目录 go" }));
     expect(reveal).toHaveBeenCalledWith("agents", "go");
+  });
+});
+
+describe("ToolSkillsPage states", () => {
+  it("folds undetected tools behind a toggle", () => {
+    const folded = [
+      ...tools,
+      { id: "kiro", name: "Kiro", iconKey: "kiro", installDir: "<home>/.kiro/skills", scanDirs: [], readers: [], status: "leftover", official: true, enabled: true },
+    ];
+    render(<ToolSkillsPage vaultId="v1" groups={[] as never} tools={folded as never} onChanged={() => {}} />);
+    expect(screen.queryByTestId("tool-chip-kiro")).toBeNull();
+    fireEvent.click(screen.getByTestId("tool-toggle-hidden"));
+    expect(screen.getByTestId("tool-chip-kiro")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("tool-toggle-hidden"));
+    expect(screen.queryByTestId("tool-chip-kiro")).toBeNull();
+  });
+
+  it("explains the probe rules when nothing is detected", () => {
+    const missing = [
+      { id: "agents", name: "通用目录", iconKey: "globe", scanDirs: [], readers: [], status: "detected", official: true, enabled: true },
+      { id: "claude-code", name: "Claude Code", iconKey: "claude-code", scanDirs: [], readers: [], status: "missing", official: true, enabled: true },
+    ];
+    render(<ToolSkillsPage vaultId="v1" groups={[] as never} tools={missing as never} onChanged={() => {}} />);
+    expect(screen.getByText("没有检测到已安装的工具。")).toBeTruthy();
+    expect(screen.getByText(/探测依据/)).toBeTruthy();
   });
 });

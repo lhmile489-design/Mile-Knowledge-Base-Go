@@ -49,7 +49,10 @@ describe("DistributeDialog", () => {
   it("previews targets, submits the selection and reports results", async () => {
     const onClose = vi.fn();
     const onDone = vi.fn();
-    render(<DistributeDialog vaultId="v1" skills={[skill]} tools={tools as never} onClose={onClose} onDone={onDone} />);
+    const onResult = vi.fn();
+    render(
+      <DistributeDialog vaultId="v1" skills={[skill]} tools={tools as never} onClose={onClose} onDone={onDone} onResult={onResult} />,
+    );
     await waitFor(() => expect(preview).toHaveBeenCalled());
     fireEvent.click(screen.getByTestId("distribute-target-claude-code"));
     fireEvent.click(screen.getByTestId("distribute-submit"));
@@ -59,9 +62,9 @@ describe("DistributeDialog", () => {
     expect(path).toBe("skills/前端/vue");
     expect(inputs).toEqual([{ targetId: "claude-code", allowOverwrite: false }]);
     expect(mode).toBe("link");
-    await waitFor(() => expect(screen.getByTestId("distribute-result").textContent).toContain("已联接"));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+    expect((onResult.mock.calls[0]?.[0] as string[]).join(" ")).toContain("已联接");
     expect(onDone).toHaveBeenCalled();
-    fireEvent.click(screen.getByTestId("distribute-close"));
     expect(onClose).toHaveBeenCalled();
   });
 

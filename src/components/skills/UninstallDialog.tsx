@@ -10,17 +10,18 @@ export function UninstallDialog({
   skillName,
   onClose,
   onDone,
+  onResult,
 }: {
   readonly toolId: string;
   readonly path: string;
   readonly skillName: string;
   readonly onClose: () => void;
   readonly onDone: () => void;
+  readonly onResult?: (lines: string[]) => void;
 }) {
   const [preview, setPreview] = useState<SkillUninstallPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -52,13 +53,16 @@ export function UninstallDialog({
     try {
       const value = await skillsApi.uninstall(toolId, path);
       const item = value.items[0];
-      if (item?.result === "removed") {
-        setResult(item.backupId ? `已移到备份区（${item.backupId}）` : "已删除链接，知识库未改动");
-      } else {
-        setResult(item?.detail || "卸载失败");
-      }
+      const line =
+        item?.result === "removed"
+          ? item.backupId
+            ? `已卸载 ${skillName}：移到备份区（${item.backupId}）`
+            : `已卸载 ${skillName}：已删除链接，知识库未改动`
+          : `卸载失败：${item?.detail || "未知原因"}`;
+      onResult?.([line]);
+      onDone();
     } catch (err) {
-      setResult(err instanceof Error ? err.message : String(err));
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
@@ -96,35 +100,22 @@ export function UninstallDialog({
           ) : (
             <p className="skills-dialog-line">读取中…</p>
           )}
-          {result ? (
-            <p className="skills-dialog-line" data-testid="uninstall-result">
-              {result}
-            </p>
-          ) : null}
         </div>
         <footer className="skills-subview-foot">
           <span />
           <div className="skills-subview-actions">
-            {result ? (
-              <button type="button" className="btn-primary" onClick={onDone} data-testid="uninstall-done">
-                完成
-              </button>
-            ) : (
-              <>
-                <button type="button" className="btn-quiet" onClick={onClose} disabled={busy}>
-                  取消
-                </button>
-                <button
-                  type="button"
-                  className="btn-danger"
-                  onClick={() => void confirm()}
-                  disabled={busy || !preview}
-                  data-testid="uninstall-confirm"
-                >
-                  {busy ? "卸载中…" : "卸载"}
-                </button>
-              </>
-            )}
+            <button type="button" className="btn-quiet" onClick={onClose} disabled={busy}>
+              取消
+            </button>
+            <button
+              type="button"
+              className="btn-danger"
+              onClick={() => void confirm()}
+              disabled={busy || !preview}
+              data-testid="uninstall-confirm"
+            >
+              {busy ? "卸载中…" : "卸载"}
+            </button>
           </div>
         </footer>
       </div>

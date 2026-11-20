@@ -10,19 +10,20 @@ export function AdoptDialog({
   extras,
   onClose,
   onDone,
+  onResult,
 }: {
   readonly vaultId: string;
   readonly skill: ToolSkill;
   readonly builtin: boolean;
   readonly extras: SkillToolRef[];
   readonly onClose: () => void;
-  readonly onDone: (warnings: string[]) => void;
+  readonly onDone: () => void;
+  readonly onResult?: (lines: string[]) => void;
 }) {
   const [category, setCategory] = useState("");
   const [linkBack, setLinkBack] = useState(!builtin);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ vaultPath: string; warnings: string[] } | null>(null);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -43,7 +44,8 @@ export function AdoptDialog({
     setError(null);
     try {
       const value = await skillsApi.adopt(vaultId, skill.toolId, skill.name, category.trim(), linkBack, extras);
-      setResult({ vaultPath: value.vaultPath, warnings: value.warnings ?? [] });
+      onResult?.([`已收进知识库：${value.vaultPath}`, ...(value.warnings ?? [])]);
+      onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -61,19 +63,7 @@ export function AdoptDialog({
           </button>
         </header>
         <div className="skills-dialog-body">
-          {result ? (
-            <>
-              <p className="skills-dialog-line" data-testid="adopt-result">
-                已复制到 {result.vaultPath}
-              </p>
-              {result.warnings.map((warning) => (
-                <p key={warning} className="skills-dialog-line">
-                  {warning}
-                </p>
-              ))}
-            </>
-          ) : (
-            <>
+          <>
               <label className="skills-dialog-field">
                 <span>分类</span>
                 <input
@@ -101,26 +91,17 @@ export function AdoptDialog({
                 </p>
               ) : null}
               {error ? <p className="skills-dialog-line" data-tone="fault">{error}</p> : null}
-            </>
-          )}
+          </>
         </div>
         <footer className="skills-subview-foot">
           <span />
           <div className="skills-subview-actions">
-            {result ? (
-              <button type="button" className="btn-primary" onClick={() => onDone(result.warnings)} data-testid="adopt-done">
-                完成
-              </button>
-            ) : (
-              <>
-                <button type="button" className="btn-quiet" onClick={onClose} disabled={busy}>
-                  取消
-                </button>
-                <button type="button" className="btn-primary" onClick={() => void submit()} disabled={busy} data-testid="adopt-submit">
-                  {busy ? "收编中…" : "收进知识库"}
-                </button>
-              </>
-            )}
+            <button type="button" className="btn-quiet" onClick={onClose} disabled={busy}>
+              取消
+            </button>
+            <button type="button" className="btn-primary" onClick={() => void submit()} disabled={busy} data-testid="adopt-submit">
+              {busy ? "收编中…" : "收进知识库"}
+            </button>
           </div>
         </footer>
       </div>

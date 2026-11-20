@@ -25,6 +25,7 @@ export function SkillsPanel() {
   const [page, setPage] = useState<Page>("kb");
   const [distributePaths, setDistributePaths] = useState<string[] | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
+  const [resultLines, setResultLines] = useState<string[] | null>(null);
   const [box, setBox] = useState<{ right: number; width: number; height: number } | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -157,7 +158,25 @@ export function SkillsPanel() {
         </header>
 
         <div className="skills-body scroll-y" data-testid="skills-body">
-          {installOpen && vaultId ? (
+          {resultLines ? (
+            <div className="skills-banner" role="status" data-testid="skills-banner">
+              <ul>
+                {resultLines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <button type="button" className="btn-quiet" onClick={() => setResultLines(null)} data-testid="skills-banner-close">
+                关闭
+              </button>
+            </div>
+          ) : null}
+          {!scan && vaultId && !installOpen ? (
+            <div className="skills-skeleton" aria-label="正在扫描" data-testid="skills-skeleton">
+              {[0, 1, 2, 3, 4].map((row) => (
+                <span key={row} className="skills-skeleton-row" />
+              ))}
+            </div>
+          ) : installOpen && vaultId ? (
             <InstallView
               vaultId={vaultId}
               onBack={() => setInstallOpen(false)}
@@ -197,6 +216,7 @@ export function SkillsPanel() {
               onChanged={() => {
                 if (vaultId) void useSkillsStore.getState().loadScan(vaultId);
               }}
+              onResult={(lines) => setResultLines(lines)}
             />
           )}
         </div>
@@ -209,6 +229,7 @@ export function SkillsPanel() {
               .filter((skill) => distributePaths.includes(skill.path))}
             tools={tools}
             onClose={() => setDistributePaths(null)}
+            onResult={(lines) => setResultLines(lines)}
             onDone={() => {
               void useSkillsStore.getState().loadScan(vaultId);
             }}

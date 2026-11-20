@@ -34,25 +34,30 @@ export function ToolSkillsPage({
   groups,
   tools,
   onChanged,
+  onResult,
 }: {
   readonly vaultId: string;
   readonly groups: SkillToolScan[];
   readonly tools: SkillTool[];
   readonly onChanged: () => void;
+  readonly onResult?: (lines: string[]) => void;
 }) {
   const [chip, setChip] = useState("all");
+  const [showHidden, setShowHidden] = useState(false);
   const [uninstall, setUninstall] = useState<ToolSkill | null>(null);
   const [adopt, setAdopt] = useState<ToolSkill | null>(null);
-  const [results, setResults] = useState<string[] | null>(null);
 
-  const chips = useMemo(() => {
-    const list = tools.filter((tool) => {
-      if (tool.id === "agents") return true;
-      const count = groups.find((group) => group.toolId === tool.id)?.skills.length ?? 0;
-      return tool.enabled && (tool.status === "detected" || count > 0);
-    });
-    return list;
-  }, [tools, groups]);
+  const countOf = (id: string) => groups.find((group) => group.toolId === id)?.skills.length ?? 0;
+  const visible = (tool: SkillTool) => {
+    if (tool.id === "agents") return true;
+    if (showHidden) return true;
+    return tool.enabled && (tool.status === "detected" || countOf(tool.id) > 0);
+  };
+  const chips = useMemo(() => tools.filter(visible), [tools, groups, showHidden]);
+  const hiddenCount = tools.filter(
+    (tool) => tool.id !== "agents" && !(tool.enabled && (tool.status === "detected" || countOf(tool.id) > 0)),
+  ).length;
+  const detectedCount = tools.filter((tool) => tool.id !== "agents" && tool.status === "detected").length;
 
   const rows = useMemo(() => {
     const all = groups.flatMap((group) => group.skills.map((skill) => ({ skill, toolId: group.toolId })));
@@ -71,7 +76,6 @@ export function ToolSkillsPage({
     if (!vaultId) return;
     // A copy that fell behind is refreshed through the normal distribute path
     // (overwrite keeps a backup first).
-    setResults([`重新分发 ${skill.name}…`]);
     try {
       const value = await skillsApi.distribute(
         vaultId,
@@ -79,10 +83,10 @@ export function ToolSkillsPage({
         [{ targetId: skill.toolId, allowOverwrite: true }],
         "copy",
       );
-      setResults(value.items.map((item) => `${skill.name}：${item.result}${item.detail ? `（${item.detail}）` : ""}`));
+      onResult?.(value.items.map((item) => `${skill.name}：${item.result}${item.detail ? `（${item.detail}）` : ""}`));
       onChanged();
     } catch (error) {
-      setResults([`重新分发失败：${error instanceof Error ? error.message : String(error)}`]);
+      onResult?.([`重新分发失败：${error instanceof Error ? error.message : String(error)}`]);
     }
   };
 
@@ -100,7 +104,7 @@ export function ToolSkillsPage({
           全部
         </button>
         {chips.map((tool) => {
-          const count = groups.find((group) => group.toolId === tool.id)?.skills.length ?? 0;
+          const count = countOf(tool.id);
           return (
             <button
               key={tool.id}
@@ -119,8 +123,24 @@ export function ToolSkillsPage({
         })}
       </div>
 
+      {hiddenCount > 0 ? (
+        <button
+          type="button"
+          className="btn-quiet"
+          data-testid="tool-toggle-hidden"
+          onClick={() => setShowHidden(!showHidden)}
+        >
+          {showHidden ? "收起未检测到的工具" : `显示未检测到的 ${hiddenCount} 个`}
+        </button>
+      ) : null}
+
       {rows.length === 0 ? (
-        <p className="skills-empty">没有可显示的工具技能。</p>
+        <div className="skills-empty">
+          <p>{detectedCount === 0 ? "没有检测到已安装的工具。" : "没有可显示的工具技能。"}</p>
+          {detectedCount === 0 ? (
+            <p className="field-hint">探测依据：CLI、安装记录、安装目录。装好工具后重开浮层即可看到。</p>
+          ) : null}
+        </div>
       ) : (
         <div className="tool-rows">
           {rows.map(({ skill, toolId }) => {
@@ -184,21 +204,6 @@ export function ToolSkillsPage({
         </div>
       )}
 
-      {results ? (
-        <div className="skills-result" data-testid="tool-result">
-          <ul>
-            {results.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-          <div className="skills-subview-actions">
-            <button type="button" className="btn-quiet" onClick={() => setResults(null)}>
-              关闭
-            </button>
-          </div>
-        </div>
-      ) : null}
-
       {uninstall ? (
         <UninstallDialog
           toolId={uninstall.toolId}
@@ -209,6 +214,7 @@ export function ToolSkillsPage({
             setUninstall(null);
             onChanged();
           }}
+          onResult={onResult}
         />
       ) : null}
 
@@ -219,11 +225,11 @@ export function ToolSkillsPage({
           builtin={adopt.origin === "builtin"}
           extras={sameName(adopt)}
           onClose={() => setAdopt(null)}
-          onDone={(warnings) => {
+          onDone={() => {
             setAdopt(null);
-            if (warnings.length > 0) setResults(warnings);
             onChanged();
           }}
+          onResult={onResult}
         />
       ) : null}
     </div>

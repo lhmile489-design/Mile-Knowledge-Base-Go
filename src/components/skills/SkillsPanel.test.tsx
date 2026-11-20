@@ -152,3 +152,14 @@ describe("skills panel shell", () => {
     expect(screen.getByRole("button", { name: "打开知识库…" })).toBeTruthy();
   });
 });
+
+describe("skills panel states", () => {
+  it("shows scan skeleton before the first payload arrives", async () => {
+    useSkillsStore.setState({ tools: [], scan: null, loading: true, error: null });
+    renderShell();
+    fireEvent.click(screen.getByTestId("open-skills"));
+    expect(screen.getByTestId("skills-skeleton")).toBeTruthy();
+    useSkillsStore.setState({ scan: emptyScan });
+    await waitFor(() => expect(screen.queryByTestId("skills-skeleton")).toBeNull());
+  });
+});

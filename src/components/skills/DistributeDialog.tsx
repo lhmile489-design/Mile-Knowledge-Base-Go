@@ -12,12 +12,14 @@ export function DistributeDialog({
   tools,
   onClose,
   onDone,
+  onResult,
 }: {
   readonly vaultId: string;
   readonly skills: KbSkill[];
   readonly tools: SkillTool[];
   readonly onClose: () => void;
   readonly onDone: () => void;
+  readonly onResult?: (lines: string[]) => void;
 }) {
   const [mode, setMode] = useState<Mode>("link");
   const [selected, setSelected] = useState<Set<string>>(() => {
@@ -27,7 +29,6 @@ export function DistributeDialog({
   const [overwrite, setOverwrite] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<SkillPreviewItem[] | null>(null);
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<string[] | null>(null);
 
   const targets = useMemo(() => {
     const list = tools.filter(
@@ -102,9 +103,11 @@ export function DistributeDialog({
         }
       }
       onDone();
-      setResult(lines);
+      onResult?.(lines);
+      onClose();
     } catch (error) {
-      setResult([`分发失败：${error instanceof Error ? error.message : String(error)}`]);
+      onResult?.([`分发失败：${error instanceof Error ? error.message : String(error)}`]);
+      onClose();
     } finally {
       setBusy(false);
     }
@@ -124,21 +127,7 @@ export function DistributeDialog({
           </button>
         </header>
 
-        {result ? (
-          <div className="skills-result" data-testid="distribute-result">
-            <ul>
-              {result.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-            <div className="skills-subview-actions">
-              <button type="button" className="btn-primary" onClick={onClose} data-testid="distribute-close">
-                完成
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
+        <>
             <div className="skills-subview-row">
               <span>方式</span>
               <div className="segmented" role="radiogroup" aria-label="分发方式">
@@ -226,8 +215,7 @@ export function DistributeDialog({
                 </button>
               </div>
             </footer>
-          </>
-        )}
+        </>
       </div>
     </div>
   );
