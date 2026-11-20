@@ -46,6 +46,7 @@ type ScanOptions struct {
 	KbRefs        []KbSkillRef
 	Tools         []DetectedTool
 	Distributions []Distribution
+	ToolSources   []ToolSource
 	Now           func() time.Time
 }
 
@@ -183,6 +184,9 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root, base string, builtin bo
 		case KindDir:
 			if hasSkillFile(dir) {
 				skill := contract.ToolSkill{Name: name, Path: dir, ToolID: tool.ID, Builtin: builtin, Base: base, Rel: rel}
+				if record, ok := matchToolSource(opts.ToolSources, dir); ok {
+					skill.Remote = toolRemoteFor(dir, record)
+				}
 				switch {
 				case builtin:
 					skill.Origin = "builtin"

@@ -49,7 +49,7 @@
 | T01 | 地址解析与 GitHub 客户端 | `internal/skills/{ghref,github}.go`、测试 | T00 | 3 种输入与非法输入；默认分支 / 头部 / 子目录提交 / 下载；404、额度、超时、跨主机重定向全部用 `httptest` 覆盖 | 待验证（门禁已过，待用户验收） |
 | T02 | 安全解包与暂存区 | `internal/skills/{unpack,stage}.go`、测试 | T01 | tar.gz 与 zip；技术设计 16.3 七条不变量各有测试；违规整包拒绝后暂存目录不存在；过期、上限 3 个、启动清空 | 待验证（门禁已过，待用户验收） |
 | T03 | 候选定位 | `internal/skills/candidates.go`、`internal/vault/skillimport.go`（扩展任意深度）、测试 | T02 | 3 层、跳过点号与 node_modules、50 个上限、重复名、过大、非法名、已存在 | 待验证（门禁已过，待用户验收） |
-| T04 | 来源记录与扫描合并 | `internal/skills/sources.go`、`scan.go`、测试 | T03 | A 区稳定序列化（与 provenance 同规则）、B 区读写、坏条目丢弃；扫描结果带 `remote` | 待做 |
+| T04 | 来源记录与扫描合并 | `internal/skills/sources.go`、`scan.go`、测试 | T03 | A 区稳定序列化（与 provenance 同规则）、B 区读写、坏条目丢弃；扫描结果带 `remote` | 待验证（门禁已过，待用户验收） |
 | T05 | 读取与暂存服务 | `internal/service/skills_install.go`（新）、M88/M89/M92、E13、transport | T04 | 读 GitHub、选 zip、取消即删暂存、进度事件节流；`mygo generate` | 待做 |
 | T06 | 安装服务 | 同上、M90/M91 | T05 | 装进知识库不覆盖；装进工具按分发规则与备份；来源记录、日志、E12 | 待做 |
 | T07 | 变更计划 `importFile` | `internal/mutation/{plan,execute}.go`、`internal/policy`、测试 | T04 | 只允许 user；Agent 生成与执行两处拒绝；暂存解析与哈希校验；替换进事务且可恢复 | 待做 |
@@ -131,6 +131,7 @@
 
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-21 | T04 | 完成：`sources.go`（A 区 `.mile-kb/skill-sources.json`：版本 1、records 按 skillPath 的 UTF-8 字节序、键序固定、2 空格 + 换行、不转义 HTML、原子写；未知版本只读不写并报 unsupported；坏条目丢弃并 warning；按 skillPath 合并/删除。B 区 `skills/sources.json`：`g-<12 hex>`、按 targetPath 合并、损坏改名 `.corrupt-<时间>` 后从空开始）。`AttachKbRemotes` / `toolRemoteFor` 给扫描结果补 `remote`（基线哈希不符 → `local-modified`，否则 `unchecked`，远端检查留给 T08）；`ScanOptions.ToolSources` 与 `ScanTools` 合并工具来源；服务 `kbSkills` 读 A 区并附加、`runScan` 传 B 区。数据库设计 3.8 补「字节序排序」澄清。测试 5 项 | 见下 | `go test ./internal/skills/`（65 项）、`go test -count=1 ./...`、vet/gofmt、tsc/bindings | 等待放行 T05 |
 | 2026-11-21 | T03 | 完成：`candidates.go`（根目录自身有 SKILL.md 即单技能，名字取 frontmatter `name`，否则用仓库名；否则向下 3 层找，跳过点号与 node_modules、不进入重解析点、不钻进已识别的技能目录；按相对路径排序；状态 ok/exists/too-large/duplicate/invalid-name；50 个上限并标 truncated；文件数与字节按 FR-SKILL 上限截停）；`vault.ImportSkills` 支持任意深度候选并校验来源相对路径（拒绝 `..`、绝对、盘符、点号开头），源码路径必须解析到来源根内。测试 6 项 | 见下 | `go test ./internal/skills/ ./internal/vault/`（101 项）、`go test -count=1 ./...`、vet/gofmt、e2e 构建 | 等待放行 T04 |
 | 2026-11-21 | T02 | 完成：`unpack.go`（tar.gz 去顶层目录；zip 先验中央目录再解压；`..`/绝对路径/盘符/保留名/末尾点或空格/大小写重名整包拒绝并删暂存根；符号链接与特殊文件跳过并记录；解开后 200 MiB 与 20000 条目上限，按实际字节计数；单段 ≤255）；`stage.go`（`s-<12 hex>`、30 分钟 TTL、最多 3 个按目录时间淘汰、`meta.json` 原子写与 treeHashes、过期即删、`CleanAll`）。测试 9 项覆盖七条不变量与暂存生命周期 | 见下 | `go test ./internal/skills/`（普通与 e2e）、`go test -count=1 ./...`、vet/gofmt | 等待放行 T03 |
 | 2026-11-21 | T01 | 完成：`ghref.go`（3 种输入、owner/repo 字符集、ref 单段、path ≤8 段、`.git` 与尾斜杠、其他主机与 http/查询串/凭据拒绝）；`github.go`（匿名客户端：默认分支、`application/vnd.github.sha` 取头部、`commits?path=` 取子目录最近提交、codeload 下载钉在提交上、系统代理、跨主机重定向白名单、网络错误重试 1 次、404 → not-found、403/429 且剩余 0 → rate-limited 带重置时间、15s/120s 超时、200 MiB 流式上限）；`github_e2e.go` / `github_prod.go` 提供 `SKILLS_FAKE_GITHUB`（仅 e2e 读取）。测试 9 项 + e2e/prod 各 1 项。API §13.3 与 技术设计 16.9 补 ref 单段说明 | 见下 | `go test ./internal/skills/`（普通与 e2e 构建）、`go test ./...`、vet/gofmt、tsc/bindings/Vitest | 等待放行 T02 |

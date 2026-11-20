@@ -110,6 +110,7 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 		KbRefs:        refs,
 		Tools:         tools,
 		Distributions: state.Distributions,
+		ToolSources:   skills.LoadToolSources(filepath.Join(s.app.DataDir, "skills")).Records,
 	})
 	// Tool paths never leave Go unredacted (API §1, §12).
 	for i := range groups {
@@ -182,6 +183,12 @@ func (s *SkillService) kbSkills(ctx context.Context, vaultID string, distributio
 		}
 		byCategory[entry.Category] = append(byCategory[entry.Category], skill)
 		refs = append(refs, skills.KbSkillRef{Category: entry.Category, Name: entry.Name, Path: dir})
+	}
+	// GitHub provenance lives in the vault (.mile-kb/skill-sources.json) and
+	// is merged into the scan payload (M5 T04).
+	sources := skills.LoadKbSources(root)
+	for _, category := range order {
+		skills.AttachKbRemotes(root, byCategory[category], sources)
 	}
 	groups := make([]contract.SkillCategory, 0, len(order))
 	for _, category := range order {
