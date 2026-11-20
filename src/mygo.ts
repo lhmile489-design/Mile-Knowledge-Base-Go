@@ -801,6 +801,25 @@ export interface SharedContextResult {
   failure?: Failure;
 }
 
+/** SkillBackup is one entry of skills/backups (Q-SKM-3). */
+export interface SkillBackup {
+  id: string;
+  toolId: string;
+  originalPath: string;
+  /** uninstall | overwrite | adopt */
+  kind: string;
+  createdAt: string;
+  size: number;
+  files: number;
+  restorable: boolean;
+}
+
+/** SkillBackupsResult is M85/M86. */
+export interface SkillBackupsResult {
+  items: SkillBackup[];
+  failure?: Failure;
+}
+
 /** SkillCandidate is one importable skill. */
 export interface SkillCandidate {
   name: string;
@@ -872,6 +891,12 @@ export interface SkillRegistryResult {
   failure?: Failure;
 }
 
+/** SkillRestoreResult is M83. */
+export interface SkillRestoreResult {
+  restoredTo: string;
+  failure?: Failure;
+}
+
 /** SkillScan is the M77 payload: cached first, refreshed in the background. */
 export interface SkillScan {
   cachedAt: string;
@@ -926,6 +951,21 @@ export interface SkillTool {
 export interface SkillToolScan {
   toolId: string;
   skills: ToolSkill[];
+}
+
+/** SkillUninstallPreview is M80's answer before removing anything. */
+export interface SkillUninstallPreview {
+  /** link | copy | independent */
+  kind: string;
+  target?: string;
+  backupPath?: string;
+  affectedTools?: string[];
+}
+
+/** SkillUninstallResult is M80. */
+export interface SkillUninstallResult {
+  preview: SkillUninstallPreview;
+  failure?: Failure;
 }
 
 /** SkillsChangedEvent is E12: background scan or skill operation finished. */
@@ -1437,14 +1477,24 @@ export const ConversationService = {
  * background refresh and E12. Write operations arrive in T05–T08.
  */
 export const SkillService = {
+  /** Backups is M85. */
+  backups: bind<[], SkillBackupsResult>("SkillService.Backups", () => []),
+  /** CleanBackups is M86. */
+  cleanBackups: bind<[string[]], SkillBackupsResult>("SkillService.CleanBackups", (ids: string[]) => [ids]),
   /** Distribute is M79. */
   distribute: bind<[string, string, SkillDistributeTarget[], string], SkillOpResult>("SkillService.Distribute", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
   /** DistributePreview is M78. */
   distributePreview: bind<[string, string, SkillDistributeTarget[], string], SkillPreviewResult>("SkillService.DistributePreview", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
   /** Registry is M76: the built-in tools plus detection, with redacted paths. */
   registry: bind<[], SkillRegistryResult>("SkillService.Registry", () => []),
+  /** Restore is M83. */
+  restore: bind<[string], SkillRestoreResult>("SkillService.Restore", (backupID: string) => [backupID]),
   /** Scan is M77: cached-first with a background refresh (API.md §12.2). */
   scan: bind<[string], SkillScanResult>("SkillService.Scan", (vaultID: string) => [vaultID]),
+  /** Uninstall is M81. */
+  uninstall: bind<[string, string], SkillOpResult>("SkillService.Uninstall", (toolID: string, rel: string) => [toolID, rel]),
+  /** UninstallPreview is M80. */
+  uninstallPreview: bind<[string, string], SkillUninstallResult>("SkillService.UninstallPreview", (toolID: string, rel: string) => [toolID, rel]),
 } as const;
 
 // ---- Events ----

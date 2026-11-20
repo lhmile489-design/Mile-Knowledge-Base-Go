@@ -918,7 +918,7 @@ type SkillPreviewItem = {
 };
 type SkillOpItem = {
   targetId: string; toolId: string;
-  result: 'linked' | 'copied' | 'skipped' | 'failed';
+  result: 'linked' | 'copied' | 'skipped' | 'failed' | 'removed';
   detail?: string; backupId?: string;
 };
 type SkillLogRecord = {

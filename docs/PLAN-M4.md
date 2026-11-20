@@ -49,7 +49,7 @@
 | T03 | 扫描与缓存 | `internal/skills/{scan,state}.go`、`scan-cache.json` | T02 | 六种来源状态与同步状态；缓存损坏重建；单测覆盖 | 待验证（门禁已过，待用户验收） |
 | T04 | 服务与事件骨架 | `internal/service/skills_panel.go`（新）、`contract`、`src/lib/transport.ts`、`src/stores/skillsStore.ts`（新） | T03 | M76/M77 + E12；前端 store 能拿到注册表与扫描结果 | 待验证（门禁已过，待用户验收） |
 | T05 | 分发 | `internal/skills/{distribute,backup,state}.go`、M78/M79、测试 | T04 | 联接成功、回退拷贝、同名冲突、覆盖备份、重复加载提示 | 待验证（门禁已过，待用户验收） |
-| T06 | 卸载与备份 | `internal/skills/{backup}.go`、M80/M81/M83/M85/M86 | T05 | 链接只删链接；拷贝移备份；恢复冲突；清理后不可恢复 | 待做 |
+| T06 | 卸载与备份 | `internal/skills/{backup,uninstall}.go`、M80/M81/M83/M85/M86 | T05 | 链接只删链接；拷贝移备份；恢复冲突；清理后不可恢复 | 待验证（门禁已过，待用户验收） |
 | T07 | 收编 | `internal/skills/adopt.go`、M82 | T06 | 复制进知识库；换链前备份；多工具同内容合并 | 待做 |
 | T08 | 操作记录 | `internal/skills/log.go`、M84 | T07 | 每次操作与恢复各一条；坏行跳过 | 待做 |
 | T09 | 浮层外壳 | `src/components/skills/`（新）、标题栏、侧栏、总览磁贴 | T04 | 开关/角标/Esc/焦点/层级/无库；移除侧栏导入入口 | 待做 |
@@ -130,6 +130,7 @@ M4 实测后按 G-PERF 阻断口径校准，超目标先报告再决定。
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 草案 | — | 自查见第 9 节 | 用户 2026-11-20 批准，B-M4-01–03 按建议执行，放行 T00 |
+| 2026-11-20 | T06 | 完成：`skills/uninstall.go`（卸载预览按 Classify 判 link/copy/independent；链接只删链接、目录先移备份；恢复冲突不覆盖、坏 id/已清理返回 backup-missing；列表按时间倒序、清理后不可恢复）；服务 M80/M81/M83/M85/M86（工具与内置目录解析、内置技能拒绝、共享目录卸载列出受影响工具、切除对应分发记录、清缓存发 E12、路径脱敏）；备份列表与设置页数据就绪。API §12.2 补 `removed` 结果值。新增 Go 5 项测试（4 项 skills + 1 项 service） | 见下 | `go test ./...` 563 项、Vitest 222 项、`tsc`、`check:bindings`、vet/gofmt | 等待放行 T07 |
 | 2026-11-20 | T05 | 完成：`skills/distribute.go`（预览/执行、联接优先失败退回拷贝并写明方式、目标已存在跳过、覆盖先备份、跨分类同名冲突、重复加载提示）；`skills/backup.go`（覆盖/卸载的备份创建，移入 `backups/<id>/files` 并写 meta）；`skills/state.go` 分发记录（state.json 原子写，按工具+目标替换）；服务 M78/M79（校验 vault/技能路径/目标、注册表解析安装目录、禁用与未检测工具拒绝、跨分类冲突检测）；分发成功后写记录、清扫描缓存、发 E12；transport 暴露两个方法。新增 Go 7 项测试（6 项 skills + 1 项 service） | 见下 | `go test ./...` 558 项、Vitest 222 项、`tsc`、`check:bindings`、vet/gofmt | 等待放行 T06 |
 | 2026-11-20 | T04 | 完成：`SkillService`（M76 `registry` 走探测并脱敏 `<home>` / `<local-app-data>`；M77 `scan` 缓存优先、无缓存时同步扫描、后台刷新后发 E12）；`SkillsChangedEvent` 与 `skills-changed` 事件；知识库技能来自索引（`SkillDocuments` + `BuildSkillCatalog`），描述读 SKILL.md frontmatter；扫描目标补上安装目录；`skills.SkillDescription` 导出。前端：`skillsApi`、类型再导出、`skillsStore`（registry/scan/refresh、过期响应丢弃）；`main.go` 绑定服务。`mygo generate` 重写 `src/mygo.ts`。新增 Go 3 项 + 前端 5 项测试 | 见下 | `go test ./...` 551 项、Vitest 222 项、`tsc`、`check:bindings` | 等待放行 T05 |
 | 2026-11-20 | T03 | 完成：注册表补「内置目录」并把 Trae/Grok/Antigravity/ZCode/MiniMax 的内置路径归入；`scan.go` 两层扫描（跳过点号与 node_modules、不进入链接、非内置条目逐级下钻、`*` 段展开、frontmatter description）、六种来源状态（链接到知识库 / 失效 / 拷贝 / 独立 / 内置 / 外部）与拷贝同步四态（基线哈希）；`state.go` 扫描缓存（版本 1、2 MiB 上限、原子写、损坏/版本不符返回空、超 2000 条截断并记 warning）。新增 6 项测试 | 见下 | `go test ./internal/skills/` 20 项（普通与 e2e 构建）、`go test ./...` 548 项、vet / gofmt、`check:bindings` | 等待放行 T04 |

@@ -51,6 +51,10 @@ import {
   type SkillDistributeTarget,
   type SkillPreviewResult,
   type SkillOpResult,
+  type SkillUninstallResult,
+  type SkillRestoreResult,
+  type SkillBackup,
+  type SkillBackupsResult,
 } from "../mygo";
 
 export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
@@ -116,6 +120,13 @@ export const skillsApi = {
     guard(async () => unwrap(await SkillService.distributePreview(vaultId, skillPath, targets, mode))),
   distribute: (vaultId: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) =>
     guard(async () => unwrap(await SkillService.distribute(vaultId, skillPath, targets, mode))),
+  uninstallPreview: (toolId: string, path: string) =>
+    guard(async () => unwrap(await SkillService.uninstallPreview(toolId, path))),
+  uninstall: (toolId: string, path: string) =>
+    guard(async () => unwrap(await SkillService.uninstall(toolId, path))),
+  restore: (backupId: string) => guard(async () => unwrap(await SkillService.restore(backupId))),
+  backups: () => guard(async () => unwrap(await SkillService.backups())),
+  cleanBackups: (ids: string[]) => guard(async () => unwrap(await SkillService.cleanBackups(ids))),
 };
 
 export const vaultApi = {

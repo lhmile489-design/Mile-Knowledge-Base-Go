@@ -158,3 +158,59 @@ func TestSkillServiceDistributeWritesRecord(t *testing.T) {
 		t.Fatalf("second preview = %+v", again.Items[0])
 	}
 }
+
+func TestSkillServiceUninstallAndBackups(t *testing.T) {
+	app, _, _ := mutationTestApp(t)
+	home := t.TempDir()
+	writeFile := func(rel, body string) {
+		t.Helper()
+		full := filepath.Join(home, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeFile(".local/bin/claude.cmd", "@echo off")
+	writeFile(".claude/skills/copied/SKILL.md", "# copied\n")
+	// Builtin dir of Trae, detected through the uninstall registry.
+	writeFile(".trae/builtin_skills/official/SKILL.md", "# builtin\n")
+	svc := NewSkillService(app)
+	svc.detector = func() *skills.Detector {
+		return &skills.Detector{
+			Home: home, LocalAppData: filepath.Join(home, "AppData", "Local"),
+			UserProgramFiles: filepath.Join(home, "Programs"),
+			CLIDirs:          []string{filepath.Join(home, ".local", "bin")},
+			Uninstall:        []skills.UninstallEntry{{DisplayName: "TRAE 2.0"}},
+		}
+	}
+
+	preview := svc.UninstallPreview(context.Background(), "claude-code", "copied")
+	if preview.Failure != nil || preview.Preview.Kind != "independent" {
+		t.Fatalf("preview = %+v", preview)
+	}
+	result := svc.Uninstall(context.Background(), "claude-code", "copied")
+	if result.Failure != nil || result.Items[0].Result != "removed" || result.Items[0].BackupID == "" {
+		t.Fatalf("uninstall = %+v", result)
+	}
+	backups := svc.Backups(context.Background())
+	if backups.Failure != nil || len(backups.Items) != 1 || !backups.Items[0].Restorable {
+		t.Fatalf("backups = %+v", backups)
+	}
+	if !strings.HasPrefix(backups.Items[0].OriginalPath, "<home>") {
+		t.Fatalf("originalPath not redacted: %q", backups.Items[0].OriginalPath)
+	}
+	restore := svc.Restore(context.Background(), backups.Items[0].ID)
+	if restore.Failure != nil || !strings.HasPrefix(restore.RestoredTo, "<home>") {
+		t.Fatalf("restore = %+v", restore)
+	}
+	if body, err := os.ReadFile(filepath.Join(home, ".claude", "skills", "copied", "SKILL.md")); err != nil || string(body) != "# copied\n" {
+		t.Fatalf("restored: %q %v", body, err)
+	}
+
+	builtin := svc.UninstallPreview(context.Background(), "trae", "official")
+	if builtin.Failure == nil || builtin.Failure.Code != contract.CodeSkillProtected {
+		t.Fatalf("builtin preview = %+v", builtin)
+	}
+}
