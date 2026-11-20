@@ -39,6 +39,9 @@ const (
 	CodeSkillConflict       = "skill-conflict"
 	CodeSkillProtected      = "skill-protected"
 	CodeBackupMissing       = "backup-missing"
+	CodeNetworkFailure      = "network-failure"
+	CodeRateLimited         = "rate-limited"
+	CodeUnsafeArchive       = "unsafe-archive"
 )
 
 // Skills fake-environment switches (技术设计 15.7, API.md §12.5). Only e2e
@@ -47,6 +50,7 @@ const (
 	EnvSkillsFakeHome     = "SKILLS_FAKE_HOME"
 	EnvSkillsFakePath     = "SKILLS_FAKE_PATH"
 	EnvSkillsFakeRegistry = "SKILLS_FAKE_REGISTRY"
+	EnvSkillsFakeGithub   = "SKILLS_FAKE_GITHUB" // M5: base URL of the fake GitHub (e2e only)
 )
 
 // Fail builds a Failure.
@@ -663,6 +667,7 @@ const (
 	MutArchive         = "archive"
 	MutTrash           = "trash"
 	MutPermanentDelete = "permanentDelete"
+	MutImportFile      = "importFile" // M5: write one file staged under skills/tmp (user plans only)
 )
 
 // MutationAction is one step of a plan (API.md M29).
@@ -675,6 +680,10 @@ type MutationAction struct {
 	ExpectedTargetRevision *int64  `json:"expectedTargetRevision,omitempty"`
 	Text                   *string `json:"text,omitempty"`
 	Reason                 string  `json:"reason"`
+	// importFile only (API §13.4): the staged file this action writes.
+	StageID   string `json:"stageId,omitempty"`
+	StagePath string `json:"stagePath,omitempty"`
+	StageHash string `json:"stageHash,omitempty"`
 }
 
 // MutationPlan is what the plan card shows and what execute receives.
@@ -1128,21 +1137,23 @@ type KbSkill struct {
 	Path        string                `json:"path"`
 	Category    string                `json:"category"`
 	Distributed []KbSkillDistribution `json:"distributed,omitempty"`
+	Remote      *SkillRemote          `json:"remote,omitempty"` // M5: GitHub origin and update state
 }
 
 // ToolSkill is one skill found in a tool directory (FR-SKM-SCAN).
 type ToolSkill struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Path        string `json:"path"`
-	ToolID      string `json:"toolId"`
-	Origin      string `json:"origin"`               // linked | link-broken | copied | independent | builtin | external-link
-	Sync        string `json:"sync,omitempty"`       // in-sync | vault-updated | tool-updated | both-updated | missing
-	Target      string `json:"target,omitempty"`     // redacted target of a link
-	SourcePath  string `json:"sourcePath,omitempty"` // copied: the vault skill it came from
-	Builtin     bool   `json:"builtin,omitempty"`
-	Base        string `json:"base,omitempty"` // install | scan:<n> | builtin:<n> (API §12.3)
-	Rel         string `json:"rel,omitempty"`  // path inside that root, slash-separated
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Path        string       `json:"path"`
+	ToolID      string       `json:"toolId"`
+	Origin      string       `json:"origin"`               // linked | link-broken | copied | independent | builtin | external-link
+	Sync        string       `json:"sync,omitempty"`       // in-sync | vault-updated | tool-updated | both-updated | missing
+	Target      string       `json:"target,omitempty"`     // redacted target of a link
+	SourcePath  string       `json:"sourcePath,omitempty"` // copied: the vault skill it came from
+	Builtin     bool         `json:"builtin,omitempty"`
+	Base        string       `json:"base,omitempty"`   // install | scan:<n> | builtin:<n> (API §12.3)
+	Rel         string       `json:"rel,omitempty"`    // path inside that root, slash-separated
+	Remote      *SkillRemote `json:"remote,omitempty"` // M5: GitHub origin and update state
 }
 
 // SkillCategory groups knowledge-base skills by category.
@@ -1225,6 +1236,120 @@ type SkillBackup struct {
 	Size         int64  `json:"size"`
 	Files        int    `json:"files"`
 	Restorable   bool   `json:"restorable"`
+}
+
+// ---- R2 install sources and updates (M5, API.md §13) ----
+
+// SkillOrigin is where a skill came from in a GitHub repository.
+type SkillOrigin struct {
+	Owner  string `json:"owner"`
+	Repo   string `json:"repo"`
+	Ref    string `json:"ref"`
+	Path   string `json:"path"`   // repository sub-path; "" means the repository root
+	Commit string `json:"commit"` // head commit the download was pinned to
+}
+
+// SkillRemote is the M5 source record plus its latest checked update state.
+type SkillRemote struct {
+	SkillOrigin
+	PathCommit       string `json:"pathCommit"`
+	InstalledAt      string `json:"installedAt"`
+	UpdateState      string `json:"updateState"` // up-to-date | update-available | both-changed | local-modified | unchecked | error
+	LatestPathCommit string `json:"latestPathCommit,omitempty"`
+	CheckedAt        string `json:"checkedAt,omitempty"`
+	Error            string `json:"error,omitempty"`
+}
+
+// SkillStageCandidate is one skill found inside a staged download.
+type SkillStageCandidate struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Files       int    `json:"files"`
+	Bytes       int64  `json:"bytes"`
+	State       string `json:"state"` // ok | exists | too-large | duplicate | invalid-name
+	Existing    string `json:"existing,omitempty"`
+}
+
+// SkillStage is the M88/M89 answer: a staged download and its candidates.
+type SkillStage struct {
+	StageID    string                `json:"stageId"`
+	Kind       string                `json:"kind"` // github | zip
+	Origin     *SkillOrigin          `json:"origin,omitempty"`
+	Label      string                `json:"label"`
+	Candidates []SkillStageCandidate `json:"candidates"`
+	Skipped    []SkillStageSkip      `json:"skipped,omitempty"`
+	ExpiresAt  string                `json:"expiresAt"`
+}
+
+// SkillStageSkip is one entry the unpacker refused to create.
+type SkillStageSkip struct {
+	Path   string `json:"path"`
+	Reason string `json:"reason"` // symlink | special
+}
+
+// SkillStageResult is M88/M89.
+type SkillStageResult struct {
+	Stage     *SkillStage `json:"stage,omitempty"`
+	Cancelled bool        `json:"cancelled,omitempty"`
+	Failure   *Failure    `json:"failure,omitempty"`
+}
+
+// SkillInstallTarget chooses where M91 installs (API §13.1).
+type SkillInstallTarget struct {
+	Kind     string                  `json:"kind"` // kb | tools
+	Category string                  `json:"category,omitempty"`
+	Targets  []SkillDistributeTarget `json:"targets,omitempty"`
+}
+
+// SkillUpdateCheckResult is M93.
+type SkillUpdateCheckResult struct {
+	CheckedAt        string `json:"checkedAt"`
+	Checking         bool   `json:"checking"`
+	Groups           int    `json:"groups"`
+	Unchecked        int    `json:"unchecked"`
+	RateLimitResetAt string `json:"rateLimitResetAt,omitempty"`
+}
+
+// SkillUpdateTarget is one skill M94 previews an update for.
+type SkillUpdateTarget struct {
+	Kind      string `json:"kind"` // kb | tool
+	SkillPath string `json:"skillPath,omitempty"`
+	ToolID    string `json:"toolId,omitempty"`
+	Path      string `json:"path,omitempty"` // wire spec (§12.3)
+}
+
+// SkillUpdateFile is one entry of the update diff.
+type SkillUpdateFile struct {
+	Path   string `json:"path"`
+	Change string `json:"change"` // added | modified | removed
+	Bytes  int64  `json:"bytes"`
+	Binary bool   `json:"binary,omitempty"`
+}
+
+// SkillUpdatePreviewResult is M94.
+type SkillUpdatePreviewResult struct {
+	StageID    string            `json:"stageId,omitempty"`
+	From       string            `json:"from,omitempty"`
+	To         string            `json:"to,omitempty"`
+	Files      []SkillUpdateFile `json:"files,omitempty"`
+	Plan       *MutationPlan     `json:"plan,omitempty"`
+	BackupPath string            `json:"backupPath,omitempty"`
+	Failure    *Failure          `json:"failure,omitempty"`
+}
+
+// SkillConfirmUpdateResult is M95.
+type SkillConfirmUpdateResult struct {
+	Updated bool     `json:"updated"`
+	Failure *Failure `json:"failure,omitempty"`
+}
+
+// SkillStageProgressEvent is E13: download/unpack progress (≤ 1 frame / 200 ms).
+type SkillStageProgressEvent struct {
+	RequestID string `json:"requestId"`
+	Phase     string `json:"phase"` // resolving | downloading | unpacking | scanning
+	Received  int64  `json:"received"`
+	Total     int64  `json:"total,omitempty"`
 }
 
 // SkillRegistryResult is M76.

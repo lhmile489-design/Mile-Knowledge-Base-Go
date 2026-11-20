@@ -256,7 +256,7 @@
 
 ### 9.4 M5：GitHub / zip 安装与更新
 
-> 状态：草稿，待用户审核（随 docs/PLAN-M5.md v0.1）。原型在同一个 [`design/r2/skills-panel.html`](../design/r2/skills-panel.html) 里新增 7 个状态（`?state=` 后接下表的名字）；截图在 `design/r2/shots-m5/`（7 × 浅 / 深，共 14 张，1440×900）。M4 的 18 张截图不变。
+> 状态：用户 2026-11-21 审核通过（随 docs/PLAN-M5.md v0.1 批准）。原型在同一个 [`design/r2/skills-panel.html`](../design/r2/skills-panel.html) 里新增 7 个状态（`?state=` 后接下表的名字）；截图在 `design/r2/shots-m5/`（7 × 浅 / 深，共 14 张，1440×900）。M4 的 18 张截图不变。
 
 | 视图 | 进入方式 | 截图 | 要点 |
 | --- | --- | --- | --- |

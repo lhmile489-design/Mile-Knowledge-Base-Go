@@ -75,9 +75,9 @@ type LoadResult struct {
 | `skill-conflict` | 技能名冲突或目标已存在、恢复时原位置被占用（detail 给出另一处位置） | 用户改名/处理后 | 名称或目标冲突 | 新增（FR-SKM-DIST/UNINST，§12） |
 | `skill-protected` | 内置技能不可卸载/覆盖，或工具未启用 | 否 | 内置技能只读 | 新增（FR-SKM-UNINST，§12） |
 | `backup-missing` | 备份已被清理或记录不可恢复 | 否 | 备份不存在 | 新增（FR-SKM-UNINST，§12） |
-| `network-failure` | 连不上 GitHub（DNS、TLS、超时、5xx），detail 写类别 | 是 | 网络错误，检查网络或代理后重试 | 新增（FR-SKM-SRC，§13，M5 草稿） |
-| `rate-limited` | GitHub 匿名额度用完（403/429 且剩余 0），detail 带重置时间 | 重置后 | GitHub 额度已用完，几点后再试 | 新增（FR-SKM-SRC/UPD，§13，M5 草稿） |
-| `unsafe-archive` | 压缩包含不安全路径（`..`、绝对路径、盘符、保留名、大小写冲突），整包拒绝；detail 给出第一个违规条目 | 否 | 压缩包不安全，已拒绝 | 新增（FR-SKM-SRC，§13，M5 草稿） |
+| `network-failure` | 连不上 GitHub（DNS、TLS、超时、5xx），detail 写类别 | 是 | 网络错误，检查网络或代理后重试 | 新增（FR-SKM-SRC，§13） |
+| `rate-limited` | GitHub 匿名额度用完（403/429 且剩余 0），detail 带重置时间 | 重置后 | GitHub 额度已用完，几点后再试 | 新增（FR-SKM-SRC/UPD，§13） |
+| `unsafe-archive` | 压缩包含不安全路径（`..`、绝对路径、盘符、保留名、大小写冲突），整包拒绝；detail 给出第一个违规条目 | 否 | 压缩包不安全，已拒绝 | 新增（FR-SKM-SRC，§13） |
 
 ### 1.4 通用入参校验规则（所有方法）
 
@@ -976,7 +976,7 @@ E12 `skills-changed` 在扫描完成与每次操作完成后发；前端重新�
 
 ## 13. R2 增补：安装来源与更新（M5）
 
-> 状态：草稿，待用户审核（随 docs/PLAN-M5.md v0.1）。需求见 PRD 第 15 节 FR-SKM-SRC / FR-SKM-UPD；实现见技术设计第 16 节；存储见数据库设计 3.8 与 4.6；界面见 docs/UI设计稿.md 9.4。
+> 状态：用户 2026-11-21 审核通过（随 docs/PLAN-M5.md v0.1 批准）。需求见 PRD 第 15 节 FR-SKM-SRC / FR-SKM-UPD；实现见技术设计第 16 节；存储见数据库设计 3.8 与 4.6；界面见 docs/UI设计稿.md 9.4。
 
 ### 13.1 类型
 

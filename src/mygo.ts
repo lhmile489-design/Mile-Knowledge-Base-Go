@@ -448,6 +448,8 @@ export interface KbSkill {
   path: string;
   category: string;
   distributed?: KbSkillDistribution[];
+  /** M5: GitHub origin and update state */
+  remote?: SkillRemote;
 }
 
 /** KbSkillDistribution is one tool this knowledge-base skill reached (M78). */
@@ -488,6 +490,10 @@ export interface MutationAction {
   expectedTargetRevision?: number;
   text?: string;
   reason: string;
+  /** importFile only (API §13.4): the staged file this action writes. */
+  stageId?: string;
+  stagePath?: string;
+  stageHash?: string;
 }
 
 /** MutationPlan is what the plan card shows and what execute receives. */
@@ -934,6 +940,24 @@ export interface SkillRegistryResult {
   failure?: Failure;
 }
 
+/** SkillRemote is the M5 source record plus its latest checked update state. */
+export interface SkillRemote {
+  owner: string;
+  repo: string;
+  ref: string;
+  /** repository sub-path; "" means the repository root */
+  path: string;
+  /** head commit the download was pinned to */
+  commit: string;
+  pathCommit: string;
+  installedAt: string;
+  /** up-to-date | update-available | both-changed | local-modified | unchecked | error */
+  updateState: string;
+  latestPathCommit?: string;
+  checkedAt?: string;
+  error?: string;
+}
+
 /** SkillRestoreResult is M83. */
 export interface SkillRestoreResult {
   restoredTo: string;
@@ -1099,6 +1123,8 @@ export interface ToolSkill {
   base?: string;
   /** path inside that root, slash-separated */
   rel?: string;
+  /** M5: GitHub origin and update state */
+  remote?: SkillRemote;
 }
 
 /** TransactionSummary is one transaction row in the audit panel. */
