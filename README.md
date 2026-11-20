@@ -80,7 +80,8 @@
 | M3 验收 | 总览、设置五节、主题与分类持久化、进检索、重启 | `bash scripts/e2e/ac-m3.sh`（需要 e2e 构建） | 已验证 47/47 |
 | M3 视觉对照 | 50 张新版截图 + 本地并排对照页 | `python -I scripts/visual/capture-new.py`（生成物在 `design/compare/`，已 gitignore） | 已验证（见 docs/PLAN-M3.md §6）；M3.5 T08 用 `--accent indigo` 在靛下重拍对照 |
 | M3.5 视觉 | 6 预设 × 浅 / 深真实界面 13 张；技能浮层按橙 18 张 | `python -I scripts/visual/capture-new.py --accents`；`design/r2/shots/` | 已验证（见 docs/PLAN-M3.5.md §9） |
-| 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical --input <json>` | 已接入（阻断，正反对照通过） |
+| M4 性能 | 技能扫描 p95 与分发/卸载时延 | `bash scripts/e2e/perf-m4.sh`（假 HOME，700 条目） | 已验证：scan p95 123ms、op p95 30ms；`perf:gate --kind skills` 通过 |
+| 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical\|big\|skills --input <json>` | 已接入（阻断，正反对照通过） |
 | 旧版性能基线 | 只读运行旧版 Electron 测冷启动与检索 | `bash scripts/perf-legacy/bench.sh typical\|big` | 已验证（见 docs/PLAN-M3.md §6） |
 | 安装包 | 1.1.0 NSIS 安装包 | `bun run build`（产物 `build/windows-amd64/mile-knowledge-base-setup-1.1.0-amd64.exe`） | 本机 1.0.0 → 1.1.0 升级冒烟通过（设置保留、默认橙；见 docs/发布清单.md 第 8 节） |
 | M2 冒烟 | Secrets 与系统代理能力 | `go run ./spikes/t00-smoke` | 已验证（Secrets 存取/超长拒绝/删除；netproxy 回环直连） |

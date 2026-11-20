@@ -21,6 +21,10 @@ TARGETS = {
     "big": {
         "searchP95Ms": 200,
     },
+    "skills": {
+        "scanP95Ms": 200,
+        "opP95Ms": 300,
+    },
 }
 
 LABELS = {
@@ -29,6 +33,8 @@ LABELS = {
     "viewerFirstFrameMs": "历史查看器首帧 ms",
     "slowFrames": "流式 >20ms 帧数",
     "keyLatencyP90Ms": "按键延迟 p90 ms",
+    "scanP95Ms": "技能扫描 p95 ms",
+    "opP95Ms": "技能操作 p95 ms",
 }
 
 
