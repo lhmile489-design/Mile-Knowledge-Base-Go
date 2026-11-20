@@ -102,12 +102,14 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 	detector := s.detector()
 	tools := detector.Detect()
 	kb, refs, root := s.kbSkills(ctx, vaultID)
+	state := skills.LoadState(filepath.Join(s.app.DataDir, "skills", "state.json"))
 	groups, warnings := skills.ScanTools(skills.ScanOptions{
-		VaultID:   vaultID,
-		VaultRoot: root,
-		Kb:        kb,
-		KbRefs:    refs,
-		Tools:     tools,
+		VaultID:       vaultID,
+		VaultRoot:     root,
+		Kb:            kb,
+		KbRefs:        refs,
+		Tools:         tools,
+		Distributions: state.Distributions,
 	})
 	scan := contract.SkillScan{Kb: kb, Tools: groups, Warnings: warnings}
 	if err := skills.SaveScanCache(s.cachePath(), scan, s.now().UTC().Format(time.RFC3339)); err != nil {

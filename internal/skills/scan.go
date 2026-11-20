@@ -33,6 +33,7 @@ type Distribution struct {
 	Mode       string
 	Name       string
 	BaseHash   string
+	CreatedAt  string
 }
 
 // ScanOptions carries everything a scan needs; nothing is read from globals.

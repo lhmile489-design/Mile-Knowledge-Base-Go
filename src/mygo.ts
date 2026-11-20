@@ -819,11 +819,51 @@ export interface SkillCategory {
   skills: KbSkill[];
 }
 
+/** SkillDistributeTarget is one destination of M78/M79. */
+export interface SkillDistributeTarget {
+  targetId: string;
+  allowOverwrite?: boolean;
+}
+
 /** SkillEntry is one assignable skill (M71). */
 export interface SkillEntry {
   path: string;
   category: string;
   name: string;
+}
+
+/** SkillOpItem is one target's result of a distribute/uninstall (M79/M81). */
+export interface SkillOpItem {
+  targetId: string;
+  toolId: string;
+  /** linked | copied | skipped | failed */
+  result: string;
+  detail?: string;
+  backupId?: string;
+}
+
+/** SkillOpResult is M79 and M81. */
+export interface SkillOpResult {
+  items: SkillOpItem[];
+  failure?: Failure;
+}
+
+/** SkillPreviewItem is one target of a distribute preview (M78). */
+export interface SkillPreviewItem {
+  targetId: string;
+  toolId: string;
+  name: string;
+  /** create | exists | overwrite | conflict | duplicate | protected */
+  action: string;
+  targetPath: string;
+  backupPath?: string;
+  detail?: string;
+}
+
+/** SkillPreviewResult is M78. */
+export interface SkillPreviewResult {
+  items: SkillPreviewItem[];
+  failure?: Failure;
 }
 
 /** SkillRegistryResult is M76. */
@@ -1397,6 +1437,10 @@ export const ConversationService = {
  * background refresh and E12. Write operations arrive in T05–T08.
  */
 export const SkillService = {
+  /** Distribute is M79. */
+  distribute: bind<[string, string, SkillDistributeTarget[], string], SkillOpResult>("SkillService.Distribute", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
+  /** DistributePreview is M78. */
+  distributePreview: bind<[string, string, SkillDistributeTarget[], string], SkillPreviewResult>("SkillService.DistributePreview", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
   /** Registry is M76: the built-in tools plus detection, with redacted paths. */
   registry: bind<[], SkillRegistryResult>("SkillService.Registry", () => []),
   /** Scan is M77: cached-first with a background refresh (API.md §12.2). */

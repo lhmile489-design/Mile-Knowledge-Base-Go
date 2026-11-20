@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 )
@@ -105,4 +106,64 @@ func (c *ScanCache) ToScan(scanning bool) contract.SkillScan {
 		Tools:    c.Tools,
 		Warnings: c.Warnings,
 	}
+}
+
+// Distribution records live in skills/state.json (数据库设计 4.6). They are
+// the source of truth for "which knowledge-base skill was distributed to
+// which tool, and how" — the scan and later uninstall both read them.
+
+const stateVersion = 1
+
+// State is the on-disk shape of skills/state.json.
+type State struct {
+	Version       int            `json:"version"`
+	Distributions []Distribution `json:"distributions"`
+}
+
+// LoadState returns an empty state for a missing or corrupt file; callers do
+// not fail a scan because a bookkeeping file is unreadable.
+func LoadState(path string) *State {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return &State{Version: stateVersion, Distributions: []Distribution{}}
+	}
+	var state State
+	if err := json.Unmarshal(body, &state); err != nil || state.Version != stateVersion {
+		return &State{Version: stateVersion, Distributions: []Distribution{}}
+	}
+	if state.Distributions == nil {
+		state.Distributions = []Distribution{}
+	}
+	return &state
+}
+
+// SaveState writes state.json atomically.
+func SaveState(path string, state State) error {
+	state.Version = stateVersion
+	if state.Distributions == nil {
+		state.Distributions = []Distribution{}
+	}
+	body, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, append(body, '\n'), 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
+}
+
+// AddDistribution appends or replaces the record for the same tool+target.
+func (s *State) AddDistribution(record Distribution) {
+	for i, existing := range s.Distributions {
+		if existing.ToolID == record.ToolID && strings.EqualFold(existing.TargetPath, record.TargetPath) {
+			s.Distributions[i] = record
+			return
+		}
+	}
+	s.Distributions = append(s.Distributions, record)
 }

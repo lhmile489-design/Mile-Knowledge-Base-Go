@@ -106,3 +106,55 @@ func TestSkillServiceScanRejectsBadVault(t *testing.T) {
 		t.Fatal("failure message is empty")
 	}
 }
+
+func TestSkillServiceDistributeWritesRecord(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	home := t.TempDir()
+	writeFile := func(rel, body string) {
+		t.Helper()
+		full := filepath.Join(home, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeFile(".local/bin/claude.cmd", "@echo off")
+	skillDir := filepath.Join(root, "skills", "前端", "vue")
+	if err := os.MkdirAll(skillDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("# vue\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	svc := NewSkillService(app)
+	svc.detector = func() *skills.Detector {
+		return &skills.Detector{
+			Home: home, LocalAppData: filepath.Join(home, "AppData", "Local"),
+			UserProgramFiles: filepath.Join(home, "Programs"),
+			CLIDirs:          []string{filepath.Join(home, ".local", "bin")},
+		}
+	}
+	targets := []contract.SkillDistributeTarget{{TargetID: "claude-code"}}
+	preview := svc.DistributePreview(context.Background(), vaultID, "skills/前端/vue", targets, "link")
+	if preview.Failure != nil || preview.Items[0].Action != "create" {
+		t.Fatalf("preview = %+v", preview)
+	}
+	result := svc.Distribute(context.Background(), vaultID, "skills/前端/vue", targets, "link")
+	if result.Failure != nil || result.Items[0].Result != "linked" {
+		t.Fatalf("distribute = %+v", result)
+	}
+	if kind, _, err := skills.Classify(filepath.Join(home, ".claude", "skills", "vue")); err != nil || kind != skills.KindJunction {
+		t.Fatalf("target kind = %q %v", kind, err)
+	}
+	state := skills.LoadState(filepath.Join(app.DataDir, "skills", "state.json"))
+	if len(state.Distributions) != 1 || state.Distributions[0].VaultID != vaultID ||
+		state.Distributions[0].SkillPath != "skills/前端/vue" {
+		t.Fatalf("state = %+v", state.Distributions)
+	}
+	again := svc.DistributePreview(context.Background(), vaultID, "skills/前端/vue", targets, "link")
+	if again.Items[0].Action != "exists" {
+		t.Fatalf("second preview = %+v", again.Items[0])
+	}
+}

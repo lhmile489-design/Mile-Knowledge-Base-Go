@@ -48,9 +48,12 @@ import {
   type SkillCategory,
   type ToolSkill,
   type SkillsChangedEvent,
+  type SkillDistributeTarget,
+  type SkillPreviewResult,
+  type SkillOpResult,
 } from "../mygo";
 
-export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent };
+export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
 
 export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
@@ -109,6 +112,10 @@ export const settingsApi = {
 export const skillsApi = {
   registry: () => guard(async () => unwrap(await SkillService.registry())),
   scan: (vaultId: string) => guard(async () => unwrap(await SkillService.scan(vaultId))),
+  distributePreview: (vaultId: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) =>
+    guard(async () => unwrap(await SkillService.distributePreview(vaultId, skillPath, targets, mode))),
+  distribute: (vaultId: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) =>
+    guard(async () => unwrap(await SkillService.distribute(vaultId, skillPath, targets, mode))),
 };
 
 export const vaultApi = {

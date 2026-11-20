@@ -1271,3 +1271,9 @@ type SkillBackupsResult struct {
 	Items   []SkillBackup `json:"items"`
 	Failure *Failure      `json:"failure,omitempty"`
 }
+
+// SkillDistributeTarget is one destination of M78/M79.
+type SkillDistributeTarget struct {
+	TargetID       string `json:"targetId"`
+	AllowOverwrite bool   `json:"allowOverwrite,omitempty"`
+}
