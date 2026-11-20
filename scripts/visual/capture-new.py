@@ -423,6 +423,258 @@ def main():
             log("  [captured] real-settings-light.png")
             return 0
 
+        if "--skills-shots" in sys.argv:
+            # M4 T15: 18 states of the real skills panel (9 states × light/dark),
+            # captured into design/r2/shots/ and compared with the prototype.
+            import subprocess as sp
+            import io as pyio
+
+            from PIL import Image as PILImage
+
+            shots = ROOT / "design" / "r2" / "shots"
+            shots.mkdir(parents=True, exist_ok=True)
+            home = canon(tempfile.mkdtemp(prefix="mkb-skills-home-"))
+
+            def hw(rel, body):
+                full = Path(home) / rel
+                full.parent.mkdir(parents=True, exist_ok=True)
+                full.write_text(body, encoding="utf-8")
+
+            hw(".local/bin/claude.cmd", "@echo off")
+            hw(".local/bin/cursor.cmd", "@echo off")
+            hw(".local/bin/trae.cmd", "@echo off")
+            hw(".kiro/skills/x/SKILL.md", "# leftover\n")
+            hw(".claude/skills/copiedone/SKILL.md", "# copied\n")
+            hw(".claude/skills/indepone/SKILL.md", "# independent\n")
+            hw(".cursor/skills/vue/SKILL.md", "# old vue\n")
+            hw(".trae/builtin_skills/builtinone/SKILL.md", "# builtin\n")
+            ext = Path(tempfile.mkdtemp(prefix="mkb-skills-ext-")) / "extskill"
+            ext.mkdir()
+            (ext / "SKILL.md").write_text("# external\n", encoding="utf-8")
+            gone = Path(tempfile.mkdtemp(prefix="mkb-skills-gone-")) / "gone"
+            gone.mkdir()
+            (gone / "SKILL.md").write_text("# gone\n", encoding="utf-8")
+
+            def junction(link, target):
+                sp.run(
+                    [
+                        "powershell",
+                        "-NoProfile",
+                        "-Command",
+                        "New-Item -ItemType Junction -Path '%s' -Target '%s' | Out-Null" % (link, target),
+                    ],
+                    capture_output=True,
+                )
+
+            junction(str(Path(home) / ".claude" / "skills" / "linked"), str(Path(vault) / "skills" / "前端" / "vue"))
+            junction(str(Path(home) / ".claude" / "skills" / "extskill"), str(ext))
+            junction(str(Path(home) / ".claude" / "skills" / "brokenone"), str(gone))
+            sp.run(
+                ["powershell", "-NoProfile", "-Command", "Remove-Item -Recurse -Force '%s'" % gone],
+                capture_output=True,
+            )
+
+            registry = Path(home) / "registry.json"
+            registry.write_text(
+                json.dumps({"uninstall": [{"displayName": "TRAE 2.0", "installLocation": ""}]}),
+                encoding="utf-8",
+            )
+            state_dir = Path(appdata) / "Mile Knowledge Base" / "skills"
+            state_dir.mkdir(parents=True, exist_ok=True)
+            (state_dir / "state.json").write_text(
+                json.dumps(
+                    {
+                        "version": 1,
+                        "distributions": [
+                            {
+                                "id": "d-aaaaaaaaaaaa",
+                                "vaultId": vault_id_of(vault),
+                                "skillPath": "skills/前端/vue",
+                                "toolId": "claude-code",
+                                "targetPath": str(Path(home) / ".claude" / "skills" / "copiedone"),
+                                "mode": "copy",
+                                "name": "vue",
+                                "createdAt": "2026-11-20T09:00:00Z",
+                                "baseHash": "sha256:old",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            for rel in ["前端/vue", "后端/vue", "分类/foo"]:
+                target = Path(vault) / "skills" / rel
+                target.mkdir(parents=True, exist_ok=True)
+                (target / "SKILL.md").write_text("# %s\n\n" % Path(rel).name, encoding="utf-8")
+
+            app.terminate()
+            time.sleep(2.0)
+            for db in (Path(appdata) / "Mile Knowledge Base" / "index").glob("*.db*"):
+                try:
+                    db.unlink()
+                except OSError:
+                    pass
+            env = {
+                **os.environ,
+                "APPDATA": appdata,
+                "MYGO_AUTOMATION": f"tcp:127.0.0.1:{PORT}",
+                "SKILLS_FAKE_HOME": home,
+                "SKILLS_FAKE_PATH": str(Path(home) / ".local" / "bin"),
+                "SKILLS_FAKE_REGISTRY": str(registry),
+            }
+            app = subprocess.Popen([str(APP)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            d = Driver(PORT)
+            d.connect(40)
+            d.wait("!!document.querySelector('[data-testid=\"overview-grid\"]')", 60)
+            try:
+                d.wait("!document.body.innerText.includes('未索引')", 60)
+            except Exception:
+                pass
+            time.sleep(1.5)
+
+            def warm_scan():
+                for _ in range(15):
+                    d.js("window.__mkbSkills.getState().loadScan(window.__mkbApp.getState().activeVaultId); true")
+                    time.sleep(1.0)
+                    if d.js("(window.__mkbSkills.getState().scan?.kb?.length ?? 0) > 0"):
+                        return
+                raise RuntimeError("skills scan never produced knowledge-base skills")
+
+            warm_scan()
+
+            def cap(name):
+                png = d.capture()
+                image = PILImage.open(pyio.BytesIO(png)).convert("RGB").resize((1440, 900), PILImage.LANCZOS)
+                image.save(shots / f"{name}.png")
+                log(f"  [captured] {name}.png")
+
+            CONTRAST_JS = """(() => {
+              const parse = (s) => (s.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+              const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126*f(c[0])+0.7152*f(c[1])+0.0722*f(c[2]); };
+              const ratio = (a, b) => { const x = lum(parse(a)), y = lum(parse(b)); const hi = Math.max(x, y), lo = Math.min(x, y); return (hi + 0.05) / (lo + 0.05); };
+              const panel = document.querySelector('[data-testid="skills-panel"]');
+              if (!panel) return '[]';
+              const bg = getComputedStyle(panel).backgroundColor;
+              const pick = ['.skills-foot span', '.kb-group-title', '.kb-card-desc', '.tool-row-path', '.skills-tabs .segmented-item[aria-selected="true"]'];
+              return JSON.stringify(pick.map((sel) => { const el = panel.querySelector(sel); return el ? [sel, +ratio(getComputedStyle(el).color, bg).toFixed(2)] : [sel, null]; }));
+            })()"""
+
+            def states(theme):
+                d.js("window.__mkbApp.getState().closeSkillsPanel(); true")
+                time.sleep(0.4)
+                cap(f"closed-{theme}")
+                d.js("window.__mkbApp.getState().openSkillsPanel(); true")
+                time.sleep(0.5)
+                d.js(
+                    "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('知识库技能')); if(tab) tab.click(); return true; })()"
+                )
+                d.wait("document.querySelector('[data-testid=\"kb-card-vue\"]') !== null", 30)
+                time.sleep(0.8)
+                log(f"  contrast {theme}: " + str(d.js(CONTRAST_JS)))
+                cap(f"kb-{theme}")
+                d.js("(() => { const b=document.querySelector('[data-testid=\"kb-batch-toggle\"]'); if(b) b.click(); return true; })()")
+                time.sleep(0.4)
+                d.js(
+                    "(() => { const boxes=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=checkbox][aria-label^=\"选择 \"]')];"
+                    " boxes.slice(0,2).forEach((b)=>b.click()); return true; })()"
+                )
+                time.sleep(0.4)
+                cap(f"kb-select-{theme}")
+                d.js("(() => { const b=document.querySelector('[data-testid=\"kb-batch-toggle\"]'); if(b) b.click(); return true; })()")
+                time.sleep(0.3)
+                d.js(
+                    "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('工具技能')); if(tab) tab.click(); return true; })()"
+                )
+                time.sleep(0.7)
+                cap(f"tools-{theme}")
+                d.js(
+                    "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('知识库技能')); if(tab) tab.click(); return true; })()"
+                )
+                time.sleep(0.6)
+                d.js(
+                    "(() => { const card=document.querySelector('[data-testid=\"kb-grid-前端\"] [data-testid=\"kb-card-vue\"]');"
+                    " const b=card && [...card.querySelectorAll('button')].find((x)=>x.textContent.trim()==='分发'); if(b) b.click(); return true; })()"
+                )
+                d.wait("document.querySelector('[data-testid=\"distribute-dialog\"]') !== null", 12)
+                time.sleep(0.8)
+                cap(f"distribute-{theme}")
+                d.js(
+                    "(() => { const b=[...document.querySelectorAll('[data-testid=\"distribute-dialog\"] button')].find((x)=>x.textContent.trim()==='取消'); if(b) b.click(); return true; })()"
+                )
+                time.sleep(0.3)
+                d.js(
+                    "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('工具技能')); if(tab) tab.click(); return true; })()"
+                )
+                time.sleep(0.6)
+                d.js("(() => { const b=document.querySelector('[data-testid=\"tool-uninstall-copiedone\"]'); if(b) b.click(); return true; })()")
+                d.wait("document.querySelector('[data-testid=\"uninstall-dialog\"]') !== null", 10)
+                time.sleep(0.6)
+                cap(f"uninstall-{theme}")
+                d.js(
+                    "(() => { const b=[...document.querySelectorAll('[data-testid=\"uninstall-dialog\"] button')].find((x)=>x.textContent.trim()==='取消'); if(b) b.click(); return true; })()"
+                )
+                time.sleep(0.3)
+                d.js("(() => { const b=document.querySelector('[data-testid^=\"tool-adopt-indepone-\"]'); if(b) b.click(); return true; })()")
+                d.wait("document.querySelector('[data-testid=\"adopt-dialog\"]') !== null", 10)
+                time.sleep(0.5)
+                cap(f"adopt-{theme}")
+                d.js(
+                    "(() => { const b=[...document.querySelectorAll('[data-testid=\"adopt-dialog\"] button')].find((x)=>x.textContent.trim()==='取消'); if(b) b.click(); return true; })()"
+                )
+                time.sleep(0.3)
+                d.js(
+                    "(() => { const b=[...document.querySelectorAll('[data-testid=\"skills-panel\"] button')].find((x)=>x.textContent.trim()==='安装'); if(b) b.click(); return true; })()"
+                )
+                d.wait("document.querySelector('[data-testid=\"install-local\"]') !== null", 10)
+                time.sleep(0.6)
+                cap(f"install-{theme}")
+                d.js("(() => { const b=document.querySelector('[aria-label=\"返回技能列表\"]'); if(b) b.click(); return true; })()")
+                time.sleep(0.3)
+                d.js("window.__mkbApp.getState().closeSkillsPanel(); true")
+                time.sleep(0.3)
+
+            states("light")
+            d.js("window.__mkbApp.getState().setTheme('dark'); true")
+            time.sleep(0.8)
+            states("dark")
+            app.terminate()
+
+            # No-vault state on a fresh APPDATA. Make sure the first instance
+            # is really gone (a lingering one would own the single-instance
+            # lock) and use its own automation port.
+            subprocess.run(["taskkill", "/F", "/IM", "Mile Knowledge Base.exe"], capture_output=True)
+            time.sleep(2.0)
+            empty = canon(tempfile.mkdtemp(prefix="mkb-skills-empty-"))
+            port2 = PORT + 3  # PORT+1 is the fake provider
+            app2 = subprocess.Popen(
+                [str(APP)],
+                env={**os.environ, "APPDATA": empty, "MYGO_AUTOMATION": f"tcp:127.0.0.1:{port2}"},
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            try:
+                d2 = Driver(port2)
+                d2.connect(40)
+                d2.wait("!!document.querySelector('.welcome-shell')", 60)
+                time.sleep(1.0)
+                d2.js("window.__mkbApp.getState().openSkillsPanel(); true")
+                d2.wait("document.querySelector('[data-testid=\"skills-panel\"]') !== null", 20)
+                time.sleep(0.6)
+                png = d2.capture()
+                PILImage.open(pyio.BytesIO(png)).convert("RGB").resize((1440, 900), PILImage.LANCZOS).save(
+                    shots / "novault-light.png"
+                )
+                d2.js("window.__mkbApp.getState().setTheme('dark'); true")
+                time.sleep(0.8)
+                png = d2.capture()
+                PILImage.open(pyio.BytesIO(png)).convert("RGB").resize((1440, 900), PILImage.LANCZOS).save(
+                    shots / "novault-dark.png"
+                )
+                log("  [captured] novault-light/dark.png")
+            finally:
+                app2.terminate()
+            return 0
+
         if "--probe" in sys.argv:
             log(str(DRIVER.js(
                 "JSON.stringify({inner: window.innerWidth,"
