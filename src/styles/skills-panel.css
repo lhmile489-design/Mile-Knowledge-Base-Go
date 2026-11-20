@@ -729,3 +729,112 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* ---------- 安装视图（M4 T12；UI 稿 install-*） ---------- */
+.install-view {
+  display: grid;
+  gap: 10px;
+}
+
+.install-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-body-sm);
+  color: var(--raw-strong);
+}
+
+.install-sources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.install-source {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-card);
+  background: var(--raw-sunken);
+  color: var(--raw-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  cursor: pointer;
+}
+
+.install-source:hover:not(:disabled) {
+  border-color: var(--raw-line-strong);
+}
+
+.install-source:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.install-source em {
+  font-style: normal;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.install-recent {
+  display: grid;
+  gap: 6px;
+}
+
+.install-records {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.install-record {
+  display: grid;
+  grid-template-columns: 52px 110px minmax(0, 1fr) 150px auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: var(--radius-control);
+  background: var(--raw-sunken);
+  font-size: var(--text-meta);
+}
+
+.install-record-op {
+  font-weight: 600;
+  color: var(--raw-strong);
+}
+
+.install-record-skill {
+  overflow: hidden;
+  color: var(--raw-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.install-record-loc {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.install-record-time {
+  color: var(--raw-faint);
+  font-size: var(--text-caption);
+}
+
+/* Embedded wizard fills the install area instead of overlaying the window. */
+.skill-wizard-embedded {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}

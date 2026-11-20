@@ -17,9 +17,17 @@ type Step = "source" | "select" | "done";
 /** Skill import wizard (M3 T08; PRD FR-SKILL). Three steps: pick a source
  * folder, choose skills and a category, then the result. The overlay starts
  * below the title bar, Esc closes it and focus returns to the sidebar entry. */
-export function SkillImportWizard() {
-  const open = useAppStore((state) => state.skillWizardOpen);
+export function SkillImportWizard({
+  embedded = false,
+  onClose,
+}: {
+  readonly embedded?: boolean;
+  readonly onClose?: () => void;
+} = {}) {
+  const storeOpen = useAppStore((state) => state.skillWizardOpen);
   const closeWizard = useAppStore((state) => state.closeSkillWizard);
+  const open = embedded || storeOpen;
+  const close = () => (embedded ? onClose?.() : closeWizard());
   const vaultId = useAppStore((state) => state.activeVaultId);
   const invalidateTree = useTreeStore((state) => state.invalidate);
   const [step, setStep] = useState<Step>("source");
@@ -51,14 +59,14 @@ export function SkillImportWizard() {
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopPropagation();
-      closeWizard();
+      close();
       window.requestAnimationFrame(() =>
         document.querySelector<HTMLButtonElement>('[data-testid="open-skills"]')?.focus(),
       );
     };
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [open, closeWizard]);
+  }, [open, embedded, onClose]);
 
   const problem = useMemo(() => categoryProblem(category), [category]);
   const sorted = useMemo(
@@ -116,13 +124,12 @@ export function SkillImportWizard() {
     });
   };
 
-  return (
-    <div className="skill-wizard-backdrop" role="presentation">
+  const panel = (
       <div
         ref={panelRef}
-        className="skill-wizard"
+        className={embedded ? "skill-wizard skill-wizard-embedded" : "skill-wizard"}
         role="dialog"
-        aria-modal="true"
+        aria-modal={embedded ? undefined : "true"}
         aria-labelledby="skill-wizard-title"
         tabIndex={-1}
         data-testid="skill-wizard"
@@ -138,7 +145,7 @@ export function SkillImportWizard() {
             type="button"
             className="icon-button"
             aria-label="关闭导入向导"
-            onClick={() => closeWizard()}
+            onClick={() => close()}
           >
             <X size={15} aria-hidden />
           </button>
@@ -259,13 +266,18 @@ export function SkillImportWizard() {
               >
                 换个分类再导入
               </button>
-              <button type="button" className="btn-primary" onClick={() => closeWizard()} data-testid="skill-wizard-done">
+              <button type="button" className="btn-primary" onClick={() => close()} data-testid="skill-wizard-done">
                 完成
               </button>
             </div>
           </div>
         ) : null}
       </div>
+  );
+  if (embedded) return panel;
+  return (
+    <div className="skill-wizard-backdrop" role="presentation">
+      {panel}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { useTreeStore } from "../../stores/treeStore";
 import { KbSkillsPage } from "./KbSkillsPage";
 import { DistributeDialog } from "./DistributeDialog";
 import { ToolSkillsPage } from "./ToolSkillsPage";
+import { InstallView } from "./InstallView";
 
 type Page = "kb" | "tools";
 
@@ -17,13 +18,13 @@ type Page = "kb" | "tools";
 export function SkillsPanel() {
   const open = useAppStore((state) => state.skillsPanelOpen);
   const closePanel = useAppStore((state) => state.closeSkillsPanel);
-  const openWizard = useAppStore((state) => state.openSkillWizard);
   const vaultId = useAppStore((state) => state.activeVaultId);
   const chooseVault = useAppStore((state) => state.chooseVault);
   const scan = useSkillsStore((state) => state.scan);
   const tools = useSkillsStore((state) => state.tools);
   const [page, setPage] = useState<Page>("kb");
   const [distributePaths, setDistributePaths] = useState<string[] | null>(null);
+  const [installOpen, setInstallOpen] = useState(false);
   const [box, setBox] = useState<{ right: number; width: number; height: number } | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -119,7 +120,10 @@ export function SkillsPanel() {
                 className="segmented-item"
                 tabIndex={page === id || index === 0 ? 0 : -1}
                 data-skills-tab
-                onClick={() => setPage(id)}
+                onClick={() => {
+                  setInstallOpen(false);
+                  setPage(id);
+                }}
                 onKeyDown={(event) => {
                   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
                   event.preventDefault();
@@ -136,7 +140,14 @@ export function SkillsPanel() {
               </button>
             ))}
           </div>
-          <button type="button" className="btn-quiet skills-install" onClick={() => openWizard()}>
+          <button
+            type="button"
+            className="btn-quiet skills-install"
+            onClick={() => {
+              setDistributePaths(null);
+              setInstallOpen(true);
+            }}
+          >
             <Plus size={13} aria-hidden />
             安装
           </button>
@@ -146,7 +157,15 @@ export function SkillsPanel() {
         </header>
 
         <div className="skills-body scroll-y" data-testid="skills-body">
-          {page === "kb" ? (
+          {installOpen && vaultId ? (
+            <InstallView
+              vaultId={vaultId}
+              onBack={() => setInstallOpen(false)}
+              onChanged={() => {
+                if (vaultId) void useSkillsStore.getState().loadScan(vaultId);
+              }}
+            />
+          ) : page === "kb" ? (
             vaultId ? (
               <KbSkillsPage
                 groups={scan?.kb ?? []}
@@ -160,7 +179,7 @@ export function SkillsPanel() {
                   close();
                 }}
                 onDistribute={(paths) => setDistributePaths(paths)}
-                onInstall={() => openWizard()}
+                onInstall={() => setInstallOpen(true)}
               />
             ) : (
               <div className="skills-empty">
