@@ -44,7 +44,7 @@
 | 编号 | 目标 | 修改范围 | 依赖 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | T00 | 契约落盘 | 技术设计 §15、API §12、数据库设计 4.6、本计划 | 用户批准本计划 | 三份契约与本计划按批准意见定稿；伪造开关与错误码进入 contract | 待验证（门禁已过，待用户验收） |
-| T01 | 路径与链接底层 | `internal/skills/{link_windows,paths}.go`、`internal/contract`、测试 | T00 | 重解析点识别/创建/删除；删链接不跟随、`RemoveAll` 回归通过 | 待做 |
+| T01 | 路径与链接底层 | `internal/skills/{reparse_windows,paths}.go`、`internal/contract`、测试 | T00 | 重解析点识别/创建/删除；删链接不跟随、`RemoveAll` 回归通过 | 待验证（门禁已过，待用户验收） |
 | T02 | 注册表与探测 | `internal/skills/{registry,detect}.go`、注入表与测试 | T01 | 25 个工具表；3 条证据；三态；假 PATH/注册表单测 | 待做 |
 | T03 | 扫描与缓存 | `internal/skills/{scan,state}.go`、`scan-cache.json` | T02 | 六种来源状态与同步状态；缓存损坏重建；单测覆盖 | 待做 |
 | T04 | 服务与事件骨架 | `internal/service/skills.go`、`contract`、`src/lib/transport.ts`、`src/stores/skillsStore.ts`（新） | T03 | M76/M77 + E12；前端 store 能拿到注册表与扫描结果 | 待做 |
@@ -130,7 +130,8 @@ M4 实测后按 G-PERF 阻断口径校准，超目标先报告再决定。
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-20 | 计划 | v0.1 草案 | — | 自查见第 9 节 | 用户 2026-11-20 批准，B-M4-01–03 按建议执行，放行 T00 |
-| 2026-11-20 | T00 | 完成：技术设计 §15、API §12、数据库设计 4.6、本计划去掉草稿标记并写「用户 2026-11-20 审核通过」；`internal/contract` 新增技能类型（ToolSkill、SkillScan、预览/结果/记录/备份）、3 个错误码（skill-conflict / skill-protected / backup-missing）与 3 个假环境开关常量（SKILLS_FAKE_HOME/PATH/REGISTRY，仅 e2e 构建读取）。`mygo generate` 确认前端绑定无变化（SkillService 在 T04 才出现） | 见下 | `go build ./...`、`bun run check:bindings`、`bun run typecheck` | 等待放行 T01 |
+| 2026-11-20 | T01 | 完成：`internal/skills/reparse_windows.go`（Classify 按重解析数据判联接/符号链接、CreateJunction 走 FSCTL_SET_REPARSE_POINT 并拒绝 UNC/缺失目标、RemoveLink 只删链接、SafeWalk 不进入重解析点、UnderRoot 按分隔边界比较）与 `paths.go`（IsValidSegment 与 FR-SKILL 同名规则、ResolveUnder 拒绝越界与联接父目录、TreeHash 跳过链接）。9 项测试覆盖 R-9 C6–C8 回归：删链接后目标哈希不变、`RemoveAll` 不跟随、路径守卫与名称规则与 vault 侧逐例对齐。`golang.org/x/sys` 转为直接依赖 | 见下 | `go test ./internal/skills/` 9 项、`go test ./...` 537 项、vet / gofmt、`check:bindings` | 等待放行 T02 |
+| 2026-11-20 | T00 | 完成：技术设计 §15、API §12、数据库设计 4.6、本计划去掉草稿标记并写「用户 2026-11-20 审核通过」；`internal/contract` 新增技能类型（ToolSkill、SkillScan、预览/结果/记录/备份）、3 个错误码（skill-conflict / skill-protected / backup-missing）与 3 个假环境开关常量（SKILLS_FAKE_HOME/PATH/REGISTRY，仅 e2e 构建读取）。`mygo generate` 确认前端绑定无变化（SkillService 在 T04 才出现） | 见下 | `go build ./...`、`bun run check:bindings`、`bun run typecheck` | 已放行 T01 |
 
 ## 9. 自查
 
