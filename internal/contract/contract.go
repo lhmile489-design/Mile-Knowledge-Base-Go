@@ -36,6 +36,17 @@ const (
 	CodeProviderError       = "provider-error"
 	CodeApprovalExpired     = "approval-expired"
 	CodeSecretUnavailable   = "secret-unavailable"
+	CodeSkillConflict       = "skill-conflict"
+	CodeSkillProtected      = "skill-protected"
+	CodeBackupMissing       = "backup-missing"
+)
+
+// Skills fake-environment switches (技术设计 15.7, API.md §12.5). Only e2e
+// builds read them; production ignores them.
+const (
+	EnvSkillsFakeHome     = "SKILLS_FAKE_HOME"
+	EnvSkillsFakePath     = "SKILLS_FAKE_PATH"
+	EnvSkillsFakeRegistry = "SKILLS_FAKE_REGISTRY"
 )
 
 // Fail builds a Failure.
@@ -1080,4 +1091,178 @@ type AppConfigChangedEvent struct {
 type PermissionOption struct {
 	ID    string `json:"id"`
 	Label string `json:"label"`
+}
+
+// ---- R2 skills (M4, API.md §12) ----
+
+// SkillTool is one entry of the built-in tool registry plus its detection
+// result (FR-SKM-TOOL/DETECT; paths are already redacted for display).
+type SkillTool struct {
+	ID         string   `json:"id"`      // stable id, e.g. "claude-code", "agents"
+	Name       string   `json:"name"`    // display name
+	IconKey    string   `json:"iconKey"` // brand svg key; "globe" for the shared dir, "" for a letter placeholder
+	InstallDir string   `json:"installDir,omitempty"`
+	ScanDirs   []string `json:"scanDirs"`
+	Readers    []string `json:"readers,omitempty"` // tools that read the shared ~/.agents/skills
+	Status     string   `json:"status"`            // detected | leftover | missing
+	Official   bool     `json:"official"`          // false = official support not verified
+	Enabled    bool     `json:"enabled"`           // MiniMax Code defaults to false
+}
+
+// KbSkill is one knowledge-base skill in the scan result.
+type KbSkill struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Path        string `json:"path"`
+	Category    string `json:"category"`
+}
+
+// ToolSkill is one skill found in a tool directory (FR-SKM-SCAN).
+type ToolSkill struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Path        string `json:"path"`
+	ToolID      string `json:"toolId"`
+	Origin      string `json:"origin"`           // linked | link-broken | copied | independent | builtin | external-link
+	Sync        string `json:"sync,omitempty"`   // in-sync | vault-updated | tool-updated | both-updated | missing
+	Target      string `json:"target,omitempty"` // redacted target of a link
+	Builtin     bool   `json:"builtin,omitempty"`
+}
+
+// SkillCategory groups knowledge-base skills by category.
+type SkillCategory struct {
+	Category string    `json:"category"`
+	Skills   []KbSkill `json:"skills"`
+}
+
+// SkillToolScan groups tool skills by tool.
+type SkillToolScan struct {
+	ToolID string      `json:"toolId"`
+	Skills []ToolSkill `json:"skills"`
+}
+
+// SkillScanWarning is a degraded scan step (unreadable dir, cache rebuilt).
+type SkillScanWarning struct {
+	ToolID string `json:"toolId,omitempty"`
+	Text   string `json:"text"`
+}
+
+// SkillScan is the M77 payload: cached first, refreshed in the background.
+type SkillScan struct {
+	CachedAt string             `json:"cachedAt"`
+	Scanning bool               `json:"scanning"`
+	Kb       []SkillCategory    `json:"kb"`
+	Tools    []SkillToolScan    `json:"tools"`
+	Warnings []SkillScanWarning `json:"warnings,omitempty"`
+}
+
+// SkillPreviewItem is one target of a distribute preview (M78).
+type SkillPreviewItem struct {
+	TargetID   string `json:"targetId"`
+	ToolID     string `json:"toolId"`
+	Name       string `json:"name"`
+	Action     string `json:"action"` // create | exists | overwrite | conflict | duplicate | protected
+	TargetPath string `json:"targetPath"`
+	BackupPath string `json:"backupPath,omitempty"`
+	Detail     string `json:"detail,omitempty"`
+}
+
+// SkillOpItem is one target's result of a distribute/uninstall (M79/M81).
+type SkillOpItem struct {
+	TargetID string `json:"targetId"`
+	ToolID   string `json:"toolId"`
+	Result   string `json:"result"` // linked | copied | skipped | failed
+	Detail   string `json:"detail,omitempty"`
+	BackupID string `json:"backupId,omitempty"`
+}
+
+// SkillUninstallPreview is M80's answer before removing anything.
+type SkillUninstallPreview struct {
+	Kind          string   `json:"kind"` // link | copy | independent
+	Target        string   `json:"target,omitempty"`
+	BackupPath    string   `json:"backupPath,omitempty"`
+	AffectedTools []string `json:"affectedTools,omitempty"`
+}
+
+// SkillLogRecord is one line of skills/log.jsonl (FR-SKM-LOG).
+type SkillLogRecord struct {
+	ID         string `json:"id"`
+	At         string `json:"at"`
+	Op         string `json:"op"` // distribute | uninstall | overwrite | adopt | restore | clean
+	Skill      string `json:"skill"`
+	ToolID     string `json:"toolId,omitempty"`
+	Location   string `json:"location"`
+	Mode       string `json:"mode,omitempty"` // link | copy | copy-adopt
+	Result     string `json:"result"`         // ok | partial | failed
+	BackupID   string `json:"backupId,omitempty"`
+	Restorable bool   `json:"restorable"`
+	Error      string `json:"error,omitempty"`
+}
+
+// SkillBackup is one entry of skills/backups (Q-SKM-3).
+type SkillBackup struct {
+	ID           string `json:"id"`
+	ToolID       string `json:"toolId"`
+	OriginalPath string `json:"originalPath"`
+	Kind         string `json:"kind"` // uninstall | overwrite | adopt
+	CreatedAt    string `json:"createdAt"`
+	Size         int64  `json:"size"`
+	Files        int    `json:"files"`
+	Restorable   bool   `json:"restorable"`
+}
+
+// SkillRegistryResult is M76.
+type SkillRegistryResult struct {
+	Tools   []SkillTool `json:"tools"`
+	Failure *Failure    `json:"failure,omitempty"`
+}
+
+// SkillScanResult is M77.
+type SkillScanResult struct {
+	Scan    SkillScan `json:"scan"`
+	Failure *Failure  `json:"failure,omitempty"`
+}
+
+// SkillPreviewResult is M78.
+type SkillPreviewResult struct {
+	Items   []SkillPreviewItem `json:"items"`
+	Failure *Failure           `json:"failure,omitempty"`
+}
+
+// SkillOpResult is M79 and M81.
+type SkillOpResult struct {
+	Items   []SkillOpItem `json:"items"`
+	Failure *Failure      `json:"failure,omitempty"`
+}
+
+// SkillUninstallResult is M80.
+type SkillUninstallResult struct {
+	Preview SkillUninstallPreview `json:"preview"`
+	Failure *Failure              `json:"failure,omitempty"`
+}
+
+// SkillAdoptResult is M82.
+type SkillAdoptResult struct {
+	VaultPath string   `json:"vaultPath"`
+	Linked    bool     `json:"linked"`
+	BackupIDs []string `json:"backupIds,omitempty"`
+	Failure   *Failure `json:"failure,omitempty"`
+}
+
+// SkillRestoreResult is M83.
+type SkillRestoreResult struct {
+	RestoredTo string   `json:"restoredTo"`
+	Failure    *Failure `json:"failure,omitempty"`
+}
+
+// SkillLogResult is M84.
+type SkillLogResult struct {
+	Records []SkillLogRecord `json:"records"`
+	Failure *Failure         `json:"failure,omitempty"`
+}
+
+// SkillBackupsResult is M85/M86.
+type SkillBackupsResult struct {
+	Items   []SkillBackup `json:"items"`
+	Failure *Failure      `json:"failure,omitempty"`
 }
