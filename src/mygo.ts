@@ -876,6 +876,14 @@ export interface SkillEntry {
   name: string;
 }
 
+/** SkillInstallTarget chooses where M91 installs (API §13.1). */
+export interface SkillInstallTarget {
+  /** kb | tools */
+  kind: string;
+  category?: string;
+  targets?: SkillDistributeTarget[];
+}
+
 /** SkillLogRecord is one line of skills/log.jsonl (FR-SKM-LOG). */
 export interface SkillLogRecord {
   id: string;
@@ -1628,6 +1636,10 @@ export const SkillService = {
   distribute: bind<[string, string, SkillDistributeTarget[], string], SkillOpResult>("SkillService.Distribute", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
   /** DistributePreview is M78. */
   distributePreview: bind<[string, string, SkillDistributeTarget[], string], SkillPreviewResult>("SkillService.DistributePreview", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
+  /** Install is M91. */
+  install: bind<[string, string, string[], SkillInstallTarget], SkillOpResult>("SkillService.Install", (vaultID: string, stageID: string, ids: string[], target: SkillInstallTarget) => [vaultID, stageID, ids, target]),
+  /** InstallPreview is M90: what M91 would write for the picked candidates. */
+  installPreview: bind<[string, string, string[], SkillInstallTarget], SkillPreviewResult>("SkillService.InstallPreview", (vaultID: string, stageID: string, ids: string[], target: SkillInstallTarget) => [vaultID, stageID, ids, target]),
   /**
    * Log is M84: the newest records, newest first, with paths redacted for the
    * page and restorable recomputed from the backup area.

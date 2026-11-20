@@ -113,9 +113,11 @@ func TestKbSourcesUnknownVersionAndInvalidRecords(t *testing.T) {
 
 func TestToolSources(t *testing.T) {
 	skillsDir := t.TempDir()
+	sample := sampleSource("skills/文档/pdf")
 	record := ToolSource{
 		ToolID: "claude-code", TargetPath: filepath.Join("C:", "Users", "x", ".claude", "skills", "pdf"),
-		KbSource: sampleSource("skills/文档/pdf"),
+		Owner: sample.Owner, Repo: sample.Repo, Ref: sample.Ref, Path: sample.Path,
+		Commit: sample.Commit, PathCommit: sample.PathCommit, BaseHash: sample.BaseHash, InstalledAt: sample.InstalledAt,
 	}
 	if f := SaveToolSource(skillsDir, record); f != nil {
 		t.Fatalf("save: %+v", f)
@@ -180,7 +182,12 @@ func TestScanAttachesToolRemote(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	record := ToolSource{ToolID: "claude-code", TargetPath: dir, KbSource: sampleSource("skills/文档/pdf")}
+	sample := sampleSource("skills/文档/pdf")
+	record := ToolSource{
+		ToolID: "claude-code", TargetPath: dir, Owner: sample.Owner, Repo: sample.Repo, Ref: sample.Ref,
+		Path: sample.Path, Commit: sample.Commit, PathCommit: sample.PathCommit, BaseHash: sample.BaseHash,
+		InstalledAt: sample.InstalledAt,
+	}
 	record.BaseHash = hash
 	record.Commit = sourceCommit
 	record.PathCommit = sourceCommit

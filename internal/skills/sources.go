@@ -41,12 +41,20 @@ type KbSources struct {
 	Warnings       []string
 }
 
-// ToolSource is one GitHub record for a skill installed straight into a tool.
+// ToolSource is one GitHub record for a skill installed straight into a tool
+// (数据库设计 4.6 M5 增补).
 type ToolSource struct {
-	ID         string `json:"id"`
-	ToolID     string `json:"toolId"`
-	TargetPath string `json:"targetPath"`
-	KbSource
+	ID          string `json:"id"`
+	ToolID      string `json:"toolId"`
+	TargetPath  string `json:"targetPath"`
+	Owner       string `json:"owner"`
+	Repo        string `json:"repo"`
+	Ref         string `json:"ref"`
+	Path        string `json:"path"`
+	Commit      string `json:"commit"`
+	PathCommit  string `json:"pathCommit"`
+	BaseHash    string `json:"baseHash"`
+	InstalledAt string `json:"installedAt"`
 }
 
 // ToolSources is the parsed B-zone file.
@@ -310,11 +318,11 @@ func matchToolSource(records []ToolSource, dir string) (ToolSource, bool) {
 	return ToolSource{}, false
 }
 
-// AttachToolRemote fills ToolSkill.Remote for a skill installed straight into
-// a tool (B zone).
+// toolRemoteFor fills ToolSkill.Remote for a skill installed straight into a
+// tool (B zone).
 func toolRemoteFor(dir string, record ToolSource) *contract.SkillRemote {
 	source := KbSource{
-		SkillPath: record.TargetPath, Owner: record.Owner, Repo: record.Repo, Ref: record.Ref,
+		Owner: record.Owner, Repo: record.Repo, Ref: record.Ref,
 		Path: record.Path, Commit: record.Commit, PathCommit: record.PathCommit,
 		BaseHash: record.BaseHash, InstalledAt: record.InstalledAt,
 	}
