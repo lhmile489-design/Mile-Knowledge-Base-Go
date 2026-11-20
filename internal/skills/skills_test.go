@@ -1,6 +1,7 @@
 package skills
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -231,5 +232,157 @@ func TestTreeHashStableAndIgnoresLinks(t *testing.T) {
 	after, err := TreeHash(root)
 	if err != nil || after != third {
 		t.Fatalf("junction changed the tree hash: %s -> %s", third, after)
+	}
+}
+
+// M4 T02: the built-in registry and the three detection rules (技术设计 13.2/13.3).
+
+func TestRegistryShape(t *testing.T) {
+	if len(Registry) != 25 {
+		t.Fatalf("registry has %d tools, want 25", len(Registry))
+	}
+	seen := map[string]bool{}
+	for _, tool := range Registry {
+		if tool.ID == "" || seen[tool.ID] {
+			t.Fatalf("duplicate or empty id %q", tool.ID)
+		}
+		seen[tool.ID] = true
+		if tool.Name == "" {
+			t.Fatalf("%s has no name", tool.ID)
+		}
+		if !tool.Shared && tool.InstallDir == "" && len(tool.ScanDirs) == 0 && len(tool.ScanRelative) == 0 {
+			t.Fatalf("%s has no directory at all", tool.ID)
+		}
+		for _, reader := range tool.Readers {
+			if _, ok := ToolByID(reader); !ok {
+				t.Fatalf("%s lists unknown reader %q", tool.ID, reader)
+			}
+		}
+	}
+	shared, ok := ToolByID("agents")
+	if !ok || !shared.Shared || len(shared.Readers) != 15 {
+		t.Fatalf("shared tool readers = %d, want 15", len(shared.Readers))
+	}
+	if trae, _ := ToolByID("trae"); trae.Official {
+		t.Fatal("trae should be marked unofficial")
+	}
+	if zcode, _ := ToolByID("zcode"); zcode.Official {
+		t.Fatal("zcode should be marked unofficial")
+	}
+	if minimax, _ := ToolByID("minimax-code"); minimax.Enabled {
+		t.Fatal("minimax-code must default to disabled")
+	}
+}
+
+func detectByID(tools []DetectedTool, id string) DetectedTool {
+	for _, tool := range tools {
+		if tool.ID == id {
+			return tool
+		}
+	}
+	return DetectedTool{}
+}
+
+func TestDetectEvidenceAndStates(t *testing.T) {
+	root := t.TempDir()
+	home := filepath.Join(root, "home")
+	programFiles := filepath.Join(root, "Programs")
+	writeFile(t, filepath.Join(home, ".local", "bin", "claude.cmd"), "@echo off")
+	writeFile(t, filepath.Join(home, ".trae", "skills", "x", "SKILL.md"), "# x")
+	writeFile(t, filepath.Join(programFiles, "DeepSeek Harness", "DeepSeek Harness.exe"), "MZ")
+	writeFile(t, filepath.Join(home, ".zcode", "skills", "y", "SKILL.md"), "# y")
+	writeFile(t, filepath.Join(programFiles, "ZCode", "ZCode.exe"), "MZ")
+
+	detector := &Detector{
+		Home: home, LocalAppData: filepath.Join(home, "AppData", "Local"),
+		UserProgramFiles: programFiles,
+		CLIDirs:          []string{filepath.Join(home, ".local", "bin")},
+		PathDirs:         []string{filepath.Join(home, "bin")},
+		Uninstall:        []UninstallEntry{{DisplayName: "Kiro 0.9.1", InstallLocation: `D:\Kiro`}},
+	}
+	tools := detector.Detect()
+
+	if got := detectByID(tools, "claude-code").Status; got != StatusDetected {
+		t.Fatalf("claude-code = %q, want detected via CLI", got)
+	}
+	if got := detectByID(tools, "kiro").Status; got != StatusDetected {
+		t.Fatalf("kiro = %q, want detected via uninstall entry", got)
+	}
+	if got := detectByID(tools, "deepseek-harness").Status; got != StatusDetected {
+		t.Fatalf("deepseek = %q, want detected via known exe", got)
+	}
+	if got := detectByID(tools, "trae").Status; got != StatusLeftover {
+		t.Fatalf("trae = %q, want leftover (skills dir only)", got)
+	}
+	if got := detectByID(tools, "windsurf").Status; got != StatusMissing {
+		t.Fatalf("windsurf = %q, want missing", got)
+	}
+	if got := detectByID(tools, "agents").Status; got != StatusDetected {
+		t.Fatalf("shared = %q, want detected", got)
+	}
+	zcode := detectByID(tools, "zcode")
+	if zcode.Status != StatusDetected || len(zcode.ScanDirs) == 0 {
+		t.Fatalf("zcode = %+v, want detected with scan dirs", zcode)
+	}
+	if !strings.Contains(zcode.ScanDirs[len(zcode.ScanDirs)-1], "resources") {
+		t.Fatalf("zcode scan dirs = %v", zcode.ScanDirs)
+	}
+}
+
+func TestDetectCLIExtensions(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"claude.exe", "codex.cmd", "gemini.bat", "qoder.ps1", "pi"} {
+		writeFile(t, filepath.Join(root, name), "x")
+	}
+	detector := &Detector{Home: root, CLIDirs: []string{root}}
+	tools := detector.Detect()
+	for _, id := range []string{"claude-code", "codex", "gemini-cli", "qoder", "pi"} {
+		if got := detectByID(tools, id).Status; got != StatusDetected {
+			t.Fatalf("%s = %q, want detected", id, got)
+		}
+	}
+}
+
+func TestExpandPath(t *testing.T) {
+	detector := &Detector{Home: `C:\Users\me`, LocalAppData: `C:\Users\me\AppData\Local`}
+	cases := map[string]string{
+		"~/.claude/skills":             `C:\Users\me\.claude\skills`,
+		"~/.agents/skills":             `C:\Users\me\.agents\skills`,
+		"%LOCALAPPDATA%/hermes/skills": `C:\Users\me\AppData\Local\hermes\skills`,
+		"":                             "",
+	}
+	for in, want := range cases {
+		if got := detector.ExpandPath(in); got != want {
+			t.Fatalf("ExpandPath(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestFakeDetectorFromEnv(t *testing.T) {
+	root := t.TempDir()
+	home := filepath.Join(root, "home")
+	writeFile(t, filepath.Join(home, ".local", "bin", "claude.cmd"), "x")
+	registryFile := filepath.Join(root, "registry.json")
+	body, err := json.Marshal(map[string]any{
+		"userProgramFiles": filepath.Join(root, "Programs"),
+		"uninstall":        []UninstallEntry{{DisplayName: "Cursor 1.0"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, registryFile, string(body))
+	t.Setenv("SKILLS_FAKE_HOME", home)
+	t.Setenv("SKILLS_FAKE_PATH", filepath.Join(home, "bin"))
+	t.Setenv("SKILLS_FAKE_REGISTRY", registryFile)
+
+	detector := newFakeDetector()
+	if detector.Home != home {
+		t.Fatalf("home = %q", detector.Home)
+	}
+	if got := detectByID(detector.Detect(), "cursor").Status; got != StatusDetected {
+		t.Fatalf("cursor = %q, want detected via fake registry", got)
+	}
+	if got := detectByID(detector.Detect(), "claude-code").Status; got != StatusDetected {
+		t.Fatalf("claude = %q, want detected via fake CLI dir", got)
 	}
 }
