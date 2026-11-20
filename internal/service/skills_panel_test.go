@@ -264,3 +264,73 @@ func TestSkillServiceAdoptMergesIdenticalTools(t *testing.T) {
 	// The tool copies are links now, so a second adopt must not see a
 	// mismatch either way; the conflict above is about the vault target.
 }
+
+func TestSkillServiceLogsOperations(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	home := t.TempDir()
+	writeFile := func(rel, body string) {
+		t.Helper()
+		full := filepath.Join(home, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeFile(".local/bin/claude.cmd", "@echo off")
+	writeFile(".claude/skills/copied/SKILL.md", "# copied\n")
+	svc := NewSkillService(app)
+	svc.detector = func() *skills.Detector {
+		return &skills.Detector{
+			Home: home, LocalAppData: filepath.Join(home, "AppData", "Local"),
+			UserProgramFiles: filepath.Join(home, "Programs"),
+			CLIDirs:          []string{filepath.Join(home, ".local", "bin")},
+		}
+	}
+	skillDir := filepath.Join(root, "skills", "前端", "vue")
+	if err := os.MkdirAll(skillDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("# vue\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	targets := []contract.SkillDistributeTarget{{TargetID: "claude-code"}}
+	if result := svc.Distribute(context.Background(), vaultID, "skills/前端/vue", targets, "link"); result.Failure != nil {
+		t.Fatalf("distribute: %+v", result)
+	}
+	log := svc.Log(context.Background(), 10)
+	if log.Failure != nil || len(log.Records) != 1 {
+		t.Fatalf("log = %+v", log)
+	}
+	if log.Records[0].Op != "distribute" || log.Records[0].Skill != "vue" || log.Records[0].Mode != "link" {
+		t.Fatalf("record = %+v", log.Records[0])
+	}
+	if !strings.HasPrefix(log.Records[0].Location, "<home>") {
+		t.Fatalf("location not redacted: %q", log.Records[0].Location)
+	}
+
+	if result := svc.Uninstall(context.Background(), "claude-code", "copied"); result.Failure != nil || result.Items[0].Result != "removed" {
+		t.Fatalf("uninstall: %+v", result)
+	}
+	log = svc.Log(context.Background(), 10)
+	if log.Records[0].Op != "uninstall" || log.Records[0].BackupID == "" || !log.Records[0].Restorable {
+		t.Fatalf("uninstall record = %+v", log.Records[0])
+	}
+	backupID := log.Records[0].BackupID
+	if restore := svc.Restore(context.Background(), backupID); restore.Failure != nil {
+		t.Fatalf("restore: %+v", restore)
+	}
+	log = svc.Log(context.Background(), 10)
+	if log.Records[0].Op != "restore" || log.Records[0].Skill != "copied" {
+		t.Fatalf("restore record = %+v", log.Records[0])
+	}
+	// The backup was consumed by the restore, so the old record is no longer
+	// restorable.
+	for _, record := range log.Records {
+		if record.Op == "uninstall" && record.Restorable {
+			t.Fatalf("uninstall record still restorable: %+v", record)
+		}
+	}
+}

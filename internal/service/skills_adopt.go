@@ -138,5 +138,14 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 	}
 	_ = os.Remove(s.cachePath())
 	s.emitChanged()
+	mode := "copy"
+	if linkBack {
+		mode = "copy-adopt"
+	}
+	backupID := ""
+	if len(out.BackupIDs) > 0 {
+		backupID = out.BackupIDs[0]
+	}
+	s.logOperation("adopt", name, tool.ID, out.VaultPath, mode, "ok", backupID, "")
 	return out
 }

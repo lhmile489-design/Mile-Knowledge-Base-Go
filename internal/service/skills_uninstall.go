@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -100,10 +101,12 @@ func (s *SkillService) Uninstall(ctx context.Context, toolID, rel string) contra
 	if err != nil {
 		item.Result = "failed"
 		item.Detail = err.Error()
+		s.logOperation("uninstall", filepath.Base(abs), toolID, abs, "", "failed", "", err.Error())
 		return contract.SkillOpResult{Items: []contract.SkillOpItem{item}}
 	}
 	item.Result = "removed"
 	item.BackupID = backupID
+	s.logOperation("uninstall", filepath.Base(abs), toolID, abs, "", "ok", backupID, "")
 	state := skills.LoadState(s.statePath())
 	kept := state.Distributions[:0]
 	for _, dist := range state.Distributions {
@@ -134,6 +137,7 @@ func (s *SkillService) Restore(ctx context.Context, backupID string) contract.Sk
 	}
 	_ = os.Remove(s.cachePath())
 	s.emitChanged()
+	s.logOperation("restore", filepath.Base(restored), "", restored, "", "ok", backupID, "")
 	return contract.SkillRestoreResult{RestoredTo: redactToolPath(restored, s.detector())}
 }
 
@@ -155,6 +159,7 @@ func (s *SkillService) CleanBackups(ctx context.Context, ids []string) contract.
 	if err := skills.CleanBackups(s.backupStore(), ids); err != nil {
 		return contract.SkillBackupsResult{Failure: contract.Fail(contract.CodeIOFailure, "清理备份失败")}
 	}
+	s.logOperation("clean", "", "", fmt.Sprintf("%d 个备份", len(ids)), "", "ok", "", "")
 	return s.Backups(ctx)
 }
 

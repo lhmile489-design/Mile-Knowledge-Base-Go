@@ -860,6 +860,30 @@ export interface SkillEntry {
   name: string;
 }
 
+/** SkillLogRecord is one line of skills/log.jsonl (FR-SKM-LOG). */
+export interface SkillLogRecord {
+  id: string;
+  at: string;
+  /** distribute | uninstall | overwrite | adopt | restore | clean */
+  op: string;
+  skill: string;
+  toolId?: string;
+  location: string;
+  /** link | copy | copy-adopt */
+  mode?: string;
+  /** ok | partial | failed */
+  result: string;
+  backupId?: string;
+  restorable: boolean;
+  error?: string;
+}
+
+/** SkillLogResult is M84. */
+export interface SkillLogResult {
+  records: SkillLogRecord[];
+  failure?: Failure;
+}
+
 /** SkillOpItem is one target's result of a distribute/uninstall (M79/M81). */
 export interface SkillOpItem {
   targetId: string;
@@ -1502,6 +1526,11 @@ export const SkillService = {
   distribute: bind<[string, string, SkillDistributeTarget[], string], SkillOpResult>("SkillService.Distribute", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
   /** DistributePreview is M78. */
   distributePreview: bind<[string, string, SkillDistributeTarget[], string], SkillPreviewResult>("SkillService.DistributePreview", (vaultID: string, skillPath: string, targets: SkillDistributeTarget[], mode: string) => [vaultID, skillPath, targets, mode]),
+  /**
+   * Log is M84: the newest records, newest first, with paths redacted for the
+   * page and restorable recomputed from the backup area.
+   */
+  log: bind<[number], SkillLogResult>("SkillService.Log", (limit: number) => [limit]),
   /** Registry is M76: the built-in tools plus detection, with redacted paths. */
   registry: bind<[], SkillRegistryResult>("SkillService.Registry", () => []),
   /** Restore is M83. */

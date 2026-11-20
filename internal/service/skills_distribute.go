@@ -34,6 +34,11 @@ func (s *SkillService) Distribute(ctx context.Context, vaultID, skillPath string
 		return contract.SkillOpResult{Failure: f}
 	}
 	items, records := skills.ExecuteDistribute(opts)
+	locations := map[string]string{}
+	for _, target := range opts.Targets {
+		locations[target.TargetID] = filepath.Join(target.InstallDir, target.Name)
+	}
+	s.logDistributeRecords(opts.Targets[0].Name, items, locations)
 	if len(records) > 0 {
 		state := skills.LoadState(s.statePath())
 		for _, record := range records {
