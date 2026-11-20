@@ -1095,6 +1095,10 @@ export interface ToolSkill {
   /** copied: the vault skill it came from */
   sourcePath?: string;
   builtin?: boolean;
+  /** install | scan:<n> | builtin:<n> (API §12.3) */
+  base?: string;
+  /** path inside that root, slash-separated */
+  rel?: string;
 }
 
 /** TransactionSummary is one transaction row in the audit panel. */

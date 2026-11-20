@@ -14,29 +14,6 @@ import (
 // M82 (API.md §12): adopt a tool skill into the knowledge base, optionally
 // swapping the tool copy (and identical copies in other tools) for links.
 
-func (s *SkillService) resolveAnyToolSkill(toolID, rel string) (skills.DetectedTool, string, *contract.Failure) {
-	for _, tool := range s.detector().Detect() {
-		if tool.ID != toolID {
-			continue
-		}
-		if !tool.Enabled {
-			return tool, "", contract.Fail(contract.CodeSkillProtected, "该工具未启用")
-		}
-		if tool.InstallDir != "" {
-			if abs, err := skills.ResolveUnder(tool.InstallDir, rel); err == nil {
-				return tool, abs, nil
-			}
-		}
-		for _, builtin := range tool.BuiltinDirs {
-			if abs, err := skills.ResolveUnder(builtin, rel); err == nil {
-				return tool, abs, nil
-			}
-		}
-		return tool, "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
-	}
-	return skills.DetectedTool{}, "", contract.Fail(contract.CodeInvalidInput, "未知的工具")
-}
-
 // Adopt is M82.
 func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category string, linkBack bool, extras []contract.SkillToolRef) contract.SkillAdoptResult {
 	if f := validateID(vaultID); f != nil {
@@ -52,7 +29,7 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 	if f != nil {
 		return contract.SkillAdoptResult{Failure: contract.Fail(contract.CodeVaultUnavailable, "知识库不可用")}
 	}
-	tool, sourceDir, f := s.resolveAnyToolSkill(toolID, rel)
+	tool, sourceDir, f := s.resolveAnyToolSkill(ctx, toolID, rel)
 	if f != nil {
 		return contract.SkillAdoptResult{Failure: f}
 	}
@@ -94,7 +71,7 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 	var skipped []string
 	resolvedExtras := make([]extra, 0, len(extras))
 	for _, ref := range extras {
-		otherTool, otherDir, f := s.resolveAnyToolSkill(ref.ToolID, ref.Path)
+		otherTool, otherDir, f := s.resolveAnyToolSkill(ctx, ref.ToolID, ref.Path)
 		if f != nil {
 			return contract.SkillAdoptResult{Failure: f}
 		}

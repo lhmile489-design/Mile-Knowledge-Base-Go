@@ -251,7 +251,7 @@ func TestRegistryShape(t *testing.T) {
 			t.Fatalf("%s has no name", tool.ID)
 		}
 		if !tool.Shared && tool.InstallDir == "" && len(tool.ScanDirs) == 0 &&
-			len(tool.ScanRelative) == 0 && len(tool.BuiltinDirs) == 0 && len(tool.BuiltinRelative) == 0 {
+			len(tool.ScanRelative) == 0 && len(tool.BuiltinDirs) == 0 && len(tool.AppBuiltinRelative) == 0 {
 			t.Fatalf("%s has no directory at all", tool.ID)
 		}
 		for _, reader := range tool.Readers {
@@ -293,6 +293,7 @@ func TestDetectEvidenceAndStates(t *testing.T) {
 	writeFile(t, filepath.Join(programFiles, "DeepSeek Harness", "DeepSeek Harness.exe"), "MZ")
 	writeFile(t, filepath.Join(home, ".zcode", "skills", "y", "SKILL.md"), "# y")
 	writeFile(t, filepath.Join(programFiles, "ZCode", "ZCode.exe"), "MZ")
+	writeFile(t, filepath.Join(programFiles, "ZCode", "resources", "glm", "packages", "pkg", "skills", "SKILL.md"), "# builtin")
 
 	detector := &Detector{
 		Home: home, LocalAppData: filepath.Join(home, "AppData", "Local"),
@@ -325,7 +326,13 @@ func TestDetectEvidenceAndStates(t *testing.T) {
 	if zcode.Status != StatusDetected || len(zcode.BuiltinDirs) == 0 {
 		t.Fatalf("zcode = %+v, want detected with builtin dirs", zcode)
 	}
-	if !strings.Contains(zcode.BuiltinDirs[len(zcode.BuiltinDirs)-1], "resources") {
+	found := false
+	for _, dir := range zcode.BuiltinDirs {
+		if strings.Contains(dir, filepath.Join("packages", "pkg", "skills")) {
+			found = true
+		}
+	}
+	if !found {
 		t.Fatalf("zcode builtin dirs = %v", zcode.BuiltinDirs)
 	}
 }

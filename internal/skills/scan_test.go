@@ -164,7 +164,7 @@ func TestExpandWildcard(t *testing.T) {
 	for _, name := range []string{"alpha", "beta"} {
 		writeFile(t, filepath.Join(root, "packages", name, "skills", "SKILL.md"), "# s\n")
 	}
-	dirs := expandWildcard(filepath.Join(root, "packages", "*", "skills"))
+	dirs := ExpandWildcard(filepath.Join(root, "packages", "*", "skills"))
 	if len(dirs) != 2 {
 		t.Fatalf("expanded %d dirs: %v", len(dirs), dirs)
 	}
@@ -215,5 +215,48 @@ func TestScanCacheTrim(t *testing.T) {
 	}
 	if len(cache.Warnings) == 0 {
 		t.Fatal("trim warning missing")
+	}
+}
+
+// T17 审查：builtin 目录里的链接同样是内置技能；两层技能带可解析的 base/rel。
+func TestBuiltinLinksAndTwoLevelRel(t *testing.T) {
+	root := t.TempDir()
+	builtin := filepath.Join(root, "builtin")
+	writeFile(t, filepath.Join(builtin, "official", "SKILL.md"), "# builtin\n")
+	outside := filepath.Join(root, "outside")
+	writeFile(t, filepath.Join(outside, "SKILL.md"), "# outside\n")
+	mustJunction(t, filepath.Join(builtin, "linked-builtin"), outside)
+	tool := filepath.Join(root, "tool")
+	writeFile(t, filepath.Join(tool, "group", "nested", "SKILL.md"), "# nested\n")
+	groups, _ := ScanTools(ScanOptions{
+		Tools: []DetectedTool{{ID: "demo", Status: StatusDetected, ScanDirs: []string{tool}, BuiltinDirs: []string{builtin}}},
+	})
+	byName := map[string]contract.ToolSkill{}
+	for _, skill := range groups[0].Skills {
+		byName[skill.Name] = skill
+	}
+	if skill := byName["linked-builtin"]; skill.Origin != "builtin" || !skill.Builtin {
+		t.Fatalf("builtin link = %+v, want builtin origin", skill)
+	}
+	if skill := byName["nested"]; skill.Rel != "group/nested" || skill.Base != "scan:0" {
+		t.Fatalf("nested rel/base = %q/%q", skill.Rel, skill.Base)
+	}
+	if skill := byName["official"]; skill.Base != "builtin:0" || skill.Rel != "official" {
+		t.Fatalf("builtin rel/base = %q/%q", skill.Rel, skill.Base)
+	}
+}
+
+// T17 审查：知识库技能被删或改名后，拷贝不应再显示为「知识库有更新」。
+func TestCopySyncVaultMissing(t *testing.T) {
+	root := t.TempDir()
+	vault := filepath.Join(root, "vault")
+	toolDir := filepath.Join(root, "tool", "copied")
+	writeFile(t, filepath.Join(toolDir, "SKILL.md"), "# copied\n")
+	dist := Distribution{SkillPath: "skills/分类/gone", TargetPath: toolDir, BaseHash: mustHash(t, toolDir)}
+	if got := CopySyncState(vault, dist, toolDir); got != "vault-missing" {
+		t.Fatalf("sync = %q, want vault-missing", got)
+	}
+	if got := CopySyncState("", dist, toolDir); got != "" {
+		t.Fatalf("sync without vault = %q, want empty", got)
 	}
 }

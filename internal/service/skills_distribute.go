@@ -39,7 +39,7 @@ func (s *SkillService) Distribute(ctx context.Context, vaultID, skillPath string
 		locations[target.TargetID] = filepath.Join(target.InstallDir, target.Name)
 	}
 	s.logDistributeRecords(opts.Targets[0].Name, items, locations)
-	if len(records) > 0 {
+	if len(items) > 0 {
 		state := skills.LoadState(s.statePath())
 		for _, record := range records {
 			state.AddDistribution(record)

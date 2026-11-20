@@ -1,26 +1,27 @@
 package skills
 
 // Tool is one built-in registry entry (技术设计 13.2, FR-SKM-TOOL). Path
-// templates use "~" (the user profile) and "%LOCALAPPDATA%"; ScanRelative and
-// BuiltinRelative entries are relative to the detected install location
-// (ZCode, MiniMax). Builtin dirs hold read-only skills shipped with the tool
-// (PRD FR-SKM-SCAN). A "*" segment marks one directory level to expand.
+// templates use "~" (the user profile) and "%LOCALAPPDATA%"; ScanRelative
+// entries are relative to the tool's skill install directory, while
+// AppBuiltinRelative entries are relative to the tool's application install
+// location (ZCode, MiniMax) and may contain a "*" segment to expand. Builtin
+// dirs hold read-only skills shipped with the tool (PRD FR-SKM-SCAN).
 type Tool struct {
-	ID              string
-	Name            string
-	IconKey         string
-	Shared          bool // the shared ~/.agents/skills entry
-	InstallDir      string
-	ScanDirs        []string
-	ScanRelative    []string
-	BuiltinDirs     []string
-	BuiltinRelative []string
-	Readers         []string // shared entry: tools that read ~/.agents/skills
-	Official        bool
-	Enabled         bool
-	CLIs            []string
-	Uninstall       []string // DisplayName prefixes in the uninstall registry
-	KnownExes       []string // relative paths under UserProgramFiles
+	ID                 string
+	Name               string
+	IconKey            string
+	Shared             bool // the shared ~/.agents/skills entry
+	InstallDir         string
+	ScanDirs           []string
+	ScanRelative       []string
+	BuiltinDirs        []string
+	AppBuiltinRelative []string
+	Readers            []string // shared entry: tools that read ~/.agents/skills
+	Official           bool
+	Enabled            bool
+	CLIs               []string
+	Uninstall          []string // DisplayName prefixes in the uninstall registry
+	KnownExes          []string // relative paths under UserProgramFiles
 }
 
 // sharedReaders are the tools whose official docs read ~/.agents/skills
@@ -155,7 +156,7 @@ var Registry = []Tool{
 	},
 	{
 		ID: "zcode", Name: "ZCode", IconKey: "zcode",
-		InstallDir: "~/.zcode/skills", BuiltinRelative: []string{`resources\glm\packages\*\skills`},
+		InstallDir: "~/.zcode/skills", AppBuiltinRelative: []string{`resources\glm\packages\*\skills`},
 		Official: false, Enabled: true, // 官方文档未查到，本机证据
 		Uninstall: []string{"ZCode"}, KnownExes: []string{`ZCode\ZCode.exe`},
 	},
@@ -166,8 +167,8 @@ var Registry = []Tool{
 	},
 	{
 		ID: "minimax-code", Name: "MiniMax Code", IconKey: "", // letter placeholder
-		BuiltinRelative: []string{`resources\resources\daemon\skills`},
-		Official:        false, Enabled: false, // 官方未核实，默认不启用
+		AppBuiltinRelative: []string{`resources\resources\daemon\skills`},
+		Official:           false, Enabled: false, // 官方未核实，默认不启用
 		KnownExes: []string{`MiniMax Code\MiniMax Code.exe`},
 	},
 }

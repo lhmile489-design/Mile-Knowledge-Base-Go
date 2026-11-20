@@ -6,6 +6,7 @@ import { skillsApi, type SkillToolRef, type ToolSkill } from "../../lib/transpor
 export function AdoptDialog({
   vaultId,
   skill,
+  spec,
   builtin,
   extras,
   onClose,
@@ -14,6 +15,7 @@ export function AdoptDialog({
 }: {
   readonly vaultId: string;
   readonly skill: ToolSkill;
+  readonly spec: string;
   readonly builtin: boolean;
   readonly extras: SkillToolRef[];
   readonly onClose: () => void;
@@ -43,7 +45,7 @@ export function AdoptDialog({
     setBusy(true);
     setError(null);
     try {
-      const value = await skillsApi.adopt(vaultId, skill.toolId, skill.name, category.trim(), linkBack, extras);
+      const value = await skillsApi.adopt(vaultId, skill.toolId, spec, category.trim(), linkBack, extras);
       onResult?.([`已收进知识库：${value.vaultPath}`, ...(value.warnings ?? [])]);
       onDone();
     } catch (err) {

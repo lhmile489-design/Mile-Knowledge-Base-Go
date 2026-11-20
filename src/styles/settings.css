@@ -929,3 +929,47 @@
   flex: 1;
   min-width: 160px;
 }
+
+/* 技能备份清单（M4 关于与诊断 → 维护） */
+.backup-list {
+  display: grid;
+  max-height: 320px;
+  margin: 6px 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.backup-row + .backup-row {
+  border-top: 1px solid var(--raw-line);
+}
+
+.backup-check {
+  display: grid;
+  grid-template-columns: 18px 64px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  font-size: var(--text-meta);
+  color: var(--raw-text);
+  cursor: pointer;
+}
+
+.backup-kind {
+  color: var(--raw-muted);
+}
+
+.backup-path {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backup-meta {
+  color: var(--raw-faint);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}

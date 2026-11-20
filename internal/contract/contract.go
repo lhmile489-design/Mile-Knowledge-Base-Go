@@ -1141,6 +1141,8 @@ type ToolSkill struct {
 	Target      string `json:"target,omitempty"`     // redacted target of a link
 	SourcePath  string `json:"sourcePath,omitempty"` // copied: the vault skill it came from
 	Builtin     bool   `json:"builtin,omitempty"`
+	Base        string `json:"base,omitempty"` // install | scan:<n> | builtin:<n> (API §12.3)
+	Rel         string `json:"rel,omitempty"`  // path inside that root, slash-separated
 }
 
 // SkillCategory groups knowledge-base skills by category.

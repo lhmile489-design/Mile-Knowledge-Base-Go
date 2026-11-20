@@ -2,8 +2,10 @@ package skills
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -67,31 +69,24 @@ func ScanTools(opts ScanOptions) ([]contract.SkillToolScan, []contract.SkillScan
 		}
 		group := contract.SkillToolScan{ToolID: tool.ID}
 		seen := map[string]bool{}
-		targets := make([]struct {
+		type target struct {
 			dir     string
 			builtin bool
-		}, 0, len(tool.ScanDirs)+len(tool.BuiltinDirs))
+			base    string
+		}
+		targets := make([]target, 0, 1+len(tool.ScanDirs)+len(tool.BuiltinDirs))
 		if tool.InstallDir != "" {
-			targets = append(targets, struct {
-				dir     string
-				builtin bool
-			}{tool.InstallDir, false})
+			targets = append(targets, target{tool.InstallDir, false, "install"})
 		}
-		for _, dir := range tool.ScanDirs {
-			targets = append(targets, struct {
-				dir     string
-				builtin bool
-			}{dir, false})
+		for index, dir := range tool.ScanDirs {
+			targets = append(targets, target{dir, false, "scan:" + strconv.Itoa(index)})
 		}
-		for _, dir := range tool.BuiltinDirs {
-			targets = append(targets, struct {
-				dir     string
-				builtin bool
-			}{dir, true})
+		for index, dir := range tool.BuiltinDirs {
+			targets = append(targets, target{dir, true, "builtin:" + strconv.Itoa(index)})
 		}
-		for _, target := range targets {
-			for _, root := range expandWildcard(target.dir) {
-				found, warns := scanRoot(opts, tool, root, target.builtin, byTool[tool.ID], kbSkillsRoot)
+		for _, item := range targets {
+			for _, root := range ExpandWildcard(item.dir) {
+				found, warns := scanRoot(opts, tool, root, item.base, item.builtin, byTool[tool.ID], kbSkillsRoot)
 				warnings = append(warnings, warns...)
 				for _, skill := range found {
 					key := strings.ToLower(skill.Path)
@@ -111,9 +106,9 @@ func ScanTools(opts ScanOptions) ([]contract.SkillToolScan, []contract.SkillScan
 	return groups, warnings
 }
 
-// expandWildcard expands one "*" path segment, e.g. ZCode's
+// ExpandWildcard expands one "*" path segment, e.g. ZCode's
 // resources\glm\packages\*\skills. Without a "*" it returns the path itself.
-func expandWildcard(dir string) []string {
+func ExpandWildcard(dir string) []string {
 	parts := strings.Split(dir, string(filepath.Separator))
 	index := -1
 	for i, part := range parts {
@@ -144,7 +139,7 @@ func expandWildcard(dir string) []string {
 	return out
 }
 
-func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, dists []Distribution, kbSkillsRoot string) ([]contract.ToolSkill, []contract.SkillScanWarning) {
+func scanRoot(opts ScanOptions, tool DetectedTool, root, base string, builtin bool, dists []Distribution, kbSkillsRoot string) ([]contract.ToolSkill, []contract.SkillScanWarning) {
 	var skills []contract.ToolSkill
 	var warnings []contract.SkillScanWarning
 	if root == "" {
@@ -157,8 +152,8 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, di
 		}
 		return nil, warnings
 	}
-	var handle func(dir string, depth int)
-	handle = func(dir string, depth int) {
+	var handle func(dir, rel string, depth int)
+	handle = func(dir, rel string, depth int) {
 		kind, target, err := Classify(dir)
 		if err != nil {
 			return
@@ -167,10 +162,14 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, di
 		switch kind {
 		case KindJunction, KindSymlink:
 			// A link is listed as a skill (its target is read-only); it is
-			// never descended into.
+			// never descended into. Links that live in a builtin directory are
+			// built-in skills too and must stay read-only.
 			exists := pathExists(dir)
-			skill := contract.ToolSkill{Name: name, Path: dir, ToolID: tool.ID, Target: target}
+			skill := contract.ToolSkill{Name: name, Path: dir, ToolID: tool.ID, Target: target, Base: base, Rel: rel}
 			switch {
+			case builtin:
+				skill.Origin = "builtin"
+				skill.Builtin = true
 			case !exists:
 				skill.Origin = "link-broken"
 			case kbSkillsRoot != "" && UnderRoot(target, kbSkillsRoot):
@@ -183,7 +182,7 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, di
 			return
 		case KindDir:
 			if hasSkillFile(dir) {
-				skill := contract.ToolSkill{Name: name, Path: dir, ToolID: tool.ID, Builtin: builtin}
+				skill := contract.ToolSkill{Name: name, Path: dir, ToolID: tool.ID, Builtin: builtin, Base: base, Rel: rel}
 				switch {
 				case builtin:
 					skill.Origin = "builtin"
@@ -214,14 +213,14 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root string, builtin bool, di
 			if skipEntry(child.Name()) {
 				continue
 			}
-			handle(filepath.Join(dir, child.Name()), depth+1)
+			handle(filepath.Join(dir, child.Name()), path.Join(rel, child.Name()), depth+1)
 		}
 	}
 	for _, entry := range entries {
 		if skipEntry(entry.Name()) {
 			continue
 		}
-		handle(filepath.Join(root, entry.Name()), 1)
+		handle(filepath.Join(root, entry.Name()), entry.Name(), 1)
 	}
 	return skills, warnings
 }
@@ -252,16 +251,17 @@ func CopySyncState(vaultRoot string, dist Distribution, dir string) string {
 	if err != nil {
 		return "missing"
 	}
-	kbHash := ""
-	if vaultRoot != "" && dist.SkillPath != "" {
-		if hash, err := TreeHash(filepath.Join(vaultRoot, filepath.FromSlash(dist.SkillPath))); err == nil {
-			kbHash = hash
-		}
+	if vaultRoot == "" || dist.SkillPath == "" {
+		return ""
+	}
+	kbHash, err := TreeHash(filepath.Join(vaultRoot, filepath.FromSlash(dist.SkillPath)))
+	if err != nil {
+		// The knowledge-base skill was deleted or renamed; a copy that is
+		// still in the tool is an orphan, not an update (PRD 15.5).
+		return "vault-missing"
 	}
 	base := dist.BaseHash
 	switch {
-	case kbHash == "":
-		return "vault-updated"
 	case toolHash == kbHash:
 		return "in-sync"
 	case toolHash == base && kbHash != base:

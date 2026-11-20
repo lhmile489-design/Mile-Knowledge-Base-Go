@@ -4,6 +4,7 @@ import type { AboutInfoResult } from "../../mygo";
 import { settingsApi, TransportError, windowApi } from "../../lib/transport";
 import { EngineBadge } from "../chat/EngineBadge";
 import { SettingGroup, SettingRow } from "./SettingRow";
+import { SkillBackupsRow } from "./SkillBackupsRow";
 
 const REPO_URL = "https://github.com/lhmile489-design/Mile-Knowledge-Base-Go";
 
@@ -179,6 +180,10 @@ export function AboutSection({ onClose }: { readonly onClose: () => void }) {
                 }
               />
             ))}
+          </SettingGroup>
+
+          <SettingGroup title="维护">
+            <SkillBackupsRow />
           </SettingGroup>
         </div>
       </div>

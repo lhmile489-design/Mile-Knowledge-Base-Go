@@ -20,6 +20,7 @@ const SYNC_LABEL: Record<string, { text: string; tone: "live" | "warn" | "idle" 
   "tool-updated": { text: "工具里有改动", tone: "warn" },
   "both-updated": { text: "两边都改了", tone: "warn" },
   missing: { text: "工具里不见了", tone: "idle" },
+  "vault-missing": { text: "知识库已删除", tone: "warn" },
 };
 
 function statusOf(skill: ToolSkill) {
@@ -68,11 +69,12 @@ export function ToolSkillsPage({
       .sort((a, b) => a.skill.name.toLowerCase().localeCompare(b.skill.name.toLowerCase()));
   }, [groups, chip]);
 
+  const specOf = (skill: ToolSkill) => (skill.base && skill.rel ? `${skill.base}:${skill.rel}` : skill.name);
   const toolFor = (id: string) => tools.find((tool) => tool.id === id);
   const sameName = (skill: ToolSkill) =>
     rows
       .filter((row) => row.skill.name === skill.name && row.skill.path !== skill.path)
-      .map((row) => ({ toolId: row.toolId, path: row.skill.path }));
+      .map((row) => ({ toolId: row.toolId, path: specOf(row.skill) }));
 
   const reDistribute = async (skill: ToolSkill) => {
     if (!vaultId) return;
@@ -195,7 +197,7 @@ export function ToolSkillsPage({
                     type="button"
                     className="icon-button"
                     aria-label={`打开所在目录 ${skill.name}`}
-                    onClick={() => void skillsApi.reveal(toolId, skill.name).catch(() => undefined)}
+                    onClick={() => void skillsApi.reveal(toolId, specOf(skill)).catch(() => undefined)}
                   >
                     <FolderOpen size={14} aria-hidden />
                   </button>
@@ -209,7 +211,7 @@ export function ToolSkillsPage({
       {uninstall ? (
         <UninstallDialog
           toolId={uninstall.toolId}
-          path={uninstall.name}
+          path={specOf(uninstall)}
           skillName={uninstall.name}
           onClose={() => setUninstall(null)}
           onDone={() => {
@@ -224,6 +226,7 @@ export function ToolSkillsPage({
         <AdoptDialog
           vaultId={vaultId}
           skill={adopt}
+          spec={specOf(adopt)}
           builtin={adopt.origin === "builtin"}
           extras={sameName(adopt)}
           onClose={() => setAdopt(null)}

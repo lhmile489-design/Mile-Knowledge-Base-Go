@@ -43,6 +43,7 @@ type DetectedTool struct {
 	Shared      bool
 	Status      string
 	InstallDir  string
+	AppDir      string
 	ScanDirs    []string
 	BuiltinDirs []string
 	Readers     []string
@@ -154,20 +155,28 @@ func (d *Detector) Detect() []DetectedTool {
 
 func (d *Detector) detect(tool Tool) DetectedTool {
 	install := d.ExpandPath(tool.InstallDir)
+	appDir := d.appInstallDir(tool)
 	scan := make([]string, 0, len(tool.ScanDirs)+len(tool.ScanRelative))
 	for _, template := range tool.ScanDirs {
 		scan = append(scan, d.ExpandPath(template))
 	}
-	builtin := make([]string, 0, len(tool.BuiltinDirs)+len(tool.BuiltinRelative))
+	builtin := make([]string, 0, len(tool.BuiltinDirs)+len(tool.AppBuiltinRelative))
 	for _, template := range tool.BuiltinDirs {
-		builtin = append(builtin, d.ExpandPath(template))
+		for _, dir := range ExpandWildcard(d.ExpandPath(template)) {
+			builtin = append(builtin, dir)
+		}
 	}
 	if install != "" {
 		for _, rel := range tool.ScanRelative {
 			scan = append(scan, filepath.Join(install, strings.ReplaceAll(rel, `\`, string(filepath.Separator))))
 		}
-		for _, rel := range tool.BuiltinRelative {
-			builtin = append(builtin, filepath.Join(install, strings.ReplaceAll(rel, `\`, string(filepath.Separator))))
+	}
+	if appDir != "" {
+		for _, rel := range tool.AppBuiltinRelative {
+			joined := filepath.Join(appDir, strings.ReplaceAll(rel, `\`, string(filepath.Separator)))
+			for _, dir := range ExpandWildcard(joined) {
+				builtin = append(builtin, dir)
+			}
 		}
 	}
 	status := StatusMissing
@@ -187,9 +196,29 @@ func (d *Detector) detect(tool Tool) DetectedTool {
 	}
 	return DetectedTool{
 		ID: tool.ID, Name: tool.Name, IconKey: tool.IconKey, Shared: tool.Shared,
-		Status: status, InstallDir: install, ScanDirs: scan, BuiltinDirs: builtin, Readers: tool.Readers,
+		Status: status, InstallDir: install, AppDir: appDir, ScanDirs: scan, BuiltinDirs: builtin, Readers: tool.Readers,
 		Official: tool.Official, Enabled: tool.Enabled,
 	}
+}
+
+// appInstallDir resolves where the tool itself is installed: the parent of a
+// known executable under UserProgramFiles, else the uninstall entry's
+// InstallLocation. Builtin skill dirs live under this location (13.2).
+func (d *Detector) appInstallDir(tool Tool) string {
+	for _, rel := range tool.KnownExes {
+		exe := filepath.Join(d.UserProgramFiles, rel)
+		if pathExists(exe) {
+			return filepath.Dir(exe)
+		}
+	}
+	for _, prefix := range tool.Uninstall {
+		for _, entry := range d.Uninstall {
+			if strings.HasPrefix(strings.ToLower(entry.DisplayName), strings.ToLower(prefix)) && entry.InstallLocation != "" {
+				return entry.InstallLocation
+			}
+		}
+	}
+	return ""
 }
 
 // hasEvidence applies the three detection rules from 技术设计 13.3.

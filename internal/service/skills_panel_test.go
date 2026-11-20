@@ -334,3 +334,47 @@ func TestSkillServiceLogsOperations(t *testing.T) {
 		}
 	}
 }
+
+// T17 审查：path 现在带 base 令牌；两层相对路径、内置保护与共享目录影响范围。
+func TestSkillServiceResolveSpecs(t *testing.T) {
+	app, _, _ := mutationTestApp(t)
+	home := t.TempDir()
+	writeAt := func(rel string) {
+		t.Helper()
+		full := filepath.Join(home, filepath.FromSlash(rel))
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(full, "SKILL.md"), []byte("# x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeAt(".local/bin/claude.cmd")
+	writeAt(".local/bin/cursor.cmd")
+	writeAt(".cursor/skills/vue")
+	writeAt(".cursor/skills-cursor/group/nested")
+	writeAt(".trae/builtin_skills/official")
+	writeAt(".agents/skills/sharedone")
+	svc := NewSkillService(app)
+	svc.detector = func() *skills.Detector {
+		return &skills.Detector{
+			Home: home, LocalAppData: filepath.Join(home, "AppData", "Local"),
+			UserProgramFiles: filepath.Join(home, "Programs"),
+			CLIDirs:          []string{filepath.Join(home, ".local", "bin")},
+			Uninstall:        []skills.UninstallEntry{{DisplayName: "TRAE 2.0"}},
+		}
+	}
+
+	if got := svc.UninstallPreview(context.Background(), "cursor", "install:vue"); got.Failure != nil || got.Preview.Kind != "independent" {
+		t.Fatalf("install:vue = %+v", got)
+	}
+	if got := svc.UninstallPreview(context.Background(), "cursor", "scan:0:group/nested"); got.Failure != nil || got.Preview.Kind != "independent" {
+		t.Fatalf("scan nested = %+v", got)
+	}
+	if got := svc.UninstallPreview(context.Background(), "trae", "builtin:0:official"); got.Failure == nil || got.Failure.Code != contract.CodeSkillProtected {
+		t.Fatalf("builtin spec = %+v, want protected", got)
+	}
+	if got := svc.UninstallPreview(context.Background(), "agents", "sharedone"); got.Failure != nil || len(got.Preview.AffectedTools) == 0 {
+		t.Fatalf("shared preview = %+v, want affected tools", got)
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
@@ -19,35 +20,134 @@ func (s *SkillService) backupStore() *skills.BackupStore {
 	return &skills.BackupStore{Dir: filepath.Join(s.app.DataDir, "skills", "backups")}
 }
 
-// resolveToolSkill validates toolId + tool-relative path and rejects builtin
-// directories (PRD FR-SKM-UNINST: builtin skills are read-only).
-func (s *SkillService) resolveToolSkill(ctx context.Context, toolID, rel string) (skills.DetectedTool, string, *contract.Failure) {
-	detector := s.detector()
-	for _, tool := range detector.Detect() {
+// parseToolSpec splits the wire path "install:<rel>", "scan:<n>:<rel>",
+// "builtin:<n>:<rel>" or a legacy bare "<rel>" (API.md §12.3).
+func parseToolSpec(spec string) (kind string, index int, rel string) {
+	parts := strings.SplitN(spec, ":", 3)
+	if len(parts) >= 2 && (parts[0] == "install" || parts[0] == "scan" || parts[0] == "builtin") {
+		if parts[0] == "install" {
+			return "install", -1, strings.Join(parts[1:], ":")
+		}
+		if len(parts) == 3 {
+			n, err := strconv.Atoi(parts[1])
+			if err != nil {
+				return "invalid", -1, ""
+			}
+			return parts[0], n, parts[2]
+		}
+		return "invalid", -1, ""
+	}
+	return "", -1, spec
+}
+
+func validRel(rel string) bool {
+	segments := strings.Split(rel, "/")
+	if len(segments) < 1 || len(segments) > 2 {
+		return false
+	}
+	for _, segment := range segments {
+		if !skills.IsValidSegment(segment) {
+			return false
+		}
+	}
+	return true
+}
+
+// resolveSpec turns a wire path into an absolute path inside one of the
+// tool's registered roots. allowBuiltin lets Reveal/Adopt reach builtin dirs;
+// removal paths pass false and get skill-protected instead.
+func (s *SkillService) resolveSpec(tool skills.DetectedTool, spec string, allowBuiltin bool) (string, *contract.Failure) {
+	kind, index, rel := parseToolSpec(spec)
+	if kind == "invalid" || rel == "" || !validRel(rel) {
+		return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
+	}
+	resolve := func(base string) (string, bool) {
+		if base == "" {
+			return "", false
+		}
+		abs, err := skills.ResolveUnder(base, rel)
+		return abs, err == nil
+	}
+	switch kind {
+	case "install":
+		if abs, ok := resolve(tool.InstallDir); ok {
+			return abs, nil
+		}
+		return "", contract.Fail(contract.CodeSkillProtected, "该工具没有安装目录")
+	case "scan":
+		if index < 0 || index >= len(tool.ScanDirs) {
+			return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
+		}
+		if abs, ok := resolve(tool.ScanDirs[index]); ok {
+			return abs, nil
+		}
+		return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
+	case "builtin":
+		if index < 0 || index >= len(tool.BuiltinDirs) {
+			return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
+		}
+		abs, ok := resolve(tool.BuiltinDirs[index])
+		if !ok {
+			return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
+		}
+		if !allowBuiltin {
+			return "", contract.Fail(contract.CodeSkillProtected, "内置技能只读")
+		}
+		return abs, nil
+	default:
+		// Legacy bare name: find the root that actually holds it.
+		if abs, ok := resolve(tool.InstallDir); ok && pathExists(abs) {
+			return abs, nil
+		}
+		for _, dir := range tool.ScanDirs {
+			if abs, ok := resolve(dir); ok && pathExists(abs) {
+				return abs, nil
+			}
+		}
+		for _, dir := range tool.BuiltinDirs {
+			if abs, ok := resolve(dir); ok && pathExists(abs) {
+				if !allowBuiltin {
+					return "", contract.Fail(contract.CodeSkillProtected, "内置技能只读")
+				}
+				return abs, nil
+			}
+		}
+		return "", contract.Fail(contract.CodeNotFound, "技能不存在")
+	}
+}
+
+// resolveToolSkill validates toolId + wire path for removal paths and rejects
+// builtin directories (PRD FR-SKM-UNINST: builtin skills are read-only).
+func (s *SkillService) resolveToolSkill(ctx context.Context, toolID, spec string) (skills.DetectedTool, string, *contract.Failure) {
+	for _, tool := range s.detector().Detect() {
 		if tool.ID != toolID {
 			continue
 		}
 		if !tool.Enabled {
 			return tool, "", contract.Fail(contract.CodeSkillProtected, "该工具未启用")
 		}
-		// The path may point into a builtin directory too; those are readable
-		// but never removable (PRD FR-SKM-UNINST).
-		for _, builtin := range tool.BuiltinDirs {
-			if abs, err := skills.ResolveUnder(builtin, rel); err == nil {
-				_ = abs
-				return tool, "", contract.Fail(contract.CodeSkillProtected, "内置技能只读")
-			}
-		}
-		if tool.InstallDir == "" {
-			return tool, "", contract.Fail(contract.CodeSkillProtected, "该工具没有安装目录")
-		}
-		abs, err := skills.ResolveUnder(tool.InstallDir, rel)
-		if err != nil {
-			return tool, "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
-		}
-		return tool, abs, nil
+		abs, f := s.resolveSpec(tool, spec, false)
+		return tool, abs, f
 	}
 	return skills.DetectedTool{}, "", contract.Fail(contract.CodeInvalidInput, "未知的工具")
+}
+
+// resolveAnyToolSkill is the read-side variant used by Reveal and Adopt: it
+// may point into a builtin directory, and disabled tools are still readable.
+func (s *SkillService) resolveAnyToolSkill(ctx context.Context, toolID, spec string) (skills.DetectedTool, string, *contract.Failure) {
+	for _, tool := range s.detector().Detect() {
+		if tool.ID != toolID {
+			continue
+		}
+		abs, f := s.resolveSpec(tool, spec, true)
+		return tool, abs, f
+	}
+	return skills.DetectedTool{}, "", contract.Fail(contract.CodeInvalidInput, "未知的工具")
+}
+
+func pathExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // UninstallPreview is M80.
@@ -180,7 +280,7 @@ func backupContract(meta skills.BackupMeta, detector *skills.Detector) contract.
 // Reveal opens Explorer at a tool skill directory (M87). The path is resolved
 // through the same guard as removal; nothing is written.
 func (s *SkillService) Reveal(ctx context.Context, toolID, rel string) contract.Failure {
-	_, abs, f := s.resolveAnyToolSkill(toolID, rel)
+	_, abs, f := s.resolveAnyToolSkill(ctx, toolID, rel)
 	if f != nil {
 		return *f
 	}

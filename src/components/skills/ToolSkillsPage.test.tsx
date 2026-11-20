@@ -41,14 +41,14 @@ const groups = [
   {
     toolId: "claude-code",
     skills: [
-      { name: "vue", description: "", path: "<home>/.claude/skills/vue", toolId: "claude-code", origin: "copied", sync: "vault-updated", sourcePath: "skills/前端/vue" },
+      { name: "vue", description: "", path: "<home>/.claude/skills/vue", toolId: "claude-code", origin: "copied", sync: "vault-updated", sourcePath: "skills/前端/vue", base: "install", rel: "vue" },
     ],
   },
   {
     toolId: "agents",
     skills: [
-      { name: "go", description: "", path: "<home>/.agents/skills/go", toolId: "agents", origin: "linked", target: "<vault>/skills/后端/go" },
-      { name: "builtin-one", description: "", path: "<home>/.agents/skills/builtin-one", toolId: "agents", origin: "builtin", builtin: true },
+      { name: "go", description: "", path: "<home>/.agents/skills/go", toolId: "agents", origin: "linked", target: "<vault>/skills/后端/go", base: "install", rel: "go" },
+      { name: "builtin-one", description: "", path: "<home>/.agents/skills/builtin-one", toolId: "agents", origin: "builtin", builtin: true, base: "builtin:0", rel: "builtin-one" },
     ],
   },
 ];
@@ -78,10 +78,10 @@ describe("ToolSkillsPage", () => {
     const onResult = vi.fn();
     render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={onChanged} onResult={onResult} />);
     fireEvent.click(screen.getByTestId("tool-uninstall-go"));
-    await waitFor(() => expect(uninstallPreview).toHaveBeenCalledWith("agents", "go"));
+    await waitFor(() => expect(uninstallPreview).toHaveBeenCalledWith("agents", "install:go"));
     await waitFor(() => expect(screen.getByTestId("uninstall-target").textContent).toContain("<vault>/skills/后端/go"));
     fireEvent.click(screen.getByTestId("uninstall-confirm"));
-    await waitFor(() => expect(uninstall).toHaveBeenCalledWith("agents", "go"));
+    await waitFor(() => expect(uninstall).toHaveBeenCalledWith("agents", "install:go"));
     await waitFor(() => expect(onResult).toHaveBeenCalled());
     expect((onResult.mock.calls[0]?.[0] as string[]).join(" ")).toContain("已删除链接");
     expect(onChanged).toHaveBeenCalled();
@@ -100,7 +100,7 @@ describe("ToolSkillsPage", () => {
     const args = adopt.mock.calls[0] as [string, string, string, string, boolean, unknown[]];
     expect(args[0]).toBe("v1");
     expect(args[1]).toBe("agents");
-    expect(args[2]).toBe("builtin-one");
+    expect(args[2]).toBe("builtin:0:builtin-one");
     expect(args[3]).toBe("分类");
     expect(args[4]).toBe(false);
     await waitFor(() => expect(onResult).toHaveBeenCalled());
@@ -108,10 +108,34 @@ describe("ToolSkillsPage", () => {
     expect(onChanged).toHaveBeenCalled();
   });
 
-  it("opens the containing directory", () => {
+  it("opens the containing directory with the wire spec", () => {
     render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "打开所在目录 go" }));
-    expect(reveal).toHaveBeenCalledWith("agents", "go");
+    expect(reveal).toHaveBeenCalledWith("agents", "install:go");
+  });
+
+  it("marks copies whose knowledge-base skill is gone and hides redistribute", () => {
+    const orphan = [
+      {
+        toolId: "claude-code",
+        skills: [
+          {
+            name: "gone",
+            description: "",
+            path: "<home>/.claude/skills/gone",
+            toolId: "claude-code",
+            origin: "copied",
+            sync: "vault-missing",
+            sourcePath: "skills/分类/gone",
+            base: "install",
+            rel: "gone",
+          },
+        ],
+      },
+    ];
+    render(<ToolSkillsPage vaultId="v1" groups={orphan as never} tools={tools as never} onChanged={() => {}} />);
+    expect(screen.getByText("知识库已删除")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "重新分发 gone" })).toBeNull();
   });
 });
 

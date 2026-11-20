@@ -874,7 +874,7 @@ type SkillTool = {
 };
 
 type SkillOrigin = 'linked' | 'link-broken' | 'copied' | 'independent' | 'builtin' | 'external-link';
-type SkillSync = 'in-sync' | 'vault-updated' | 'tool-updated' | 'both-updated' | 'missing';
+type SkillSync = 'in-sync' | 'vault-updated' | 'tool-updated' | 'both-updated' | 'missing' | 'vault-missing';
 
 type KbSkill = {
   name: string; description: string; path: string; category: string;
@@ -886,6 +886,8 @@ type ToolSkill = {
   target?: string;            // 链接到知识库 / 外部时的目标（脱敏）
   sourcePath?: string;        // 拷贝：来源的知识库技能路径
   builtin?: boolean;          // 内置技能（不可卸载/覆盖）
+  base?: string;              // 该技能所在的根：install | scan:<n> | builtin:<n>
+  rel?: string;               // 根内的相对路径（1–2 段，斜杠分隔）
 };
 
 type SkillScan = {
@@ -941,7 +943,7 @@ type SkillToolRef = { toolId: string; path: string };            // M82 extras�
 
 ### 12.3 校验与错误
 
-- `toolId`：注册表内的 id；`path`：工具目录内的相对路径，1–2 段，单段规则同 FR-SKILL（≤80、不以点开头、无保留名、无 `..`）；`skillPath`：`skills/<分类>/<技能>`，分类与技能各一段；`category`：单段。
+- `toolId`：注册表内的 id；`path`：**wire spec**，形如 `install:<rel>`、`scan:<n>:<rel>`、`builtin:<n>:<rel>`（`<rel>` 是根内 1–2 段相对路径，单段规则同 FR-SKILL：≤80、不以点开头、无保留名、无 `..`）；不带前缀的旧写法按 `<rel>` 依次在安装目录、只扫描目录、内置目录里查找，内置命中按 `skill-protected` 拒绝。`skillPath`：`skills/<分类>/<技能>`，分类与技能各一段；`category`：单段。
 - 所有预览与执行都在服务端重新解析路径到登记目录内部（技术设计 15.3）；前端传绝对路径一律 `invalid-input`。
 - 目标已存在且未选覆盖：跳过而不是失败（`skipped`，detail 写原因）；选了覆盖但目标是内置：`skill-protected`。
 - 名称冲突（知识库内跨分类同名）：预览返回 `conflict` 并带另一处位置；执行返回 `skill-conflict`。
