@@ -160,9 +160,10 @@ func ImportSkills(vaultRoot, sourceRoot string, preview *SkillSourcePreview, cat
 			outcome.Skipped = append(outcome.Skipped, SkillSkip{Name: name, Reason: "exists"})
 			continue
 		}
-		from := sourceRoot
-		if rel != "" {
-			from = filepath.Join(sourceRoot, filepath.FromSlash(rel))
+		from, ok := resolveSkillRel(sourceRoot, rel)
+		if !ok {
+			outcome.Skipped = append(outcome.Skipped, SkillSkip{Name: name, Reason: "failed"})
+			continue
 		}
 		files, _, err := walkSkill(from)
 		if err != nil {
@@ -181,6 +182,27 @@ func ImportSkills(vaultRoot, sourceRoot string, preview *SkillSourcePreview, cat
 		outcome.Imported = append(outcome.Imported, name)
 	}
 	return outcome, nil
+}
+
+// resolveSkillRel turns a preview relative path into an absolute source path
+// and refuses anything that leaves the source root. Deep paths are allowed so
+// staged GitHub/zip installs can import skills from any level (M5); the folder
+// wizard still only previews root and one level.
+func resolveSkillRel(sourceRoot, rel string) (string, bool) {
+	if rel == "" {
+		return sourceRoot, true
+	}
+	for _, segment := range strings.Split(rel, "/") {
+		if segment == "" || segment == "." || segment == ".." ||
+			strings.ContainsAny(segment, `:\`) || strings.HasPrefix(segment, ".") {
+			return "", false
+		}
+	}
+	abs, f := pathguard.Resolve(sourceRoot, rel)
+	if f != nil {
+		return "", false
+	}
+	return abs, true
 }
 
 func copySkillTree(from, target string, files []string) error {

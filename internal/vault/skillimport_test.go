@@ -196,3 +196,35 @@ func TestImportSkillsSkipsSymlinks(t *testing.T) {
 		t.Fatal("symlink was copied")
 	}
 }
+
+// M5 T03: the staged installs import candidates from any depth, with the
+// source path checked against the source root.
+func TestImportSkillsDeepPathAndTraversal(t *testing.T) {
+	source := t.TempDir()
+	writeSkillFile(t, source, "group/nested/SKILL.md", "# nested\n")
+	writeSkillFile(t, source, "group/nested/ref/a.md", "a")
+	vaultRoot := t.TempDir()
+	preview := &SkillSourcePreview{
+		Dirs:       map[string]string{"nested": "group/nested"},
+		Candidates: []SkillCandidateInfo{{Name: "nested", FileCount: 2}},
+	}
+	outcome, f := ImportSkills(vaultRoot, source, preview, "通用", []string{"nested"})
+	if f != nil || len(outcome.Imported) != 1 {
+		t.Fatalf("deep import = %+v %+v", outcome, f)
+	}
+	if _, err := os.Stat(filepath.Join(vaultRoot, "skills", "通用", "nested", "ref", "a.md")); err != nil {
+		t.Fatalf("deep file missing: %v", err)
+	}
+
+	evil := &SkillSourcePreview{
+		Dirs:       map[string]string{"evil": "../outside"},
+		Candidates: []SkillCandidateInfo{{Name: "evil", FileCount: 1}},
+	}
+	outcome, f = ImportSkills(vaultRoot, source, evil, "通用", []string{"evil"})
+	if f != nil || len(outcome.Imported) != 0 || len(outcome.Skipped) != 1 || outcome.Skipped[0].Reason != "failed" {
+		t.Fatalf("traversal import = %+v %+v", outcome, f)
+	}
+	if _, err := os.Stat(filepath.Join(vaultRoot, "skills", "通用", "evil")); !os.IsNotExist(err) {
+		t.Fatalf("traversal created a target")
+	}
+}
