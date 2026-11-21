@@ -154,10 +154,21 @@
 }
 
 .skills-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   padding: 8px 12px;
   border-top: 1px solid color-mix(in srgb, var(--raw-line) 75%, transparent);
   font-size: var(--text-meta);
   color: var(--raw-faint);
+}
+
+.skills-foot .spacer {
+  flex: 1;
+}
+
+.skills-foot-warn {
+  color: var(--warn);
 }
 
 /* Title-bar pill (DESIGN.md 11.1). */
@@ -1089,6 +1100,63 @@
   border-top: 1px solid var(--raw-line);
   font-size: var(--text-meta);
   color: var(--raw-muted);
+}
+
+/* M5 T11: GitHub source line, update preview diff and the backup path. */
+.kb-card-src {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  color: var(--raw-faint);
+  font-size: var(--text-caption);
+}
+
+.update-crumb {
+  font-size: var(--text-body-sm);
+  color: var(--raw-strong);
+}
+
+.update-diff {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-control);
+  list-style: none;
+}
+
+.update-diff-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  font-size: var(--text-meta);
+}
+
+.update-diff-row + .update-diff-row {
+  border-top: 1px solid var(--raw-line);
+}
+
+.update-diff-row code {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.update-diff-size {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.update-backup {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+  word-break: break-all;
 }
 
 /* Embedded wizard fills the install area instead of overlaying the window. */

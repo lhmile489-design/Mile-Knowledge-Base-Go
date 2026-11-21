@@ -6,6 +6,9 @@ const uninstall = vi.fn();
 const adopt = vi.fn();
 const reveal = vi.fn();
 const distribute = vi.fn();
+const updatePreview = vi.fn();
+const updateTool = vi.fn();
+const discardStage = vi.fn();
 
 vi.mock("../../lib/transport", () => {
   class TransportError extends Error {}
@@ -17,6 +20,9 @@ vi.mock("../../lib/transport", () => {
       adopt: (...args: unknown[]) => adopt(...args),
       reveal: (...args: unknown[]) => reveal(...args),
       distribute: (...args: unknown[]) => distribute(...args),
+      updatePreview: (...args: unknown[]) => updatePreview(...args),
+      updateTool: (...args: unknown[]) => updateTool(...args),
+      discardStage: (...args: unknown[]) => discardStage(...args),
     },
     settingsApi: { patch: vi.fn(), get: vi.fn() },
     vaultApi: { list: vi.fn() },
@@ -54,11 +60,12 @@ const groups = [
 ];
 
 beforeEach(() => {
-  for (const fn of [uninstallPreview, uninstall, adopt, reveal, distribute]) fn.mockReset();
+  for (const fn of [uninstallPreview, uninstall, adopt, reveal, distribute, updatePreview, updateTool, discardStage]) fn.mockReset();
   uninstallPreview.mockResolvedValue({ preview: { kind: "link", target: "<vault>/skills/后端/go" } });
   uninstall.mockResolvedValue({ items: [{ targetId: "agents", toolId: "agents", result: "removed" }] });
   adopt.mockResolvedValue({ vaultPath: "skills/分类/builtin-one", linked: false, warnings: [] });
   reveal.mockResolvedValue({});
+  discardStage.mockResolvedValue({});
 });
 
 afterEach(cleanup);
@@ -161,5 +168,58 @@ describe("ToolSkillsPage states", () => {
     render(<ToolSkillsPage vaultId="v1" groups={[] as never} tools={missing as never} onChanged={() => {}} />);
     expect(screen.getByText("没有检测到已安装的工具。")).toBeTruthy();
     expect(screen.getByText(/探测依据/)).toBeTruthy();
+  });
+});
+
+describe("ToolSkillsPage GitHub updates", () => {
+  it("shows the update pill and replaces the directory after confirmation", async () => {
+    const commit = "0123456789abcdef0123456789abcdef01234567";
+    const latest = "89abcdef0123456789abcdef0123456789abcdef";
+    updatePreview.mockResolvedValue({
+      stageId: "s-0123456789ab",
+      from: commit,
+      to: latest,
+      files: [{ path: "SKILL.md", change: "modified", bytes: 10, binary: false }],
+      backupPath: "C:\\app\\backups\\<new>\\files",
+    });
+    updateTool.mockResolvedValue({ items: [{ targetId: "g-aaaaaaaaaaaa", toolId: "claude-code", result: "copied", detail: "已更新" }] });
+    const onChanged = vi.fn();
+    const onResult = vi.fn();
+    const withRemote = [
+      {
+        toolId: "claude-code",
+        skills: [
+          {
+            name: "pdf", description: "", path: "<home>/.claude/skills/pdf", toolId: "claude-code",
+            origin: "independent", base: "install", rel: "pdf",
+            remote: {
+              owner: "anthropics", repo: "skills", ref: "main", path: "skills/pdf",
+              commit, pathCommit: commit, installedAt: "2026-11-21T09:00:00Z",
+              updateState: "update-available", latestPathCommit: latest,
+            },
+          },
+        ],
+      },
+    ];
+    render(
+      <ToolSkillsPage
+        vaultId="v1"
+        groups={withRemote as never}
+        tools={tools as never}
+        onChanged={onChanged}
+        onResult={onResult}
+      />,
+    );
+    const row = screen.getByTestId("tool-skill-pdf-claude-code");
+    expect(row.textContent).toContain("GitHub 有更新");
+    expect(row.textContent).toContain("anthropics/skills");
+    fireEvent.click(screen.getByTestId("tool-update-pdf-claude-code"));
+    await waitFor(() => expect(updatePreview).toHaveBeenCalledWith("v1", { kind: "tool", toolId: "claude-code", path: "install:pdf" }));
+    await waitFor(() => expect(screen.getByTestId("tool-update-submit")).toBeTruthy());
+    fireEvent.click(screen.getByTestId("tool-update-submit"));
+    await waitFor(() => expect(updateTool).toHaveBeenCalledWith("s-0123456789ab"));
+    expect(onResult).toHaveBeenCalledWith(["已更新 Claude Code 里的 pdf（已更新）"]);
+    expect(onChanged).toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByTestId("tool-update-dialog")).toBeNull());
   });
 });

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { DotsThree, SquaresFour, ListBullets, Check } from "@phosphor-icons/react";
+import { DotsThree, SquaresFour, ListBullets, Check, GithubLogo } from "@phosphor-icons/react";
 import type { KbSkill, SkillCategory, SkillTool } from "../../lib/transport";
+import { remotePill, sourceOf } from "../../lib/skillRemote";
 import { ToolIcon } from "./ToolIcon";
 
 type View = "grid" | "list";
@@ -14,6 +15,7 @@ export function KbSkillsPage({
   onLocate,
   onDistribute,
   onInstall,
+  onUpdate,
 }: {
   readonly groups: SkillCategory[];
   readonly tools: SkillTool[];
@@ -21,6 +23,7 @@ export function KbSkillsPage({
   readonly onLocate: (path: string) => void;
   readonly onDistribute: (paths: string[]) => void;
   readonly onInstall: () => void;
+  readonly onUpdate: (skill: KbSkill) => void;
 }) {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<View>("grid");
@@ -130,6 +133,7 @@ export function KbSkillsPage({
                     onOpen={() => onOpenSkill(skill.path)}
                     onLocate={() => onLocate(skill.path)}
                     onDistribute={() => onDistribute([skill.path])}
+                    onUpdate={() => onUpdate(skill)}
                   />
                 ))}
               </div>
@@ -176,6 +180,7 @@ function KbSkillCard({
   onOpen,
   onLocate,
   onDistribute,
+  onUpdate,
 }: {
   readonly skill: KbSkill;
   readonly tools: SkillTool[];
@@ -185,9 +190,12 @@ function KbSkillCard({
   readonly onOpen: () => void;
   readonly onLocate: () => void;
   readonly onDistribute: () => void;
+  readonly onUpdate: () => void;
 }) {
   const [menu, setMenu] = useState(false);
   const status = statusOf(skill);
+  const remote = remotePill(skill.remote);
+  const updatable = skill.remote?.updateState === "update-available";
   const distributed = (skill.distributed ?? []).slice(0, 4);
   const extra = Math.max(0, (skill.distributed?.length ?? 0) - distributed.length);
 
@@ -216,17 +224,39 @@ function KbSkillCard({
           <ToolIcon key={item.toolId} tool={tools.find((tool) => tool.id === item.toolId) ?? { id: item.toolId, name: item.toolId, iconKey: "" }} size={16} />
         ))}
         {extra > 0 ? <span className="kb-card-more">+{extra}</span> : null}
+        {skill.remote ? (
+          <span className="kb-card-src" title={sourceOf(skill.remote)}>
+            <GithubLogo size={12} aria-hidden />
+            {sourceOf(skill.remote)}
+          </span>
+        ) : null}
       </span>
       <span className="kb-card-foot">
         <span className="pill" data-tone={status.tone}>
           {status.label}
         </span>
+        {remote ? (
+          <span className="pill" data-tone={remote.tone} title={remote.title}>
+            {remote.text}
+          </span>
+        ) : null}
         <span className="kb-card-actions">
         {!selecting ? (
           <>
-            <button type="button" className="btn-quiet kb-distribute" onClick={onDistribute}>
-              分发
-            </button>
+            {updatable ? (
+              <button
+                type="button"
+                className="btn-quiet kb-distribute"
+                onClick={onUpdate}
+                data-testid={`kb-update-${skill.name}`}
+              >
+                更新
+              </button>
+            ) : (
+              <button type="button" className="btn-quiet kb-distribute" onClick={onDistribute}>
+                分发
+              </button>
+            )}
             <span className="kb-menu-wrap">
               <button
                 type="button"
@@ -246,9 +276,16 @@ function KbSkillCard({
                   <button type="button" role="menuitem" onClick={() => { setMenu(false); onLocate(); }}>
                     在侧栏定位
                   </button>
-                  <button type="button" role="menuitem" disabled>
-                    更新（下个版本）
-                  </button>
+                  {updatable ? (
+                    <button type="button" role="menuitem" onClick={() => { setMenu(false); onUpdate(); }}>
+                      更新…
+                    </button>
+                  ) : null}
+                  {skill.remote?.updateState === "both-changed" ? (
+                    <button type="button" role="menuitem" disabled title="本地改过，不能一键更新">
+                      更新（本地改过）
+                    </button>
+                  ) : null}
                 </span>
               ) : null}
             </span>

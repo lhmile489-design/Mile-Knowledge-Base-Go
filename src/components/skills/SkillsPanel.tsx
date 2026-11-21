@@ -1,16 +1,31 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, X } from "@phosphor-icons/react";
+import { events } from "../../mygo";
+import { skillsApi, type SkillUpdateCheckResult } from "../../lib/transport";
+import { checkedLabel, clockOf } from "../../lib/skillRemote";
 import { useAppStore } from "../../stores/appStore";
 import { useSkillsStore } from "../../stores/skillsStore";
 import { totals } from "../../lib/skillsView";
 import { useDocStore } from "../../stores/docStore";
 import { useTreeStore } from "../../stores/treeStore";
+import { useMutationStore } from "../../stores/mutationStore";
 import { KbSkillsPage } from "./KbSkillsPage";
 import { DistributeDialog } from "./DistributeDialog";
 import { ToolSkillsPage } from "./ToolSkillsPage";
 import { InstallView } from "./InstallView";
+import { UpdateView } from "./UpdateView";
 
 type Page = "kb" | "tools";
+
+type PendingUpdate = { vaultId: string; stageId: string; planId: string; name: string };
+
+function subscribeSkillsChanged(listener: () => void): () => void {
+  try {
+    return events.skillsChanged.on(listener);
+  } catch {
+    return () => undefined;
+  }
+}
 
 /** The skills panel shell (M4 T09; UI 稿 9.1–9.2). T10/T11 fill the two
  * pages; this task delivers the layer, the two tabs, the install entry, the
@@ -25,9 +40,15 @@ export function SkillsPanel() {
   const [page, setPage] = useState<Page>("kb");
   const [distributePaths, setDistributePaths] = useState<string[] | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
+  const [updatePath, setUpdatePath] = useState<string | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<SkillUpdateCheckResult | null>(null);
+  const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
   const [resultLines, setResultLines] = useState<string[] | null>(null);
   const [box, setBox] = useState<{ right: number; width: number; height: number } | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const pendingPlan = useMutationStore((state) => state.pending);
+  const mutationRunning = useMutationStore((state) => state.running);
+  const mutationReport = useMutationStore((state) => state.report);
 
   // Position under the title-bar button, never crossing the sidebar (9.1).
   useEffect(() => {
@@ -58,6 +79,69 @@ export function SkillsPanel() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, vaultId]);
+
+  const refreshUpdates = async (vault: string, force: boolean) => {
+    try {
+      setUpdateInfo(await skillsApi.checkUpdates(vault, force));
+    } catch {
+      // A failed check leaves the previous footer state in place.
+    }
+  };
+
+  // Q-SKM-2: opening the panel asks M93; E12 refreshes the scan and the state.
+  useEffect(() => {
+    if (!open) return;
+    void refreshUpdates(vaultId, false);
+    const off = subscribeSkillsChanged(() => {
+      if (vaultId) void useSkillsStore.getState().loadScan(vaultId);
+      void refreshUpdates(vaultId, false);
+    });
+    return off;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, vaultId]);
+
+  // After the plan card runs, M95 moves the source record only when the tree
+  // matches the staged version; closing the card drops the stage instead.
+  useEffect(() => {
+    if (!pendingUpdate) return;
+    if (mutationReport && mutationReport.planId === pendingUpdate.planId) {
+      const target = pendingUpdate;
+      setPendingUpdate(null);
+      void (async () => {
+        try {
+          const value = await skillsApi.confirmKbUpdate(target.vaultId, target.stageId);
+          setResultLines([
+            value.updated
+              ? `已更新「${target.name}」`
+              : `「${target.name}」没有全部写入${value.failure ? `：${value.failure.message}` : ""}，可以重新检查更新`,
+          ]);
+        } catch (error) {
+          setResultLines([`更新确认失败：${error instanceof Error ? error.message : String(error)}`]);
+        }
+        if (target.vaultId) {
+          void useSkillsStore.getState().loadScan(target.vaultId);
+          void refreshUpdates(target.vaultId, false);
+        }
+      })();
+      return;
+    }
+    if (!pendingPlan && !mutationRunning) {
+      const target = pendingUpdate;
+      setPendingUpdate(null);
+      void skillsApi.discardStage(target.stageId).catch(() => undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mutationReport, pendingPlan, mutationRunning, pendingUpdate]);
+
+  const updateSkillName = useMemo(() => {
+    if (!updatePath) return "";
+    for (const group of scan?.kb ?? []) {
+      for (const skill of group.skills) {
+        if (skill.path === updatePath) return skill.name;
+      }
+    }
+    return updatePath.split("/").pop() ?? updatePath;
+  }, [scan, updatePath]);
 
   useEffect(() => {
     if (!open) return;
@@ -141,6 +225,7 @@ export function SkillsPanel() {
                 data-skills-tab
                 onClick={() => {
                   setInstallOpen(false);
+                  setUpdatePath(null);
                   setPage(id);
                 }}
                 onKeyDown={(event) => {
@@ -164,6 +249,7 @@ export function SkillsPanel() {
             className="btn-quiet skills-install"
             onClick={() => {
               setDistributePaths(null);
+              setUpdatePath(null);
               setInstallOpen(true);
             }}
           >
@@ -188,12 +274,18 @@ export function SkillsPanel() {
               </button>
             </div>
           ) : null}
-          {!scan && vaultId && !installOpen ? (
-            <div className="skills-skeleton" aria-label="正在扫描" data-testid="skills-skeleton">
-              {[0, 1, 2, 3, 4].map((row) => (
-                <span key={row} className="skills-skeleton-row" />
-              ))}
-            </div>
+          {updatePath && vaultId ? (
+            <UpdateView
+              vaultId={vaultId}
+              skillPath={updatePath}
+              skillName={updateSkillName}
+              onClose={() => setUpdatePath(null)}
+              onProposed={(plan, stageId) => {
+                setPendingUpdate({ vaultId, stageId, planId: plan.id, name: updateSkillName });
+                useMutationStore.getState().propose(plan, `更新技能「${updateSkillName}」`);
+                setUpdatePath(null);
+              }}
+            />
           ) : installOpen && vaultId ? (
             <InstallView
               vaultId={vaultId}
@@ -203,6 +295,12 @@ export function SkillsPanel() {
                 if (vaultId) void useSkillsStore.getState().loadScan(vaultId);
               }}
             />
+          ) : !scan && vaultId ? (
+            <div className="skills-skeleton" aria-label="正在扫描" data-testid="skills-skeleton">
+              {[0, 1, 2, 3, 4].map((row) => (
+                <span key={row} className="skills-skeleton-row" />
+              ))}
+            </div>
           ) : page === "kb" ? (
             vaultId ? (
               <KbSkillsPage
@@ -217,7 +315,14 @@ export function SkillsPanel() {
                   close();
                 }}
                 onDistribute={(paths) => setDistributePaths(paths)}
-                onInstall={() => setInstallOpen(true)}
+                onInstall={() => {
+                  setUpdatePath(null);
+                  setInstallOpen(true);
+                }}
+                onUpdate={(skill) => {
+                  setInstallOpen(false);
+                  setUpdatePath(skill.path);
+                }}
               />
             ) : (
               <div className="skills-empty">
@@ -259,6 +364,29 @@ export function SkillsPanel() {
           <span data-testid="skills-status">
             {scanning ? "后台扫描中…" : scan ? `上次扫描 ${scan.cachedAt}` : "尚未扫描"}
           </span>
+          <span className="spacer" />
+          {updateInfo && updateInfo.unchecked > 0 ? (
+            <span className="skills-foot-warn" data-testid="skills-unchecked">
+              {updateInfo.unchecked} 个来源这次没查
+            </span>
+          ) : null}
+          {updateInfo?.rateLimitResetAt ? (
+            <span className="skills-foot-warn" data-testid="skills-rate-limit">
+              额度用完，{clockOf(updateInfo.rateLimitResetAt)} 后再试
+            </span>
+          ) : null}
+          <span data-testid="skills-checked">
+            {updateInfo?.checking ? "检查中…" : checkedLabel(updateInfo?.checkedAt) || "尚未检查"}
+          </span>
+          <button
+            type="button"
+            className="btn-quiet"
+            disabled={updateInfo?.checking ?? false}
+            onClick={() => void refreshUpdates(vaultId, true)}
+            data-testid="skills-check-updates"
+          >
+            检查更新
+          </button>
         </footer>
       </div>
     </div>

@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { Archive, ArrowClockwise, FolderOpen, Tray } from "@phosphor-icons/react";
 import { skillsApi, type SkillTool, type SkillToolScan, type ToolSkill } from "../../lib/transport";
+import { remotePill, sourceOf } from "../../lib/skillRemote";
 import { ToolIcon } from "./ToolIcon";
 import { UninstallDialog } from "./UninstallDialog";
 import { AdoptDialog } from "./AdoptDialog";
+import { ToolUpdateDialog } from "./ToolUpdateDialog";
 
 const ORIGIN_LABEL: Record<string, { text: string; tone: "live" | "warn" | "fault" | "idle" }> = {
   linked: { text: "链接到知识库", tone: "live" },
@@ -47,6 +49,7 @@ export function ToolSkillsPage({
   const [showHidden, setShowHidden] = useState(false);
   const [uninstall, setUninstall] = useState<ToolSkill | null>(null);
   const [adopt, setAdopt] = useState<ToolSkill | null>(null);
+  const [updating, setUpdating] = useState<ToolSkill | null>(null);
 
   const countOf = (id: string) => groups.find((group) => group.toolId === id)?.skills.length ?? 0;
   const visible = (tool: SkillTool) => {
@@ -148,7 +151,9 @@ export function ToolSkillsPage({
       ) : (
         <div className="tool-rows">
           {rows.map(({ skill, toolId }) => {
-            const status = statusOf(skill);
+            const remote = skill.remote ? remotePill(skill.remote) : null;
+            const status = remote ?? statusOf(skill);
+            const updatable = skill.remote?.updateState === "update-available";
             const tool = toolFor(toolId);
             return (
               <div key={skill.path} className="tool-row" data-testid={`tool-skill-${skill.name}-${toolId}`}>
@@ -156,11 +161,24 @@ export function ToolSkillsPage({
                 <span className="tool-row-name">{skill.name}</span>
                 <span className="tool-row-path" title={skill.path}>
                   {skill.path}
+                  {skill.remote ? ` · ${sourceOf(skill.remote)}` : ""}
                 </span>
-                <span className="pill" data-tone={status.tone}>
+                <span className="pill" data-tone={status.tone} title={remote?.title}>
                   {status.text}
                 </span>
                 <span className="tool-row-actions">
+                  {updatable ? (
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`更新 ${skill.name}`}
+                      title="更新"
+                      onClick={() => setUpdating(skill)}
+                      data-testid={`tool-update-${skill.name}-${toolId}`}
+                    >
+                      <ArrowClockwise size={14} aria-hidden />
+                    </button>
+                  ) : null}
                   {skill.origin === "copied" && skill.sync === "vault-updated" && skill.sourcePath ? (
                     <button
                       type="button"
@@ -218,6 +236,20 @@ export function ToolSkillsPage({
             setUninstall(null);
             onChanged();
           }}
+          onResult={onResult}
+        />
+      ) : null}
+
+      {updating?.remote ? (
+        <ToolUpdateDialog
+          vaultId={vaultId}
+          toolId={updating.toolId}
+          toolName={toolFor(updating.toolId)?.name ?? updating.toolId}
+          skillName={updating.name}
+          spec={specOf(updating)}
+          remote={updating.remote}
+          onClose={() => setUpdating(null)}
+          onChanged={onChanged}
           onResult={onResult}
         />
       ) : null}

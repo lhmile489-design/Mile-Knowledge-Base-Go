@@ -31,6 +31,7 @@ describe("KbSkillsPage", () => {
         onLocate={noop}
         onDistribute={noop}
         onInstall={noop}
+        onUpdate={noop}
       />,
     );
     expect(screen.getByTestId("kb-group-前端")).toBeTruthy();
@@ -50,6 +51,7 @@ describe("KbSkillsPage", () => {
         onLocate={noop}
         onDistribute={noop}
         onInstall={noop}
+        onUpdate={noop}
       />,
     );
     fireEvent.change(screen.getByTestId("kb-skills-search"), { target: { value: "组合式" } });
@@ -70,6 +72,7 @@ describe("KbSkillsPage", () => {
         onLocate={noop}
         onDistribute={noop}
         onInstall={noop}
+        onUpdate={noop}
       />,
     );
     expect(screen.getByTestId("kb-grid-前端")).toBeTruthy();
@@ -90,6 +93,7 @@ describe("KbSkillsPage", () => {
         onLocate={noop}
         onDistribute={onDistribute}
         onInstall={noop}
+        onUpdate={noop}
       />,
     );
     fireEvent.click(screen.getByTestId("kb-batch-toggle"));
@@ -110,6 +114,7 @@ describe("KbSkillsPage", () => {
         onLocate={onLocate}
         onDistribute={noop}
         onInstall={noop}
+        onUpdate={noop}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "更多操作：vue" }));
@@ -118,5 +123,41 @@ describe("KbSkillsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "更多操作：vue" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "在侧栏定位" }));
     expect(onLocate).toHaveBeenCalledWith("skills/前端/vue");
+  });
+
+  it("shows GitHub update states and turns the action into an update", () => {
+    const onUpdate = vi.fn();
+    const commit = "0123456789abcdef0123456789abcdef01234567";
+    const latest = "89abcdef0123456789abcdef0123456789abcdef";
+    const remoteBase = {
+      owner: "anthropics",
+      repo: "skills",
+      ref: "main",
+      path: "skills/pdf",
+      commit,
+      pathCommit: commit,
+      installedAt: "2026-11-21T09:00:00Z",
+    };
+    const withRemote: KbSkill[] = [
+      { name: "pdf", description: "PDF", path: "skills/文档/pdf", category: "文档", distributed: [], remote: { ...remoteBase, updateState: "update-available", latestPathCommit: latest } },
+      { name: "docx", description: "Word", path: "skills/文档/docx", category: "文档", distributed: [], remote: { ...remoteBase, path: "skills/docx", updateState: "both-changed" } },
+    ];
+    render(
+      <KbSkillsPage
+        groups={[{ category: "文档", skills: withRemote }]}
+        tools={tools}
+        onOpenSkill={noop}
+        onLocate={noop}
+        onDistribute={noop}
+        onInstall={noop}
+        onUpdate={onUpdate}
+      />,
+    );
+    expect(screen.getByTestId("kb-card-pdf").textContent).toContain("GitHub 有更新");
+    expect(screen.getByTestId("kb-card-pdf").textContent).toContain("anthropics/skills");
+    expect(screen.getByTestId("kb-card-docx").textContent).toContain("两边都改了");
+    fireEvent.click(screen.getByTestId("kb-update-pdf"));
+    expect(onUpdate).toHaveBeenCalledWith(withRemote[0]);
+    expect(screen.queryByTestId("kb-update-docx")).toBeNull();
   });
 });
