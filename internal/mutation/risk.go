@@ -26,6 +26,11 @@ func AssessRisk(actions []contract.MutationAction) string {
 		if destructiveKinds[action.Kind] {
 			return "medium"
 		}
+		// importFile only replaces content when it pins an existing revision
+		// (API §13.4); a pure create stays low.
+		if action.Kind == contract.MutImportFile && action.ExpectedTargetRevision != nil {
+			return "medium"
+		}
 	}
 	return "low"
 }
@@ -35,7 +40,7 @@ func isMutationKind(kind string) bool {
 	switch kind {
 	case contract.MutCreate, contract.MutCreateDirectory, contract.MutEdit,
 		contract.MutMove, contract.MutCopy, contract.MutArchive,
-		contract.MutTrash, contract.MutPermanentDelete:
+		contract.MutTrash, contract.MutPermanentDelete, contract.MutImportFile:
 		return true
 	}
 	return false

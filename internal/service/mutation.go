@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -40,6 +41,14 @@ func (s *MutationService) Execute(ctx context.Context, plan contract.MutationPla
 		Manager: mutation.TxManager{Root: root},
 		Trash: func(abs string) error {
 			return mygo.Shell.TrashItem(abs)
+		},
+		StageRoot: filepath.Join(s.app.DataDir, "skills", "tmp"),
+		StatRevision: func(rel string) (int64, *contract.Failure) {
+			revision, _, f := vault.StatRevision(root, rel)
+			if f != nil {
+				return 0, f
+			}
+			return revision, nil
 		},
 		RecordProvenance: func(copyRel, sourceRel string) {
 			snap, rf := vault.Read(root, sourceRel)
@@ -372,7 +381,7 @@ func (s *MutationService) build(req contract.PlanRequest) contract.PlanResult {
 	if f != nil {
 		return contract.PlanResult{Failure: f}
 	}
-	builder := mutation.Builder{Root: root}
+	builder := mutation.Builder{Root: root, StagingRoot: filepath.Join(s.app.DataDir, "skills", "tmp")}
 	plan, failure := builder.Plan(req)
 	if failure != nil {
 		return contract.PlanResult{Failure: failure}

@@ -20,14 +20,18 @@ const MaxWriteBytes = 2 << 20
 // Builder validates plans against a vault root. It only reads.
 type Builder struct {
 	Root string
+	// StagingRoot is <app data>/skills/tmp; empty disables importFile.
+	StagingRoot string
 	// NewID is injectable for tests; defaults to a random plan id.
-	NewID func() string
+	NewID  func() string
+	origin string // the request's origin, for importFile's user-only rule
 }
 
 // Plan validates the request and returns the plan the user will confirm
 // (API.md M29). Nothing is written: every check is a read.
 func (b Builder) Plan(req contract.PlanRequest) (contract.MutationPlan, *contract.Failure) {
 	plan := contract.MutationPlan{VaultID: req.VaultID, Origin: req.Origin}
+	b.origin = req.Origin
 	if req.Origin != "user" && !policy.IsAgent(req.Origin) {
 		return plan, contract.Fail(contract.CodeInvalidInput, "计划来源不合法")
 	}
@@ -43,6 +47,11 @@ func (b Builder) Plan(req contract.PlanRequest) (contract.MutationPlan, *contrac
 		// The permission gate runs before any filesystem check, so an agent gets
 		// "no permission" for a system path instead of learning whether it
 		// exists. The executor runs the same gate again on the final plan.
+		if policy.IsAgent(req.Origin) && raw.Kind == contract.MutImportFile {
+			// importFile can write any staged file over any vault path; agents
+			// never get it (PRD 15.4, API §13.4).
+			return plan, contract.Fail(contract.CodePermissionDenied, "Agent 不能导入暂存文件")
+		}
 		if policy.IsAgent(req.Origin) && isMutationKind(raw.Kind) {
 			if decision := policy.CanMutate(req.Origin, raw.Kind, raw.Source, raw.Target); !decision.Allowed {
 				return plan, contract.Fail(contract.CodePermissionDenied, decision.Reason)
@@ -115,6 +124,8 @@ func (b Builder) validateAction(index int, raw contract.MutationAction) (contrac
 		return b.validateMove(action)
 	case contract.MutCopy:
 		return b.validateCopy(action)
+	case contract.MutImportFile:
+		return b.validateImportFile(action)
 	case contract.MutArchive, contract.MutTrash, contract.MutPermanentDelete:
 		if action.Source == "" {
 			return action, contract.Fail(contract.CodeInvalidInput, "缺少源路径")
@@ -226,6 +237,47 @@ func (b Builder) validateEdit(action contract.MutationAction) (contract.Mutation
 	}
 	if info.IsDir() {
 		return action, contract.Fail(contract.CodeNotAFile, "目标不是文件")
+	}
+	return action, nil
+}
+
+// validateImportFile checks the staged source and the target rules of API
+// §13.4: a create needs no revision, a replacement is destructive and must pin
+// the revision the user saw.
+func (b Builder) validateImportFile(action contract.MutationAction) (contract.MutationAction, *contract.Failure) {
+	action.Source = ""
+	if b.origin != "user" {
+		return action, contract.Fail(contract.CodePermissionDenied, "Agent 不能导入暂存文件")
+	}
+	if action.Target == "" || action.StageID == "" || action.StagePath == "" || action.StageHash == "" {
+		return action, contract.Fail(contract.CodeInvalidInput, "导入文件需要目标与暂存信息")
+	}
+	if !strings.HasPrefix(action.StageHash, "sha256:") || len(action.StageHash) != len("sha256:")+64 {
+		return action, contract.Fail(contract.CodeInvalidInput, "暂存哈希不合法")
+	}
+	staged, f := resolveStagedFile(b.StagingRoot, action.StageID, action.StagePath)
+	if f != nil {
+		return action, f
+	}
+	if f := assertStagedHash(staged, action.StageHash); f != nil {
+		return action, f
+	}
+	targetAbs, f := pathguard.Resolve(b.Root, action.Target)
+	if f != nil {
+		return action, f
+	}
+	info, err := os.Lstat(targetAbs)
+	if err != nil {
+		if action.ExpectedTargetRevision != nil {
+			return action, contract.Fail(contract.CodeInvalidInput, "目标不存在，不能替换")
+		}
+		return action, nil
+	}
+	if info.IsDir() {
+		return action, contract.Fail(contract.CodeNotAFile, "目标不是文件")
+	}
+	if action.ExpectedTargetRevision == nil {
+		return action, contract.Fail(contract.CodeInvalidInput, "替换已有文件需要基于版本")
 	}
 	return action, nil
 }

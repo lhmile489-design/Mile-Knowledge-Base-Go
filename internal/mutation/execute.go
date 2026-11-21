@@ -28,7 +28,12 @@ type Executor struct {
 	WriteText func(rel string, expectedRevision int64, text string) (string, *contract.Failure)
 	// RecordProvenance is called after a successful copy into projects/.
 	RecordProvenance func(copyRel, sourceRel string)
-	Now              func() time.Time
+	// StageRoot is <app data>/skills/tmp for importFile actions.
+	StageRoot string
+	// StatRevision returns the vault revision the page saw; importFile uses it
+	// to refuse a replacement the user did not preview.
+	StatRevision func(rel string) (int64, *contract.Failure)
+	Now          func() time.Time
 }
 
 func (e Executor) now() time.Time {
@@ -46,6 +51,13 @@ func (e Executor) Execute(plan contract.MutationPlan) contract.MutationReport {
 	}
 	if policy.IsAgent(plan.Origin) {
 		for _, action := range plan.Actions {
+			if action.Kind == contract.MutImportFile {
+				// Never reachable for an agent: the plan layer refuses it, and
+				// this gate is the one M30 crosses (API §13.4).
+				report.Status = "failed"
+				report.Failure = contract.Fail(contract.CodePermissionDenied, "Agent 不能导入暂存文件")
+				return report
+			}
 			// The second gate runs on the canonical spelling: an 8.3 short name
 			// or case alias can pass the spelling check while pointing into the
 			// system area (legacy VaultFsBridge.ts:161-172).
@@ -201,6 +213,8 @@ func (e Executor) runAction(plan contract.MutationPlan, action contract.Mutation
 		return e.doTrash(action, tx)
 	case contract.MutPermanentDelete:
 		return e.doPermanentDelete(plan, action, tx)
+	case contract.MutImportFile:
+		return e.doImportFile(action, tx)
 	}
 	return actionOutcome{}, contractError{code: contract.CodeUnsupported, message: "不支持的操作类型"}
 }
@@ -279,6 +293,61 @@ func (e Executor) writeText(rel string, expectedRevision int64, text string) (st
 		return "", contract.Fail(contract.CodeIOFailure, "写入器未注入")
 	}
 	return e.WriteText(rel, expectedRevision, text)
+}
+
+// doImportFile writes one staged file (API §13.4). The staged hash and the
+// target revision are checked again here: the plan crossed the renderer.
+func (e Executor) doImportFile(action contract.MutationAction, tx *Tx) (actionOutcome, error) {
+	staged, f := resolveStagedFile(e.StageRoot, action.StageID, action.StagePath)
+	if f != nil {
+		return actionOutcome{}, contractError{code: f.Code, message: f.Message}
+	}
+	if f := assertStagedHash(staged, action.StageHash); f != nil {
+		return actionOutcome{}, contractError{code: f.Code, message: f.Message}
+	}
+	targetAbs, err := e.abs(action.Target)
+	if err != nil {
+		return actionOutcome{}, err
+	}
+	exists := false
+	if info, statErr := os.Lstat(targetAbs); statErr == nil {
+		if info.IsDir() {
+			return actionOutcome{}, contractError{code: contract.CodeNotAFile, message: "目标不是文件"}
+		}
+		exists = true
+		if action.ExpectedTargetRevision == nil {
+			return actionOutcome{}, contractError{code: contract.CodeInvalidInput, message: "替换已有文件需要基于版本"}
+		}
+		if e.StatRevision == nil {
+			return actionOutcome{}, contractError{code: contract.CodeIOFailure, message: "版本读取器未注入"}
+		}
+		revision, f := e.StatRevision(action.Target)
+		if f != nil {
+			return actionOutcome{}, contractError{code: f.Code, message: f.Message}
+		}
+		if revision != *action.ExpectedTargetRevision {
+			return actionOutcome{}, contractError{code: contract.CodeRevisionMismatch, message: "目标已被外部修改"}
+		}
+	} else if action.ExpectedTargetRevision != nil {
+		return actionOutcome{}, contractError{code: contract.CodeNotFound, message: "目标不存在"}
+	}
+	before := ""
+	if exists {
+		before, _ = hashFile(targetAbs)
+		if tx != nil {
+			if err := e.Manager.Capture(tx, action.Target, targetAbs); err != nil {
+				return actionOutcome{}, err
+			}
+		}
+	}
+	if err := os.MkdirAll(filepath.Dir(targetAbs), 0o755); err != nil {
+		return actionOutcome{}, contractError{code: contract.CodeIOFailure, message: "无法创建目录"}
+	}
+	if err := copyFileVerified(staged, targetAbs); err != nil {
+		return actionOutcome{}, contractError{code: contract.CodeIOFailure, message: "写入失败：" + err.Error()}
+	}
+	after, _ := hashFile(targetAbs)
+	return actionOutcome{touched: []string{parentOf(action.Target)}, beforeHash: before, afterHash: after}, nil
 }
 
 func (e Executor) doMoveOrCopy(action contract.MutationAction, tx *Tx, isMove bool) (actionOutcome, error) {
@@ -446,6 +515,9 @@ func (e Executor) doPermanentDelete(plan contract.MutationPlan, action contract.
 func needsTransaction(actions []contract.MutationAction) bool {
 	for _, action := range actions {
 		if destructiveKinds[action.Kind] {
+			return true
+		}
+		if action.Kind == contract.MutImportFile && action.ExpectedTargetRevision != nil {
 			return true
 		}
 	}
