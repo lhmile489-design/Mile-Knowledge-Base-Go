@@ -84,7 +84,7 @@ describe("ToolSkillsPage", () => {
     const onChanged = vi.fn();
     const onResult = vi.fn();
     render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={onChanged} onResult={onResult} />);
-    fireEvent.click(screen.getByTestId("tool-uninstall-go"));
+    fireEvent.click(screen.getByTestId("tool-uninstall-go-agents"));
     await waitFor(() => expect(uninstallPreview).toHaveBeenCalledWith("agents", "install:go"));
     await waitFor(() => expect(screen.getByTestId("uninstall-target").textContent).toContain("<vault>/skills/后端/go"));
     fireEvent.click(screen.getByTestId("uninstall-confirm"));
@@ -98,7 +98,7 @@ describe("ToolSkillsPage", () => {
     const onChanged = vi.fn();
     const onResult = vi.fn();
     render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={onChanged} onResult={onResult} />);
-    expect(screen.queryByTestId("tool-uninstall-builtin-one")).toBeNull();
+    expect(screen.queryByTestId("tool-uninstall-builtin-one-agents")).toBeNull();
     fireEvent.click(screen.getByTestId("tool-adopt-builtin-one-agents"));
     fireEvent.change(screen.getByTestId("adopt-category"), { target: { value: "分类" } });
     expect((screen.getByTestId("adopt-linkback") as HTMLInputElement).disabled).toBe(true);

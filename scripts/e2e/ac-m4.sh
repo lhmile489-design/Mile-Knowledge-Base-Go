@@ -160,7 +160,7 @@ check "AC-SKM-2 external" "document.querySelector('[data-testid=\"tool-skill-ext
 
 # AC-SKM-2: uninstall the external link; the target bytes stay the same.
 EXT_BEFORE=$(hash_dir "$EXT")
-click '[data-testid="tool-uninstall-extskill"]'
+click '[data-testid="tool-uninstall-extskill-claude-code"]'
 wait_match "uninstall dialog" "document.querySelector('[data-testid=\"uninstall-dialog\"]') !== null" '"value":true' 20
 click '[data-testid="uninstall-confirm"]'
 wait_match "external removed" "document.querySelector('[data-testid=\"skills-banner\"]') !== null" '"value":true' 30
@@ -197,7 +197,7 @@ grep -q "知识库更新" "$HOME_DIR/.cursor/skills/vue/SKILL.md" && { pass=$((p
 # Restore refuses an occupied path (PRD), so remove the new link first, then
 # bring the backup back from the install view.
 open_tools
-click '[data-testid="tool-uninstall-vue"]'
+click '[data-testid="tool-uninstall-vue-cursor"]'
 wait_match "AC-SKM-6 uninstall new" "document.querySelector('[data-testid=\"uninstall-dialog\"]') !== null" '"value":true' 20
 click '[data-testid="uninstall-confirm"]'
 wait_match "AC-SKM-6 removed new" "document.querySelector('[data-testid=\"skills-banner\"]') !== null" '"value":true' 30
@@ -213,7 +213,7 @@ sleep 0.3
 # AC-SKM-7: uninstall a link; the knowledge base bytes are unchanged.
 KB_BEFORE=$(hash_dir "$VAULT/skills/前端/vue")
 open_tools
-click '[data-testid="tool-uninstall-linked"]'
+click '[data-testid="tool-uninstall-linked-claude-code"]'
 wait_match "AC-SKM-7 dialog" "document.querySelector('[data-testid=\"uninstall-dialog\"]') !== null" '"value":true' 20
 click '[data-testid="uninstall-confirm"]'
 wait_match "AC-SKM-7 removed" "document.querySelector('[data-testid=\"skills-banner\"]') !== null" '"value":true' 30
@@ -225,7 +225,7 @@ close_banner
 w "$HOME_DIR/.claude/skills/indepone/SKILL.md" "# independent\n"
 INDEP_BEFORE=$(hash_dir "$HOME_DIR/.claude/skills/indepone")
 open_tools
-click '[data-testid="tool-uninstall-indepone"]'
+click '[data-testid="tool-uninstall-indepone-claude-code"]'
 wait_match "AC-SKM-8 dialog" "document.querySelector('[data-testid=\"uninstall-dialog\"]') !== null" '"value":true' 20
 click '[data-testid="uninstall-confirm"]'
 wait_match "AC-SKM-8 removed" "document.querySelector('[data-testid=\"skills-banner\"]') !== null" '"value":true' 30
@@ -258,7 +258,7 @@ open_tools
 wait_match "AC-SKM-9 linked row" "document.querySelector('[data-testid=\"tool-skill-foo-claude-code\"] .pill')?.textContent.includes('链接到知识库')" '"value":true' 30
 
 # AC-SKM-10: builtin skills have no uninstall action.
-check "AC-SKM-10 no uninstall for builtin" "document.querySelector('[data-testid=\"tool-uninstall-builtinone\"]') === null" '"value":true'
+check "AC-SKM-10 no uninstall for builtin" "document.querySelector('[data-testid=\"tool-uninstall-builtinone-trae\"]') === null" '"value":true'
 REJECT=$(ev "window.__mkbApi.skills.uninstall('trae','builtinone').then(()=> 'unexpected').catch((e)=>String(e.code||e.message))")
 echo "$REJECT" | grep -q 'skill-protected' && { pass=$((pass+1)); echo "PASS AC-SKM-10 api rejects"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-10 api rejects :: $REJECT"; }
 
@@ -287,8 +287,8 @@ wait_match "second overview" "document.querySelector('[data-testid=\"overview-gr
 try_index
 open_panel
 open_tools
-if ev "document.querySelector('[data-testid=\"tool-uninstall-vue\"]') !== null" | grep -q '"value":true'; then
-  click '[data-testid="tool-uninstall-vue"]'
+if ev "document.querySelector('[data-testid=\"tool-uninstall-vue-claude-code\"]') !== null" | grep -q '"value":true'; then
+  click '[data-testid="tool-uninstall-vue-claude-code"]'
   wait_match "old vue dialog" "document.querySelector('[data-testid=\"uninstall-dialog\"]') !== null" '"value":true' 20
   click '[data-testid="uninstall-confirm"]'
   wait_match "old vue removed" "document.querySelector('[data-testid=\"skills-banner\"]') !== null" '"value":true' 30

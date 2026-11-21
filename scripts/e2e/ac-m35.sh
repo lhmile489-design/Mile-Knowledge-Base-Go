@@ -142,7 +142,9 @@ import json,sys
 script = open(sys.argv[2], encoding="utf-8").read()
 open(sys.argv[1],"w",encoding="utf-8").write(json.dumps({"id":1,"method":"eval","params":{"window":1,"script":script}}))
 PY
-if timeout 240 "$DRIVE" -f "$WORK/req.json" > "$WORK/contrast.json" 2>&1 && python -I - "$WORK/contrast.json" <<'PY'
+run_contrast() { timeout 240 "$DRIVE" -f "$WORK/req.json" > "$WORK/contrast.json" 2>&1; }
+check_contrast() {
+python -I - "$WORK/contrast.json" <<'PY'
 import json, re, sys
 resp = json.loads(open(sys.argv[1], encoding="utf-8").read())
 if "result" not in resp or "value" not in resp["result"]:
@@ -183,7 +185,14 @@ for item in missing:
     print("MISSING", "/".join(item))
 sys.exit(1 if fails or missing or len(samples) != 72 else 0)
 PY
-then
+}
+# The automation eval has flaked once (empty answer, no samples); one retry
+# keeps a transport hiccup from failing the contrast gate.
+if ! run_contrast || ! check_contrast; then
+  echo "contrast eval: retrying once"
+  run_contrast
+fi
+if check_contrast; then
   pass=$((pass+1)); echo "PASS AC-ACC-3 real-component contrast"
 else
   fail=$((fail+1)); echo "FAIL AC-ACC-3 real-component contrast"

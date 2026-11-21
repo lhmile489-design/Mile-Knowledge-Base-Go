@@ -195,7 +195,7 @@ export function ToolSkillsPage({
                       className="icon-button"
                       aria-label={`卸载 ${skill.name}`}
                       onClick={() => setUninstall(skill)}
-                      data-testid={`tool-uninstall-${skill.name}`}
+                      data-testid={`tool-uninstall-${skill.name}-${toolId}`}
                     >
                       <Tray size={14} aria-hidden />
                     </button>

@@ -254,7 +254,10 @@ func Write(root, rel string, expectedRevision int64, text string) (contract.Writ
 	}
 	// The temp file is 0600; carry over the original mode, or 0644 for a new file.
 	_ = os.Chmod(tmpName, mode)
-	if err := os.Rename(tmpName, abs); err != nil {
+	// A reader that opened the target without FILE_SHARE_DELETE makes the
+	// replace fail with a sharing violation on Windows; the indexer and scans
+	// hold documents for a moment, so retry briefly before giving up.
+	if err := replaceFile(tmpName, abs); err != nil {
 		os.Remove(tmpName)
 		return contract.WriteOutcome{}, failf(contract.CodeIOFailure, "无法写入文件")
 	}
@@ -266,6 +269,17 @@ func Write(root, rel string, expectedRevision int64, text string) (contract.Writ
 	hash := hashBytes(out)
 	rev := revisions.Observe(root+"|"+rel, info.Size(), info.ModTime().UnixMilli(), hash)
 	return contract.WriteOutcome{Status: "written", Revision: rev, Hash: hash, Size: info.Size()}, nil
+}
+
+// replaceFile renames over the target, retrying while a transient reader keeps
+// it open (sharing violation). Six attempts cover the indexer's short reads.
+func replaceFile(oldpath, newpath string) error {
+	err := os.Rename(oldpath, newpath)
+	for attempt := 0; attempt < 6 && err != nil && isSharingViolation(err); attempt++ {
+		time.Sleep(time.Duration(10*(attempt+1)) * time.Millisecond)
+		err = os.Rename(oldpath, newpath)
+	}
+	return err
 }
 
 // StatRevision returns the current revision and hash of a file without keeping

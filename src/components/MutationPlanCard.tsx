@@ -9,6 +9,7 @@ const KIND_LABEL: Record<string, string> = {
   create: "新建文件",
   createDirectory: "新建目录",
   edit: "写入",
+  importFile: "导入文件",
   move: "移动 / 重命名",
   copy: "复制",
   archive: "归档",
