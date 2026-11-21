@@ -24,12 +24,14 @@ func resolveStagedFile(stagingRoot, stageID, stagePath string) (string, *contrac
 		return "", contract.Fail(contract.CodeInvalidInput, "暂存标识不合法")
 	}
 	segments := strings.Split(stagePath, "/")
-	if len(segments) == 0 || len(segments) > 8 {
+	if len(segments) == 0 {
 		return "", contract.Fail(contract.CodeInvalidInput, "暂存文件路径不合法")
 	}
 	for _, segment := range segments {
-		if segment == "" || segment == "." || segment == ".." ||
-			strings.ContainsAny(segment, `:\`) || strings.HasPrefix(segment, ".") {
+		// Real skills contain dot files and deep trees (.gitignore,
+		// references/...); only the forms that could escape the stage root are
+		// refused. Every parent is checked by pathguard.Resolve below.
+		if segment == "" || segment == "." || segment == ".." || strings.ContainsAny(segment, `:\`) {
 			return "", contract.Fail(contract.CodeInvalidInput, "暂存文件路径不合法")
 		}
 	}

@@ -230,6 +230,10 @@ func distributionID() string {
 	return backupID()
 }
 
+// CopyTree copies regular files (never links) from source to target; M96 puts
+// a staged update in place with it.
+func CopyTree(source, target string) error { return copyTree(source, target) }
+
 // copyTree copies regular files (never links) from source to target.
 func copyTree(source, target string) error {
 	files, _, err := SafeWalk(source)

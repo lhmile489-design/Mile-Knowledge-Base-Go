@@ -183,6 +183,84 @@ func TestAttachKbRemotesWithCache(t *testing.T) {
 	}
 }
 
+func TestDiffSkillTrees(t *testing.T) {
+	local := t.TempDir()
+	staged := t.TempDir()
+	writeFile(t, filepath.Join(local, "SKILL.md"), "# old\n")
+	writeFile(t, filepath.Join(staged, "SKILL.md"), "# new\n")
+	writeFile(t, filepath.Join(local, "keep.md"), "same")
+	writeFile(t, filepath.Join(staged, "keep.md"), "same")
+	writeFile(t, filepath.Join(local, "gone.md"), "gone")
+	if err := os.WriteFile(filepath.Join(local, "img.bin"), []byte{0x00, 0xff}, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(staged, "img.bin"), []byte{0x01, 0xff}, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(staged, "notes.md"), "notes")
+	writeFile(t, filepath.Join(staged, ".gitignore"), "node_modules\n")
+	writeFile(t, filepath.Join(staged, "sub", "new.md"), "new")
+
+	diff, err := DiffSkillTrees(local, staged)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byPath := map[string]UpdateDiff{}
+	for _, entry := range diff {
+		byPath[entry.Path] = entry
+	}
+	if _, ok := byPath["keep.md"]; ok {
+		t.Fatalf("unchanged file reported")
+	}
+	if entry := byPath["SKILL.md"]; entry.Change != "modified" || !entry.TextOK || entry.Text != "# new\n" || entry.Hash == "" {
+		t.Fatalf("modified text = %+v", entry)
+	}
+	if entry := byPath["img.bin"]; entry.Change != "modified" || !entry.Binary || entry.Hash == "" {
+		// 0x01 0xff is invalid UTF-8, so it must be binary.
+		t.Fatalf("modified binary = %+v", entry)
+	}
+	if entry := byPath["gone.md"]; entry.Change != "removed" || entry.Bytes != 4 {
+		t.Fatalf("removed = %+v", entry)
+	}
+	if entry := byPath["notes.md"]; entry.Change != "added" || !entry.TextOK {
+		t.Fatalf("added text = %+v", entry)
+	}
+	if entry := byPath[".gitignore"]; entry.Change != "added" || !entry.TextOK {
+		t.Fatalf("dotfile = %+v", entry)
+	}
+	if entry := byPath["sub/new.md"]; entry.Change != "added" || !entry.TextOK {
+		t.Fatalf("nested added = %+v", entry)
+	}
+	if len(diff) != 6 {
+		t.Fatalf("diff = %d entries", len(diff))
+	}
+}
+
+func TestStageUpdateMeta(t *testing.T) {
+	store := NewStageStore(t.TempDir(), func() time.Time {
+		return time.Date(2026, 11, 21, 10, 0, 0, 0, time.UTC)
+	})
+	stage, f := store.Create("github", "acme/skills", &contract.SkillOrigin{
+		Owner: "acme", Repo: "skills", Ref: "main", Path: "skills/pdf", Commit: sourceCommit,
+	})
+	if f != nil {
+		t.Fatalf("create: %+v", f)
+	}
+	stage.Meta.PathCommit = sourceCommit
+	if f := stage.SetUpdate(StageUpdate{Kind: "tool", ToolID: "claude-code", TargetPath: `C:\x\pdf`, SourcePath: "skills/pdf"}); f != nil {
+		t.Fatalf("set update: %+v", f)
+	}
+	loaded, f := store.Get(stage.Meta.ID)
+	if f != nil {
+		t.Fatalf("get: %+v", f)
+	}
+	update := loaded.Meta.Update
+	if update == nil || update.Kind != "tool" || update.ToolID != "claude-code" ||
+		update.TargetPath != `C:\x\pdf` || update.SourcePath != "skills/pdf" || loaded.Meta.PathCommit != sourceCommit {
+		t.Fatalf("update meta = %+v", loaded.Meta)
+	}
+}
+
 func TestScanAttachesToolRemoteWithCache(t *testing.T) {
 	root := t.TempDir()
 	install := filepath.Join(root, "skills")

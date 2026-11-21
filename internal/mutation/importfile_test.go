@@ -81,6 +81,32 @@ func TestPlanImportFileRules(t *testing.T) {
 	}
 }
 
+func TestPlanImportFileAllowsDeepDotPaths(t *testing.T) {
+	staging := t.TempDir()
+	stageID := "s-0123456789ab"
+	rel := "skills/pdf/references/deep/.hidden/a.bin"
+	file := filepath.Join(staging, stageID, "root", filepath.FromSlash(rel))
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(file, []byte{0x00}, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	hash, err := stagedFileHash(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	builder := Builder{Root: t.TempDir(), StagingRoot: staging}
+	action := contract.MutationAction{
+		ID: "imp", Kind: contract.MutImportFile, Target: "x.bin",
+		StageID: stageID, StagePath: rel, StageHash: hash, Reason: "更新技能",
+	}
+	plan, f := builder.Plan(contract.PlanRequest{VaultID: "v", Origin: "user", Actions: []contract.MutationAction{action}})
+	if f != nil || len(plan.Actions) != 1 {
+		t.Fatalf("deep stage path = %+v %+v", plan, f)
+	}
+}
+
 func TestExecuteImportFileCreatesAndReplaces(t *testing.T) {
 	root := t.TempDir()
 	staging, stageID, hash := importStage(t)

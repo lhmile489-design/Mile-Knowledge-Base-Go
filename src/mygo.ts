@@ -863,6 +863,12 @@ export interface SkillCategory {
   skills: KbSkill[];
 }
 
+/** SkillConfirmUpdateResult is M95. */
+export interface SkillConfirmUpdateResult {
+  updated: boolean;
+  failure?: Failure;
+}
+
 /** SkillDistributeTarget is one destination of M78/M79. */
 export interface SkillDistributeTarget {
   targetId: string;
@@ -1114,6 +1120,36 @@ export interface SkillUpdateCheckResult {
   groups: number;
   unchecked: number;
   rateLimitResetAt?: string;
+}
+
+/** SkillUpdateFile is one entry of the update diff. */
+export interface SkillUpdateFile {
+  path: string;
+  /** added | modified | removed */
+  change: string;
+  bytes: number;
+  binary?: boolean;
+}
+
+/** SkillUpdatePreviewResult is M94. */
+export interface SkillUpdatePreviewResult {
+  stageId?: string;
+  from?: string;
+  to?: string;
+  files?: SkillUpdateFile[];
+  plan?: MutationPlan;
+  backupPath?: string;
+  failure?: Failure;
+}
+
+/** SkillUpdateTarget is one skill M94 previews an update for. */
+export interface SkillUpdateTarget {
+  /** kb | tool */
+  kind: string;
+  skillPath?: string;
+  toolId?: string;
+  /** wire spec (§12.3) */
+  path?: string;
 }
 
 /** SkillsChangedEvent is E12: background scan or skill operation finished. */
@@ -1644,6 +1680,11 @@ export const SkillService = {
   checkUpdates: bind<[string, boolean], SkillUpdateCheckResult>("SkillService.CheckUpdates", (vaultID: string, force: boolean) => [vaultID, force]),
   /** CleanBackups is M86. */
   cleanBackups: bind<[string[]], SkillBackupsResult>("SkillService.CleanBackups", (ids: string[]) => [ids]),
+  /**
+   * ConfirmKbUpdate is M95: only when the skill now equals the staged version
+   * does the source record move forward.
+   */
+  confirmKbUpdate: bind<[string, string], SkillConfirmUpdateResult>("SkillService.ConfirmKbUpdate", (vaultID: string, stageID: string) => [vaultID, stageID]),
   /** DiscardStage is M92: the page drops a stage when the user backs out. */
   discardStage: bind<[string], Failure>("SkillService.DiscardStage", (stageID: string) => [stageID]),
   /** Distribute is M79. */
@@ -1681,6 +1722,16 @@ export const SkillService = {
   uninstall: bind<[string, string], SkillOpResult>("SkillService.Uninstall", (toolID: string, rel: string) => [toolID, rel]),
   /** UninstallPreview is M80. */
   uninstallPreview: bind<[string, string], SkillUninstallResult>("SkillService.UninstallPreview", (toolID: string, rel: string) => [toolID, rel]),
+  /**
+   * UpdatePreview is M94: fetch the new version, compare it and prepare the plan
+   * (knowledge base) or the replacement stage (tool).
+   */
+  updatePreview: bind<[string, SkillUpdateTarget], SkillUpdatePreviewResult>("SkillService.UpdatePreview", (vaultID: string, target: SkillUpdateTarget) => [vaultID, target]),
+  /**
+   * UpdateTool is M96: back up the tool skill, copy the staged version in, and
+   * move the backup back if the copy fails (16.6).
+   */
+  updateTool: bind<[string], SkillOpResult>("SkillService.UpdateTool", (stageID: string) => [stageID]),
 } as const;
 
 // ---- Events ----

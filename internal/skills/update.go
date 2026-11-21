@@ -1,12 +1,17 @@
 package skills
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 )
@@ -174,6 +179,157 @@ func (c *UpdateCache) CountUnchecked(groups []UpdateGroup) int {
 		}
 	}
 	return count
+}
+
+// MaxUpdateTextBytes is M18's write limit; a larger file goes through
+// importFile instead of create/edit (16.6).
+const MaxUpdateTextBytes = 2 << 20
+
+// UpdateDiff is one file that differs between an installed skill and the
+// staged new version.
+type UpdateDiff struct {
+	Path        string // slash-separated, relative to the skill directory
+	Change      string // added | modified | removed
+	Bytes       int64
+	Binary      bool
+	Text        string // staged text for added/modified when TextOK
+	TextOK      bool   // the staged file can be written through create/edit
+	LocalTextOK bool   // modified only: the local file is also plain text
+	Hash        string // staged file hash for added/modified
+}
+
+// DiffSkillTrees compares the installed directory with the staged one, file by
+// file (16.6). Links are skipped by SafeWalk on both sides.
+func DiffSkillTrees(localDir, stagedDir string) ([]UpdateDiff, error) {
+	localFiles, _, err := SafeWalk(localDir)
+	if err != nil {
+		return nil, err
+	}
+	stagedFiles, _, err := SafeWalk(stagedDir)
+	if err != nil {
+		return nil, err
+	}
+	localSet := map[string]bool{}
+	for _, rel := range localFiles {
+		localSet[filepath.ToSlash(rel)] = true
+	}
+	stagedSet := map[string]bool{}
+	for _, rel := range stagedFiles {
+		stagedSet[filepath.ToSlash(rel)] = true
+	}
+	all := make([]string, 0, len(localSet)+len(stagedSet))
+	for rel := range stagedSet {
+		all = append(all, rel)
+	}
+	for rel := range localSet {
+		if !stagedSet[rel] {
+			all = append(all, rel)
+		}
+	}
+	sort.Strings(all)
+
+	diffs := make([]UpdateDiff, 0, len(all))
+	for _, rel := range all {
+		localPath := filepath.Join(localDir, rel)
+		stagedPath := filepath.Join(stagedDir, rel)
+		switch {
+		case !localSet[rel]:
+			diff, err := describeStaged(stagedPath, rel, "added")
+			if err != nil {
+				return nil, err
+			}
+			diffs = append(diffs, diff)
+		case !stagedSet[rel]:
+			info, err := os.Stat(localPath)
+			if err != nil {
+				return nil, err
+			}
+			diff := UpdateDiff{Path: rel, Change: "removed", Bytes: info.Size(), Binary: !plainFile(localPath)}
+			diffs = append(diffs, diff)
+		default:
+			stagedHash, err := fileSHA(stagedPath)
+			if err != nil {
+				return nil, err
+			}
+			localHash, err := fileSHA(localPath)
+			if err != nil {
+				return nil, err
+			}
+			if stagedHash == localHash {
+				continue
+			}
+			diff, err := describeStaged(stagedPath, rel, "modified")
+			if err != nil {
+				return nil, err
+			}
+			diff.LocalTextOK = plainFile(localPath)
+			diffs = append(diffs, diff)
+		}
+	}
+	return diffs, nil
+}
+
+func describeStaged(path, rel, change string) (UpdateDiff, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return UpdateDiff{}, err
+	}
+	hash, err := fileSHA(path)
+	if err != nil {
+		return UpdateDiff{}, err
+	}
+	diff := UpdateDiff{Path: rel, Change: change, Bytes: info.Size(), Hash: hash}
+	if text, ok := plainTextFile(path, info.Size()); ok {
+		diff.Text = text
+		diff.TextOK = true
+		return diff, nil
+	}
+	diff.Binary = true
+	return diff, nil
+}
+
+// plainTextFile reports whether a file can go through create/edit without
+// changing its bytes: valid UTF-8, no BOM, LF endings and within the write
+// limit. Everything else must use importFile so the updated tree stays
+// byte-identical to the staged version (M95 compares tree hashes).
+func plainTextFile(path string, size int64) (string, bool) {
+	if size > MaxUpdateTextBytes {
+		return "", false
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return "", false
+	}
+	if bytes.HasPrefix(raw, []byte{0xEF, 0xBB, 0xBF}) || !utf8.Valid(raw) || bytes.ContainsRune(raw, '\r') {
+		return "", false
+	}
+	return string(raw), true
+}
+
+func plainFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	_, ok := plainTextFile(path, info.Size())
+	return ok
+}
+
+// FileSHA is the sha256 of one file, formatted like TreeHash. importFile pins
+// this value (API §13.4).
+func FileSHA(path string) (string, error) { return fileSHA(path) }
+
+func fileSHA(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	digest := sha256.New()
+	if _, err := io.Copy(digest, file); err != nil {
+		return "", err
+	}
+	return "sha256:" + hex.EncodeToString(digest.Sum(nil)), nil
 }
 
 // RemoteUpdateState decides the five states of 技术设计 16.5 from the local

@@ -320,6 +320,14 @@ func matchToolSource(records []ToolSource, dir string) (ToolSource, bool) {
 	return ToolSource{}, false
 }
 
+// FindToolSource exposes the B-zone lookup to the update flow (M94/M96).
+func FindToolSource(records []ToolSource, dir string) (ToolSource, bool) {
+	return matchToolSource(records, dir)
+}
+
+// IsValidKbSkillPath reports whether value is skills/<category>/<name>.
+func IsValidKbSkillPath(value string) bool { return validKbSkillPath(value) }
+
 // toolRemoteFor fills ToolSkill.Remote for a skill installed straight into a
 // tool (B zone).
 func toolRemoteFor(dir string, record ToolSource, cache *UpdateCache) *contract.SkillRemote {

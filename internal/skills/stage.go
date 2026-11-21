@@ -39,6 +39,19 @@ type StageMeta struct {
 	CreatedAt  string                `json:"createdAt"`
 	ExpiresAt  string                `json:"expiresAt"`
 	TreeHashes map[string]string     `json:"treeHashes,omitempty"`
+	// Update marks a stage created by M94; M95/M96 read the target from it.
+	Update *StageUpdate `json:"update,omitempty"`
+}
+
+// StageUpdate is the install target an update stage belongs to. SourcePath is
+// the skill directory inside the stage root; TargetPath is the absolute tool
+// directory (empty for knowledge-base updates).
+type StageUpdate struct {
+	Kind       string `json:"kind"` // kb | tool
+	SkillPath  string `json:"skillPath,omitempty"`
+	ToolID     string `json:"toolId,omitempty"`
+	TargetPath string `json:"targetPath,omitempty"`
+	SourcePath string `json:"sourcePath"`
 }
 
 // Root is where the archive was unpacked.
@@ -159,6 +172,12 @@ func (stage Stage) SaveMeta() *contract.Failure { return stage.save() }
 // SetTreeHashes records candidate hashes for the later update preview.
 func (stage Stage) SetTreeHashes(hashes map[string]string) *contract.Failure {
 	stage.Meta.TreeHashes = hashes
+	return stage.save()
+}
+
+// SetUpdate records the update target before M94 returns (16.6).
+func (stage Stage) SetUpdate(update StageUpdate) *contract.Failure {
+	stage.Meta.Update = &update
 	return stage.save()
 }
 
