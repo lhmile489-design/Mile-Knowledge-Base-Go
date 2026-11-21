@@ -1031,7 +1031,7 @@ type SkillConfirmUpdateResult = { updated: boolean; failure?: Failure };
 | M90 `installPreview` | `vaultId`、`stageId`、`ids[]`、`target` | `{items: SkillPreviewItem[]}` | 同 M78：逐项列出目标、已存在、冲突、覆盖备份位置；不写盘 |
 | M91 `install` | 同 M90 | `{items: SkillOpItem[]}` | 执行；逐项结果；装进知识库不覆盖；装进工具按分发规则；GitHub 来源写来源记录；完成后删暂存、记日志、发 E12 |
 | M92 `discardStage` | `stageId` | `Failure` | 用户返回或关闭时删暂存；不存在也算成功 |
-| M93 `checkUpdates` | `vaultId`（可为空串）、`force` | `SkillUpdateCheckResult` | 不到 60 分钟且 `force=false` 直接返回缓存；否则后台检查并置 `checking=true`，完成后发 E12，结果并入 M77 的 `remote` |
+| M93 `checkUpdates` | `vaultId`（可为空串）、`force` | `SkillUpdateCheckResult` | 不到 60 分钟且 `force=false` 直接返回缓存；否则后台检查并置 `checking=true`，完成后发 E12，结果并入 M77 的 `remote`。单轮最多 40 组（超出计 `unchecked`），额度用完即停；下一轮 M93 命中缓存时带回 `rateLimitResetAt`（进程内记忆，重启后为空） |
 | M94 `updatePreview` | `vaultId`、`target` | `SkillUpdatePreviewResult` | 下载新版本到暂存并比较；本地改过返回 `skill-conflict`（「两边都改了」）；`kb` 返回变更计划，前端交给计划卡确认、M30 执行 |
 | M95 `confirmKbUpdate` | `vaultId`、`stageId` | `SkillConfirmUpdateResult` | M30 执行完成后调用：知识库技能哈希等于暂存版本才更新来源记录（`updated=true`）；不等返回 `updated=false` + `revision-mismatch` |
 | M96 `updateTool` | `stageId` | `{items: SkillOpItem[]}` | 工具技能：原目录移入备份区再替换；失败移回；记日志 |

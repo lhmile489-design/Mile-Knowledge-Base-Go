@@ -270,9 +270,9 @@ func writeToolSources(skillsDir string, records []ToolSource) *contract.Failure 
 	return nil
 }
 
-// AttachKbRemotes fills KbSkill.Remote from the A-zone records and the local
-// hash (16.5). The remote check in T08 refines the state afterwards.
-func AttachKbRemotes(vaultRoot string, kbs []contract.KbSkill, sources KbSources) {
+// AttachKbRemotes fills KbSkill.Remote from the A-zone records, the local hash
+// and the latest update check (16.5).
+func AttachKbRemotes(vaultRoot string, kbs []contract.KbSkill, sources KbSources, cache *UpdateCache) {
 	if len(sources.Records) == 0 {
 		return
 	}
@@ -285,27 +285,29 @@ func AttachKbRemotes(vaultRoot string, kbs []contract.KbSkill, sources KbSources
 		if !ok {
 			continue
 		}
-		kbs[index].Remote = remoteFor(vaultRoot, kbs[index].Path, record, "unchecked")
+		kbs[index].Remote = remoteFor(vaultRoot, kbs[index].Path, record, cache)
 	}
 }
 
 // remoteFor builds the SkillRemote shown in the UI.
-func remoteFor(root, dir string, record KbSource, fallback string) *contract.SkillRemote {
-	state := fallback
+func remoteFor(root, dir string, record KbSource, cache *UpdateCache) *contract.SkillRemote {
+	localHash := ""
 	if hash, err := TreeHash(filepath.Join(root, filepath.FromSlash(dir))); err == nil {
-		if record.BaseHash != "" && hash != record.BaseHash {
-			state = "local-modified"
-		}
+		localHash = hash
 	}
-	remote := &contract.SkillRemote{
+	result, checked := cache.Lookup(record.Owner, record.Repo, record.Ref, record.Path)
+	state, latest, checkedAt, errText := RemoteUpdateState(record.PathCommit, record.BaseHash, localHash, result, checked)
+	return &contract.SkillRemote{
 		SkillOrigin: contract.SkillOrigin{
 			Owner: record.Owner, Repo: record.Repo, Ref: record.Ref, Path: record.Path, Commit: record.Commit,
 		},
-		PathCommit:  record.PathCommit,
-		InstalledAt: record.InstalledAt,
-		UpdateState: state,
+		PathCommit:       record.PathCommit,
+		InstalledAt:      record.InstalledAt,
+		UpdateState:      state,
+		LatestPathCommit: latest,
+		CheckedAt:        checkedAt,
+		Error:            errText,
 	}
-	return remote
 }
 
 // matchToolSource finds the B-zone record for a skill directory.
@@ -320,13 +322,13 @@ func matchToolSource(records []ToolSource, dir string) (ToolSource, bool) {
 
 // toolRemoteFor fills ToolSkill.Remote for a skill installed straight into a
 // tool (B zone).
-func toolRemoteFor(dir string, record ToolSource) *contract.SkillRemote {
+func toolRemoteFor(dir string, record ToolSource, cache *UpdateCache) *contract.SkillRemote {
 	source := KbSource{
 		Owner: record.Owner, Repo: record.Repo, Ref: record.Ref,
 		Path: record.Path, Commit: record.Commit, PathCommit: record.PathCommit,
 		BaseHash: record.BaseHash, InstalledAt: record.InstalledAt,
 	}
-	return remoteFor(filepath.Dir(dir), filepath.Base(dir), source, "unchecked")
+	return remoteFor(filepath.Dir(dir), filepath.Base(dir), source, cache)
 }
 
 func validKbSkillPath(value string) bool {

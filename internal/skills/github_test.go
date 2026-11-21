@@ -215,14 +215,52 @@ func TestGithubDownloadSizeCap(t *testing.T) {
 }
 
 func TestRateLimitFailure(t *testing.T) {
+	client := NewGithubClientForTest()
 	response := &http.Response{StatusCode: http.StatusForbidden, Header: http.Header{}}
-	if f := rateLimitFailure(response); f != nil {
+	if f := client.rateLimitFailure(response); f != nil {
 		t.Fatalf("no remaining header should not be a rate limit: %+v", f)
 	}
+	reset := time.Now().Add(time.Hour).Truncate(time.Second)
 	response.Header.Set("x-ratelimit-remaining", "0")
-	response.Header.Set("x-ratelimit-reset", strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10))
-	f := rateLimitFailure(response)
+	response.Header.Set("x-ratelimit-reset", strconv.FormatInt(reset.Unix(), 10))
+	f := client.rateLimitFailure(response)
 	if f == nil || f.Code != contract.CodeRateLimited || !strings.Contains(f.Detail, "额度重置") {
 		t.Fatalf("rate limit = %+v", f)
+	}
+	if !client.RateLimitResetAt().Equal(reset) {
+		t.Fatalf("reset = %v, want %v", client.RateLimitResetAt(), reset)
+	}
+}
+
+func TestGithubLatestPathCommit(t *testing.T) {
+	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/acme/skills/commits/main":
+			_, _ = w.Write([]byte(headSHA))
+		case "/repos/acme/skills/commits":
+			if r.URL.Query().Get("path") != "skills/pdf" || r.URL.Query().Get("sha") != "main" {
+				t.Errorf("path commit query = %s", r.URL.RawQuery)
+			}
+			_ = json.NewEncoder(w).Encode([]map[string]string{{"sha": pathSHA}})
+		case "/repos/acme/gone/commits":
+			_ = json.NewEncoder(w).Encode([]map[string]string{})
+		default:
+			http.NotFound(w, r)
+		}
+	})
+
+	commit, f := client.LatestPathCommit(context.Background(), GithubRef{Owner: "acme", Repo: "skills", Ref: "main", Path: "skills/pdf"})
+	if f != nil || commit != pathSHA {
+		t.Fatalf("path commit = %q %+v", commit, f)
+	}
+	commit, f = client.LatestPathCommit(context.Background(), GithubRef{Owner: "acme", Repo: "skills", Ref: "main"})
+	if f != nil || commit != headSHA {
+		t.Fatalf("root commit = %q %+v", commit, f)
+	}
+	if _, f := client.LatestPathCommit(context.Background(), GithubRef{Owner: "acme", Repo: "gone", Ref: "main", Path: "skills/pdf"}); f == nil || f.Code != contract.CodeNotFound {
+		t.Fatalf("empty history = %+v", f)
+	}
+	if _, f := client.LatestPathCommit(context.Background(), GithubRef{Owner: "acme", Repo: "skills"}); f == nil || f.Code != contract.CodeInvalidInput {
+		t.Fatalf("missing ref = %+v", f)
 	}
 }

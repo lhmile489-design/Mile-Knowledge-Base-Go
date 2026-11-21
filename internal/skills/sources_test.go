@@ -161,13 +161,13 @@ func TestAttachKbRemotes(t *testing.T) {
 	}
 
 	kbs := []contract.KbSkill{{Name: "pdf", Path: "skills/文档/pdf"}}
-	AttachKbRemotes(vault, kbs, LoadKbSources(vault))
+	AttachKbRemotes(vault, kbs, LoadKbSources(vault), nil)
 	if kbs[0].Remote == nil || kbs[0].Remote.UpdateState != "unchecked" || kbs[0].Remote.Owner != "anthropics" {
 		t.Fatalf("remote = %+v", kbs[0].Remote)
 	}
 
 	writeFile(t, filepath.Join(dir, "SKILL.md"), "# pdf changed\n")
-	AttachKbRemotes(vault, kbs, LoadKbSources(vault))
+	AttachKbRemotes(vault, kbs, LoadKbSources(vault), nil)
 	if kbs[0].Remote == nil || kbs[0].Remote.UpdateState != "local-modified" {
 		t.Fatalf("local change = %+v", kbs[0].Remote)
 	}

@@ -45,6 +45,8 @@ type GithubClient struct {
 	HTTP         *http.Client
 	MaxDownload  int64
 	APITimeout   time.Duration
+
+	rateLimitReset time.Time
 }
 
 // ResolvedRef is what the client learned about a ref before downloading.
@@ -252,7 +254,7 @@ func (c *GithubClient) do(request *http.Request) (*http.Response, *contract.Fail
 			lastFailure = contract.Fail(contract.CodeNetworkFailure, "连不上 GitHub，检查网络或代理").WithDetail(err.Error())
 			continue
 		}
-		if f := rateLimitFailure(response); f != nil {
+		if f := c.rateLimitFailure(response); f != nil {
 			response.Body.Close()
 			return nil, f
 		}
@@ -276,8 +278,9 @@ func (c *GithubClient) do(request *http.Request) (*http.Response, *contract.Fail
 	return nil, lastFailure
 }
 
-// rateLimitFailure reports GitHub's exhausted anonymous quota (16.2).
-func rateLimitFailure(response *http.Response) *contract.Failure {
+// rateLimitFailure reports GitHub's exhausted anonymous quota (16.2) and
+// remembers the reset time for the update check's bottom bar.
+func (c *GithubClient) rateLimitFailure(response *http.Response) *contract.Failure {
 	if response.StatusCode != http.StatusForbidden && response.StatusCode != http.StatusTooManyRequests {
 		return nil
 	}
@@ -288,10 +291,51 @@ func rateLimitFailure(response *http.Response) *contract.Failure {
 	failure := contract.Fail(contract.CodeRateLimited, "GitHub 匿名额度已用完")
 	if reset := response.Header.Get("x-ratelimit-reset"); reset != "" {
 		if epoch, err := strconv.ParseInt(reset, 10, 64); err == nil {
-			failure.Detail = "额度重置时间：" + time.Unix(epoch, 0).Local().Format("2006-01-02 15:04")
+			c.rateLimitReset = time.Unix(epoch, 0)
+			failure.Detail = "额度重置时间：" + c.rateLimitReset.Local().Format("2006-01-02 15:04")
 		}
 	}
 	return failure
+}
+
+// RateLimitResetAt is the reset time reported by the last rate-limited answer;
+// zero when the quota has not run out (M93).
+func (c *GithubClient) RateLimitResetAt() time.Time {
+	return c.rateLimitReset
+}
+
+// LatestPathCommit is the one request an update check needs per group (16.2):
+// the ref head for a repository root, or the latest commit touching the
+// skill's sub-path.
+func (c *GithubClient) LatestPathCommit(ctx context.Context, ref GithubRef) (string, *contract.Failure) {
+	if ref.Ref == "" {
+		return "", contract.Fail(contract.CodeInvalidInput, "来源记录缺少分支")
+	}
+	base := c.APIBase + "/repos/" + url.PathEscape(ref.Owner) + "/" + url.PathEscape(ref.Repo)
+	if ref.Path == "" {
+		return c.getSHA(ctx, base+"/commits/"+url.PathEscape(ref.Ref))
+	}
+	query := url.Values{}
+	query.Set("sha", ref.Ref)
+	query.Set("path", ref.Path)
+	query.Set("per_page", "1")
+	body, f := c.getJSON(ctx, base+"/commits?"+query.Encode())
+	if f != nil {
+		return "", f
+	}
+	var commits []struct {
+		SHA string `json:"sha"`
+	}
+	if err := json.Unmarshal(body, &commits); err != nil {
+		return "", contract.Fail(contract.CodeNetworkFailure, "GitHub 返回的内容无法解析")
+	}
+	if len(commits) == 0 {
+		return "", contract.Fail(contract.CodeNotFound, "路径在远端不存在")
+	}
+	if !isHexSHA(commits[0].SHA) {
+		return "", contract.Fail(contract.CodeNetworkFailure, "GitHub 返回的提交号无效")
+	}
+	return commits[0].SHA, nil
 }
 
 func isHexSHA(value string) bool {

@@ -72,13 +72,14 @@ import {
   type SkillRemote,
   type SkillStageProgressEvent,
   type SkillInstallTarget,
+  type SkillUpdateCheckResult,
 } from "../mygo";
 
 export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
 export type { SkillUninstallResult, SkillRestoreResult, SkillBackup, SkillBackupsResult, SkillAdoptResult, SkillToolRef, SkillLogRecord, SkillLogResult, KbSkill, KbSkillDistribution, SkillPreviewItem };
 export type { SkillToolScan, SkillUninstallPreview };
 export type { SkillStageResult, SkillStage, SkillStageCandidate, SkillStageSkip, SkillOrigin, SkillRemote };
-export type { SkillStageProgressEvent, SkillInstallTarget };
+export type { SkillStageProgressEvent, SkillInstallTarget, SkillUpdateCheckResult };
 
 export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
@@ -159,6 +160,8 @@ export const skillsApi = {
     guard(async () => unwrap(await SkillService.installPreview(vaultId, stageId, ids, target))),
   install: (vaultId: string, stageId: string, ids: string[], target: SkillInstallTarget) =>
     guard(async () => unwrap(await SkillService.install(vaultId, stageId, ids, target))),
+  checkUpdates: (vaultId: string, force = false) =>
+    guard(async () => SkillService.checkUpdates(vaultId, force)),
 };
 
 export const vaultApi = {

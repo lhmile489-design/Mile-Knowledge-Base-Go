@@ -1107,6 +1107,15 @@ export interface SkillUninstallResult {
   failure?: Failure;
 }
 
+/** SkillUpdateCheckResult is M93. */
+export interface SkillUpdateCheckResult {
+  checkedAt: string;
+  checking: boolean;
+  groups: number;
+  unchecked: number;
+  rateLimitResetAt?: string;
+}
+
 /** SkillsChangedEvent is E12: background scan or skill operation finished. */
 export interface SkillsChangedEvent {
   sequence: number;
@@ -1628,6 +1637,11 @@ export const SkillService = {
   adopt: bind<[string, string, string, string, boolean, SkillToolRef[]], SkillAdoptResult>("SkillService.Adopt", (vaultID: string, toolID: string, rel: string, category: string, linkBack: boolean, extras: SkillToolRef[]) => [vaultID, toolID, rel, category, linkBack, extras]),
   /** Backups is M85. */
   backups: bind<[], SkillBackupsResult>("SkillService.Backups", () => []),
+  /**
+   * CheckUpdates is M93: fresh cache within 60 minutes is answered directly,
+   * otherwise one grouped round runs in the background and ends with E12.
+   */
+  checkUpdates: bind<[string, boolean], SkillUpdateCheckResult>("SkillService.CheckUpdates", (vaultID: string, force: boolean) => [vaultID, force]),
   /** CleanBackups is M86. */
   cleanBackups: bind<[string[]], SkillBackupsResult>("SkillService.CleanBackups", (ids: string[]) => [ids]),
   /** DiscardStage is M92: the page drops a stage when the user backs out. */

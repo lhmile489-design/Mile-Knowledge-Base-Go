@@ -47,6 +47,7 @@ type ScanOptions struct {
 	Tools         []DetectedTool
 	Distributions []Distribution
 	ToolSources   []ToolSource
+	UpdateCache   *UpdateCache
 	Now           func() time.Time
 }
 
@@ -185,7 +186,7 @@ func scanRoot(opts ScanOptions, tool DetectedTool, root, base string, builtin bo
 			if hasSkillFile(dir) {
 				skill := contract.ToolSkill{Name: name, Path: dir, ToolID: tool.ID, Builtin: builtin, Base: base, Rel: rel}
 				if record, ok := matchToolSource(opts.ToolSources, dir); ok {
-					skill.Remote = toolRemoteFor(dir, record)
+					skill.Remote = toolRemoteFor(dir, record, opts.UpdateCache)
 				}
 				switch {
 				case builtin:

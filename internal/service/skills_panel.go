@@ -27,6 +27,10 @@ type SkillService struct {
 	detector     func() *skills.Detector
 	githubClient func(version string) *skills.GithubClient
 	openDialog   func(ctx context.Context, title string, extensions []string) ([]string, error)
+	// checking guards one update round at a time (M93).
+	checking bool
+	// rateLimitResetAt remembers the quota reset of the last round (M93).
+	rateLimitResetAt string
 }
 
 // NewSkillService wires the service; tests replace detector and now.
@@ -128,6 +132,7 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 		Tools:         tools,
 		Distributions: state.Distributions,
 		ToolSources:   skills.LoadToolSources(filepath.Join(s.app.DataDir, "skills")).Records,
+		UpdateCache:   s.updateCache(),
 	})
 	// Tool paths never leave Go unredacted (API §1, §12).
 	for i := range groups {
@@ -202,10 +207,11 @@ func (s *SkillService) kbSkills(ctx context.Context, vaultID string, distributio
 		refs = append(refs, skills.KbSkillRef{Category: entry.Category, Name: entry.Name, Path: dir})
 	}
 	// GitHub provenance lives in the vault (.mile-kb/skill-sources.json) and
-	// is merged into the scan payload (M5 T04).
+	// is merged into the scan payload with the latest check (M5 T04/T08).
 	sources := skills.LoadKbSources(root)
+	cache := s.updateCache()
 	for _, category := range order {
-		skills.AttachKbRemotes(root, byCategory[category], sources)
+		skills.AttachKbRemotes(root, byCategory[category], sources, cache)
 	}
 	groups := make([]contract.SkillCategory, 0, len(order))
 	for _, category := range order {
