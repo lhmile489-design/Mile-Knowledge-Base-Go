@@ -386,7 +386,13 @@ export function InstallView({
               <code>提交 {stage.origin.commit.slice(0, 7)}</code>
             </>
           ) : null}
-          <span className="install-faint">找到 {stage.candidates.length} 个技能</span>
+          {targetKind === "tools" && selected.size > 0 ? (
+            <span className="install-faint">
+              已选 {stage.candidates.filter((candidate) => selected.has(candidate.id)).map((candidate) => candidate.name).join("、")}
+            </span>
+          ) : (
+            <span className="install-faint">找到 {stage.candidates.length} 个技能</span>
+          )}
         </div>
 
         {skippedLinks > 0 || capped ? (
@@ -552,7 +558,7 @@ export function InstallView({
         <footer className="install-foot">
           <span data-testid="install-summary">
             {targetKind === "kb"
-              ? `已选 ${selected.size} 个 · 可安装 ${Math.min(eligible, selected.size)} 个`
+              ? `已选 ${selected.size} 个 · 写入知识库 ${Math.min(eligible, selected.size)} 个目录`
               : `${selected.size} 个技能 × ${toolTargets.size} 个工具，新增 ${Math.min(creates, selected.size * toolTargets.size)} 处`}
           </span>
           <span className="spacer" />

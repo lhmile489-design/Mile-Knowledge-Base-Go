@@ -31,3 +31,6 @@ spikes/**/*.exe
 
 # 视觉对照生成物（本地看，不入库）：scripts/visual/capture-new.py
 design/compare/
+
+# Python 缓存（视觉脚本导入时生成）
+__pycache__/

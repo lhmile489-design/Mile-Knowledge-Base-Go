@@ -143,6 +143,16 @@ export function SkillsPanel() {
     return updatePath.split("/").pop() ?? updatePath;
   }, [scan, updatePath]);
 
+  const updateRemote = useMemo(() => {
+    if (!updatePath) return undefined;
+    for (const group of scan?.kb ?? []) {
+      for (const skill of group.skills) {
+        if (skill.path === updatePath) return skill.remote;
+      }
+    }
+    return undefined;
+  }, [scan, updatePath]);
+
   useEffect(() => {
     if (!open) return;
     const first = panelRef.current?.querySelector<HTMLElement>("[data-skills-tab]");
@@ -279,6 +289,7 @@ export function SkillsPanel() {
               vaultId={vaultId}
               skillPath={updatePath}
               skillName={updateSkillName}
+              remote={updateRemote}
               onClose={() => setUpdatePath(null)}
               onProposed={(plan, stageId) => {
                 setPendingUpdate({ vaultId, stageId, planId: plan.id, name: updateSkillName });

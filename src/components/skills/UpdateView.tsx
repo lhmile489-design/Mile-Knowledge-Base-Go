@@ -4,9 +4,10 @@ import {
   TransportError,
   skillsApi,
   type MutationPlan,
+  type SkillRemote,
   type SkillUpdatePreviewResult,
 } from "../../lib/transport";
-import { changeSummary, formatBytes, shortSha } from "../../lib/skillRemote";
+import { changeSummary, formatBytes, shortSha, sourceOf } from "../../lib/skillRemote";
 
 const CHANGE: Record<string, { text: string; tone: "live" | "idle" | "fault" }> = {
   added: { text: "新增", tone: "live" },
@@ -26,12 +27,14 @@ export function UpdateView({
   vaultId,
   skillPath,
   skillName,
+  remote,
   onClose,
   onProposed,
 }: {
   readonly vaultId: string;
   readonly skillPath: string;
   readonly skillName: string;
+  readonly remote?: SkillRemote;
   readonly onClose: () => void;
   readonly onProposed: (plan: MutationPlan, stageId: string) => void;
 }) {
@@ -74,8 +77,6 @@ export function UpdateView({
   };
 
   const files = preview?.files ?? [];
-  const remote = preview?.from || preview?.to;
-
   return (
     <div className="install-view update-view" data-testid="update-view">
       <header className="install-head">
@@ -101,9 +102,10 @@ export function UpdateView({
         <>
           <div className="install-origin" data-testid="update-origin">
             <GithubLogo size={16} aria-hidden />
-            <b>{skillName}</b>
+            <b>{remote ? sourceOf(remote) : skillName}</b>
             <code>{skillPath}</code>
-            {remote ? <code>{shortSha(preview?.from)} → {shortSha(preview?.to)}</code> : null}
+            {remote ? <span>{remote.ref}</span> : null}
+            <code>{shortSha(preview.from)} → {shortSha(preview.to)}</code>
             <span className="install-faint">本地没有改过</span>
           </div>
 

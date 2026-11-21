@@ -51,6 +51,7 @@ const (
 	EnvSkillsFakePath     = "SKILLS_FAKE_PATH"
 	EnvSkillsFakeRegistry = "SKILLS_FAKE_REGISTRY"
 	EnvSkillsFakeGithub   = "SKILLS_FAKE_GITHUB" // M5: base URL of the fake GitHub (e2e only)
+	EnvSkillsFakeZip      = "SKILLS_FAKE_ZIP"    // M5: zip the picker returns without a dialog (e2e only)
 )
 
 // Fail builds a Failure.
