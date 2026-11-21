@@ -11,6 +11,8 @@ import (
 
 const sourceCommit = "0123456789abcdef0123456789abcdef01234567"
 
+const sampleBaseHash = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
 func sampleSource(skillPath string) KbSource {
 	return KbSource{
 		SkillPath:   skillPath,
@@ -20,7 +22,7 @@ func sampleSource(skillPath string) KbSource {
 		Path:        "skills/pdf",
 		Commit:      sourceCommit,
 		PathCommit:  sourceCommit,
-		BaseHash:    "sha256:abc",
+		BaseHash:    sampleBaseHash,
 		InstalledAt: "2026-11-21T09:00:00Z",
 	}
 }
@@ -49,7 +51,7 @@ func TestKbSourcesStableSerialization(t *testing.T) {
       "path": "skills/pdf",
       "commit": "` + sourceCommit + `",
       "pathCommit": "` + sourceCommit + `",
-      "baseHash": "sha256:abc",
+      "baseHash": "` + sampleBaseHash + `",
       "installedAt": "2026-11-21T09:00:00Z"
     },
     {
@@ -60,7 +62,7 @@ func TestKbSourcesStableSerialization(t *testing.T) {
       "path": "skills/pdf",
       "commit": "` + sourceCommit + `",
       "pathCommit": "` + sourceCommit + `",
-      "baseHash": "sha256:abc",
+      "baseHash": "` + sampleBaseHash + `",
       "installedAt": "2026-11-21T09:00:00Z"
     }
   ]
@@ -95,7 +97,7 @@ func TestKbSourcesUnknownVersionAndInvalidRecords(t *testing.T) {
 		t.Fatalf("unknown-version file was rewritten: %s", body)
 	}
 
-	broken := `{"version":1,"records":[{"skillPath":"skills/x","owner":"a","repo":"b","ref":"main","commit":"` + sourceCommit + `","pathCommit":"` + sourceCommit + `"},{"skillPath":"skills/前端/vue","owner":"anthropics","repo":"skills","ref":"main","path":"","commit":"` + sourceCommit + `","pathCommit":"` + sourceCommit + `"}]}`
+	broken := `{"version":1,"records":[{"skillPath":"skills/x","owner":"a","repo":"b","ref":"main","commit":"` + sourceCommit + `","pathCommit":"` + sourceCommit + `"},{"skillPath":"skills/前端/vue","owner":"anthropics","repo":"skills","ref":"main","path":"","commit":"` + sourceCommit + `","pathCommit":"` + sourceCommit + `","baseHash":"` + sampleBaseHash + `","installedAt":"2026-11-21T09:00:00Z"}]}`
 	if err := os.WriteFile(path, []byte(broken), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -108,6 +110,40 @@ func TestKbSourcesUnknownVersionAndInvalidRecords(t *testing.T) {
 	}
 	if loaded := LoadKbSources(vault); len(loaded.Records) != 0 {
 		t.Fatalf("record not removed: %+v", loaded)
+	}
+}
+
+func TestSourceRecordsRequireBaseHashAndTime(t *testing.T) {
+	vault := t.TempDir()
+	badHash := sampleSource("skills/前端/vue")
+	badHash.BaseHash = "sha256:abc"
+	if f := SaveKbSource(vault, badHash); f == nil || f.Code != contract.CodeInvalidInput {
+		t.Fatalf("bad hash = %+v", f)
+	}
+	badTime := sampleSource("skills/前端/vue")
+	badTime.InstalledAt = ""
+	if f := SaveKbSource(vault, badTime); f == nil || f.Code != contract.CodeInvalidInput {
+		t.Fatalf("bad time = %+v", f)
+	}
+	empty := sampleSource("skills/前端/vue")
+	empty.BaseHash = ""
+	if f := SaveKbSource(vault, empty); f == nil || f.Code != contract.CodeInvalidInput {
+		t.Fatalf("empty hash = %+v", f)
+	}
+
+	// A hand-edited record without baseHash is dropped instead of making the
+	// update check treat the skill as never modified.
+	raw := `{"version":1,"records":[{"skillPath":"skills/前端/vue","owner":"anthropics","repo":"skills","ref":"main","path":"","commit":"` + sourceCommit + `","pathCommit":"` + sourceCommit + `","installedAt":"2026-11-21T09:00:00Z"}]}`
+	dir := filepath.Join(vault, ".mile-kb")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "skill-sources.json"), []byte(raw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	loaded := LoadKbSources(vault)
+	if len(loaded.Records) != 0 || len(loaded.Warnings) == 0 {
+		t.Fatalf("record without baseHash = %+v", loaded)
 	}
 }
 

@@ -30,21 +30,19 @@ func (s *SkillService) CheckUpdates(ctx context.Context, vaultID string, force b
 		result.CheckedAt = cache.CheckedAt
 		result.Unchecked = cache.CountUnchecked(groups)
 	}
+	// Read and set the flag under one lock: two callers (panel open plus a
+	// quick "check now") must never start two rounds.
 	s.mu.Lock()
 	result.RateLimitResetAt = s.rateLimitResetAt
-	checking := s.checking
-	s.mu.Unlock()
-	if checking {
+	if s.checking {
+		s.mu.Unlock()
 		result.Checking = true
 		return result
 	}
-	if !force && cache.Fresh(s.now()) {
+	if (!force && cache.Fresh(s.now())) || len(groups) == 0 {
+		s.mu.Unlock()
 		return result
 	}
-	if len(groups) == 0 {
-		return result
-	}
-	s.mu.Lock()
 	s.checking = true
 	s.mu.Unlock()
 	result.Checking = true

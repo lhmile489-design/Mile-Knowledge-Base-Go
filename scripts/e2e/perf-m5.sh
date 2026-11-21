@@ -58,7 +58,7 @@ for i in range(20):
         "owner": "acme", "repo": "g%02d" % i, "ref": "main",
         "path": "skills/g%02d" % i,
         "commit": sha, "pathCommit": sha,
-        "baseHash": "", "installedAt": "2026-11-21T09:00:00Z",
+        "baseHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "installedAt": "2026-11-21T09:00:00Z",
     })
 json.dump({"repos": repos}, open(state_path, "w", encoding="utf-8"))
 os.makedirs(os.path.join(vault, ".mile-kb"), exist_ok=True)

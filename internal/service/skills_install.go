@@ -135,16 +135,7 @@ func (s *SkillService) DiscardStage(ctx context.Context, stageID string) contrac
 // findCandidates lists the staged skills and records their hashes for the
 // update diff (T09).
 func (s *SkillService) findCandidates(ctx context.Context, vaultID string, stage skills.Stage, fallback string, skipped []contract.SkillStageSkip) (contract.SkillStageResult, *contract.Failure) {
-	existing := map[string]string{}
-	if vaultID != "" {
-		if groups, _, root := s.kbSkills(ctx, vaultID, nil); root != "" {
-			for _, group := range groups {
-				for _, skill := range group.Skills {
-					existing[strings.ToLower(skill.Name)] = skill.Path
-				}
-			}
-		}
-	}
+	existing := s.existingSkillNames(ctx, vaultID)
 	options := skills.CandidateOptions{
 		Existing: func(name string) (string, bool) {
 			location, ok := existing[strings.ToLower(name)]
@@ -180,6 +171,23 @@ func (s *SkillService) findCandidates(ctx context.Context, vaultID string, stage
 		payload.Skipped = append(payload.Skipped, contract.SkillStageSkip{Path: "", Reason: "capped"})
 	}
 	return contract.SkillStageResult{Stage: &payload}, nil
+}
+
+// existingSkillNames maps lowercased names to their vault path; the read-time
+// candidate states and the install-time check use the same view (API §13.3).
+func (s *SkillService) existingSkillNames(ctx context.Context, vaultID string) map[string]string {
+	existing := map[string]string{}
+	if vaultID == "" {
+		return existing
+	}
+	if groups, _, root := s.kbSkills(ctx, vaultID, nil); root != "" {
+		for _, group := range groups {
+			for _, skill := range group.Skills {
+				existing[strings.ToLower(skill.Name)] = skill.Path
+			}
+		}
+	}
+	return existing
 }
 
 func (s *SkillService) stageStore() *skills.StageStore {

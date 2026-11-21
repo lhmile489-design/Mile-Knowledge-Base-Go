@@ -14,7 +14,7 @@ import (
 
 // InstallPreview is M90: what M91 would write for the picked candidates.
 func (s *SkillService) InstallPreview(ctx context.Context, vaultID, stageID string, ids []string, target contract.SkillInstallTarget) contract.SkillPreviewResult {
-	stage, picked, f := s.stageSelection(stageID, ids)
+	stage, picked, f := s.stageSelection(ctx, vaultID, stageID, ids)
 	if f != nil {
 		return contract.SkillPreviewResult{Failure: f}
 	}
@@ -67,7 +67,7 @@ func (s *SkillService) InstallPreview(ctx context.Context, vaultID, stageID stri
 
 // Install is M91.
 func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids []string, target contract.SkillInstallTarget) contract.SkillOpResult {
-	stage, picked, f := s.stageSelection(stageID, ids)
+	stage, picked, f := s.stageSelection(ctx, vaultID, stageID, ids)
 	if f != nil {
 		return contract.SkillOpResult{Failure: f}
 	}
@@ -114,8 +114,10 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 			}
 			skillPath := "skills/" + target.Category + "/" + candidate.Name
 			targetDir := filepath.Join(root, filepath.FromSlash(skillPath))
-			hash, _ := skills.TreeHash(targetDir)
-			if stage.Meta.Origin != nil {
+			hash, hashErr := skills.TreeHash(targetDir)
+			if hashErr != nil || hash == "" {
+				item.Detail = "已安装，但无法计算内容哈希，未写来源记录"
+			} else if stage.Meta.Origin != nil {
 				repoPath := joinRepoPath(stage.Meta.Origin.Path, candidate.ID)
 				record := skills.KbSource{
 					SkillPath: skillPath, Owner: stage.Meta.Origin.Owner, Repo: stage.Meta.Origin.Repo,
@@ -164,7 +166,7 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 				if stage.Meta.Origin != nil {
 					targetPath := filepath.Join(targets[index].InstallDir, candidate.Name)
 					targetHash, err := skills.TreeHash(targetPath)
-					if err != nil {
+					if err != nil || targetHash == "" {
 						targetHash = hash
 					}
 					record := skills.ToolSource{
@@ -174,7 +176,9 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 						Commit: stage.Meta.Origin.Commit, PathCommit: stage.Meta.PathCommit,
 						BaseHash: targetHash, InstalledAt: s.now().UTC().Format("2006-01-02T15:04:05Z"),
 					}
-					_ = skills.SaveToolSource(filepath.Join(s.app.DataDir, "skills"), record)
+					if f := skills.SaveToolSource(filepath.Join(s.app.DataDir, "skills"), record); f != nil {
+						item.Detail = "已安装，但来源记录写入失败：" + f.Message
+					}
 				}
 			}
 		}
@@ -191,7 +195,7 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 }
 
 // stageSelection loads the stage and keeps the candidates the user picked.
-func (s *SkillService) stageSelection(stageID string, ids []string) (skills.Stage, []contract.SkillStageCandidate, *contract.Failure) {
+func (s *SkillService) stageSelection(ctx context.Context, vaultID, stageID string, ids []string) (skills.Stage, []contract.SkillStageCandidate, *contract.Failure) {
 	if len(ids) == 0 || len(ids) > 50 {
 		return skills.Stage{}, nil, contract.Fail(contract.CodeInvalidInput, "请选择 1–50 个技能")
 	}
@@ -199,13 +203,30 @@ func (s *SkillService) stageSelection(stageID string, ids []string) (skills.Stag
 	if f != nil {
 		return skills.Stage{}, nil, f
 	}
-	result, f := skills.FindCandidates(stage.Root(), stage.Meta.Label, skills.CandidateOptions{Existing: nil})
+	existing := s.existingSkillNames(ctx, vaultID)
+	result, f := skills.FindCandidates(stage.Root(), stage.Meta.Label, skills.CandidateOptions{
+		Existing: func(name string) (string, bool) {
+			location, ok := existing[strings.ToLower(name)]
+			return location, ok
+		},
+	})
 	if f != nil {
 		return skills.Stage{}, nil, f
 	}
+	picked, f := pickInstallCandidates(result.Candidates, ids)
+	if f != nil {
+		return skills.Stage{}, nil, f
+	}
+	return stage, picked, nil
+}
+
+// pickInstallCandidates enforces API §13.3: only state=ok may be installed. A
+// target that already exists in the vault is refused here even if a caller
+// bypasses the disabled checkbox.
+func pickInstallCandidates(candidates []contract.SkillStageCandidate, ids []string) ([]contract.SkillStageCandidate, *contract.Failure) {
 	byID := map[string]contract.SkillStageCandidate{}
-	for _, candidate := range result.Candidates {
-		if candidate.State == "ok" || candidate.State == "exists" {
+	for _, candidate := range candidates {
+		if candidate.State == "ok" {
 			byID[candidate.ID] = candidate
 		}
 	}
@@ -213,11 +234,11 @@ func (s *SkillService) stageSelection(stageID string, ids []string) (skills.Stag
 	for _, id := range ids {
 		candidate, ok := byID[id]
 		if !ok {
-			return skills.Stage{}, nil, contract.Fail(contract.CodeInvalidInput, "候选不存在或不能安装")
+			return nil, contract.Fail(contract.CodeInvalidInput, "候选不存在或不能安装")
 		}
 		picked = append(picked, candidate)
 	}
-	return stage, picked, nil
+	return picked, nil
 }
 
 // resolveInstallTargets validates the tool targets like M78 does.

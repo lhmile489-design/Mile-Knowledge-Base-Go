@@ -60,7 +60,7 @@
 | T12 | e2e 验收 | `scripts/e2e/ac-m5.sh`（新）、本地假 GitHub 服务、`scripts/test-e2e.sh` | T05–T11 | AC-SKM-12–16 自动化；断网用关闭端口；真实网络零请求、真实工具目录零写入；全量回归通过 | 待验证（门禁已过，待用户验收） |
 | T13 | 视觉对照 | `design/r2/shots-m5/`、`scripts/visual/capture-m5.py`（新） | T11 | 7 状态 × 浅 / 深真实截图；与原型差异记入 UI 稿；对比度复测 | 待验证（门禁已过，待用户验收） |
 | T14 | 性能与人工项 | `scripts/e2e/perf-m5.sh`（新）、G-PERF、真实 GitHub 冒烟（按 B-M5-02） | T12 | 50 MB 包读取 p95 ≤ 3 s、检查 20 组 ≤ 2 s（本地）；真实冒烟经同意后执行并记录 | 待验证（门禁已过，待用户验收） |
-| T15 | 整体审查（按 B-M5-03） | 审查报告、本计划 | T14 | 阻断 0，需改项已修或经用户接受 | 待做 |
+| T15 | 整体审查（按 B-M5-03） | 审查报告、本计划 | T14 | 阻断 0，需改项已修或经用户接受 | 待验证（阻断 0、需改已修） |
 | T16 | 收尾（按 B-M5-01） | README、CLAUDE.md、路线、发布清单、本计划 | T15 | 版本与安装包；文档同步；列提交；推送前询问 | 待做 |
 
 依赖顺序 T00 → T16，串行。T07 与 T05/T06 互不依赖，T10 与 T07–T09 也不依赖，但都按「一次一个」分开放行。
@@ -80,6 +80,17 @@
 - **T10–T11**：结构与状态按 UI 稿 9.4；新组件按 DESIGN 11.5；更新计划交给 `useMutationStore.propose`，报告 `completed` 后调 M95。
 - **T12**：假 GitHub 服务从夹具目录现场打 tar.gz（含 `../evil` 恶意包），能模拟 404、额度为 0、慢响应；AC-SKM-14 关闭端口；断言整个用例期间没有对外连接（e2e 构建里客户端只认假地址）。
 - **T14**：真实 GitHub 冒烟只读一个公开仓库，装进临时知识库与假 HOME；完成后删掉临时目录。
+
+### T15 整体独立审查（task-reviewer，2026-11-21）
+
+- 范围：基线 `c4a8c76` → `2adcfb4`（T00–T14），按 B-M5-03 交给 task-reviewer；审查代理只读、未改仓库，复核时 `go test -count=1 ./...` 639 项、Vitest 263 项与 `tsc` 均通过，未跑 e2e、未访问真实网络。
+- 结论：**阻断 0，需改 3，建议 4**。解包七条不变量、`importFile` 双层拒绝、GitHub 客户端约束、更新状态机、e2e 断言真实性（落到文件系统而非空跑）与数据卫生均核实；可以修复需改项后进入 T16。
+- 需改项与修复：
+  1. 安装候选校验：`stageSelection` 原来接受 `state=exists`，与 API §13.3 不符，tools 目标可被覆盖。现在按**当前知识库**重算同名候选（`existingSkillNames`，与读取时同一视图），并用 `pickInstallCandidates` 只放行 `state=ok`；新增单元测试（`TestPickInstallCandidatesRequiresOK`）。
+  2. 启动清空暂存：`StageStore.CleanAll` 无调用者，与数据库设计 4.6 不符。`service.New` 现在启动即清空 `skills/tmp/`（M4 的 `tmp/<opId>/` 一并清理）；新增 `TestServiceNewClearsSkillStaging`。
+  3. 来源记录校验：`SaveKbSource`/`SaveToolSource` 原来不校验 `BaseHash`/`InstalledAt`，空哈希会被当成「本地没改过」使更新检测静默失效。写入与读取现在都要求 `sha256:<64 hex>` 与 RFC3339（坏条目丢弃并记 warning）；安装流程算不出哈希时不写记录并在结果里说明；数据库设计 3.8 已同步。新增 `TestSourceRecordsRequireBaseHashAndTime`；性能夹具补合法哈希。
+- 建议项处理：S-1（`CheckUpdates` 先读后加锁的并发窗口）已改为同一次持锁读取与置位；S-2（错误条目的 `checkedAt` 语义）、S-3（e2e fake 的重定向白名单）、S-4（`Resolve` 对不存在段的短路）记录保留，均无实际风险。
+- 修复后门禁：Go **642**、全量 e2e **250 项全过**（15/16/22/47/37/60/53）、Vitest 263、`tsc`、`build:web`。审查者未复现 e2e 与并发场景，相关结论基于代码通读；修复后的 e2e 由本轮重新跑过。
 
 ## 5. 验证与验收
 
@@ -131,6 +142,7 @@
 
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-21 | T15 | 完成：task-reviewer 独立审查（c4a8c76→2adcfb4，T00–T14），阻断 0、需改 3、建议 4；需改已修：安装候选只放行 `state=ok`（按当前知识库重算 exists，`pickInstallCandidates` + 单测）、`service.New` 启动清空暂存（+测试）、来源记录 `BaseHash`/`InstalledAt` 写入与读取双层校验（坏条目丢弃，算不出哈希时不写记录，+测试，数据库设计 3.8 同步）；建议 S-1 并发窗口已改为同锁读取与置位，S-2–S-4 记录保留。修复后 Go 642、全量 e2e 250 项全过、Vitest 263、tsc/build:web 通过 | 见下 | 全量 `scripts/test-e2e.sh`；`go test -count=1 ./...`（642）；Vitest 263；typecheck；build:web | 等待放行 T16 |
 | 2026-11-21 | T14 | 完成：`scripts/e2e/perf-m5.sh`（本地假 GitHub：50.0 MiB tar.gz 读取 5 次、20 组更新检查；写 metrics.json 并跑 G-PERF）；`scripts/perf-gate.py` 新增 `kind=m5`（read50P95Ms 3000、check20Ms 2000，阻断）；README 与 技术设计 16.8 记录实测与命令。实测：50 MB 读取 190/178/182/204/192 ms，p95 **204 ms**；20 组检查 **69 ms**（groups=20、unchecked=0），门禁通过。B-M5-02 真实 GitHub 冒烟（用户 2026-11-21 同意后执行）：匿名读取 anthropics/skills 成功，20 个候选，提交 e4bb5d96…，31.2 s（含下载）；把 academy-guide 装进临时知识库「文档」，来源记录 commit / pathCommit / baseHash 一致；临时目录已删除。`scripts/e2e/manual-github-smoke.sh` 作为可复跑的手动项保留（不进入 test-e2e） | 见下 | `bash scripts/e2e/perf-m5.sh`（门禁通过）；真实冒烟证据；脚本与文档改动，无 Go/Vitest 代码改动 | 等待放行 T15 |
 | 2026-11-21 | T13 | 完成：新增 `scripts/visual/capture-m5.py`（e2e 构建、假 HOME、本地假 GitHub、`SKILLS_FAKE_ZIP` 固定 zip；真实窗口驱动 7 状态 × 浅 / 深，写入 `design/r2/shots-m5/`，原型保留在 git 历史）；`internal/service` 增加 e2e 构建专用的 `autoOpenDialog`（生产不变）与 `SKILLS_FAKE_ZIP` 契约常量，附 e2e 构建测试；为对齐原型修了安装底栏文案、工具目标来源条显示已选名单、更新预览来源条补 owner/repo；UI 稿新增 9.4.1 逐状态差异。对比度实测（浅 / 深）：更新胶囊 9.61 / 11.12、来源行 6.22 / 6.22、错误标题 16.22 / 13.99、错误正文 7.32 / 6.61、信息正文 13.47 / 14.50、预览路径 14.95 / 13.50，全部达标 | 见下 | 14 张截图；对比度实测；ac-m5 回归；typecheck / Vitest 263；Go 639 + e2e 构建测试 | 等待放行 T14 |
 | 2026-11-21 | T12 | 完成：`scripts/e2e/fake-github.py`（本地假 GitHub：默认分支 / 头部提交 / 子目录提交 / tar.gz，状态文件热切换；禁止双实例占端口）；`scripts/e2e/ac-m5.sh`（AC-SKM-12：多技能仓库只装勾选；13：`../evil` 整包拒绝、知识库与暂存零残留；14：关端口读取失败、零写入；15：v2 更新 → 预览（文本 / 二进制 / 新增 / 删除）→ 计划卡含 importFile 与 trash → 执行 → 内容等于远端、来源记录推进、rewindPrepare 可恢复；16：本地改过显示两边都改了、无更新按钮、updatePreview 拒绝）；`scripts/test-e2e.sh` 自动纳入。顺带修复：`vault.Write` 对 Windows 共享冲突的替换重试（新增 `replace_windows.go` / `replace_other.go` 与 Windows 回归测试），解决计划写入偶发 io-failure；工具行卸载 testid 带 toolId，ac-m4 选择器同步（T11 的 E12 自动刷新暴露了旧模糊选择器）；计划卡补 importFile 标签；对比度采样加一次重试。证据：ac-m5 53 项全过；全量 e2e 250 项（15/16/22/47/37/60/53）全过；e2e 构建通过 | 见下 | 全量 `scripts/test-e2e.sh`；`go test -count=1 ./...`（639）、vet/gofmt、typecheck、bindings、Vitest 263、build:web | 等待放行 T13 |

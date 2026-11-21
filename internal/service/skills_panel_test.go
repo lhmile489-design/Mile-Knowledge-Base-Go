@@ -28,6 +28,24 @@ func skillServiceWithHome(t *testing.T, home string) (*SkillService, string) {
 	return svc, vaultID
 }
 
+func TestServiceNewClearsSkillStaging(t *testing.T) {
+	data := t.TempDir()
+	stageRoot := filepath.Join(data, "skills", "tmp", "s-0123456789ab", "root")
+	if err := os.MkdirAll(stageRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(stageRoot, "x"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(data, filepath.Join(t.TempDir(), "legacy")); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := os.ReadDir(filepath.Join(data, "skills", "tmp"))
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("staging not cleared: %v %v", entries, err)
+	}
+}
+
 func TestSkillServiceRegistryRedactsPaths(t *testing.T) {
 	home := t.TempDir()
 	svc, _ := skillServiceWithHome(t, home)

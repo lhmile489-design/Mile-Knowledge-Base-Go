@@ -23,6 +23,7 @@ import (
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/render"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/settings"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/skills"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/vault"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/watch"
 )
@@ -123,6 +124,9 @@ func New(dataDir, legacyDir string) (*App, error) {
 	}
 	app.Vaults = vault.New(store)
 	app.Vaults.Load()
+	// The staging area is derived state: nothing survives a restart
+	// (数据库设计 4.6, 技术设计 16.1).
+	_ = skills.NewStageStore(filepath.Join(dataDir, "skills", "tmp"), time.Now).CleanAll()
 	// M56: switching the active conversation is refused while a turn runs.
 	app.AgentBusy = app.Agents.AnyBusy
 	return app, nil

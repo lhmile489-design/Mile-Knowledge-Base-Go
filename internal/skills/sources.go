@@ -100,7 +100,8 @@ func LoadKbSources(vaultRoot string) KbSources {
 		return result
 	}
 	for _, record := range file.Records {
-		if !validKbSkillPath(record.SkillPath) || !isHexSHA(record.Commit) || !isHexSHA(record.PathCommit) {
+		if !validSourceRecord(record.SkillPath, record.Owner, record.Repo, record.Ref, record.Path,
+			record.Commit, record.PathCommit, record.BaseHash, record.InstalledAt) {
 			result.Warnings = append(result.Warnings, "来源记录里有无效条目，已跳过")
 			continue
 		}
@@ -109,11 +110,38 @@ func LoadKbSources(vaultRoot string) KbSources {
 	return result
 }
 
+// validSourceRecord checks the fields the update flow depends on. baseHash is
+// required: without it a local edit can never be detected (16.5).
+func validSourceRecord(skillPath, owner, repo, ref, path, commit, pathCommit, baseHash, installedAt string) bool {
+	if !validKbSkillPath(skillPath) || !validOrigin(owner, repo, ref, path) || !isHexSHA(commit) || !isHexSHA(pathCommit) {
+		return false
+	}
+	return validHash(baseHash) && validInstalledAt(installedAt)
+}
+
+func validHash(value string) bool {
+	const prefix = "sha256:"
+	if !strings.HasPrefix(value, prefix) || len(value) != len(prefix)+64 {
+		return false
+	}
+	for _, r := range value[len(prefix):] {
+		if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f')) {
+			return false
+		}
+	}
+	return true
+}
+
+func validInstalledAt(value string) bool {
+	_, err := time.Parse(time.RFC3339, value)
+	return err == nil
+}
+
 // SaveKbSource merges one record by skillPath and writes the file with the
 // stable serialization from 数据库设计 3.4/3.8.
 func SaveKbSource(vaultRoot string, record KbSource) *contract.Failure {
-	if !validKbSkillPath(record.SkillPath) || !validOrigin(record.Owner, record.Repo, record.Ref, record.Path) ||
-		!isHexSHA(record.Commit) || !isHexSHA(record.PathCommit) {
+	if !validSourceRecord(record.SkillPath, record.Owner, record.Repo, record.Ref, record.Path,
+		record.Commit, record.PathCommit, record.BaseHash, record.InstalledAt) {
 		return contract.Fail(contract.CodeInvalidInput, "来源记录字段不合法")
 	}
 	existing := LoadKbSources(vaultRoot)
@@ -201,7 +229,8 @@ func LoadToolSources(skillsDir string) ToolSources {
 	for _, record := range file.Records {
 		if !IsToolSourceID(record.ID) || record.ToolID == "" || record.TargetPath == "" ||
 			!validOrigin(record.Owner, record.Repo, record.Ref, record.Path) ||
-			!isHexSHA(record.Commit) || !isHexSHA(record.PathCommit) {
+			!isHexSHA(record.Commit) || !isHexSHA(record.PathCommit) ||
+			!validHash(record.BaseHash) || !validInstalledAt(record.InstalledAt) {
 			continue
 		}
 		result.Records = append(result.Records, record)
@@ -220,7 +249,8 @@ func SaveToolSource(skillsDir string, record ToolSource) *contract.Failure {
 	}
 	if !IsToolSourceID(record.ID) || record.ToolID == "" || record.TargetPath == "" ||
 		!validOrigin(record.Owner, record.Repo, record.Ref, record.Path) ||
-		!isHexSHA(record.Commit) || !isHexSHA(record.PathCommit) {
+		!isHexSHA(record.Commit) || !isHexSHA(record.PathCommit) ||
+		!validHash(record.BaseHash) || !validInstalledAt(record.InstalledAt) {
 		return contract.Fail(contract.CodeInvalidInput, "来源记录字段不合法")
 	}
 	existing := LoadToolSources(skillsDir)

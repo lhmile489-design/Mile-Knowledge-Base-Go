@@ -169,6 +169,23 @@ func TestSkillServiceInstallOverwritesWithBackup(t *testing.T) {
 	}
 }
 
+func TestPickInstallCandidatesRequiresOK(t *testing.T) {
+	candidates := []contract.SkillStageCandidate{
+		{ID: "skills/a", Name: "a", State: "ok"},
+		{ID: "skills/b", Name: "b", State: "exists"},
+		{ID: "skills/c", Name: "c", State: "too-large"},
+	}
+	picked, f := pickInstallCandidates(candidates, []string{"skills/a"})
+	if f != nil || len(picked) != 1 || picked[0].ID != "skills/a" {
+		t.Fatalf("ok candidate = %+v %+v", picked, f)
+	}
+	for _, id := range []string{"skills/b", "skills/c"} {
+		if _, f := pickInstallCandidates(candidates, []string{id}); f == nil || f.Code != contract.CodeInvalidInput {
+			t.Fatalf("%s = %+v", id, f)
+		}
+	}
+}
+
 func TestSkillServiceInstallRejectsBadSelection(t *testing.T) {
 	svc, vaultID := skillServiceWithHome(t, t.TempDir())
 	stage := stagedForInstall(t, svc, vaultID)

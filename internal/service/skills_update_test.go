@@ -19,8 +19,9 @@ import (
 // M5 T08: M93 update detection (技术设计 16.5).
 
 const (
-	updateTestSHA    = "0123456789abcdef0123456789abcdef01234567"
-	updateTestNewSHA = "89abcdef0123456789abcdef0123456789abcdef"
+	updateTestBaseHash = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+	updateTestSHA      = "0123456789abcdef0123456789abcdef01234567"
+	updateTestNewSHA   = "89abcdef0123456789abcdef0123456789abcdef"
 )
 
 func updateTestService(t *testing.T) (*SkillService, string) {
@@ -49,7 +50,7 @@ func writeKbSourceRecord(t *testing.T, svc *SkillService, vaultID, path, skillPa
 	}
 	record := skills.KbSource{
 		SkillPath: skillPath, Owner: "anthropics", Repo: "skills", Ref: "main", Path: path,
-		Commit: updateTestSHA, PathCommit: updateTestSHA, BaseHash: "sha256:abc",
+		Commit: updateTestSHA, PathCommit: updateTestSHA, BaseHash: updateTestBaseHash,
 		InstalledAt: "2026-11-21T09:00:00Z",
 	}
 	if f := skills.SaveKbSource(root, record); f != nil {
@@ -197,7 +198,7 @@ func TestSkillServiceCheckUpdatesCapsAtFortyGroups(t *testing.T) {
 		record := skills.ToolSource{
 			ToolID: "claude-code", TargetPath: fmt.Sprintf(`C:\tools\skills\s%02d`, i),
 			Owner: "acme", Repo: "skills", Ref: "main", Path: fmt.Sprintf("skills/s%02d", i),
-			Commit: updateTestSHA, PathCommit: updateTestSHA, BaseHash: "sha256:abc",
+			Commit: updateTestSHA, PathCommit: updateTestSHA, BaseHash: updateTestBaseHash,
 			InstalledAt: "2026-11-21T09:00:00Z",
 		}
 		if f := skills.SaveToolSource(skillsDir, record); f != nil {
