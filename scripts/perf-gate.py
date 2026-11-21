@@ -25,6 +25,10 @@ TARGETS = {
         "scanP95Ms": 200,
         "opP95Ms": 300,
     },
+    "m5": {
+        "read50P95Ms": 3000,
+        "check20Ms": 2000,
+    },
 }
 
 LABELS = {
@@ -35,6 +39,8 @@ LABELS = {
     "keyLatencyP90Ms": "按键延迟 p90 ms",
     "scanP95Ms": "技能扫描 p95 ms",
     "opP95Ms": "技能操作 p95 ms",
+    "read50P95Ms": "50 MB 包读取 p95 ms",
+    "check20Ms": "20 组更新检查 ms",
 }
 
 
