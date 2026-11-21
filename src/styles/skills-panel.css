@@ -841,6 +841,256 @@
   font-size: var(--text-caption);
 }
 
+/* M5 T10: GitHub / zip sources, candidates, targets and progress. */
+.install-view .spacer {
+  flex: 1;
+}
+
+.install-source[data-active='true'] {
+  border-color: var(--raw-accent);
+  background: color-mix(in srgb, var(--raw-accent-soft) 60%, var(--raw-card));
+}
+
+.install-github {
+  display: grid;
+  gap: 6px;
+}
+
+.install-urlrow {
+  display: flex;
+  gap: 8px;
+}
+
+.install-urlrow .skm-input {
+  flex: 1;
+}
+
+.install-fault {
+  margin: 0;
+  color: var(--fault);
+  font-size: var(--text-meta);
+}
+
+.install-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--raw-strong);
+}
+
+.install-faint {
+  color: var(--raw-faint);
+  font-size: var(--text-caption);
+  font-weight: 400;
+}
+
+.install-origin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-control);
+  background: var(--raw-sunken);
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}
+
+.install-origin b {
+  color: var(--raw-strong);
+}
+
+.install-origin code {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-text);
+}
+
+.install-candidates {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.install-candidate {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(110px, 0.9fr) minmax(110px, 1.3fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: var(--raw-sunken);
+  font-size: var(--text-meta);
+}
+
+.install-candidate[data-state='too-large'],
+.install-candidate[data-state='duplicate'],
+.install-candidate[data-state='invalid-name'],
+.install-candidate[data-state='exists'] {
+  opacity: 0.72;
+}
+
+.install-candidate-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.install-candidate-name {
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--raw-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.install-candidate-path,
+.install-candidate-size {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.install-candidate-desc {
+  overflow: hidden;
+  color: var(--raw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.install-category {
+  display: grid;
+  gap: 6px;
+}
+
+.install-category-input {
+  max-width: 280px;
+}
+
+.install-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-card);
+  background: var(--raw-sunken);
+  font-size: var(--text-meta);
+  color: var(--raw-text);
+}
+
+.install-note ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.install-note[data-tone='info'] {
+  border-color: var(--raw-line-strong);
+}
+
+.install-note[data-tone='ok'] {
+  border-color: color-mix(in srgb, var(--raw-accent) 35%, var(--raw-line));
+}
+
+.install-note[data-tone='fault'] {
+  border-color: color-mix(in srgb, var(--fault) 40%, var(--raw-line));
+  background: color-mix(in srgb, var(--fault) 6%, var(--raw-card));
+}
+
+.install-note[data-tone='fault'] > svg {
+  flex: none;
+  color: var(--fault);
+}
+
+.install-note-body {
+  display: grid;
+  gap: 4px;
+}
+
+.install-note-body b {
+  color: var(--raw-strong);
+}
+
+.install-note-body code {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+.install-note-body p {
+  margin: 0;
+  color: var(--raw-muted);
+}
+
+.install-progress-box {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-card);
+  background: var(--raw-sunken);
+}
+
+.install-progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--raw-line);
+}
+
+.install-progress > i {
+  display: block;
+  height: 100%;
+  width: 30%;
+  border-radius: inherit;
+  background: var(--raw-accent-btn);
+  transition: width 160ms linear;
+}
+
+.install-progress[data-indeterminate='true'] > i {
+  width: 35%;
+  animation: install-progress-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes install-progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.install-progress-line {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+}
+
+.install-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--raw-line);
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}
+
 /* Embedded wizard fills the install area instead of overlaying the window. */
 .skill-wizard-embedded {
   width: 100%;

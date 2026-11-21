@@ -197,6 +197,7 @@ export function SkillsPanel() {
           ) : installOpen && vaultId ? (
             <InstallView
               vaultId={vaultId}
+              tools={tools}
               onBack={() => setInstallOpen(false)}
               onChanged={() => {
                 if (vaultId) void useSkillsStore.getState().loadScan(vaultId);

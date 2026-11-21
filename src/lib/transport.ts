@@ -91,16 +91,19 @@ export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, Mutatio
 /** TransportError carries a stable code; unexpected failures get `unknown`. */
 export class TransportError extends Error {
   readonly code: string;
-  constructor(code: string, message: string) {
+  /** Safe extra line from the Go failure (e.g. the offending archive entry). */
+  readonly detail?: string;
+  constructor(code: string, message: string, detail?: string) {
     super(message);
     this.name = "TransportError";
     this.code = code;
+    this.detail = detail;
   }
 }
 
-function unwrap<T extends { failure?: { code: string; message: string } }>(value: T): T {
+function unwrap<T extends { failure?: { code: string; message: string; detail?: string } }>(value: T): T {
   if (value?.failure) {
-    throw new TransportError(value.failure.code, value.failure.message);
+    throw new TransportError(value.failure.code, value.failure.message, value.failure.detail);
   }
   return value;
 }
@@ -158,7 +161,10 @@ export const skillsApi = {
     guard(async () => unwrap(await SkillService.adopt(vaultId, toolId, path, category, linkBack, extras))),
   log: (limit = 50) => guard(async () => unwrap(await SkillService.log(limit))),
   reveal: (toolId: string, path: string) => guard(async () => SkillService.reveal(toolId, path)),
-  readGithub: (vaultId: string, input: string) => guard(async () => unwrap(await SkillService.readGithub(vaultId, input))),
+  readGithub: (vaultId: string, input: string, signal?: AbortSignal) =>
+    guard(async () =>
+      unwrap(await (signal ? SkillService.readGithub.with({ signal }) : SkillService.readGithub)(vaultId, input)),
+    ),
   pickZip: (vaultId: string) => guard(async () => unwrap(await SkillService.pickZip(vaultId))),
   discardStage: (stageId: string) => guard(async () => SkillService.discardStage(stageId)),
   installPreview: (vaultId: string, stageId: string, ids: string[], target: SkillInstallTarget) =>
