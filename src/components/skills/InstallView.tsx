@@ -341,11 +341,9 @@ export function InstallView({
     );
   }
 
+  const categoryIssue = targetKind === "kb" ? categoryProblem(category) : null;
   const canSubmit =
-    Boolean(stage) &&
-    selected.size > 0 &&
-    !busy &&
-    (targetKind === "kb" ? categoryProblem(category) === null : toolTargets.size > 0);
+    Boolean(stage) && selected.size > 0 && !busy && (targetKind === "kb" ? categoryIssue === null : toolTargets.size > 0);
   const percent = progress && progress.total > 0 ? Math.max(0, Math.min(100, Math.round((progress.received * 100) / progress.total))) : null;
 
   if (stage) {
@@ -558,7 +556,9 @@ export function InstallView({
         <footer className="install-foot">
           <span data-testid="install-summary">
             {targetKind === "kb"
-              ? `已选 ${selected.size} 个 · 写入知识库 ${Math.min(eligible, selected.size)} 个目录`
+              ? categoryIssue
+                ? `已选 ${selected.size} 个 · 先填分类再安装`
+                : `已选 ${selected.size} 个 · 写入知识库 ${Math.min(eligible, selected.size)} 个目录`
               : `${selected.size} 个技能 × ${toolTargets.size} 个工具，新增 ${Math.min(creates, selected.size * toolTargets.size)} 处`}
           </span>
           <span className="spacer" />
@@ -570,6 +570,7 @@ export function InstallView({
             className="btn-primary"
             disabled={!canSubmit}
             onClick={() => void install()}
+            title={targetKind === "kb" ? (categoryIssue ?? undefined) : undefined}
             data-testid="install-submit"
           >
             <Archive size={13} aria-hidden />

@@ -284,6 +284,7 @@ start_app "http://127.0.0.1:$GH_PORT"
 wait_match "update overview" "document.querySelector('[data-testid=\"overview-grid\"]') !== null" '"value":true' 90
 try_index
 open_panel
+wait_match "scan settles" "!document.querySelector('[data-testid=\"skills-status\"]')?.textContent.includes('后台扫描中')" '"value":true' 60
 refresh_updates
 wait_match "AC-SKM-15 update pill" "[...document.querySelectorAll('[data-testid=\"kb-card-pdf\"] .pill')].some((p)=>p.textContent.includes('GitHub 有更新'))" '"value":true' 40
 click '[data-testid="kb-update-pdf"]' >/dev/null

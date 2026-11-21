@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,11 @@ import (
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/skills"
 )
+
+// scanCacheFreshFor breaks the E12 loop: a scan that just finished writes the
+// cache, the page refreshes, and asking again inside this window must not
+// start another scan (nor report scanning=true, which used to stick).
+const scanCacheFreshFor = 2 * time.Second
 
 // SkillService is the binding layer of R2 skill management (M4, API.md §12).
 // T04 wires the read side: the tool registry (M76) and the scan (M77), with a
@@ -79,6 +85,10 @@ func (s *SkillService) Scan(ctx context.Context, vaultID string) contract.SkillS
 	}
 	cachePath := s.cachePath()
 	if cached := skills.LoadScanCache(cachePath); cached != nil {
+		if info, err := os.Stat(cachePath); err == nil && time.Since(info.ModTime()) < scanCacheFreshFor {
+			// Just scanned (usually the E12 refresh); answer from the cache.
+			return contract.SkillScanResult{Scan: cached.ToScan(false)}
+		}
 		s.startBackgroundScan(vaultID, cachePath)
 		return contract.SkillScanResult{Scan: cached.ToScan(true)}
 	}

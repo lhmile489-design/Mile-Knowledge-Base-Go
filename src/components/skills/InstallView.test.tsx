@@ -197,10 +197,12 @@ describe("InstallView candidates", () => {
     renderView();
     await openGithubStage();
     expect((screen.getByTestId("install-submit") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("install-summary").textContent).toContain("先填分类再安装");
     fireEvent.change(screen.getByTestId("install-category"), { target: { value: "a/b" } });
     expect((screen.getByTestId("install-submit") as HTMLButtonElement).disabled).toBe(true);
     fireEvent.change(screen.getByTestId("install-category"), { target: { value: "文档" } });
     expect((screen.getByTestId("install-submit") as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByTestId("install-summary").textContent).toContain("写入知识库 2 个目录");
   });
 
   it("installs into a tool with overwrite and previews the existing target", async () => {

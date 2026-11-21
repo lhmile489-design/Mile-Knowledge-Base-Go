@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/skills"
@@ -106,12 +107,36 @@ func TestSkillServiceScanIsCachedFirst(t *testing.T) {
 	if second.Failure != nil {
 		t.Fatalf("second scan: %+v", second.Failure)
 	}
-	if !second.Scan.Scanning {
-		t.Fatal("second scan should serve the cache with scanning=true")
+	if second.Scan.Scanning {
+		t.Fatal("a fresh cache must answer without starting another scan")
 	}
 	if second.Scan.CachedAt == "" {
 		t.Fatal("cached scan has no timestamp")
 	}
+
+	// An older cache still refreshes in the background.
+	old := time.Now().Add(-5 * time.Second)
+	if err := os.Chtimes(svc.cachePath(), old, old); err != nil {
+		t.Fatal(err)
+	}
+	third := svc.Scan(context.Background(), vaultID)
+	if third.Failure != nil {
+		t.Fatalf("third scan: %+v", third.Failure)
+	}
+	if !third.Scan.Scanning {
+		t.Fatal("a stale cache should start a background scan")
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		svc.mu.Lock()
+		scanning := svc.scanning
+		svc.mu.Unlock()
+		if !scanning {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatal("background scan did not finish")
 }
 
 func TestSkillServiceScanRejectsBadVault(t *testing.T) {
