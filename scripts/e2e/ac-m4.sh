@@ -301,6 +301,8 @@ echo "$RESULT" | grep -q 'copied' && { pass=$((pass+1)); echo "PASS AC-SKM-4 rep
 printf '
 再次更新。
 ' >> "$VAULT/skills/前端/vue/SKILL.md"
+# The panel answers from a cache younger than 2 seconds (loop guard); let it age.
+sleep 2.2
 ev "window.__mkbSkills.getState().loadScan('$VID'); true" >/dev/null
 sleep 1.0
 open_tools

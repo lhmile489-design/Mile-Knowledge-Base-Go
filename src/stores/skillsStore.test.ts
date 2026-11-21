@@ -85,6 +85,22 @@ describe("skillsStore", () => {
     expect(state.scan?.scanning).toBe(true);
   });
 
+  it("polls a background scan until it settles", async () => {
+    vi.useFakeTimers();
+    try {
+      scan.mockResolvedValueOnce({ scan: { ...sampleScan, scanning: true } });
+      scan.mockResolvedValueOnce({ scan: { ...sampleScan, scanning: false, cachedAt: "later" } });
+      await useSkillsStore.getState().loadScan("vault-1");
+      expect(useSkillsStore.getState().scan?.scanning).toBe(true);
+      await vi.advanceTimersByTimeAsync(1300);
+      expect(scan).toHaveBeenCalledTimes(2);
+      expect(useSkillsStore.getState().scan?.scanning).toBe(false);
+      expect(useSkillsStore.getState().scan?.cachedAt).toBe("later");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("drops a stale scan response", async () => {
     let resolveFirst: (value: unknown) => void = () => {};
     const first = new Promise((resolve) => {

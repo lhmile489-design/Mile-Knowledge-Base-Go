@@ -917,7 +917,7 @@ type SkillScan = {
 | 方法 | 入参 | 返回 | 语义 |
 | --- | --- | --- | --- |
 | M76 `registry` | — | `{tools: SkillTool[]}` | 内置注册表加探测结果；不写盘 |
-| M77 `scan` | `vaultId`（可为空串） | `SkillScan` | 触发后台扫描；先返回缓存并置 `scanning=true`，完成后发 E12。无活动库时 `kb=[]` |
+| M77 `scan` | `vaultId`（可为空串） | `SkillScan` | 触发后台扫描；先返回缓存并置 `scanning=true`，完成后发 E12。2 秒内刚写入的缓存直接返回（`scanning=false`）且不再起扫描，防止 E12 刷新循环（1.3.1）。无活动库时 `kb=[]` |
 | M78 `distributePreview` | `vaultId`、`skillPath`、`targets[]`、`mode` | `{items: SkillPreviewItem[]}` | 校验目标、冲突、重复加载、覆盖备份位置；不写盘 |
 | M79 `distribute` | 同上 + 每目标的 `allowOverwrite` | `{items: SkillOpItem[]}` | 执行；逐项结果，部分失败不整体回滚 |
 | M80 `uninstallPreview` | `toolId`、`path` | `{kind, target?, backupPath?, affectedTools[]}` | `kind = link/copy/independent`；通用目录卸载时 `affectedTools` 列出读者 |

@@ -20,6 +20,41 @@ function message(error: unknown): string {
 
 let scanSeq = 0;
 
+// A background refresh has no reliable completion event (E12 from a plain Go
+// goroutine is not delivered), so the store polls briefly until the scan
+// reports scanning=false. The Go side answers from a cache younger than two
+// seconds without starting another scan, so this cannot loop.
+const SCAN_POLL_MS = 1200;
+const SCAN_POLL_LIMIT = 20;
+let scanPollTimer: ReturnType<typeof setTimeout> | null = null;
+let scanPollCount = 0;
+
+function clearScanTimer(): void {
+  if (scanPollTimer) {
+    clearTimeout(scanPollTimer);
+    scanPollTimer = null;
+  }
+}
+
+function stopScanPoll(): void {
+  clearScanTimer();
+  scanPollCount = 0;
+}
+
+function pollScan(vaultId: string): void {
+  if (scanPollTimer || scanPollCount >= SCAN_POLL_LIMIT) return;
+  scanPollCount += 1;
+  scanPollTimer = setTimeout(() => {
+    scanPollTimer = null;
+    void useSkillsStore.getState().loadScan(vaultId);
+  }, SCAN_POLL_MS);
+}
+
+function afterScan(vaultId: string, scanning: boolean): void {
+  if (scanning) pollScan(vaultId);
+  else stopScanPoll();
+}
+
 export const useSkillsStore = create<SkillsState>((set) => ({
   tools: [],
   scan: null,
@@ -36,12 +71,15 @@ export const useSkillsStore = create<SkillsState>((set) => ({
   },
 
   loadScan: async (vaultId) => {
+    // A new request supersedes a pending poll; its own result decides again.
+    clearScanTimer();
     const seq = ++scanSeq;
     try {
       const result = await skillsApi.scan(vaultId);
       // A newer request won; drop this response.
       if (seq !== scanSeq) return;
       set({ scan: result.scan, error: null });
+      afterScan(vaultId, result.scan.scanning);
     } catch (error) {
       if (seq !== scanSeq) return;
       set({ error: message(error) });
@@ -49,10 +87,12 @@ export const useSkillsStore = create<SkillsState>((set) => ({
   },
 
   refresh: async (vaultId) => {
+    clearScanTimer();
     set({ loading: true });
     try {
       const [registry, result] = await Promise.all([skillsApi.registry(), skillsApi.scan(vaultId)]);
       set({ tools: registry.tools, scan: result.scan, error: null });
+      afterScan(vaultId, result.scan.scanning);
     } catch (error) {
       set({ error: message(error) });
     } finally {
