@@ -1,6 +1,6 @@
 # M5 实施计划：R2 安装来源与更新
 
-> 状态：v0.1 已获用户批准（2026-11-21），按「一次一个任务」执行完毕；T00–T16 全部交付，已推送到 `origin/main`（`aaaadef`，18 个提交）。B-M5-01–03 与 Q-M5-1/2 按建议执行（B-M5-02 真实 GitHub 冒烟经用户同意后执行）。
+> 状态：v0.1 已获用户批准（2026-11-21），按「一次一个任务」执行完毕；T00–T16 全部交付，已推送到 `origin/main`（`aaaadef`，18 个提交）；1.3.1 补丁随后推送（`14a0256`）。B-M5-01–03 与 Q-M5-1/2 按建议执行（B-M5-02 真实 GitHub 冒烟经用户同意后执行）。
 > 本次目标：交付 PRD 第 15 节的 M5 范围（FR-SKM-SRC、FR-SKM-UPD）。闭环为「粘贴 GitHub 地址或 `owner/repo`，或选一个 zip → 列出候选并勾选 → 装进知识库或直接装进工具 → 打开浮层看到 GitHub 来源的技能是否有更新 → 安全地更新（知识库经变更计划，工具先备份）」。
 > 上一里程碑：docs/PLAN-M4.md（已完成并推送，`d9c854b`）。下一里程碑：M6（自定义工具目录、项目源、Git 跨机同步）。
 
@@ -156,7 +156,7 @@
 
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
-| 2026-11-22 | 1.3.1 补丁 | 完成：M77 对 2 秒内的扫描缓存直接返回且不起后台扫描；前端 store 在 scanning=true 时每 1.2 秒轮询直到结束（E12 从普通 Go goroutine 不到页面，改为轮询兜底）；安装分类为空时底栏提示「先填分类再安装」；ac-m5 增加扫描停止断言，ac-m4 外部改库后等 2.2 秒。Go 642、Vitest 264、全量 e2e 251 项全过；1.3.1 安装包与本机 1.3.0 → 1.3.1 升级冒烟完成 | 见下 | `go test -count=1 ./...`、Vitest 264、全量 e2e 251、生产构建与升级冒烟 | 推送待用户确认 |
+| 2026-11-22 | 1.3.1 补丁 | 完成：M77 对 2 秒内的扫描缓存直接返回且不起后台扫描；前端 store 在 scanning=true 时每 1.2 秒轮询直到结束（E12 从普通 Go goroutine 不到页面，改为轮询兜底）；安装分类为空时底栏提示「先填分类再安装」；ac-m5 增加扫描停止断言，ac-m4 外部改库后等 2.2 秒。Go 642、Vitest 264、全量 e2e 251 项全过；1.3.1 安装包与本机 1.3.0 → 1.3.1 升级冒烟完成 | 已推送 `14a0256` | `go test -count=1 ./...`、Vitest 264、全量 e2e 251、生产构建与升级冒烟 | M5 补丁关闭 |
 | 2026-11-21 | T16 | 完成：`mygo.config.ts` 升到 1.3.0，生产构建与 NSIS 安装包（1.3.0，exe 20.3MB / 安装包 6.8MB）；静默安装 `/S` 退出码 0，安装目录版本 1.3.0；临时 APPDATA 种 1.2.0 格式（深色、sidebar 260、绿色强调色），安装后启动设置逐字段保留、界面为深色 + 绿色 + 欢迎页（截图 `E:/tmp/t16-1.3.0.png`）；真实 `%APPDATA%` 的 settings.json mtime / 长度未变，无后台实例。README、CLAUDE.md、PLAN-M0、发布清单（第 10 节）与本计划同步；M5 共 18 个提交（此前 17 个 + 收尾）已推送到 `origin/main`（`aaaadef`） | 见下 | 版本与安装包、升级冒烟、文档同步、推送 | M5 关闭；下一里程碑 M6 资料 |
 | 2026-11-21 | T15 | 完成：task-reviewer 独立审查（c4a8c76→2adcfb4，T00–T14），阻断 0、需改 3、建议 4；需改已修：安装候选只放行 `state=ok`（按当前知识库重算 exists，`pickInstallCandidates` + 单测）、`service.New` 启动清空暂存（+测试）、来源记录 `BaseHash`/`InstalledAt` 写入与读取双层校验（坏条目丢弃，算不出哈希时不写记录，+测试，数据库设计 3.8 同步）；建议 S-1 并发窗口已改为同锁读取与置位，S-2–S-4 记录保留。修复后 Go 642、全量 e2e 250 项全过、Vitest 263、tsc/build:web 通过 | 见下 | 全量 `scripts/test-e2e.sh`；`go test -count=1 ./...`（642）；Vitest 263；typecheck；build:web | 等待放行 T16 |
 | 2026-11-21 | T14 | 完成：`scripts/e2e/perf-m5.sh`（本地假 GitHub：50.0 MiB tar.gz 读取 5 次、20 组更新检查；写 metrics.json 并跑 G-PERF）；`scripts/perf-gate.py` 新增 `kind=m5`（read50P95Ms 3000、check20Ms 2000，阻断）；README 与 技术设计 16.8 记录实测与命令。实测：50 MB 读取 190/178/182/204/192 ms，p95 **204 ms**；20 组检查 **69 ms**（groups=20、unchecked=0），门禁通过。B-M5-02 真实 GitHub 冒烟（用户 2026-11-21 同意后执行）：匿名读取 anthropics/skills 成功，20 个候选，提交 e4bb5d96…，31.2 s（含下载）；把 academy-guide 装进临时知识库「文档」，来源记录 commit / pathCommit / baseHash 一致；临时目录已删除。`scripts/e2e/manual-github-smoke.sh` 作为可复跑的手动项保留（不进入 test-e2e） | 见下 | `bash scripts/e2e/perf-m5.sh`（门禁通过）；真实冒烟证据；脚本与文档改动，无 Go/Vitest 代码改动 | 等待放行 T15 |
