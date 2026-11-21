@@ -464,7 +464,7 @@ export function InstallView({
         {targetKind === "kb" ? (
           <div className="install-category">
             <input
-              className="skm-input install-category-input"
+              className="field install-category-input"
               value={category}
               placeholder="分类，例如 文档"
               onChange={(event) => setCategory(event.target.value)}
@@ -633,7 +633,7 @@ export function InstallView({
         <section className="install-github" data-testid="install-github-form">
           <div className="install-urlrow">
             <input
-              className="skm-input"
+              className="field"
               value={input}
               placeholder="https://github.com/owner/repo 或 owner/repo"
               spellCheck={false}
