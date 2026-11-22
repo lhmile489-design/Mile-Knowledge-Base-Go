@@ -55,7 +55,7 @@
 | T04 | 登记服务 | `internal/service/skills_targets.go`（新）、`skills_panel.go`、`skills_dialog_*`、`skills/sources.go`、transport | T03 | 列出 / 选目录（令牌，10 分钟）/ 保存 / 移除 / 打开目录；M76 与 M77 并入登记、路径脱敏；保存与移除后清扫描缓存，前端轮询刷新（不依赖后台 E12，见 1.3.1 结论）；`mygo generate` | 已验证 |
 | T05 | 写操作目标扩展 | `skills_distribute.go`、`skills_uninstall.go`、`skills_install_exec.go`、`skills_targets.go`（解析）、测试 | T04 | wire spec 新增 `project:<dir>:<rel>`；分发 / 卸载 / 收编 / 安装 / 更新都能解析新目标；目录不存在时写操作拒绝；内置保护与覆盖备份规则不变 | 已验证 |
 | T06 | 移除登记的清理 | `skills_targets.go`、`state.go`、`sources.go`、`skills_panel.go`、测试 | T05 | 按 Q-M6-3：删分发记录与 B 区来源记录，写 `unregister` 日志，目录文件字节不变；与写操作串行（`opMu`）；重新登记后残留的拷贝能被扫描再识别 | 已验证 |
-| T07 | 目录管理子视图 | `src/components/skills/TargetsView.tsx`（新）、transport、store | T04 | 列表（名称、脱敏路径、技能数、类型）；新增自定义 / 项目（选目录、名称、项目安装子目录）；编辑；移除确认写明「文件不会删除」；校验错误就地显示；输入框用 `.field` | 待做 |
+| T07 | 目录管理子视图 | `src/components/skills/TargetsView.tsx`（新）、`SkillsPanel.tsx`、`ToolSkillsPage.tsx`、`skills-panel.css`、测试 | T04 | 列表（名称、脱敏路径、技能数、类型、目录不存在）；新增自定义 / 项目（选目录、名称、项目安装子目录）；编辑；移除确认写明「文件不会删除」；校验错误就地显示；输入框用 `.field` | 已验证 |
 | T08 | 工具页与目标格 | `ToolSkillsPage`、`DistributeDialog`、`InstallView`、`ToolUpdateDialog` | T05、T07 | 自定义工具出现在 chip 与目标格；项目分组按子目录显示工具图标；分发与安装目标格出现项目（按 Q-M6-1） | 待做 |
 | T09 | e2e 验收 | `scripts/e2e/ac-m6.sh`（新）、`scripts/test-e2e.sh` | T05–T08 | AC-SKM-17、18；重叠与知识库内路径拒绝；移除登记后文件仍在；真实工具目录零写入；全量回归通过 | 待做 |
 | T10 | 视觉对照 | `design/r2/shots-m6/`、`scripts/visual/capture-m6.py`（新） | T08 | 目录管理与两个分组状态 × 浅 / 深真实截图；与原型差异记入 UI 稿；对比度复测 | 待做 |
