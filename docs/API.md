@@ -1126,7 +1126,7 @@ type PickTargetFolderResult = {
 - `kind` 创建后不可改；`installDir` 只能取该项目在 17.2 清单里的约定目录（缺省取第一个已存在的，都没有用 `.claude/skills`）→ 否则 `invalid-input`。
 - 前端传绝对路径一律 `invalid-input`（只收 token）。
 - 登记 id 出现在 M78–M83、M90、M91、M94、M96 的 `toolId` 或 wire spec 里时按登记解析；登记已移除 → `not-found`。
-- wire spec：自定义工具同内置（`install:<rel>`）；项目新增 `project:<dir>:<rel>`（`<dir>` 如 `.claude/skills`，`<rel>` 1–2 段、单段规则同 §12.3）。服务端按最长前缀匹配 `<dir>`，再校验 `<rel>`；分发 / 安装允许写到 `installDir`（不存在时按需创建），卸载 / 收编 / 更新只接受扫描里出现过的目录 → 其余 `invalid-input`。
+- wire spec：自定义工具同内置（`install:<rel>`）；项目新增 `project:<dir>:<rel>`（`install:<rel>` 对项目等价于 `project:<installRel>:<rel>`，为 M4 调用方的兼容口径）（`<dir>` 如 `.claude/skills`，`<rel>` 1–2 段、单段规则同 §12.3）。服务端按最长前缀匹配 `<dir>`，再校验 `<rel>`；分发 / 安装允许写到 `installDir`（不存在时按需创建），卸载 / 收编 / 更新只接受扫描里出现过的目录 → 其余 `invalid-input`。
 
 ### 14.4 事件与前端动作
 
