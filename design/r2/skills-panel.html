@@ -225,6 +225,21 @@
   .skm-diff .d .sz { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); }
   .skm-card .src { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-caption); color: var(--raw-faint); }
 
+  /* M6：管理目录 */
+  .skm-tgt { display: grid; }
+  .skm-tgt .r { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+    min-height: 44px; padding: 4px 8px; border-radius: 8px; font-size: var(--text-body-sm); }
+  .skm-tgt .r + .r { box-shadow: inset 0 1px 0 var(--skm-line); }
+  .skm-tgt .r:hover, .skm-tgt .r[data-hover] { background: var(--skm-surface); box-shadow: none; }
+  .skm-tgt .r:hover + .r, .skm-tgt .r[data-hover] + .r { box-shadow: none; }
+  .skm-tgt .r .nm { font-weight: 600; color: var(--raw-strong); }
+  .skm-tgt .r .path { display: block; margin-top: 1px; font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skm-tgt .r .stat { font-size: var(--text-meta); color: var(--raw-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .skm-tgt .r .ops { display: flex; gap: 2px; opacity: 0; }
+  .skm-tgt .r:hover .ops, .skm-tgt .r[data-hover] .ops { opacity: 1; }
+  .skm-errline { margin-top: 2px; font-size: var(--text-caption); color: var(--fault); }
+
   /* 原型导航：截图时用 ?shot=1 隐藏 */
   .proto-nav { position: fixed; right: 12px; bottom: 12px; z-index: 99; display: flex; flex-wrap: wrap; gap: 4px; max-width: 420px; padding: 8px;
     background: var(--raw-card); border: 1px solid var(--raw-line); border-radius: 10px; box-shadow: var(--shadow-float); font-size: 12px; }
@@ -260,6 +275,7 @@ const I = {
   restore: '<path d="M5 12a7 7 0 1 0 2.1-5"/><path d="M5 4.5V8h3.5"/>',
   github: '<path d="M9 19c-4 1.3-4-2-5.5-2.5M14.5 21v-3.4a3 3 0 0 0-.8-2.3c2.7-.3 5.5-1.3 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.3 4.3 0 0 0-.1-3.2s-1-.3-3.4 1.3a11.6 11.6 0 0 0-6 0C6 2.6 5 2.9 5 2.9a4.3 4.3 0 0 0-.1 3.2 4.6 4.6 0 0 0-1.3 3.2c0 4.6 2.8 5.7 5.5 6a3 3 0 0 0-.8 2.3V21"/>',
   zip: '<path d="M7 3.5h7l4.5 4.5v12a.5.5 0 0 1-.5.5H7a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M11 6h1M11 9h1M11 12h1M10.5 15h2v3h-2z"/>',
+  pencil: '<path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="m13.5 6.5 3 3"/>',
 };
 const ico = (n, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
 
@@ -604,6 +620,80 @@ function toolsUpdate() {
   </div></div>`;
 }
 
+/* ---------- M6：管理目录 ---------- */
+function manageHead(title, extra = '') {
+  return `<div class="skm-head"><button class="icon-button" aria-label="返回">${ico('back')}</button>
+      <div class="skm-sub"><span class="crumb">工具技能 /</span>${title}</div><span style="flex:1"></span>${extra}
+      <button class="icon-button" aria-label="关闭">${ico('x')}</button></div>`;
+}
+const TARGETS = [
+  ['custom', 'Droid Skills', 'D:\\…\\droid\\skills', '12 个技能', ''],
+  ['project', 'Mile KB Go', 'E:\\…\\Mile-Knowledge-Base-Go', '18 个技能 · 5 个子目录', ''],
+  ['project', 'acme-site', 'D:\\…\\acme-site', '0 个技能', 'missing'],
+];
+function tgtRow([kind, name, path, stat, flag], i, hover) {
+  return `<div class="r"${i === hover ? ' data-hover' : ''}>
+    ${pill(kind === 'custom' ? 'idle' : 'info', kind === 'custom' ? '自定义' : '项目')}
+    <span style="min-width:0"><span class="nm">${name}</span>${flag ? ' ' + pill('warn', '目录不存在') : ''}<span class="path">${path}</span></span>
+    <span style="display:flex;align-items:center;gap:10px;justify-self:end"><span class="stat">${stat}</span>
+      <span class="ops"><button class="icon-button" aria-label="编辑">${ico('pencil')}</button><button class="icon-button" aria-label="移除登记">${ico('trash')}</button></span></span>
+  </div>`;
+}
+function tgtList(hover = -1) {
+  return `<div class="skm-tgt">${TARGETS.map((t, i) => tgtRow(t, i, hover)).join('')}</div>`;
+}
+function targets() {
+  return manageHead('管理目录', `<button class="btn-quiet">${ico('plus')}新增自定义工具</button><button class="btn-quiet">${ico('plus')}登记项目</button>`) + `<div class="skm-body">
+      <div class="skm-label">已登记<span class="hint">1 个自定义工具 · 2 个项目</span></div>
+      ${tgtList(0)}
+      <div class="skm-note" data-tone="info">${ico('info')}<span>自定义工具与项目会和内置工具一样出现在「工具技能」里，扫描、分发、卸载的规则相同。</span></div>
+    </div>
+    <div class="skm-foot"><span>移除登记不会删除目录里的文件</span><span class="spacer"></span><span style="color:var(--raw-faint)">最多 100 个</span></div>`;
+}
+function targetsCustom() {
+  return manageHead('新增自定义工具') + `<div class="skm-body">
+      <div class="skm-label">名称</div>
+      <div class="skm-field"><div class="skm-input">Droid Skills</div><span style="font-size:var(--text-caption);color:var(--raw-faint)">1–40 个字符；不能和内置工具重名</span></div>
+      <div class="skm-label">目录<span class="hint">里面每个含 SKILL.md 的子目录就是一个技能</span></div>
+      <div class="skm-field">
+        <div class="skm-input" style="font-family:var(--font-mono);font-size:var(--text-meta)">E:\\…\\Mile-Knowledge-Base-Go\\.claude\\skills</div>
+        <div style="display:flex;gap:8px;align-items:center"><button class="btn-quiet">${ico('folder')}选择文件夹…</button><span style="font-size:var(--text-caption);color:var(--raw-faint)">只支持本机磁盘路径，不支持网络路径</span></div>
+        <div class="skm-errline">和已登记的项目「Mile KB Go」的安装子目录重叠</div>
+      </div>
+      <div class="skm-note">${ico('warn')}<span>登记的目录不能在知识库里面，也不能和内置工具目录、其他已登记目录互相包含。Agent 不能自己登记。</span></div>
+    </div>
+    <div class="skm-foot"><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">保存</button></div>`;
+}
+function targetsProject() {
+  return manageHead('登记项目') + `<div class="skm-body">
+      <div class="skm-label">名称</div>
+      <div class="skm-field"><div class="skm-input">acme-site</div></div>
+      <div class="skm-label">项目根目录</div>
+      <div class="skm-field">
+        <div class="skm-input" style="font-family:var(--font-mono);font-size:var(--text-meta)">D:\\…\\acme-site</div>
+        <div style="display:flex;gap:8px;align-items:center"><button class="btn-quiet">${ico('folder')}选择文件夹…</button><span style="font-size:var(--text-caption);color:var(--raw-faint)">已按这个目录检测到 3 个约定子目录</span></div>
+      </div>
+      <div class="skm-label">检测到的约定子目录<span class="hint">只扫描实际存在的这些</span></div>
+      <div class="skm-chips" style="padding:0;mask-image:none"><span class="skm-chip">${ico('folder')}.claude/skills<span class="n">12</span></span><span class="skm-chip">${ico('folder')}.agents/skills<span class="n">3</span></span><span class="skm-chip">${ico('folder')}.kiro/skills<span class="n">0</span></span></div>
+      <div class="skm-label">分发安装到<span class="hint">分发到这个项目的技能写进这里，之后可改</span></div>
+      <div class="segmented" role="radiogroup" aria-label="安装子目录"><button class="segmented-item" role="radio" aria-checked="true">.claude/skills</button><button class="segmented-item" role="radio" aria-checked="false">.agents/skills</button><button class="segmented-item" role="radio" aria-checked="false">.kiro/skills</button></div>
+      <div class="skm-note" data-tone="info">${ico('info')}<span>项目里只有这些子目录会被读取，其他文件一概不碰。分发规则与内置工具相同：联接优先，覆盖前先备份。</span></div>
+    </div>
+    <div class="skm-foot"><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">保存</button></div>`;
+}
+function targetsRemove() {
+  return manageHead('管理目录', `<button class="btn-quiet">${ico('plus')}新增自定义工具</button><button class="btn-quiet">${ico('plus')}登记项目</button>`) + `<div class="skm-body">
+      <div class="skm-label">已登记<span class="hint">1 个自定义工具 · 2 个项目</span></div>
+      ${tgtList(-1)}
+    </div>` + `
+  <div class="skm-scrim"><div class="skm-confirm" role="alertdialog" aria-label="移除登记">
+    <h3>移除登记「Droid Skills」</h3>
+    <div class="item">${ico('trash')}<span><b>3 条分发记录、1 条来源记录</b></span><span class="what">这些记录只用于在知识库技能卡片上显示「已分发」。知识库里的技能本身不受影响。</span></div>
+    <div class="item">${ico('folder')}<span><b>目录里的文件不会删除</b></span><span class="what"><code>D:\\…\\droid\\skills</code> 原样保留。重新登记同一目录后，留下的链接与拷贝会被重新识别。</span></div>
+    <div class="row"><button class="btn-quiet">取消</button><button class="btn-danger">${ico('trash')}移除登记</button></div>
+  </div></div>`;
+}
+
 /* ---------- 无知识库 ---------- */
 function novault() {
   return head('kb') + `<div class="skm-body"><div class="skm-empty"><div class="big">${ico('stack')}</div><h4>还没有打开知识库</h4><p>打开一个知识库后才能管理知识库技能。工具技能不依赖知识库，切到「工具技能」可以查看和卸载。</p><button class="btn-quiet">打开知识库…</button></div></div><div class="skm-foot"><span>检测到 18 个工具</span></div>`;
@@ -624,6 +714,10 @@ const STATES = {
   'kb-update': () => workbench(kbUpdate()),
   'update-preview': () => workbench(updatePreview()),
   'tools-update': () => workbench(toolsUpdate()),
+  targets: () => workbench(targets()),
+  'targets-custom': () => workbench(targetsCustom()),
+  'targets-project': () => workbench(targetsProject()),
+  'targets-remove': () => workbench(targetsRemove()),
   novault: () => workbench(novault(), true, 0),
   closed: () => workbench('', false, 2),
 };

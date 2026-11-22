@@ -944,7 +944,8 @@ type SkillOpItem = {
 };
 type SkillLogRecord = {
   id: string; at: string;
-  op: 'distribute' | 'uninstall' | 'overwrite' | 'adopt' | 'restore' | 'clean';
+  op: 'distribute' | 'uninstall' | 'overwrite' | 'adopt' | 'restore' | 'clean'
+    | 'install' | 'update' | 'unregister';   // install / update 见 §13（M5），unregister 见 §14（M6）
   skill: string; toolId?: string; location: string;
   mode?: 'link' | 'copy' | 'copy-adopt';
   result: 'ok' | 'partial' | 'failed';
@@ -1066,3 +1067,71 @@ type ImportFileAction = MutationAction & {
 
 - Go 单元测试：地址解析（3 种输入与非法输入）、假 GitHub（`httptest`）上的默认分支 / 提交 / 下载 / 404 / 额度 / 超时 / 跨主机重定向、恶意压缩包整包拒绝且无残留、候选定位（3 层、50 个上限、重复名、过大）、来源记录稳定序列化、更新判定 5 种状态、`importFile` 的 Agent 拒绝与哈希校验与事务恢复、M95 哈希不等不写记录。
 - e2e：AC-SKM-12–16，`SKILLS_FAKE_GITHUB` 指向本地假服务（只在 e2e 构建读取）。
+
+## 14. R2 增补：自定义目录与项目源（M6）
+
+> 状态：用户 2026-11-22 审核通过（随 PLAN-M6 v0.1 批准）。需求见 PRD 第 15 节 FR-SKM-CUSTOM / FR-SKM-PROJ；实现见技术设计第 17 节；存储见数据库设计 4.6 M6 增补；界面见 docs/UI设计稿.md 9.5 与 DESIGN.md 11.6。M4 / M5 的类型与方法不变，只做本节列出的增加。
+
+### 14.1 类型
+
+```ts
+type SkillTargetKind = 'custom' | 'project';
+
+type SkillTargetDir = { rel: string; exists: boolean; skills: number };   // 项目：约定子目录（rel 形如 '.claude/skills'）
+
+type SkillTarget = {
+  id: string;                     // t-<12 hex>
+  kind: SkillTargetKind;
+  name: string;                   // 1–40 字符，单段
+  path: string;                   // 脱敏：~ 前缀，或 <盘符>:\…\<最后 2 段>；不含绝对路径
+  installDir?: string;            // 只有 project：当前分发安装子目录（项目内相对）
+  exists: boolean;                // 登记目录当前是否存在
+  skillCount: number;             // 直接子目录里含 SKILL.md 的数量（快速统计）
+  dirs?: SkillTargetDir[];        // 只有 project：实际存在的约定子目录 + installDir（不存在时 exists=false、skills=0）
+  createdAt: string;
+};
+
+// §12.1 的 SkillTool 增加两个字段：
+//   kind: 'builtin' | 'custom' | 'project'
+//   missing?: boolean               // custom / project：登记目录已不存在
+// §12.1 的 ToolSkill 增加两个字段（只有项目分组会带）：
+//   sourceToolId?: string           // 该行所在子目录归属的工具（注册表 id，如 'agents'）
+//   subdir?: string                 // 项目内相对子目录，如 '.claude/skills'
+//   项目行的 base 为 'project:<dir>'（如 'project:.claude/skills'），完整 wire spec = base + ':' + rel
+// custom / project 的 SkillTool：status 一律 'detected'，目录不存在时 missing=true（分组照常显示、行数为 0）
+
+type PickTargetFolderResult = {
+  cancelled: boolean;
+  token?: string;                 // 10 分钟、可重复使用到过期或保存成功；前端拿不到绝对路径
+  displayName?: string;           // 文件夹名，用于表单回填
+  path?: string;                  // 脱敏路径，只用于显示
+  dirs?: { rel: string; skills: number }[];  // 选中的目录里已存在的约定子目录（登记项目时用来默认 installDir）
+};
+```
+
+### 14.2 方法
+
+| 方法 | 入参 | 出参 | 说明 |
+| --- | --- | --- | --- |
+| M97 `listTargets` | — | `{items: SkillTarget[]}` | 全部登记（自定义在前、项目在后，按创建时间）；`skillCount` 为快速统计，不写盘 |
+| M98 `pickTargetFolder` | — | `PickTargetFolderResult` | 原生对话框选一个目录；Go 侧登记令牌（10 分钟）。取消返回 `cancelled`。不写盘 |
+| M99 `saveTarget` | `{id?, kind, name, token?, installDir?}` | `{target: SkillTarget}` | 新建（无 `id`，必须带 `token`）或编辑（`id`；`token` 省略表示不改目录，`installDir` 只有 project）。服务端重新校验名称、路径与 overlaps；成功后清扫描缓存 |
+| M100 `removeTarget` | `{id}` | `{removed: true, distributionsRemoved: number, sourcesRemoved: number}` | 只删登记与指向它的分发 / 来源记录，目录里的文件不动（技术设计 17.6、AC-SKM-17）；记 `unregister` 日志；清扫描缓存 |
+| M101 `revealTarget` | `{id}` | `Failure` | 在资源管理器打开登记目录；只读；目录不存在返回 `not-found` |
+
+### 14.3 校验与错误
+
+- 名称、路径、overlaps、数量上限按技术设计 17.3：`invalid-input`（格式 / 不存在 / 非目录 / 是重解析点 / 上限）、`path-escape`（在知识库内）、`skill-conflict`（与内置目录或另一登记重叠，detail 写冲突对象）；token 过期或未知 → `not-found`（提示重新选择目录）；编辑 / 移除 / 打开未知 `id` → `not-found`。
+- `kind` 创建后不可改；`installDir` 只能取该项目在 17.2 清单里的约定目录（缺省取第一个已存在的，都没有用 `.claude/skills`）→ 否则 `invalid-input`。
+- 前端传绝对路径一律 `invalid-input`（只收 token）。
+- 登记 id 出现在 M78–M83、M90、M91、M94、M96 的 `toolId` 或 wire spec 里时按登记解析；登记已移除 → `not-found`。
+- wire spec：自定义工具同内置（`install:<rel>`）；项目新增 `project:<dir>:<rel>`（`<dir>` 如 `.claude/skills`，`<rel>` 1–2 段、单段规则同 §12.3）。服务端按最长前缀匹配 `<dir>`，再校验 `<rel>`；分发 / 安装允许写到 `installDir`（不存在时按需创建），卸载 / 收编 / 更新只接受扫描里出现过的目录 → 其余 `invalid-input`。
+
+### 14.4 事件与前端动作
+
+不新增事件。保存 / 移除后清扫描缓存；前端随后调 M77（`scanning` 轮询沿用 1.3.1 的机制）刷新工具页、chip 与目标格。E12 `skills-changed` 照常发，但不作为唯一刷新路径。
+
+### 14.5 验证
+
+- Go 单测：技术设计 17.9 的清单；M97 的脱敏路径不含 `%USERPROFILE%` 字面；M99 编辑不改 `createdAt`；M100 后 `state.json` / `sources.json` 无该 id 的记录且目录字节不变。
+- e2e：AC-SKM-17、18；重叠与知识库内路径拒绝；真实工具目录零写入（`scripts/e2e/ac-m6.sh`）。
