@@ -19,6 +19,7 @@ vi.mock("../../lib/transport", () => {
       updatePreview: (...args: unknown[]) => updatePreview(...args),
       discardStage: (...args: unknown[]) => discardStage(...args),
       confirmKbUpdate: (...args: unknown[]) => confirmKbUpdate(...args),
+      restorePreview: vi.fn().mockResolvedValue({ preview: { status: "missing", items: [], pending: 0, localOnly: [], unmatched: [], warnings: [], canRebuild: true } }),
     },
     settingsApi: { patch: vi.fn(), get: vi.fn() },
     vaultApi: { list: vi.fn(), choose: vi.fn() },

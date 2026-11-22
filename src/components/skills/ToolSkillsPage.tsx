@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Archive, ArrowClockwise, FolderOpen, Tray } from "@phosphor-icons/react";
-import { skillsApi, type SkillTool, type SkillToolScan, type ToolSkill } from "../../lib/transport";
+import { skillsApi, type SkillRestorePreview, type SkillTool, type SkillToolScan, type ToolSkill } from "../../lib/transport";
 import { remotePill, sourceOf } from "../../lib/skillRemote";
 import { ToolIcon } from "./ToolIcon";
 import { UninstallDialog } from "./UninstallDialog";
@@ -39,6 +39,7 @@ export function ToolSkillsPage({
   onChanged,
   onResult,
   onManageTargets,
+  onOpenRestore,
 }: {
   readonly vaultId: string;
   readonly groups: SkillToolScan[];
@@ -46,12 +47,68 @@ export function ToolSkillsPage({
   readonly onChanged: () => void;
   readonly onResult?: (lines: string[]) => void;
   readonly onManageTargets?: () => void;
+  readonly onOpenRestore?: () => void;
 }) {
   const [chip, setChip] = useState("all");
   const [showHidden, setShowHidden] = useState(false);
   const [uninstall, setUninstall] = useState<ToolSkill | null>(null);
   const [adopt, setAdopt] = useState<ToolSkill | null>(null);
   const [updating, setUpdating] = useState<ToolSkill | null>(null);
+  const [restore, setRestore] = useState<SkillRestorePreview | null>(null);
+
+  // The manifest banner (UI 稿 9.6): pending items or an unreadable file.
+  useEffect(() => {
+    if (!vaultId) {
+      setRestore(null);
+      return;
+    }
+    let alive = true;
+    void skillsApi
+      .restorePreview(vaultId)
+      .then((value) => {
+        if (alive) setRestore(value.preview ?? null);
+      })
+      .catch(() => {
+        if (alive) setRestore(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [vaultId]);
+
+  const restoreBanner = (() => {
+    if (!restore || !onOpenRestore) return null;
+    if (restore.status === "ok" && restore.pending > 0) {
+      return (
+        <div className="restore-banner" data-testid="restore-banner">
+          <span className="restore-banner-text">知识库清单里有 {restore.pending} 项尚未在本机还原</span>
+          <span className="spacer" />
+          <button type="button" className="btn-quiet" onClick={() => onOpenRestore()} data-testid="restore-banner-open">
+            查看并还原
+          </button>
+        </div>
+      );
+    }
+    if (restore.status === "unreadable" || restore.status === "too-large") {
+      return (
+        <div className="restore-banner" data-tone="warn" data-testid="restore-banner">
+          <span className="restore-banner-text">分发清单无法读取，之后的分发不会写入清单</span>
+          <span className="spacer" />
+          <button type="button" className="btn-quiet" onClick={() => onOpenRestore()} data-testid="restore-banner-open">
+            用本机记录重建
+          </button>
+        </div>
+      );
+    }
+    if (restore.status === "version-unknown") {
+      return (
+        <div className="restore-banner" data-tone="warn" data-testid="restore-banner">
+          <span className="restore-banner-text">分发清单来自更新版本的应用，请升级后再还原</span>
+        </div>
+      );
+    }
+    return null;
+  })();
 
   const countOf = (id: string) => groups.find((group) => group.toolId === id)?.skills.length ?? 0;
   const visible = (tool: SkillTool) => {
@@ -108,6 +165,7 @@ export function ToolSkillsPage({
 
   return (
     <div className="tool-skills">
+      {restoreBanner}
       <div className="targets-toolbar" data-testid="tool-manage-row">
         <span className="tool-chip-count" data-testid="tool-manage-count">
           自定义 {tools.filter((tool) => tool.kind === "custom").length} · 项目{" "}

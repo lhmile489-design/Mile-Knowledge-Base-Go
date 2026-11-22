@@ -84,6 +84,15 @@ import {
   type SkillSaveTargetInput,
   type SkillSaveTargetResult,
   type SkillRemoveTargetResult,
+  type SkillManifestTarget,
+  type SkillRestoreItem,
+  type SkillRestoreLocal,
+  type SkillRestorePreview,
+  type SkillRestorePreviewResult,
+  type SkillRestoreSelection,
+  type SkillRestoreOpItem,
+  type SkillManifestRestoreResult,
+  type SkillRebuildResult,
 } from "../mygo";
 
 export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
@@ -93,6 +102,7 @@ export type { SkillStageResult, SkillStage, SkillStageCandidate, SkillStageSkip,
 export type { SkillStageProgressEvent, SkillInstallTarget, SkillUpdateCheckResult };
 export type { SkillUpdateTarget, SkillUpdatePreviewResult, SkillUpdateFile, SkillConfirmUpdateResult };
 export type { SkillTarget, SkillTargetDir, SkillTargetsResult, PickTargetFolderResult, SkillSaveTargetInput, SkillSaveTargetResult, SkillRemoveTargetResult };
+export type { SkillManifestTarget, SkillRestoreItem, SkillRestoreLocal, SkillRestorePreview, SkillRestorePreviewResult, SkillRestoreSelection, SkillRestoreOpItem, SkillManifestRestoreResult, SkillRebuildResult };
 
 export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
@@ -192,6 +202,18 @@ export const skillsApi = {
   saveTarget: (input: SkillSaveTargetInput) => guard(async () => unwrap(await SkillService.saveTarget(input))),
   removeTarget: (id: string) => guard(async () => unwrap(await SkillService.removeTarget(id))),
   revealTarget: (id: string) => guard(async () => SkillService.revealTarget(id)),
+  restorePreview: (vaultId: string) => guard(async () => unwrap(await SkillService.restorePreview(vaultId))),
+  restoreManifest: (vaultId: string, selections: SkillRestoreSelection[], requestId: string, signal?: AbortSignal) =>
+    guard(async () =>
+      unwrap(
+        await (signal ? SkillService.restoreManifest.with({ signal }) : SkillService.restoreManifest)(
+          vaultId,
+          selections,
+          requestId,
+        ),
+      ),
+    ),
+  rebuildManifest: (vaultId: string) => guard(async () => unwrap(await SkillService.rebuildManifest(vaultId))),
 };
 
 export const vaultApi = {

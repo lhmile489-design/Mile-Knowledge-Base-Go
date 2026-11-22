@@ -9,6 +9,7 @@ const distribute = vi.fn();
 const updatePreview = vi.fn();
 const updateTool = vi.fn();
 const discardStage = vi.fn();
+const restorePreview = vi.fn();
 
 vi.mock("../../lib/transport", () => {
   class TransportError extends Error {}
@@ -23,6 +24,7 @@ vi.mock("../../lib/transport", () => {
       updatePreview: (...args: unknown[]) => updatePreview(...args),
       updateTool: (...args: unknown[]) => updateTool(...args),
       discardStage: (...args: unknown[]) => discardStage(...args),
+      restorePreview: (...args: unknown[]) => restorePreview(...args),
     },
     settingsApi: { patch: vi.fn(), get: vi.fn() },
     vaultApi: { list: vi.fn() },
@@ -60,7 +62,8 @@ const groups = [
 ];
 
 beforeEach(() => {
-  for (const fn of [uninstallPreview, uninstall, adopt, reveal, distribute, updatePreview, updateTool, discardStage]) fn.mockReset();
+  for (const fn of [uninstallPreview, uninstall, adopt, reveal, distribute, updatePreview, updateTool, discardStage, restorePreview]) fn.mockReset();
+  restorePreview.mockResolvedValue({ preview: { status: "missing", items: [], pending: 0, localOnly: [], unmatched: [], warnings: [], canRebuild: true } });
   uninstallPreview.mockResolvedValue({ preview: { kind: "link", target: "<vault>/skills/后端/go" } });
   uninstall.mockResolvedValue({ items: [{ targetId: "agents", toolId: "agents", result: "removed" }] });
   adopt.mockResolvedValue({ vaultPath: "skills/分类/builtin-one", linked: false, warnings: [] });
@@ -265,5 +268,31 @@ describe("ToolSkillsPage M6 targets", () => {
     expect(icon?.getAttribute("title")).toBe("Claude Code · .claude/skills");
     fireEvent.click(screen.getByTestId("tool-uninstall-pdf-t-222222222222"));
     expect(uninstallPreview).toHaveBeenCalledWith("t-222222222222", "project:.claude/skills:pdf");
+  });
+});
+
+describe("ToolSkillsPage manifest banner (M7)", () => {
+  it("shows the pending count and opens the restore view", async () => {
+    restorePreview.mockResolvedValue({
+      preview: { status: "ok", items: [], pending: 3, localOnly: [], unmatched: [], warnings: [], canRebuild: true },
+    });
+    const onOpenRestore = vi.fn();
+    render(
+      <ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={() => {}} onOpenRestore={onOpenRestore} />,
+    );
+    await waitFor(() => expect(screen.getByTestId("restore-banner").textContent).toContain("3 项尚未在本机还原"));
+    fireEvent.click(screen.getByTestId("restore-banner-open"));
+    expect(onOpenRestore).toHaveBeenCalled();
+  });
+
+  it("shows the unreadable warning instead of the count", async () => {
+    restorePreview.mockResolvedValue({
+      preview: { status: "unreadable", items: [], pending: 0, localOnly: [], unmatched: [], warnings: [], canRebuild: true },
+    });
+    render(
+      <ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={() => {}} onOpenRestore={vi.fn()} />,
+    );
+    await waitFor(() => expect(screen.getByTestId("restore-banner").textContent).toContain("无法读取"));
+    expect(screen.getByTestId("restore-banner").getAttribute("data-tone")).toBe("warn");
   });
 });

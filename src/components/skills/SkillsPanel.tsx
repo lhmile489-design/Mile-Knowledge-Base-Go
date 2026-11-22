@@ -15,6 +15,7 @@ import { ToolSkillsPage } from "./ToolSkillsPage";
 import { InstallView } from "./InstallView";
 import { UpdateView } from "./UpdateView";
 import { TargetsView } from "./TargetsView";
+import { RestoreView } from "./RestoreView";
 
 type Page = "kb" | "tools";
 
@@ -44,6 +45,7 @@ export function SkillsPanel() {
   const [updatePath, setUpdatePath] = useState<string | null>(null);
   const [updateInfo, setUpdateInfo] = useState<SkillUpdateCheckResult | null>(null);
   const [targetsOpen, setTargetsOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
   const targetsRequest = useAppStore((state) => state.targetsRequest);
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
   const [resultLines, setResultLines] = useState<string[] | null>(null);
@@ -174,7 +176,7 @@ export function SkillsPanel() {
         // A subview (distribute/uninstall/adopt/wizard) handles its own Esc.
         if (
           document.querySelector(
-            '[data-testid="distribute-dialog"], [data-testid="uninstall-dialog"], [data-testid="adopt-dialog"], [data-testid="skill-wizard"], [data-testid="targets-view"]',
+            '[data-testid="distribute-dialog"], [data-testid="uninstall-dialog"], [data-testid="adopt-dialog"], [data-testid="skill-wizard"], [data-testid="targets-view"], [data-testid="restore-view"]',
           )
         ) {
           return;
@@ -311,6 +313,15 @@ export function SkillsPanel() {
                 setUpdatePath(null);
               }}
             />
+          ) : restoreOpen && vaultId ? (
+            <RestoreView
+              vaultId={vaultId}
+              onBack={() => setRestoreOpen(false)}
+              onChanged={() => {
+                if (vaultId) void useSkillsStore.getState().refresh(vaultId);
+              }}
+              onResult={(lines) => setResultLines(lines)}
+            />
           ) : targetsOpen ? (
             <TargetsView
               vaultId={vaultId}
@@ -378,7 +389,14 @@ export function SkillsPanel() {
               onManageTargets={() => {
                 setInstallOpen(false);
                 setUpdatePath(null);
+                setRestoreOpen(false);
                 setTargetsOpen(true);
+              }}
+              onOpenRestore={() => {
+                setInstallOpen(false);
+                setUpdatePath(null);
+                setTargetsOpen(false);
+                setRestoreOpen(true);
               }}
             />
           )}
