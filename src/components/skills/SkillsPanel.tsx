@@ -81,6 +81,7 @@ export function SkillsPanel() {
     setPage("tools");
     setInstallOpen(false);
     setUpdatePath(null);
+    setRestoreOpen(false);
     setTargetsOpen(true);
   }, [targetsRequest]);
 
@@ -276,6 +277,7 @@ export function SkillsPanel() {
               setDistributePaths(null);
               setUpdatePath(null);
               setTargetsOpen(false);
+              setRestoreOpen(false);
               setInstallOpen(true);
             }}
           >

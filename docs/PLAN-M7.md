@@ -42,6 +42,7 @@
 | B-M7-01 | 版本与安装 | (a) 完成后发 **1.5.0**，打本地安装包并做 1.4.0 → 1.5.0 升级冒烟（安装前单独确认）；(b) 只构建不安装 | (a) |
 | B-M7-02 | 整体审查方式 | (a) task-reviewer 独立审查，重点看清单的不可信输入校验、写入点与还原复核；(b) 自审 | (a) |
 | B-M7-03 | 真实两台机器的人工测试 | (a) 你有第二台电脑时，在 T11 后亲测（我给出步骤，不由我执行）；(b) 只用 e2e 的两套临时环境模拟 | (b) 作为门禁，(a) 作为可选亲测 |
+| Q-M7-6 | 装进工具时，安装结果行显示工具 id（`claude-code → Claude Code：已安装`）而不是技能名；M5 遗留，T07 的 e2e 先按行为断言、不固化文案 | (a) 现在修：`SkillOpItem` 增加可选 `name`，服务端装进工具时填候选名，前端优先用它（约 3 处）；(b) 记录后放到 T10/T12 审查或后续里程碑 | (a)：纯显示问题、改动小、不涉及行为 | 待用户决定 |
 
 ## 3. 任务清单
 
@@ -56,7 +57,7 @@
 | T04 | 还原执行 | `skills_restore.go`（M103）、测试（GitHub 用 M5 测试替身） | T03 | 锁内复核（清单变化、已一致、未勾覆盖 → `skipped`）；知识库项链接 / 拷贝 / 联接失败退回拷贝；GitHub 项按 `owner/repo/commit` 分组下载一次、写来源记录；冲突覆盖先备份；取消保留已完成项；日志按 Q-M7-4；清扫描缓存 | 已验证 |
 | T05 | 重建清单 | `skills_restore.go`（M104）、`manifest.go`、测试 | T04 | 由本机记录重写；登记已移除的记录跳过并计数；原文件改名 `.corrupt-<时间>`，改名失败不写；`version-unknown` 拒绝 | 已验证 |
 | T06 | 前端 | `src/lib/transport.ts`、`src/components/skills/RestoreView.tsx`（新）、`ToolSkillsPage.tsx`、`SkillsPanel.tsx`、`skills-panel.css`、测试 | T05 | 横幅两种形态；预览分组、勾选规则、「需要联网」、本机有清单没有；进度与取消；结果；重建确认；Esc 分层返回；执行后主动重拉 M77 与 M102 | 已验证 |
-| T07 | e2e 验收 | `scripts/e2e/ac-m7.sh`（新）、`scripts/test-e2e.sh`（自动收录） | T06 | AC-SKM-20–25；两套临时 APPDATA + 假 HOME；本地假 GitHub；真实工具目录零写入；全量 e2e 回归通过 | 待做 |
+| T07 | e2e 验收 | `scripts/e2e/ac-m7.sh`（新）、`scripts/test-e2e.sh`（自动收录） | T06 | AC-SKM-20–25；两套临时 APPDATA + 假 HOME；本地假 GitHub；真实工具目录零写入；全量 e2e 回归通过 | 已验证 |
 | T08 | 视觉对照 | `design/r2/shots-m7/`、`scripts/visual/capture-m7.py`（新）、UI 稿 9.6.1、DESIGN 11.7 | T06 | 5 状态 × 浅 / 深真实截图替换原型；差异记入 UI 稿；对比度复测 | 待做 |
 | T09 | 性能 | `scripts/e2e/perf-m7.sh`（新）、`scripts/perf-gate.py`（`kind=m7`） | T07 | 按 Q-M7-3 的门槛实测通过；M6 的 `kind=m6` 不退化 | 待做 |
 | T10 | 整体审查（按 B-M7-02） | 审查报告、本计划、受影响代码与测试 | T09 | 阻断 0，需改项已修或经用户接受 | 待做 |
@@ -129,6 +130,7 @@ GitHub 项受网络影响，不设门槛，只记实测。实测后按 G-PERF �
 | 2026-11-22 | T04 | `skills_restore.go` 增加 M103 `RestoreManifest`（Go 侧改名规避 M83 的 `Restore`，API §15 已注明）：`opMu` 内重读清单并重判、按选择顺序逐项执行；知识库项按清单方式分发（冲突只在勾选覆盖时先备份），成功写 `state.json`；GitHub 项按 owner/repo/ref/commit 分组共用一次下载（E13 进度、可取消），解包后按拷贝安装并写来源记录；已一致 / 清单变化 / 未勾覆盖 / 已取消逐项写明；有成功项时清扫描缓存并发 E12；日志沿用 `distribute` / `install`，detail 写「从清单还原」；`skills_restore_exec_test.go` 4 个测试（链接与冲突覆盖、同组只下一次、取消与未知 id、坏清单拒绝）；顺带修掉 T03 误带入 `internal/settings/accent_test.go` 的一行空白 | `43b2b3a`（本地，未推送） | `go test ./...` 710 项全过；Vitest 272、`tsc` 通过；`gofmt` / `go vet` 干净 | 待放行 T05 |
 | 2026-11-22 | T05 | `skills_restore.go` 增加 M104 `RebuildManifest`：按本机工具来源记录（目标目录仍在）+ 当前知识库的分发记录重建；登记已移除 / 目录已消失 / 目标无法映射的项跳过并计数；原文件先改名为 `skill-distributions.json.corrupt-<UTC 时间>`（改名失败则不写并报 `io-failure`），`version-unknown` 拒绝重建；成功后清 stale 标志；`skills_restore_rebuild_test.go` 3 个测试；技术设计 18.6 的写入口径改为「整体校验、任一条不合法拒绝写入」与 T01 实现对齐 | `8c54272`（本地，未推送） | `go test ./...` 713 项全过；Vitest 272、`tsc` 通过；`gofmt` / `go vet` 干净；future-version 清单字节不变 | 待放行 T06 |
 | 2026-11-22 | T06 | `transport.ts` 增加 M102–M104 包装；`RestoreView.tsx`（新）：四组列表、默认勾选、冲突勾选后才覆盖、需要联网胶囊、执行进度（E13 同 requestId）与取消（AbortSignal）、结果页与未匹配提示、本机有清单没有折叠、重建确认与 `onResult` 提示；`ToolSkillsPage` 顶部三种横幅（待还原 / 无法读取 / 更新版本）与打开入口；`SkillsPanel` 子视图接线、Esc 过滤加入 `restore-view`；`skills-panel.css` 新增 `.restore-*`；测试：`RestoreView.test.tsx` 4 个、多个横幅 2 个，`ToolSkillsPage.test.tsx` 与 `SkillsPanel.test.tsx` 的 transport mock 补齐 | `a5ffd7e`（本地，未推送） | Vitest 40 文件 / 278 项全过；`tsc --noEmit` 与 `build:web` 通过；Go 713 项全过 | 待放行 T07 |
+| 2026-11-22 | T07 | `scripts/e2e/ac-m7.sh`（新，66 项断言）：两台机器=两套临时 APPDATA + 假 HOME，知识库含清单复制给 B；A 登记自定义与项目、分联接 / 拷贝、GitHub 直装 pdf；清单断言 4 项、含项目子目录与 GitHub 项、不含工作目录 / 用户名 / `t-` / 反斜杠路径；B 横幅 3 项、四组状态、默认选中与「1 项需要联网」、首轮还原（冲突不动、Droid 未匹配、GitHub 项联网装好、清单字节不变）、勾选冲突覆盖带备份、清单损坏后重建与 `.corrupt-*` 副本、pdf 保留 GitHub 来源、真实 `.claude/skills` / `.agents` 前后不变；`scripts/test-e2e.sh` 自动收录 | 待填 | ac-m7 66/66；全量 e2e 363 项（15/16/22/47/37/60/54/46/66）EXIT=0；中途三次修正均为脚本夹具与断言（A 机假 HOME 缺 Claude Code 探测标记；M103 只回报请求执行的项，跳过项不在结果列表；安装结果行文案），并新增 Q-M7-6 记录 M5 遗留的显示缺陷 | 待放行 T08 |
 
 ## 9. 自查
 
