@@ -50,7 +50,7 @@
 | 编号 | 目标 | 修改范围 | 依赖 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | T00 | 原型与契约落盘 | 原型 5 状态与 10 张截图（按 Q-M7-5，`design/r2/shots-m7/`、`scripts/visual/capture-proto-m7.py`）；`internal/contract` 新类型与 M102–M104 签名；`mygo generate` | 用户批准本计划 | 原型截图经用户审核；contract 与绑定生成通过；既有测试不退化 | 待验证（原型 10 张与契约已落盘，等用户审核） |
-| T01 | 清单存储 | `internal/skills/manifest.go`（新）、`manifest_test.go` | T00 | 5 种读入状态；逐字段校验（技术设计 18.7）；upsert / 删除按「目标键 + 名称」不区分大小写；稳定排序与序列化；2000 项上限；序列化结果不含绝对路径与用户名（测试断言） | 待做 |
+| T01 | 清单存储 | `internal/skills/manifest.go`（新）、`manifest_test.go` | T00 | 5 种读入状态；逐字段校验（技术设计 18.7）；upsert / 删除按「目标键 + 名称」不区分大小写；稳定排序与序列化；2000 项上限；序列化结果不含绝对路径与用户名（测试断言） | 已验证 |
 | T02 | 清单写入钩子 | `internal/service/skills_manifest.go`（新）、`skills_{distribute,uninstall,install_exec,update_exec,adopt}.go`、测试 | T01 | 18.3 每个写入点：成功写、失败不写；目标键从登记表生成（项目用实际子目录）；清单 `unreadable` 时不写但操作成功；`vaultId` 为空或没有打开的知识库时不写；Q-M7-1、Q-M7-2 按批准执行 | 待做 |
 | T03 | 还原判定与预览 | `internal/skills/restore.go`（新）、`internal/service/skills_restore.go`（新，M102）、测试 | T02 | 18.5 判定表逐行有测试；`pending`、`localOnly`、`unmatched`、`warnings` 正确；M102 不联网、不写盘、结果不含绝对路径 | 待做 |
 | T04 | 还原执行 | `skills_restore.go`（M103）、测试（GitHub 用 M5 测试替身） | T03 | 锁内复核（清单变化、已一致、未勾覆盖 → `skipped`）；知识库项链接 / 拷贝 / 联接失败退回拷贝；GitHub 项按 `owner/repo/commit` 分组下载一次、写来源记录；冲突覆盖先备份；取消保留已完成项；日志按 Q-M7-4；清扫描缓存 | 待做 |
@@ -123,6 +123,7 @@ GitHub 项受网络影响，不设门槛，只记实测。实测后按 G-PERF �
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-22 | 计划 | v0.1 草案；PRD v2.6（用户当天审核通过）；D-018；技术设计 §18、API §15、数据库设计 3.9 与 4.6 M7 增补、UI 稿 9.6、DESIGN 11.7 草稿；路线 3.9 | 未提交 | 文档 UTF-8 无 BOM；契约与现有代码核对（分发、卸载、安装、更新、来源记录、`Registry.Active()`、`SKILLS_FAKE_GITHUB`） | 用户 2026-11-22 按建议批准（含 Q-M7-1–5、B-M7-01–03），放行 T00 |
 | 2026-11-22 | T00 | 原型 5 状态（`skills-panel.html` 新增 `restore-*`）与 `capture-proto-m7.py`；10 张 1440×900 截图在 `design/r2/shots-m7/`；`internal/contract` 新增 `SkillManifestTarget` / `SkillRestoreItem` / `SkillRestorePreview` / `SkillRestoreSelection` 等 8 个类型，M103 的出参命名 `SkillManifestRestoreResult`（M83 已占用 `SkillRestoreResult`）；`bun run generate` 通过（方法未实现前绑定不出现，同 M6 T00 口径） | `3d02764`（本地，未推送） | 原型首轮两处布局问题已修（`tico('custom')` 抛错导致 5.7KB 空图；横幅挤占主体行）；UI 稿 9.6.1 记录 5 条实现细节；`go build` / `go vet` 通过 | 待用户审核原型与契约；T01 未放行 |
+| 2026-11-22 | T01 | `internal/skills/manifest.go`（新）：清单读入 5 种状态（missing / ok / unreadable / too-large / version-unknown）、单项逐字段校验（skillPath、name、target kind、工具 id、项目子目录、GitHub 字段、时间）、重复项保留最后并记 warning、2000 项上限、按目标键排序的稳定序列化（2 空格缩进、无 HTML 转义、结尾换行）、临时文件 + 原子替换；`SaveManifest` 写入前整体校验，任一条不合法即拒绝写入；`manifest_test.go` 11 个测试（含 28 个用例） | 待填 | `go test ./...` 692 项全过；`gofmt` / `go vet` 干净；序列化断言不含驱动器路径、用户名与 `t-` 登记 id | 待放行 T02 |
 
 ## 9. 自查
 
