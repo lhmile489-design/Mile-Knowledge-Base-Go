@@ -88,7 +88,8 @@
 | M3.5 视觉 | 6 预设 × 浅 / 深真实界面 13 张；技能浮层按橙 18 张 | `python -I scripts/visual/capture-new.py --accents`；`design/r2/shots/` | 已验证（见 docs/PLAN-M3.5.md §9） |
 | M4 性能 | 技能扫描 p95 与分发/卸载时延 | `bash scripts/e2e/perf-m4.sh`（假 HOME，700 条目） | 已验证：scan p95 123ms、op p95 30ms；`perf:gate --kind skills` 通过 |
 | M5 性能 | GitHub 50 MB 读取与 20 组更新检查 | `bash scripts/e2e/perf-m5.sh`（本地假 GitHub） | 已验证：50 MB 读取 p95 204ms、20 组检查 69ms；`perf:gate --kind m5` 通过 |
-| 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical\|big\|skills\|m5 --input <json>` | 已接入（阻断，正反对照通过） |
+| M6 性能 | 10 个项目扫描、登记保存与移除 | `bash scripts/e2e/perf-m6.sh`（假 HOME，10×5×20 个技能） | 已验证：M4 基准 114ms、项目扫描 p95 240ms、保存 22.7ms、移除 17.1ms；`perf:gate --kind m6` 通过 |
+| 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical\|big\|skills\|m5\|m6 --input <json>` | 已接入（阻断，正反对照通过） |
 | 旧版性能基线 | 只读运行旧版 Electron 测冷启动与检索 | `bash scripts/perf-legacy/bench.sh typical\|big` | 已验证（见 docs/PLAN-M3.md §6） |
 | 安装包 | 1.3.2 NSIS 安装包 | `bun run build`（产物 `build/windows-amd64/mile-knowledge-base-setup-1.3.2-amd64.exe`） | 本机 1.2.0 → 1.3.0、1.3.0 → 1.3.1 与 1.3.1 → 1.3.2 升级冒烟通过（设置逐字段保留；见 docs/发布清单.md 第 10–12 节） |
 | M2 冒烟 | Secrets 与系统代理能力 | `go run ./spikes/t00-smoke` | 已验证（Secrets 存取/超长拒绝/删除；netproxy 回环直连） |

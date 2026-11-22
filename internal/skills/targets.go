@@ -72,16 +72,19 @@ func LoadTargets(path string) TargetsLoad {
 		_ = os.Rename(path, path+".corrupt-"+time.Now().UTC().Format("20060102T150405"))
 		return result
 	}
+	keptDirs := make([][]string, 0, len(file.Targets))
 	for _, record := range file.Targets {
 		if !validTargetRecord(record) {
 			result.Warnings = append(result.Warnings, "丢弃一条不合法的登记："+record.ID)
 			continue
 		}
-		if conflictsTargets(record, result.Targets) {
+		dirs := targetDirsText(record)
+		if conflictsDirs(dirs, keptDirs) {
 			result.Warnings = append(result.Warnings, "丢弃一条与已有登记重叠的记录："+record.ID)
 			continue
 		}
 		result.Targets = append(result.Targets, record)
+		keptDirs = append(keptDirs, dirs)
 	}
 	return result
 }
@@ -159,33 +162,54 @@ func validTargetRecord(record Target) bool {
 	return err == nil
 }
 
-// conflictsTargets reports whether record overlaps a record already kept.
-func conflictsTargets(record Target, kept []Target) bool {
-	candidate := targetDirs(record)
-	for _, existing := range kept {
-		for _, dir := range candidate {
-			for _, other := range targetDirs(existing) {
-				if pathsOverlap(dir, other) {
+// targetDirsText is the comparable directory set of a target: the custom
+// directory itself, or a project's root plus its conventional subdirectories
+// (技术设计 17.3 rule 5). Only the root is canonicalized (one EvalSymlinks per
+// record); the subdirectories are clean joins, which keeps load-time overlap
+// checks linear instead of resolving every pair on disk.
+func targetDirsText(record Target) []string {
+	root := comparablePath(record.Path)
+	if record.Kind != TargetProject {
+		return []string{root}
+	}
+	dirs := []string{root}
+	for _, rel := range projectDirsForCheck(record) {
+		dirs = append(dirs, comparableJoin(root, rel))
+	}
+	return dirs
+}
+
+// targetDirsResolved resolves each existing directory once (Canon per dir), for
+// save-time checks where a junctioned subdirectory must not smuggle a vault or
+// built-in directory into the registration.
+func targetDirsResolved(record Target) []string {
+	if record.Kind != TargetProject {
+		return []string{comparablePath(record.Path)}
+	}
+	root := comparablePath(record.Path)
+	dirs := []string{root}
+	for _, rel := range projectDirsForCheck(record) {
+		dirs = append(dirs, comparablePath(filepath.Join(record.Path, filepath.FromSlash(rel))))
+	}
+	return dirs
+}
+
+func comparableJoin(root, rel string) string {
+	return strings.ToLower(filepath.Clean(filepath.Join(root, filepath.FromSlash(rel))))
+}
+
+// conflictsDirs reports whether any candidate directory overlaps a kept set.
+func conflictsDirs(candidate []string, kept [][]string) bool {
+	for _, dir := range candidate {
+		for _, set := range kept {
+			for _, other := range set {
+				if containsPath(dir, other) || containsPath(other, dir) {
 					return true
 				}
 			}
 		}
 	}
 	return false
-}
-
-// targetDirs is the set of directories a target reads or writes: the custom
-// directory itself, or a project's root plus its conventional subdirectories
-// (技术设计 17.3 rule 5).
-func targetDirs(record Target) []string {
-	if record.Kind != TargetProject {
-		return []string{record.Path}
-	}
-	dirs := []string{record.Path}
-	for _, rel := range projectDirsForCheck(record) {
-		dirs = append(dirs, filepath.Join(record.Path, filepath.FromSlash(rel)))
-	}
-	return dirs
 }
 
 // ProjectTargetDirs is the ordered directory list of a project registration:
@@ -274,24 +298,33 @@ func ValidateTargetPath(env TargetEnv, kind, path, installRel, exceptID string) 
 			subdirs = append(subdirs, filepath.Join(real, filepath.FromSlash(rel)))
 		}
 	}
-	vaultDirs := []string{real}
+	vaultDirs := []string{comparablePath(real)}
 	if kind == TargetProject {
-		vaultDirs = subdirs
+		vaultDirs = vaultDirs[:0]
+		for _, dir := range subdirs {
+			vaultDirs = append(vaultDirs, comparablePath(dir))
+		}
 	}
 	for _, vaultRoot := range env.VaultRoots {
+		root := comparablePath(vaultRoot)
 		for _, dir := range vaultDirs {
-			if pathsOverlap(dir, vaultRoot) {
+			if containsPath(dir, root) || containsPath(root, dir) {
 				return contract.Fail(contract.CodePathEscape, "目录与知识库重叠，不能登记")
 			}
 		}
 	}
 
 	// Rules 4 and 5 look at the project root too: a whole home directory as a
-	// project would otherwise overlap every built-in directory.
-	allDirs := append([]string{real}, subdirs...)
+	// project would otherwise overlap every built-in directory. Each existing
+	// directory is resolved once; the comparisons are plain text afterwards.
+	allDirs := make([]string, 0, 1+len(subdirs))
+	for _, dir := range append([]string{real}, subdirs...) {
+		allDirs = append(allDirs, comparablePath(dir))
+	}
 	for _, entry := range builtinDirs(env) {
+		builtin := comparablePath(entry.dir)
 		for _, dir := range allDirs {
-			if pathsOverlap(dir, entry.dir) {
+			if containsPath(dir, builtin) || containsPath(builtin, dir) {
 				return contract.Fail(contract.CodeSkillConflict, "与内置工具「"+entry.tool+"」的目录重叠")
 			}
 		}
@@ -303,9 +336,9 @@ func ValidateTargetPath(env TargetEnv, kind, path, installRel, exceptID string) 
 		if exceptID != "" && record.ID == exceptID {
 			continue
 		}
-		for _, dir := range allDirs {
-			for _, other := range targetDirs(record) {
-				if pathsOverlap(dir, other) {
+		for _, other := range targetDirsResolved(record) {
+			for _, dir := range allDirs {
+				if containsPath(dir, other) || containsPath(other, dir) {
 					return contract.Fail(contract.CodeSkillConflict, "与已登记的「"+record.Name+"」重叠")
 				}
 			}
@@ -400,14 +433,6 @@ func builtinDirs(env TargetEnv) []builtinDir {
 		}
 	}
 	return out
-}
-
-// pathsOverlap reports whether a and b are the same path or one contains the
-// other, case-insensitively (Windows), comparing real paths when they exist.
-func pathsOverlap(a, b string) bool {
-	left := comparablePath(a)
-	right := comparablePath(b)
-	return containsPath(left, right) || containsPath(right, left)
 }
 
 func comparablePath(path string) string {

@@ -29,6 +29,12 @@ TARGETS = {
         "read50P95Ms": 3000,
         "check20Ms": 2000,
     },
+    "m6": {
+        "scanBaseP95Ms": 200,
+        "scanProjectP95Ms": 300,
+        "targetSaveP95Ms": 100,
+        "targetRemoveP95Ms": 100,
+    },
 }
 
 LABELS = {
@@ -41,6 +47,10 @@ LABELS = {
     "opP95Ms": "技能操作 p95 ms",
     "read50P95Ms": "50 MB 包读取 p95 ms",
     "check20Ms": "20 组更新检查 ms",
+    "scanBaseP95Ms": "M4 基准扫描 p95 ms",
+    "scanProjectP95Ms": "10 个项目扫描 p95 ms",
+    "targetSaveP95Ms": "登记保存 p95 ms",
+    "targetRemoveP95Ms": "登记移除 p95 ms",
 }
 
 
