@@ -392,6 +392,12 @@ func (s *SkillService) UpdateTool(ctx context.Context, stageID string) contract.
 	record.InstalledAt = s.now().UTC().Format(time.RFC3339)
 	if f := skills.SaveToolSource(skillsDir, record); f != nil {
 		item.Detail = "已更新，但来源记录写入失败：" + f.Message
+	} else if target, ok := s.manifestTarget(record.ToolID, update.TargetPath); ok {
+		now := s.now()
+		s.updateManifest(s.app.Vaults.Active(), func(m *skills.Manifest) {
+			m.Upsert(manifestGitHubItem(target, name, record.Owner, record.Repo, record.Ref,
+				record.Path, record.Commit, record.PathCommit, now))
+		})
 	}
 	s.logOperation("update", name, record.ToolID, location, "copy", "ok", backup.ID, "")
 	_ = os.Remove(s.cachePath())

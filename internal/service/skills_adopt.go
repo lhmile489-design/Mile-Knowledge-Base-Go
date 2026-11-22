@@ -103,6 +103,10 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 	if result.BackupID != "" {
 		out.BackupIDs = append(out.BackupIDs, result.BackupID)
 	}
+	linkedTargets := make([]struct{ toolID, dir string }, 0, len(resolvedExtras)+1)
+	if result.Linked {
+		linkedTargets = append(linkedTargets, struct{ toolID, dir string }{tool.ID, sourceDir})
+	}
 	for _, other := range resolvedExtras {
 		if !linkBack {
 			continue
@@ -118,6 +122,20 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 			continue
 		}
 		out.BackupIDs = append(out.BackupIDs, meta.ID)
+		linkedTargets = append(linkedTargets, struct{ toolID, dir string }{other.toolID, other.dir})
+	}
+	if len(linkedTargets) > 0 {
+		skillPath := "skills/" + category + "/" + name
+		now := s.now()
+		s.updateManifest(vaultID, func(m *skills.Manifest) {
+			for _, linked := range linkedTargets {
+				target, ok := s.manifestTarget(linked.toolID, linked.dir)
+				if !ok {
+					continue
+				}
+				m.Upsert(manifestKBItem(target, name, skillPath, "link", now))
+			}
+		})
 	}
 	_ = os.Remove(s.cachePath())
 	s.emitChanged()

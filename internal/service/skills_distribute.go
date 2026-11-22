@@ -52,6 +52,18 @@ func (s *SkillService) Distribute(ctx context.Context, vaultID, skillPath string
 		// The next scan must see the new state instead of a stale cache.
 		_ = os.Remove(s.cachePath())
 		s.emitChanged()
+		if len(records) > 0 {
+			now := s.now()
+			s.updateManifest(vaultID, func(m *skills.Manifest) {
+				for _, record := range records {
+					target, ok := s.manifestTarget(record.ToolID, record.TargetPath)
+					if !ok {
+						continue
+					}
+					m.Upsert(manifestKBItem(target, record.Name, record.SkillPath, record.Mode, now))
+				}
+			})
+		}
 	}
 	return contract.SkillOpResult{Items: items}
 }

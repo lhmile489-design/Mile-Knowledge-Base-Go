@@ -241,6 +241,10 @@ func (s *SkillService) Uninstall(ctx context.Context, toolID, rel string) contra
 	if err := skills.SaveState(s.statePath(), *state); err != nil {
 		return contract.SkillOpResult{Items: []contract.SkillOpItem{item}, Failure: contract.Fail(contract.CodeIOFailure, "分发记录写入失败")}
 	}
+	if target, ok := s.manifestTarget(toolID, abs); ok {
+		name := filepath.Base(abs)
+		s.updateManifest(s.app.Vaults.Active(), func(m *skills.Manifest) { m.Remove(target, name) })
+	}
 	_ = os.Remove(s.cachePath())
 	s.emitChanged()
 	return contract.SkillOpResult{Items: []contract.SkillOpItem{item}}

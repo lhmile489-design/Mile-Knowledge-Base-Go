@@ -75,6 +75,7 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 	}
 	store := s.stageStore()
 	var items []contract.SkillOpItem
+	var manifestItems []skills.ManifestItem
 	success := false
 
 	switch target.Kind {
@@ -167,6 +168,13 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 				success = true
 				if stage.Meta.Origin != nil {
 					targetPath := filepath.Join(targets[index].InstallDir, candidate.Name)
+					if target, ok := s.manifestTarget(item.ToolID, targetPath); ok {
+						record := manifestGitHubItem(target, candidate.Name,
+							stage.Meta.Origin.Owner, stage.Meta.Origin.Repo, stage.Meta.Origin.Ref,
+							joinRepoPath(stage.Meta.Origin.Path, candidate.ID),
+							stage.Meta.Origin.Commit, stage.Meta.PathCommit, s.now())
+						manifestItems = append(manifestItems, record)
+					}
 					targetHash, err := skills.TreeHash(targetPath)
 					if err != nil || targetHash == "" {
 						targetHash = hash
@@ -192,6 +200,13 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 		_ = os.Remove(s.cachePath())
 		s.emitChanged()
 		_ = store.Discard(stageID)
+	}
+	if len(manifestItems) > 0 {
+		s.updateManifest(vaultID, func(m *skills.Manifest) {
+			for _, item := range manifestItems {
+				m.Upsert(item)
+			}
+		})
 	}
 	return contract.SkillOpResult{Items: items}
 }

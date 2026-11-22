@@ -41,6 +41,9 @@ type SkillService struct {
 	// opMu serializes write operations so a registration cannot be removed
 	// while a distribute/uninstall/install is in flight (技术设计 17.6).
 	opMu sync.Mutex
+	// manifestStale remembers a skipped vault-manifest write so M102 can
+	// report it (API §15.3); guarded by mu.
+	manifestStale bool
 }
 
 // NewSkillService wires the service; tests replace detector and now.
