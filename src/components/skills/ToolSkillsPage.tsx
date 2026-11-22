@@ -38,12 +38,14 @@ export function ToolSkillsPage({
   tools,
   onChanged,
   onResult,
+  onManageTargets,
 }: {
   readonly vaultId: string;
   readonly groups: SkillToolScan[];
   readonly tools: SkillTool[];
   readonly onChanged: () => void;
   readonly onResult?: (lines: string[]) => void;
+  readonly onManageTargets?: () => void;
 }) {
   const [chip, setChip] = useState("all");
   const [showHidden, setShowHidden] = useState(false);
@@ -99,6 +101,17 @@ export function ToolSkillsPage({
 
   return (
     <div className="tool-skills">
+      <div className="targets-toolbar" data-testid="tool-manage-row">
+        <span className="tool-chip-count" data-testid="tool-manage-count">
+          自定义 {tools.filter((tool) => tool.kind === "custom").length} · 项目{" "}
+          {tools.filter((tool) => tool.kind === "project").length}
+        </span>
+        <span className="spacer" />
+        <button type="button" className="btn-quiet" onClick={() => onManageTargets?.()} data-testid="manage-targets">
+          <FolderOpen size={13} aria-hidden />
+          管理目录
+        </button>
+      </div>
       <div className="tool-chips" role="tablist" aria-label="工具筛选">
         <button
           type="button"

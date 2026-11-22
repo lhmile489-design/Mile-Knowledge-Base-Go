@@ -1168,3 +1168,134 @@
   box-shadow: none;
   background: transparent;
 }
+
+/* ---------- 管理目录（M6 T07；UI 稿 9.5, DESIGN.md 11.6） ---------- */
+.targets-view {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.targets-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.targets-toolbar .spacer {
+  flex: 1;
+}
+
+.targets-rows {
+  display: grid;
+}
+
+.targets-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--raw-line);
+  font-size: var(--text-body-sm);
+}
+
+.targets-row:last-child {
+  border-bottom: 0;
+}
+
+.targets-row:hover,
+.targets-row:focus-within {
+  background: var(--raw-sunken);
+}
+
+.targets-main {
+  display: grid;
+  min-width: 0;
+}
+
+.targets-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--raw-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.targets-path {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.targets-stat {
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.targets-ops {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+}
+
+.targets-row:hover .targets-ops,
+.targets-row:focus-within .targets-ops {
+  opacity: 1;
+}
+
+.targets-form {
+  display: grid;
+  gap: 10px;
+}
+
+.targets-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.targets-chips,
+.targets-install {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.targets-chips .skm-chip {
+  cursor: default;
+}
+
+.targets-install .skm-chip {
+  cursor: pointer;
+}
+
+.targets-install .skm-chip[aria-checked='true'] {
+  border-color: var(--raw-accent);
+  background: var(--raw-accent-soft);
+  color: var(--raw-strong);
+  font-weight: 600;
+}
+
+.targets-empty {
+  padding: 18px;
+  border: 1px dashed var(--raw-line-strong);
+  border-radius: var(--radius-card);
+  color: var(--raw-muted);
+  font-size: var(--text-body-sm);
+  text-align: center;
+}
+
+.targets-empty p {
+  margin: 0;
+}

@@ -14,6 +14,7 @@ import { DistributeDialog } from "./DistributeDialog";
 import { ToolSkillsPage } from "./ToolSkillsPage";
 import { InstallView } from "./InstallView";
 import { UpdateView } from "./UpdateView";
+import { TargetsView } from "./TargetsView";
 
 type Page = "kb" | "tools";
 
@@ -42,6 +43,7 @@ export function SkillsPanel() {
   const [installOpen, setInstallOpen] = useState(false);
   const [updatePath, setUpdatePath] = useState<string | null>(null);
   const [updateInfo, setUpdateInfo] = useState<SkillUpdateCheckResult | null>(null);
+  const [targetsOpen, setTargetsOpen] = useState(false);
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
   const [resultLines, setResultLines] = useState<string[] | null>(null);
   const [box, setBox] = useState<{ right: number; width: number; height: number } | null>(null);
@@ -162,7 +164,7 @@ export function SkillsPanel() {
         // A subview (distribute/uninstall/adopt/wizard) handles its own Esc.
         if (
           document.querySelector(
-            '[data-testid="distribute-dialog"], [data-testid="uninstall-dialog"], [data-testid="adopt-dialog"], [data-testid="skill-wizard"]',
+            '[data-testid="distribute-dialog"], [data-testid="uninstall-dialog"], [data-testid="adopt-dialog"], [data-testid="skill-wizard"], [data-testid="targets-view"]',
           )
         ) {
           return;
@@ -236,6 +238,7 @@ export function SkillsPanel() {
                 onClick={() => {
                   setInstallOpen(false);
                   setUpdatePath(null);
+                  setTargetsOpen(false);
                   setPage(id);
                 }}
                 onKeyDown={(event) => {
@@ -260,6 +263,7 @@ export function SkillsPanel() {
             onClick={() => {
               setDistributePaths(null);
               setUpdatePath(null);
+              setTargetsOpen(false);
               setInstallOpen(true);
             }}
           >
@@ -296,6 +300,15 @@ export function SkillsPanel() {
                 useMutationStore.getState().propose(plan, `更新技能「${updateSkillName}」`);
                 setUpdatePath(null);
               }}
+            />
+          ) : targetsOpen ? (
+            <TargetsView
+              vaultId={vaultId}
+              onBack={() => setTargetsOpen(false)}
+              onChanged={() => {
+                void useSkillsStore.getState().refresh(vaultId);
+              }}
+              onResult={(lines) => setResultLines(lines)}
             />
           ) : installOpen && vaultId ? (
             <InstallView
@@ -352,6 +365,11 @@ export function SkillsPanel() {
                 if (vaultId) void useSkillsStore.getState().loadScan(vaultId);
               }}
               onResult={(lines) => setResultLines(lines)}
+              onManageTargets={() => {
+                setInstallOpen(false);
+                setUpdatePath(null);
+                setTargetsOpen(true);
+              }}
             />
           )}
         </div>
