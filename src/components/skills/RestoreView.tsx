@@ -178,17 +178,14 @@ export function RestoreView({
 
   return (
     <div className="restore-view" data-testid="restore-view">
-      <div className="skills-subview" data-testid="restore-subview">
-        <header className="skills-subview-head">
-          <button type="button" className="icon-button" aria-label="返回" onClick={back} data-testid="restore-back">
-            <ArrowLeft size={14} aria-hidden />
-          </button>
-          <span className="skills-subview-title">
-            <span className="field-hint">工具技能 / </span>从清单还原
-          </span>
-        </header>
+      <header className="install-head">
+        <button type="button" className="icon-button" aria-label="返回" onClick={back} data-testid="restore-back">
+          <ArrowLeft size={14} aria-hidden />
+        </button>
+        <strong>从清单还原</strong>
+      </header>
 
-        <div className="restore-body">
+      <div className="restore-body">
           {error ? (
             <p className="install-fault" data-testid="restore-error">
               {error}
@@ -234,11 +231,6 @@ export function RestoreView({
                   {preview.unmatched.length} 项未匹配：{preview.unmatched.join("、")}（不算失败）
                 </p>
               ) : null}
-              <div className="restore-foot">
-                <button type="button" className="btn-accent" onClick={back} data-testid="restore-done">
-                  完成
-                </button>
-              </div>
             </div>
           ) : groups.length === 0 ? (
             <div className="skills-empty" data-testid="restore-empty">
@@ -318,28 +310,37 @@ export function RestoreView({
                   </ul>
                 </details>
               ) : null}
-              <div className="restore-foot" data-testid="restore-footer">
-                <span className="field-hint" data-testid="restore-count">
-                  已选 {chosen.length} 项{chosenNetwork > 0 ? `，其中 ${chosenNetwork} 项需要联网` : ""}
-                </span>
-                <span className="spacer" />
-                <button type="button" className="btn-quiet" onClick={back} data-testid="restore-cancel">
-                  取消
-                </button>
-                <button
-                  type="button"
-                  className="btn-accent"
-                  disabled={running || chosen.length === 0}
-                  onClick={() => void run()}
-                  data-testid="restore-run"
-                >
-                  {running ? "还原中…" : "还原所选"}
-                </button>
-              </div>
             </>
           )}
-        </div>
       </div>
+
+      {results ? (
+        <div className="restore-foot" data-testid="restore-footer">
+          <span className="spacer" />
+          <button type="button" className="btn-accent" onClick={back} data-testid="restore-done">
+            完成
+          </button>
+        </div>
+      ) : preview && !futureVersion && !unreadable && groups.length > 0 ? (
+        <div className="restore-foot" data-testid="restore-footer">
+          <span className="field-hint" data-testid="restore-count">
+            已选 {chosen.length} 项{chosenNetwork > 0 ? `，其中 ${chosenNetwork} 项需要联网` : ""}
+          </span>
+          <span className="spacer" />
+          <button type="button" className="btn-quiet" onClick={back} data-testid="restore-cancel">
+            取消
+          </button>
+          <button
+            type="button"
+            className="btn-accent"
+            disabled={running || chosen.length === 0}
+            onClick={() => void run()}
+            data-testid="restore-run"
+          >
+            {running ? "还原中…" : "还原所选"}
+          </button>
+        </div>
+      ) : null}
 
       {confirmRebuild ? (
         <div className="skills-subview" data-testid="restore-rebuild-dialog">
@@ -348,9 +349,7 @@ export function RestoreView({
               <span className="skills-subview-title">用本机记录重建分发清单</span>
             </header>
             <div className="skills-subview-row">
-              <span>
-                会使用本机 {preview?.localOnly?.length ?? 0} 条本机记录生成清单；登记已移除或目录已不存在的项会跳过。
-              </span>
+              <span>会使用本机记录生成清单；登记已移除或目录已不存在的项会跳过。</span>
             </div>
             <div className="skills-subview-row">
               <span>原文件会保留为 skill-distributions.json.corrupt-&lt;时间&gt; 副本，确认无误后可自己删除。</span>

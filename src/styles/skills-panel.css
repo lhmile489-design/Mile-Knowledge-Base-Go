@@ -1340,6 +1340,9 @@
 
 .restore-view {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  height: 100%;
   min-height: 0;
 }
 
@@ -1347,7 +1350,7 @@
   display: grid;
   gap: 6px;
   align-content: start;
-  padding: 12px 14px;
+  min-height: 0;
   overflow: auto;
 }
 
