@@ -117,10 +117,13 @@ func LoadManifest(vaultRoot string) Manifest {
 		result.Warnings = append(result.Warnings, "分发清单版本不认识，本次忽略")
 		return result
 	}
-	items := []ManifestItem{}
-	if len(header.Items) == 0 {
-		header.Items = []byte("[]")
+	trimmed := strings.TrimSpace(string(header.Items))
+	if trimmed == "" || trimmed == "null" || !strings.HasPrefix(trimmed, "[") {
+		result.Status = ManifestUnreadable
+		result.Warnings = append(result.Warnings, "分发清单缺少条目数组，本次忽略")
+		return result
 	}
+	items := []ManifestItem{}
 	if err := json.Unmarshal(header.Items, &items); err != nil {
 		result.Status = ManifestUnreadable
 		result.Warnings = append(result.Warnings, "分发清单条目无法解析，本次忽略")
@@ -128,6 +131,10 @@ func LoadManifest(vaultRoot string) Manifest {
 	}
 	result.Status = ManifestOK
 	result.UpdatedAt = header.UpdatedAt
+	if result.UpdatedAt != "" && !validManifestTime(result.UpdatedAt) {
+		result.Warnings = append(result.Warnings, "分发清单的更新时间不合法，已忽略")
+		result.UpdatedAt = ""
+	}
 
 	dropped := 0
 	seen := map[string]int{}
@@ -167,13 +174,9 @@ func SaveManifest(vaultRoot string, manifest *Manifest) *contract.Failure {
 	if manifest == nil {
 		return contract.Fail(contract.CodeInvalidInput, "分发清单为空")
 	}
-	updatedAt := manifest.UpdatedAt
-	if updatedAt == "" {
-		updatedAt = time.Now().UTC().Format(time.RFC3339)
-	}
-	if !validManifestTime(updatedAt) {
-		return contract.Fail(contract.CodeInvalidInput, "分发清单时间不合法")
-	}
+	// 数据库设计 3.9: the top-level updatedAt is the last write time, so it is
+	// stamped on every save (the caller's value is read-only metadata).
+	updatedAt := time.Now().UTC().Format(time.RFC3339)
 
 	byKey := map[string]ManifestItem{}
 	order := make([]string, 0, len(manifest.Items))

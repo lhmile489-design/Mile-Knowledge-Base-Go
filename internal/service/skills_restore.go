@@ -297,6 +297,8 @@ func (s *SkillService) RestoreManifest(ctx context.Context, vaultID string, sele
 
 	if stateChanged {
 		if err := skills.SaveState(s.statePath(), *state); err != nil {
+			_ = os.Remove(s.cachePath())
+			s.emitChanged()
 			return contract.SkillManifestRestoreResult{Items: items, Failure: contract.Fail(contract.CodeIOFailure, "分发记录写入失败")}
 		}
 	}
@@ -315,7 +317,7 @@ func (s *SkillService) RestoreManifest(ctx context.Context, vaultID string, sele
 }
 
 type githubRestoreKey struct {
-	owner, repo, ref, commit string
+	owner, repo, commit string
 }
 
 type githubRestoreStage struct {
@@ -377,7 +379,7 @@ func (s *SkillService) restoreKBItem(
 			InstallDir: dest.Dir, AllowOverwrite: overwrite,
 		}},
 		Backups: s.backupStore(),
-		Now:     s.now,
+		Now:     func() time.Time { return now },
 	})
 	result := results[0]
 	out.Result, out.Detail, out.BackupID = result.Result, result.Detail, result.BackupID
@@ -404,7 +406,7 @@ func (s *SkillService) restoreGitHubItem(
 		out.Result, out.Detail = "failed", "来源信息不完整"
 		return
 	}
-	key := githubRestoreKey{owner: item.Origin.Owner, repo: item.Origin.Repo, ref: item.Origin.Ref, commit: item.Origin.Commit}
+	key := githubRestoreKey{owner: item.Origin.Owner, repo: item.Origin.Repo, commit: item.Origin.Commit}
 	group, ok := stages[key]
 	if !ok {
 		stage, sf := s.stageStore().Create("github", item.Origin.Owner+"/"+item.Origin.Repo, item.Origin)

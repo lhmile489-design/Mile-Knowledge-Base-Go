@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,7 +53,16 @@ func TestRestorePreviewJudgesAndSkips(t *testing.T) {
 	if len(preview.Unmatched) != 1 || preview.Unmatched[0] != "Droid" {
 		t.Fatalf("unmatched = %+v", preview.Unmatched)
 	}
-	// No absolute path may leak into the payload.
+	// No absolute path may leak into any field of the payload.
+	encoded, err := json.Marshal(preview)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{root, home} {
+		if strings.Contains(string(encoded), forbidden) {
+			t.Fatalf("payload leaks %q: %s", forbidden, encoded)
+		}
+	}
 	blob := first.TargetLabel + first.Reason + second.TargetLabel + second.Reason
 	for _, forbidden := range []string{root, home} {
 		if strings.Contains(blob, forbidden) {

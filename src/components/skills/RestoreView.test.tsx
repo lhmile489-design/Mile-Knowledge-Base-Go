@@ -155,6 +155,27 @@ describe("RestoreView", () => {
     expect(onChanged).toHaveBeenCalled();
   });
 
+  it("keeps the view open and refreshes the preview when a run is cancelled", async () => {
+    restorePreview.mockResolvedValue(previewOf());
+    restoreManifest.mockImplementation(
+      (_vaultId: string, _selections: unknown, _requestId: string, signal?: AbortSignal) =>
+        new Promise((_resolve, reject) => {
+          signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+        }),
+    );
+    renderView();
+
+    await screen.findByTestId("restore-group-create");
+    fireEvent.click(screen.getByTestId("restore-run"));
+    await waitFor(() => expect(screen.getByTestId("restore-run").textContent).toContain("还原中"));
+    fireEvent.click(screen.getByTestId("restore-cancel"));
+
+    await screen.findByTestId("restore-cancelled");
+    expect(screen.getByTestId("restore-view")).toBeTruthy();
+    expect(screen.getByTestId("restore-cancelled").textContent).toContain("已完成的项已保留");
+    await waitFor(() => expect(restorePreview.mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
   it("rebuilds an unreadable manifest after confirmation", async () => {
     restorePreview
       .mockResolvedValueOnce({ preview: { status: "unreadable", items: [], pending: 0, localOnly: [], unmatched: [], warnings: [], canRebuild: true } })

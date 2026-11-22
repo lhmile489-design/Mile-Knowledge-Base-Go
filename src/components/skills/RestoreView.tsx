@@ -55,6 +55,7 @@ export function RestoreView({
   const [progress, setProgress] = useState<{ phase: string; received: number } | null>(null);
   const [results, setResults] = useState<SkillRestoreOpItem[] | null>(null);
   const [confirmRebuild, setConfirmRebuild] = useState(false);
+  const [cancelNote, setCancelNote] = useState<string | null>(null);
   const [rebuilding, setRebuilding] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const requestRef = useRef("");
@@ -132,6 +133,7 @@ export function RestoreView({
     setRunning(true);
     setProgress(null);
     setResults(null);
+    setCancelNote(null);
     const unsubscribe = subscribeProgress((event) => {
       if (event.requestId === requestId) setProgress({ phase: event.phase, received: event.received });
     });
@@ -145,7 +147,14 @@ export function RestoreView({
       setResults(value.items);
       onChanged();
     } catch (err) {
-      setError(messageOf(err));
+      if (controller.signal.aborted) {
+        // The Go side keeps the finished items; reload the preview so the
+        // list shows what is already on this machine (UI 稿 9.6 取消).
+        setCancelNote("已取消。已完成的项已保留，下面的状态已刷新。");
+        await reload();
+      } else {
+        setError(messageOf(err));
+      }
     } finally {
       unsubscribe();
       abortRef.current = null;
@@ -172,7 +181,11 @@ export function RestoreView({
   };
 
   const back = () => {
-    if (running) abortRef.current?.abort();
+    if (running) {
+      // Cancel keeps the view open: the results may still arrive (UI 稿 9.6).
+      abortRef.current?.abort();
+      return;
+    }
     onBack();
   };
 
@@ -189,6 +202,11 @@ export function RestoreView({
           {error ? (
             <p className="install-fault" data-testid="restore-error">
               {error}
+            </p>
+          ) : null}
+          {cancelNote ? (
+            <p className="field-hint" data-testid="restore-cancelled">
+              {cancelNote}
             </p>
           ) : null}
           {!preview ? (

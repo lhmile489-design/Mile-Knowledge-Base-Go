@@ -273,10 +273,13 @@ card_distribute "前端" "vue"
 ev "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); true" >/dev/null
 sleep 0.4
 check "AC-SKM-11 first Esc back to list" "document.querySelector('[data-testid=\"distribute-dialog\"]') === null && document.querySelector('[data-testid=\"skills-panel\"]') !== null" '"value":true'
+ev "(() => { const pill=document.querySelector('[data-testid=\"open-skills\"]'); window.__pillFocused=false; if (pill) pill.addEventListener('focus', () => { window.__pillFocused = true; }, { once: true }); return true; })()" >/dev/null
 ev "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); true" >/dev/null
 sleep 0.4
 check "AC-SKM-11 second Esc closes" "document.querySelector('[data-testid=\"skills-panel\"]') === null" '"value":true'
-check "AC-SKM-11 focus back on pill" "document.activeElement?.getAttribute('data-testid') === 'open-skills'" '"value":true'
+# WebView2 keeps document.activeElement on body while the window itself is in
+# the background, so assert the focus() call landed on the pill instead.
+wait_match "AC-SKM-11 focus back on pill" "window.__pillFocused === true" '"value":true' 20
 check "AC-SKM-11 no sidebar import entry" "document.body.innerText.indexOf('导入技能') < 0" '"value":true'
 ev "window.__mkbApp.getState().closeSettings(); true" >/dev/null
 stop_app

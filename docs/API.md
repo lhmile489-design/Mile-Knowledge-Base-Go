@@ -1202,7 +1202,7 @@ type SkillRestoreOpItem = {
 | 方法 | 入参 | 出参 | 说明 |
 | --- | --- | --- | --- |
 | M102 `restorePreview` | `vaultId` | `{preview?: SkillRestorePreview; failure?: Failure}` | 读清单并逐项判定（技术设计 18.5）；只读文件系统，不联网、不写盘。工具页打开时调用，用 `pending` 与 `status` 决定横幅 |
-| M103 `restoreManifest` | `vaultId`、`selections: SkillRestoreSelection[]`、`requestId` | `{items: SkillRestoreOpItem[]; failure?: Failure}` | 在锁内重新判定后逐项执行（技术设计 18.8）；GitHub 项的下载进度走 E13（同一 `requestId`）；可用 AbortSignal 取消，已完成的项保留；不改清单；有成功项时清扫描缓存、发 E12 |
+| M103 `restoreManifest` | `vaultId`、`selections: SkillRestoreSelection[]`、`requestId` | `{items: SkillRestoreOpItem[]; failure?: Failure}` | 在锁内重新判定后逐项执行（技术设计 18.8）；GitHub 项的下载进度走 E13（同一 `requestId`）；可用 AbortSignal 取消，已完成的项保留；浏览器侧中止后前端重拉 M102 刷新列表；不改清单；有成功项时清扫描缓存、发 E12 |
 | M104 `rebuildManifest` | `vaultId` | `{written: number; skipped: number; corruptCopy?: string; failure?: Failure}` | 用本机分发记录与工具来源记录重写清单（技术设计 18.6）；原文件改名为 `.corrupt-<时间>`，`corruptCopy` 只返回文件名；`version-unknown` 时返回 `unsupported` |
 
 ### 15.3 校验与错误

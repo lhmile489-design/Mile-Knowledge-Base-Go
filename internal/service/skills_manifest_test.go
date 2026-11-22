@@ -62,6 +62,49 @@ func TestDistributeAndUninstallUpdateManifest(t *testing.T) {
 	}
 }
 
+func TestDistributeHalfFailureWritesOnlySuccess(t *testing.T) {
+	home := t.TempDir()
+	writeInstallFile(t, filepath.Join(home, ".local", "bin", "claude.cmd"), "cmd")
+	svc, vaultID := skillServiceWithHome(t, home)
+	ctx := context.Background()
+	root := svc.app.Vaults.List().Vaults[0].Root
+	seedVaultSkill(t, root, "skills/前端/demo")
+
+	custom := filepath.Join(home, "half")
+	if err := os.MkdirAll(custom, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// A plain file at the target path makes the custom target unable to
+	// receive the skill; the Claude Code target must still succeed.
+	writeInstallFile(t, filepath.Join(custom, "demo"), "not a directory")
+	if res := svc.SaveTarget(ctx, contract.SkillSaveTargetInput{Kind: "custom", Name: "Half", Token: svc.newTargetPick(custom)}); res.Failure != nil {
+		t.Fatalf("save target: %+v", res.Failure)
+	}
+	ids := targetIDs(t, svc)
+	result := svc.Distribute(ctx, vaultID, "skills/前端/demo", []contract.SkillDistributeTarget{
+		{TargetID: "claude-code"}, {TargetID: ids["Half"]},
+	}, "copy")
+	if result.Failure != nil || len(result.Items) != 2 {
+		t.Fatalf("distribute = %+v", result)
+	}
+	success := 0
+	for _, item := range result.Items {
+		if item.Result == "copied" {
+			success++
+		}
+	}
+	if success != 1 {
+		t.Fatalf("items = %+v, want exactly one success", result.Items)
+	}
+	manifest := manifestOf(t, svc)
+	if len(manifest.Items) != 1 {
+		t.Fatalf("manifest = %+v, want only the successful target", manifest.Items)
+	}
+	if manifest.Items[0].Target.Kind != "builtin" || manifest.Items[0].Target.ToolID != "claude-code" {
+		t.Fatalf("target = %+v", manifest.Items[0].Target)
+	}
+}
+
 func TestDistributeProjectWritesSubdir(t *testing.T) {
 	home := t.TempDir()
 	svc, vaultID := skillServiceWithHome(t, home)

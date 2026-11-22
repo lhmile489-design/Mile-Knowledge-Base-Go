@@ -371,12 +371,17 @@ check "AC-SKM-21 conflict group" "document.querySelector('[data-testid=\"restore
 check "AC-SKM-21 skip group" "document.querySelector('[data-testid=\"restore-group-skip\"]')?.textContent.includes('Droid')" '"value":true'
 check "AC-SKM-21 selection count" "document.querySelector('[data-testid=\"restore-count\"]').textContent.includes('已选 2 项') && document.querySelector('[data-testid=\"restore-count\"]').textContent.includes('1 项需要联网')" '"value":true'
 MANIFEST_B_BEFORE=$(hash_file "$(manifest_path "$VAULT_B")")
+LOG_B="$APPD_B/Mile Knowledge Base/skills/log.jsonl"
+LOG_BEFORE=$( [ -f "$LOG_B" ] && wc -l < "$LOG_B" || echo 0 )
 check "AC-SKM-22 conflict stays unchecked" "document.querySelector('[data-testid=\"restore-group-conflict\"] [data-testid^=\"restore-check-r-\"]')?.checked === false" '"value":true'
 click '[data-testid="restore-run"]'
 wait_match "AC-SKM-21 result" "document.querySelector('[data-testid=\"restore-result\"]')?.textContent.includes('已还原 2 项')" '"value":true' 120
 check "AC-SKM-23 unmatched listed" "document.querySelector('[data-testid=\"restore-unmatched\"]')?.textContent.includes('Droid')" '"value":true'
+check "AC-SKM-23 not a failure" "document.querySelector('[data-testid=\"restore-result\"]').textContent.includes('失败 0 项')" '"value":true'
 [ -f "$SITE_B/.claude/skills/vue/SKILL.md" ] && { pass=$((pass+1)); echo "PASS AC-SKM-21 project copy restored"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-21 project copy missing"; }
 [ -f "$HOME_B/.claude/skills/pdf/SKILL.md" ] && { pass=$((pass+1)); echo "PASS AC-SKM-21 github skill restored"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-21 github skill missing"; }
+LOG_AFTER=$( [ -f "$LOG_B" ] && wc -l < "$LOG_B" || echo 0 )
+[ "$((LOG_AFTER - LOG_BEFORE))" -eq 2 ] && { pass=$((pass+1)); echo "PASS AC-SKM-21 two log records"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-21 log records :: $LOG_BEFORE -> $LOG_AFTER"; }
 [ "$(cat "$HOME_B/.claude/skills/vue/SKILL.md")" = "# local edit" ] && { pass=$((pass+1)); echo "PASS AC-SKM-22 conflict dir untouched"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-22 conflict dir changed"; }
 [ "$(hash_file "$(manifest_path "$VAULT_B")")" = "$MANIFEST_B_BEFORE" ] && { pass=$((pass+1)); echo "PASS restore leaves the manifest alone"; } || { fail=$((fail+1)); echo "FAIL restore rewrote the manifest"; }
 

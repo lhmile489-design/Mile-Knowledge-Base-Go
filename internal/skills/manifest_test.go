@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func manifestRoot(t *testing.T) string {
@@ -105,6 +106,22 @@ func TestManifestReadStates(t *testing.T) {
 		}
 	})
 
+	t.Run("missing items array", func(t *testing.T) {
+		root := manifestRoot(t)
+		writeManifestFile(t, root, `{"version":1,"updatedAt":"2026-11-23T09:00:00Z"}`)
+		if got := LoadManifest(root); got.Status != ManifestUnreadable {
+			t.Fatalf("missing items = %q, want %q", got.Status, ManifestUnreadable)
+		}
+	})
+
+	t.Run("null items array", func(t *testing.T) {
+		root := manifestRoot(t)
+		writeManifestFile(t, root, `{"version":1,"items":null}`)
+		if got := LoadManifest(root); got.Status != ManifestUnreadable {
+			t.Fatalf("null items = %q, want %q", got.Status, ManifestUnreadable)
+		}
+	})
+
 	t.Run("version-unknown", func(t *testing.T) {
 		root := manifestRoot(t)
 		writeManifestFile(t, root, `{"version":2,"items":[]}`)
@@ -113,6 +130,34 @@ func TestManifestReadStates(t *testing.T) {
 			t.Fatalf("status = %q, want %q", got.Status, ManifestVersionUnknown)
 		}
 	})
+}
+
+func TestManifestRefreshesUpdatedAtOnSave(t *testing.T) {
+	root := manifestRoot(t)
+	first := Manifest{Items: []ManifestItem{kbManifestItem()}}
+	if f := SaveManifest(root, &first); f != nil {
+		t.Fatalf("save: %v", f.Message)
+	}
+	firstStamp := first.UpdatedAt
+	if firstStamp == "" {
+		t.Fatal("first save did not stamp updatedAt")
+	}
+	time.Sleep(1100 * time.Millisecond)
+	again := LoadManifest(root)
+	if again.Status != ManifestOK {
+		t.Fatalf("status = %q", again.Status)
+	}
+	item := githubManifestItem()
+	again.Upsert(item)
+	if f := SaveManifest(root, &again); f != nil {
+		t.Fatalf("save 2: %v", f.Message)
+	}
+	if again.UpdatedAt == firstStamp {
+		t.Fatal("updatedAt was not refreshed on the second save")
+	}
+	if _, err := time.Parse(time.RFC3339, again.UpdatedAt); err != nil {
+		t.Fatalf("updatedAt not RFC3339: %q", again.UpdatedAt)
+	}
 }
 
 func TestManifestDropsInvalidItems(t *testing.T) {
