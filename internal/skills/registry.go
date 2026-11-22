@@ -17,11 +17,16 @@ type Tool struct {
 	BuiltinDirs        []string
 	AppBuiltinRelative []string
 	Readers            []string // shared entry: tools that read ~/.agents/skills
-	Official           bool
-	Enabled            bool
-	CLIs               []string
-	Uninstall          []string // DisplayName prefixes in the uninstall registry
-	KnownExes          []string // relative paths under UserProgramFiles
+	// ProjectDirs are project-relative skill directories this tool reads
+	// (FR-SKM-PROJ, 技术设计 13.6). Slash-separated, no leading "~" or "."
+	// implied by the tool's user-level path; only documented conventions are
+	// listed.
+	ProjectDirs []string
+	Official    bool
+	Enabled     bool
+	CLIs        []string
+	Uninstall   []string // DisplayName prefixes in the uninstall registry
+	KnownExes   []string // relative paths under UserProgramFiles
 }
 
 // sharedReaders are the tools whose official docs read ~/.agents/skills
@@ -38,27 +43,32 @@ var Registry = []Tool{
 	{
 		ID: "agents", Name: "通用目录", IconKey: "globe", Shared: true,
 		InstallDir: "~/.agents/skills", Readers: sharedReaders, Official: true, Enabled: true,
+		ProjectDirs: []string{".agents/skills"}, // Codex/OpenCode/Gemini/Augment/Pi/Kimi/DeepSeek/Warp/Trae/Cursor 等
 	},
 	{
 		ID: "claude-code", Name: "Claude Code", IconKey: "claude-code",
 		InstallDir: "~/.claude/skills", Official: true, Enabled: true,
-		CLIs: []string{"claude"}, Uninstall: []string{"Claude Code"},
+		ProjectDirs: []string{".claude/skills"}, // 项目级 skills 官方写明，含嵌套子目录
+		CLIs:        []string{"claude"}, Uninstall: []string{"Claude Code"},
 	},
 	{
 		ID: "codex", Name: "Codex", IconKey: "codex", Shared: false,
 		ScanDirs: []string{"~/.codex/skills"}, Official: true, Enabled: true,
-		CLIs: []string{"codex"},
+		ProjectDirs: []string{".codex/skills"}, // 推导：Codex 官方只写 .agents/skills；Cursor/Kimi/Warp 作为兼容目录读取
+		CLIs:        []string{"codex"},
 	},
 	{
 		ID: "cursor", Name: "Cursor", IconKey: "cursor",
 		InstallDir: "~/.cursor/skills", ScanDirs: []string{"~/.cursor/skills-cursor"},
 		Official: true, Enabled: true,
-		CLIs: []string{"cursor"}, Uninstall: []string{"Cursor"},
+		ProjectDirs: []string{".cursor/skills"},
+		CLIs:        []string{"cursor"}, Uninstall: []string{"Cursor"},
 	},
 	{
 		ID: "trae", Name: "Trae", IconKey: "trae",
 		InstallDir: "~/.trae/skills", BuiltinDirs: []string{"~/.trae/builtin_skills"},
-		Official: false, Enabled: true, // 官方页面未读到，按本机证据启用
+		ProjectDirs: []string{".trae/skills"}, // Trae CN 官方文档写项目内 .trae/skills；国际版同一约定
+		Official:    false, Enabled: true,     // 官方页面未读到，按本机证据启用
 		Uninstall: []string{"TRAE"},
 	},
 	{
@@ -74,24 +84,28 @@ var Registry = []Tool{
 	{
 		ID: "qoder", Name: "Qoder", IconKey: "qoder",
 		InstallDir: "~/.qoder/skills", Official: true, Enabled: true,
-		CLIs: []string{"qoder", "qodercli"}, Uninstall: []string{"Qoder"},
+		ProjectDirs: []string{".qoder/skills"},
+		CLIs:        []string{"qoder", "qodercli"}, Uninstall: []string{"Qoder"},
 	},
 	{
 		ID: "grok", Name: "Grok Build", IconKey: "grok",
 		InstallDir: "~/.grok/skills", BuiltinDirs: []string{"~/.grok/bundled/skills"},
-		Official: true, Enabled: true,
+		ProjectDirs: []string{".grok/skills"},
+		Official:    true, Enabled: true,
 		CLIs: []string{"grok"},
 	},
 	{
 		ID: "opencode", Name: "OpenCode", IconKey: "opencode",
 		InstallDir: "~/.config/opencode/skills", ScanDirs: []string{"~/.opencode/skills"},
-		Official: true, Enabled: true,
+		ProjectDirs: []string{".opencode/skills"},
+		Official:    true, Enabled: true,
 		Uninstall: []string{"OpenCode"},
 	},
 	{
 		ID: "gemini-cli", Name: "Gemini CLI", IconKey: "gemini",
 		InstallDir: "~/.gemini/skills", Official: true, Enabled: true,
-		CLIs: []string{"gemini"},
+		ProjectDirs: []string{".gemini/skills"},
+		CLIs:        []string{"gemini"},
 	},
 	{
 		ID: "antigravity", Name: "Antigravity", IconKey: "antigravity",
@@ -104,17 +118,20 @@ var Registry = []Tool{
 	{
 		ID: "windsurf", Name: "Windsurf", IconKey: "windsurf",
 		InstallDir: "~/.codeium/windsurf/skills", Official: true, Enabled: true,
-		Uninstall: []string{"Windsurf"},
+		ProjectDirs: []string{".windsurf/skills"}, // 官方文档已迁到 docs.devin.ai，写作旧版读取；新主路径 .devin/skills 不在本工具登记内（技术设计 13.6）
+		Uninstall:   []string{"Windsurf"},
 	},
 	{
 		ID: "augment", Name: "Augment", IconKey: "augment",
 		InstallDir: "~/.augment/skills", Official: true, Enabled: true,
-		CLIs: []string{"augment"},
+		ProjectDirs: []string{".augment/skills"},
+		CLIs:        []string{"augment"},
 	},
 	{
 		ID: "codebuddy", Name: "CodeBuddy", IconKey: "codebuddy",
 		InstallDir: "~/.codebuddy/skills", Official: true, Enabled: true,
-		CLIs: []string{"codebuddy"}, Uninstall: []string{"CodeBuddy"},
+		ProjectDirs: []string{".codebuddy/skills"},
+		CLIs:        []string{"codebuddy"}, Uninstall: []string{"CodeBuddy"},
 	},
 	{
 		ID: "pi", Name: "Pi", IconKey: "pi",
@@ -124,7 +141,8 @@ var Registry = []Tool{
 	{
 		ID: "kiro", Name: "Kiro", IconKey: "kiro",
 		InstallDir: "~/.kiro/skills", Official: true, Enabled: true,
-		CLIs: []string{"kiro", "kiro-cli"}, Uninstall: []string{"Kiro"},
+		ProjectDirs: []string{".kiro/skills"},
+		CLIs:        []string{"kiro", "kiro-cli"}, Uninstall: []string{"Kiro"},
 	},
 	{
 		ID: "hermes", Name: "Hermes", IconKey: "hermes",
@@ -134,25 +152,29 @@ var Registry = []Tool{
 	},
 	{
 		ID: "openclaw", Name: "OpenClaw", IconKey: "openclaw",
-		InstallDir: "~/.openclaw/skills",
-		ScanDirs:   []string{"~/.clawdbot/skills", "~/.moltbot/skills"},
-		Official:   true, Enabled: true,
+		InstallDir:  "~/.openclaw/skills",
+		ScanDirs:    []string{"~/.clawdbot/skills", "~/.moltbot/skills"},
+		ProjectDirs: []string{"skills"}, // 工作区根的 skills/（OpenClaw 文档）
+		Official:    true, Enabled: true,
 		CLIs: []string{"openclaw"},
 	},
 	{
 		ID: "cline", Name: "Cline", IconKey: "cline",
 		InstallDir: "~/.cline/skills", Official: true, Enabled: true,
-		CLIs: []string{"cline"},
+		ProjectDirs: []string{".cline/skills", ".clinerules/skills"},
+		CLIs:        []string{"cline"},
 	},
 	{
 		ID: "warp", Name: "Warp", IconKey: "warp",
 		ScanDirs: []string{"~/.warp/skills"}, Official: true, Enabled: true,
-		Uninstall: []string{"Warp"},
+		ProjectDirs: []string{".warp/skills"},
+		Uninstall:   []string{"Warp"},
 	},
 	{
 		ID: "kimi", Name: "Kimi Code CLI", IconKey: "kimi",
 		ScanDirs: []string{"~/.kimi/skills"}, Official: true, Enabled: true,
-		CLIs: []string{"kimi"}, Uninstall: []string{"Kimi"},
+		ProjectDirs: []string{".kimi/skills"},
+		CLIs:        []string{"kimi"}, Uninstall: []string{"Kimi"},
 	},
 	{
 		ID: "zcode", Name: "ZCode", IconKey: "zcode",
@@ -163,7 +185,8 @@ var Registry = []Tool{
 	{
 		ID: "deepseek-harness", Name: "DeepSeek Harness", IconKey: "deepseek-harness",
 		InstallDir: "~/.dsh/skills", Official: true, Enabled: true,
-		Uninstall: []string{"DeepSeek"}, KnownExes: []string{`DeepSeek Harness\DeepSeek Harness.exe`},
+		ProjectDirs: []string{".dsh/skills"},
+		Uninstall:   []string{"DeepSeek"}, KnownExes: []string{`DeepSeek Harness\DeepSeek Harness.exe`},
 	},
 	{
 		ID: "minimax-code", Name: "MiniMax Code", IconKey: "", // letter placeholder
@@ -181,4 +204,36 @@ func ToolByID(id string) (Tool, bool) {
 		}
 	}
 	return Tool{}, false
+}
+
+// ProjectSkillDirs returns the deduplicated project-relative skill directories
+// of the whole registry, in registry order; the first tool that lists a
+// directory owns it (FR-SKM-PROJ, 技术设计 13.6).
+func ProjectSkillDirs() []string {
+	seen := make(map[string]bool, 20)
+	out := make([]string, 0, 20)
+	for _, tool := range Registry {
+		for _, dir := range tool.ProjectDirs {
+			if seen[dir] {
+				continue
+			}
+			seen[dir] = true
+			out = append(out, dir)
+		}
+	}
+	return out
+}
+
+// ProjectDirTool reports which registry tool a project-relative skill
+// directory belongs to (first in registry order). Project scan rows use it for
+// sourceToolId (API §14.1).
+func ProjectDirTool(rel string) (string, bool) {
+	for _, tool := range Registry {
+		for _, dir := range tool.ProjectDirs {
+			if dir == rel {
+				return tool.ID, true
+			}
+		}
+	}
+	return "", false
 }
