@@ -56,7 +56,7 @@
 | T05 | 写操作目标扩展 | `skills_distribute.go`、`skills_uninstall.go`、`skills_install_exec.go`、`skills_targets.go`（解析）、测试 | T04 | wire spec 新增 `project:<dir>:<rel>`；分发 / 卸载 / 收编 / 安装 / 更新都能解析新目标；目录不存在时写操作拒绝；内置保护与覆盖备份规则不变 | 已验证 |
 | T06 | 移除登记的清理 | `skills_targets.go`、`state.go`、`sources.go`、`skills_panel.go`、测试 | T05 | 按 Q-M6-3：删分发记录与 B 区来源记录，写 `unregister` 日志，目录文件字节不变；与写操作串行（`opMu`）；重新登记后残留的拷贝能被扫描再识别 | 已验证 |
 | T07 | 目录管理子视图 | `src/components/skills/TargetsView.tsx`（新）、`SkillsPanel.tsx`、`ToolSkillsPage.tsx`、`skills-panel.css`、测试 | T04 | 列表（名称、脱敏路径、技能数、类型、目录不存在）；新增自定义 / 项目（选目录、名称、项目安装子目录）；编辑；移除确认写明「文件不会删除」；校验错误就地显示；输入框用 `.field` | 已验证 |
-| T08 | 工具页与目标格 | `ToolSkillsPage`、`DistributeDialog`、`InstallView`、`ToolUpdateDialog` | T05、T07 | 自定义工具出现在 chip 与目标格；项目分组按子目录显示工具图标；分发与安装目标格出现项目（按 Q-M6-1） | 待做 |
+| T08 | 工具页与目标格 | `ToolSkillsPage`、`DistributeDialog`、`InstallView`、`ToolIcon`、`AboutSection`、`appStore`、`skillsView` | T05、T07 | 自定义工具出现在 chip 与目标格；项目行显示来源工具图标与子目录；分发与安装目标格出现项目（写入 installRel）与自定义工具，目录不存在时禁用；设置页加入口 | 已验证 |
 | T09 | e2e 验收 | `scripts/e2e/ac-m6.sh`（新）、`scripts/test-e2e.sh` | T05–T08 | AC-SKM-17、18；重叠与知识库内路径拒绝；移除登记后文件仍在；真实工具目录零写入；全量回归通过 | 待做 |
 | T10 | 视觉对照 | `design/r2/shots-m6/`、`scripts/visual/capture-m6.py`（新） | T08 | 目录管理与两个分组状态 × 浅 / 深真实截图；与原型差异记入 UI 稿；对比度复测 | 待做 |
 | T11 | 性能与人工项 | `scripts/e2e/perf-m6.sh`（新）、G-PERF、人工测试（按 B-M6-03） | T09 | 10 个项目 × 每个 5 个约定子目录 × 每个 20 个技能时扫描 p95 ≤ 300 ms；M4 的 700 条目扫描不退化（≤ 200 ms）；人工项经同意后执行并记录 | 待做 |

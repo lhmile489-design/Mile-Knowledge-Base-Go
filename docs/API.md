@@ -1091,9 +1091,10 @@ type SkillTarget = {
   createdAt: string;
 };
 
-// §12.1 的 SkillTool 增加两个字段：
+// §12.1 的 SkillTool 增加三个字段：
 //   kind: 'builtin' | 'custom' | 'project'
 //   missing?: boolean               // custom / project：登记目录已不存在
+//   installRel?: string             // project：分发安装子目录（目标格里显示「写入 …」）
 // §12.1 的 ToolSkill 增加两个字段（只有项目分组会带）：
 //   sourceToolId?: string           // 该行所在子目录归属的工具（注册表 id，如 'agents'）
 //   subdir?: string                 // 项目内相对子目录，如 '.claude/skills'
