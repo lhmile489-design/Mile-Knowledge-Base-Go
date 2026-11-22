@@ -284,10 +284,10 @@ func (s *SkillService) RestoreManifest(ctx context.Context, vaultID string, sele
 			if !overwrite[id] {
 				out.Result, out.Detail = "skipped", "目标已存在，未勾选覆盖"
 			} else {
-				s.restoreItem(ctx, vaultID, item, manifests[id], overwrite[id], now, state, &stateChanged, stages, requestID, &out)
+				s.restoreItem(ctx, vaultID, facts, item, manifests[id], overwrite[id], now, state, &stateChanged, stages, requestID, &out)
 			}
 		default:
-			s.restoreItem(ctx, vaultID, item, manifests[id], overwrite[id], now, state, &stateChanged, stages, requestID, &out)
+			s.restoreItem(ctx, vaultID, facts, item, manifests[id], overwrite[id], now, state, &stateChanged, stages, requestID, &out)
 		}
 		if ctx.Err() != nil && out.Result == "failed" {
 			out.Result, out.Detail = "skipped", "已取消"
@@ -326,23 +326,23 @@ type githubRestoreStage struct {
 // restoreItem executes one judged item. The judgment was made under the same
 // lock, moments ago (技术设计 18.8 step 1).
 func (s *SkillService) restoreItem(
-	ctx context.Context, vaultID string,
+	ctx context.Context, vaultID string, facts skills.RestoreFacts,
 	item contract.SkillRestoreItem, manifest skills.ManifestItem, overwrite bool,
 	now time.Time, state *skills.State, stateChanged *bool,
 	stages map[githubRestoreKey]*githubRestoreStage, requestID string,
 	out *contract.SkillRestoreOpItem,
 ) {
 	if item.Source == "kb" {
-		s.restoreKBItem(vaultID, item, overwrite, now, state, stateChanged, out)
+		s.restoreKBItem(vaultID, facts, item, overwrite, now, state, stateChanged, out)
 		return
 	}
-	s.restoreGitHubItem(ctx, vaultID, item, manifest, overwrite, now, stages, requestID, out)
+	s.restoreGitHubItem(ctx, vaultID, facts, item, manifest, overwrite, now, stages, requestID, out)
 }
 
 // restoreKBItem distributes one vault skill according to the manifest
 // (技术设计 18.8 step 2).
 func (s *SkillService) restoreKBItem(
-	vaultID string, item contract.SkillRestoreItem, overwrite bool,
+	vaultID string, facts skills.RestoreFacts, item contract.SkillRestoreItem, overwrite bool,
 	now time.Time, state *skills.State, stateChanged *bool,
 	out *contract.SkillRestoreOpItem,
 ) {
@@ -351,7 +351,6 @@ func (s *SkillService) restoreKBItem(
 		out.Result, out.Detail = "failed", "知识库不可用"
 		return
 	}
-	facts, _ := s.restoreFacts(root, vaultID)
 	dest, reason := facts.Resolve(skills.ManifestTarget{
 		Kind: item.Target.Kind, ToolID: item.Target.ToolID, Name: item.Target.Name, Subdir: item.Target.Subdir,
 	})
@@ -397,7 +396,7 @@ func (s *SkillService) restoreKBItem(
 // (技术设计 18.8 step 2). All items of one owner/repo/ref/commit share a
 // single download.
 func (s *SkillService) restoreGitHubItem(
-	ctx context.Context, vaultID string, item contract.SkillRestoreItem, manifest skills.ManifestItem, overwrite bool,
+	ctx context.Context, vaultID string, facts skills.RestoreFacts, item contract.SkillRestoreItem, manifest skills.ManifestItem, overwrite bool,
 	now time.Time, stages map[githubRestoreKey]*githubRestoreStage, requestID string,
 	out *contract.SkillRestoreOpItem,
 ) {
@@ -426,12 +425,6 @@ func (s *SkillService) restoreGitHubItem(
 		out.Result, out.Detail = "failed", "压缩包里没有这个技能"
 		return
 	}
-	root, f := s.app.Vaults.Root(vaultID)
-	if f != nil {
-		out.Result, out.Detail = "failed", "知识库不可用"
-		return
-	}
-	facts, _ := s.restoreFacts(root, vaultID)
 	targetDir, reason := facts.Resolve(skills.ManifestTarget{
 		Kind: item.Target.Kind, ToolID: item.Target.ToolID, Name: item.Target.Name, Subdir: item.Target.Subdir,
 	})
@@ -535,6 +528,7 @@ func (s *SkillService) RebuildManifest(ctx context.Context, vaultID string) cont
 	}
 
 	now := s.now()
+	registrations := s.loadTargets().Targets
 	rebuilt := skills.Manifest{Items: []skills.ManifestItem{}}
 	skipped := 0
 	// Tool sources first, distributions second: a knowledge-base distribution
@@ -544,7 +538,7 @@ func (s *SkillService) RebuildManifest(ctx context.Context, vaultID string) cont
 			skipped++
 			continue
 		}
-		target, ok := s.manifestTarget(source.ToolID, source.TargetPath)
+		target, ok := manifestTargetFrom(registrations, source.ToolID, source.TargetPath)
 		if !ok {
 			skipped++
 			continue
@@ -558,7 +552,7 @@ func (s *SkillService) RebuildManifest(ctx context.Context, vaultID string) cont
 		if dist.VaultID != vaultID {
 			continue
 		}
-		target, ok := s.manifestTarget(dist.ToolID, dist.TargetPath)
+		target, ok := manifestTargetFrom(registrations, dist.ToolID, dist.TargetPath)
 		if !ok {
 			skipped++
 			continue

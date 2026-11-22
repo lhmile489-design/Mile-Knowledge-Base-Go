@@ -35,6 +35,11 @@ TARGETS = {
         "targetSaveP95Ms": 100,
         "targetRemoveP95Ms": 100,
     },
+    "m7": {
+        "preview200P95Ms": 300,
+        "manifestWriteP95Ms": 50,
+        "restore100Ms": 3000,
+    },
 }
 
 LABELS = {
@@ -51,6 +56,9 @@ LABELS = {
     "scanProjectP95Ms": "10 个项目扫描 p95 ms",
     "targetSaveP95Ms": "登记保存 p95 ms",
     "targetRemoveP95Ms": "登记移除 p95 ms",
+    "preview200P95Ms": "还原预览 200 项 p95 ms",
+    "manifestWriteP95Ms": "清单写入 2000 项 p95 ms",
+    "restore100Ms": "还原 100 个知识库项 ms",
 }
 
 

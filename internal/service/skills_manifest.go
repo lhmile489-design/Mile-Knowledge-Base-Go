@@ -64,9 +64,14 @@ func (s *SkillService) manifestStaleFlag() bool {
 // 18.4). Project entries keep the actual install subdir, not the registered
 // default.
 func (s *SkillService) manifestTarget(toolID, targetPath string) (skills.ManifestTarget, bool) {
+	return manifestTargetFrom(s.loadTargets().Targets, toolID, targetPath)
+}
+
+// manifestTargetFrom is manifestTarget with a preloaded registration list, so
+// hot loops (rebuild over thousands of records) read targets.json once.
+func manifestTargetFrom(registrations []skills.Target, toolID, targetPath string) (skills.ManifestTarget, bool) {
 	if skills.IsTargetID(toolID) {
-		loaded := s.loadTargets()
-		for _, record := range loaded.Targets {
+		for _, record := range registrations {
 			if record.ID != toolID {
 				continue
 			}

@@ -59,7 +59,7 @@
 | T06 | 前端 | `src/lib/transport.ts`、`src/components/skills/RestoreView.tsx`（新）、`ToolSkillsPage.tsx`、`SkillsPanel.tsx`、`skills-panel.css`、测试 | T05 | 横幅两种形态；预览分组、勾选规则、「需要联网」、本机有清单没有；进度与取消；结果；重建确认；Esc 分层返回；执行后主动重拉 M77 与 M102 | 已验证 |
 | T07 | e2e 验收 | `scripts/e2e/ac-m7.sh`（新）、`scripts/test-e2e.sh`（自动收录） | T06 | AC-SKM-20–25；两套临时 APPDATA + 假 HOME；本地假 GitHub；真实工具目录零写入；全量 e2e 回归通过 | 已验证 |
 | T08 | 视觉对照 | `design/r2/shots-m7/`、`scripts/visual/capture-m7.py`（新）、UI 稿 9.6.1、DESIGN 11.7 | T06 | 5 状态 × 浅 / 深真实截图替换原型；差异记入 UI 稿；对比度复测 | 已验证 |
-| T09 | 性能 | `scripts/e2e/perf-m7.sh`（新）、`scripts/perf-gate.py`（`kind=m7`） | T07 | 按 Q-M7-3 的门槛实测通过；M6 的 `kind=m6` 不退化 | 待做 |
+| T09 | 性能 | `scripts/e2e/perf-m7.sh`（新）、`scripts/perf-gate.py`（`kind=m7`） | T07 | 按 Q-M7-3 的门槛实测通过；M6 的 `kind=m6` 不退化 | 已验证 |
 | T10 | 整体审查（按 B-M7-02） | 审查报告、本计划、受影响代码与测试 | T09 | 阻断 0，需改项已修或经用户接受 | 待做 |
 | T11 | 收尾（按 B-M7-01） | README、CLAUDE.md、路线、发布清单、本计划、`mygo.config.ts` | T10 | 1.5.0 安装包与 1.4.0 → 1.5.0 升级冒烟；文档同步；列提交；推送前询问 | 待做 |
 
@@ -133,6 +133,7 @@ GitHub 项受网络影响，不设门槛，只记实测。实测后按 G-PERF �
 | 2026-11-22 | T07 | `scripts/e2e/ac-m7.sh`（新，66 项断言）：两台机器=两套临时 APPDATA + 假 HOME，知识库含清单复制给 B；A 登记自定义与项目、分联接 / 拷贝、GitHub 直装 pdf；清单断言 4 项、含项目子目录与 GitHub 项、不含工作目录 / 用户名 / `t-` / 反斜杠路径；B 横幅 3 项、四组状态、默认选中与「1 项需要联网」、首轮还原（冲突不动、Droid 未匹配、GitHub 项联网装好、清单字节不变）、勾选冲突覆盖带备份、清单损坏后重建与 `.corrupt-*` 副本、pdf 保留 GitHub 来源、真实 `.claude/skills` / `.agents` 前后不变；`scripts/test-e2e.sh` 自动收录 | `7b242e9`（本地，未推送） | ac-m7 66/66；全量 e2e 363 项（15/16/22/47/37/60/54/46/66）EXIT=0；中途三次修正均为脚本夹具与断言（A 机假 HOME 缺 Claude Code 探测标记；M103 只回报请求执行的项，跳过项不在结果列表；安装结果行文案），并新增 Q-M7-6 记录 M5 遗留的显示缺陷 | 待放行 T08 |
 | 2026-11-23 | T07 补充（Q-M7-6） | `SkillOpItem` 增加可选 `name`；`skills_install_exec.go` 装进工具时为每个结果项填候选名；`InstallView` 结果行优先用候选名 / `name`，不再退到工具 id；Go 测试与 `InstallView.test.tsx` 各加一条断言；`ac-m7.sh` 恢复严格文案断言（`pdf → Claude Code：已安装`）；API §12.1 注明该字段 | `c1c9433`（本地，未推送） | `go test ./...` 713 项、Vitest 278 项、`tsc` 通过；全量 e2e 363 项（15/16/22/47/37/60/54/46/66）EXIT=0，ac-m7 恢复严格文案断言 | 用户已批准修复 |
 | 2026-11-23 | T08 | `scripts/visual/capture-m7.py`（新）：e2e 构建 + 临时 APPDATA + 假 HOME + 慢速假 GitHub（5 秒延迟以拍进行中），5 状态 × 浅深共 10 张真实截图替换原型；UI 稿 9.6.1 逐状态差异、夹具说明与对比度，DESIGN 11.7 追加实测；实现中修三处：还原视图误用模态外壳 `.skills-subview`（改与「管理目录」相同的整页子视图）、底栏从滚动内容移到固定第三行、重建确认卡去掉占位条数；`capture-m7.py` 首次把 `state.json` 写到 APPDATA 根（应为 `APPDATA/Mile Knowledge Base/`），修正后夹具正常 | `caf211e`（本地，未推送） | `tsc` 与 Vitest 40 文件 / 278 项通过；全量 e2e 363 项（15/16/22/47/37/60/54/46/66）EXIT=0；对比度最低 6.08（门槛 4.5） | 待放行 T09 |
+| 2026-11-23 | T09 | `perf-gate.py` 新增 `kind=m7`（预览 200 项 ≤300 ms、清单写入 2000 项 ≤50 ms、还原 100 项 ≤3000 ms）；`perf-m7.sh`（新）：100 个知识库技能、10 个登记项目、200 项清单、慢速假 GitHub，清单写入用「2000 项与 1 项清单各 10 次分发的逐对差值」测净开销；热点修复：还原每轮只建一次探测事实（此前每项一次 Detect）、重建每轮只读一次登记表（此前每条一次）；技术设计 18.9 记录方法与实测 | 待填 | perf-m7 `perf-gate ok`：预览 p95 60.8 ms、写入净增量 p95 36.0 ms、还原 100 项 76.3 ms（首测 424.7 / 4552.9 后修复）；perf-m6 空载复测 ok：基准 132.9、项目 277.6、保存 35、移除 20.3 ms；三次非空载复测（基准最高 206.5、项目最高 411.4）记录为整机负载，未降门槛；Go 713、Vitest 278、`tsc` 通过 | 待放行 T10 |
 
 ## 9. 自查
 
