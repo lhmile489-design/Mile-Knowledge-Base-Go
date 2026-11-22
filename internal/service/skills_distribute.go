@@ -88,8 +88,7 @@ func (s *SkillService) distributeOptions(ctx context.Context, vaultID, skillPath
 	if info, err := os.Stat(sourceDir); err != nil || !info.IsDir() {
 		return skills.DistributeOptions{}, contract.Fail(contract.CodeNotFound, "技能不存在")
 	}
-	detector := s.detector()
-	tools := detector.Detect()
+	tools := s.skillTools()
 	byID := map[string]skills.DetectedTool{}
 	readers := map[string]bool{}
 	for _, tool := range tools {
@@ -122,6 +121,9 @@ func (s *SkillService) distributeOptions(ctx context.Context, vaultID, skillPath
 		}
 		if !tool.Shared && tool.Status != skills.StatusDetected {
 			return skills.DistributeOptions{}, contract.Fail(contract.CodeSkillProtected, "该工具未检测到")
+		}
+		if tool.Missing {
+			return skills.DistributeOptions{}, contract.Fail(contract.CodeNotFound, "登记目录不存在")
 		}
 		if tool.InstallDir == "" {
 			return skills.DistributeOptions{}, contract.Fail(contract.CodeSkillProtected, "该工具没有安装目录")

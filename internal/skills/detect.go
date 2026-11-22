@@ -56,6 +56,8 @@ type DetectedTool struct {
 	ScanDirs    []string
 	BuiltinDirs []string
 	ProjectDirs []ProjectDir // M6: project targets only
+	ProjectRoot string       // M6: project targets only, the registered root
+	InstallRel  string       // M6: project targets only, the chosen install subdir
 	Readers     []string
 	Official    bool
 	Enabled     bool

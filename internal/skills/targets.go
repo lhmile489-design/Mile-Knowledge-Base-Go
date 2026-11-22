@@ -469,6 +469,8 @@ func targetTool(target Target) DetectedTool {
 	if target.Kind == TargetProject {
 		entry.IconKey = "folder"
 		entry.Missing = !isDirectory(target.Path)
+		entry.ProjectRoot = target.Path
+		entry.InstallRel = target.InstallRel
 		entry.InstallDir = filepath.Join(target.Path, filepath.FromSlash(target.InstallRel))
 		for _, rel := range projectDirsForCheck(target) {
 			dir := filepath.Join(target.Path, filepath.FromSlash(rel))

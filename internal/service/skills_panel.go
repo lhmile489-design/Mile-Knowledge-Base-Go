@@ -60,7 +60,7 @@ func (s *SkillService) cachePath() string {
 // projects plus detection, with redacted paths (API §14.1).
 func (s *SkillService) Registry(ctx context.Context) contract.SkillRegistryResult {
 	detector := s.detector()
-	tools := skills.MergeTargets(detector.Detect(), s.loadTargets().Targets)
+	tools := s.skillTools()
 	out := make([]contract.SkillTool, 0, len(tools))
 	for _, tool := range tools {
 		out = append(out, contract.SkillTool{
@@ -130,7 +130,7 @@ func (s *SkillService) startBackgroundScan(vaultID, cachePath string) {
 func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.SkillScan {
 	detector := s.detector()
 	loaded := s.loadTargets()
-	tools := skills.MergeTargets(detector.Detect(), loaded.Targets)
+	tools := s.skillTools()
 	state := skills.LoadState(filepath.Join(s.app.DataDir, "skills", "state.json"))
 	kb, refs, root := s.kbSkills(ctx, vaultID, state.Distributions)
 	groups, warnings := skills.ScanTools(skills.ScanOptions{

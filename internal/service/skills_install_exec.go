@@ -248,7 +248,7 @@ func (s *SkillService) resolveInstallTargets(inputs []contract.SkillDistributeTa
 	}
 	byID := map[string]skills.DetectedTool{}
 	readers := map[string]bool{}
-	for _, tool := range s.detector().Detect() {
+	for _, tool := range s.skillTools() {
 		byID[tool.ID] = tool
 		if tool.Shared {
 			for _, reader := range tool.Readers {
@@ -267,6 +267,9 @@ func (s *SkillService) resolveInstallTargets(inputs []contract.SkillDistributeTa
 		}
 		if !tool.Shared && tool.Status != skills.StatusDetected {
 			return nil, contract.Fail(contract.CodeSkillProtected, "该工具未检测到")
+		}
+		if tool.Missing {
+			return nil, contract.Fail(contract.CodeNotFound, "登记目录不存在")
 		}
 		if tool.InstallDir == "" {
 			return nil, contract.Fail(contract.CodeSkillProtected, "该工具没有安装目录")

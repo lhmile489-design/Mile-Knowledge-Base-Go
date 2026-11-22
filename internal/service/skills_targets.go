@@ -327,6 +327,43 @@ func (s *SkillService) RevealTarget(ctx context.Context, id string) contract.Fai
 	return *contract.Fail(contract.CodeNotFound, "登记不存在")
 }
 
+// skillTools is the merged tool list every write path resolves against
+// (M6 T05): built-ins first, then custom tools and projects.
+func (s *SkillService) skillTools() []skills.DetectedTool {
+	return skills.MergeTargets(s.detector().Detect(), s.loadTargets().Targets)
+}
+
+// parseProjectSpec splits "project:<dir>:<rel>" (API §14.3). The directory
+// part carries no colon, so the last colon separates it from the skill path.
+func parseProjectSpec(spec string) (dir, rel string, ok bool) {
+	rest, found := strings.CutPrefix(spec, "project:")
+	if !found {
+		return "", "", false
+	}
+	index := strings.LastIndex(rest, ":")
+	if index < 0 {
+		return "", "", false
+	}
+	return rest[:index], rest[index+1:], true
+}
+
+// projectRoot resolves one project-relative directory. allowInstall lets the
+// caller name installRel before that directory exists (distribute/install).
+func projectRoot(tool skills.DetectedTool, dir string, allowInstall bool) (string, bool) {
+	if tool.Kind != skills.TargetProject {
+		return "", false
+	}
+	for _, pd := range tool.ProjectDirs {
+		if pd.Rel == dir {
+			return pd.Dir, true
+		}
+	}
+	if allowInstall && tool.InstallRel != "" && dir == tool.InstallRel && tool.ProjectRoot != "" {
+		return filepath.Join(tool.ProjectRoot, filepath.FromSlash(dir)), true
+	}
+	return "", false
+}
+
 func (s *SkillService) newTargetPick(path string) string {
 	raw := make([]byte, 8)
 	_, _ = rand.Read(raw)

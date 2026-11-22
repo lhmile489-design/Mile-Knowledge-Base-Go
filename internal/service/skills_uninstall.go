@@ -57,6 +57,20 @@ func validRel(rel string) bool {
 // tool's registered roots. allowBuiltin lets Reveal/Adopt reach builtin dirs;
 // removal paths pass false and get skill-protected instead.
 func (s *SkillService) resolveSpec(tool skills.DetectedTool, spec string, allowBuiltin bool) (string, *contract.Failure) {
+	// Project rows carry "project:<dir>:<rel>" (API §14.3, M6 T05).
+	if dir, rel, ok := parseProjectSpec(spec); ok {
+		if rel == "" || !validRel(rel) {
+			return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
+		}
+		root, ok := projectRoot(tool, dir, allowBuiltin)
+		if !ok {
+			return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
+		}
+		if abs, err := skills.ResolveUnder(root, rel); err == nil {
+			return abs, nil
+		}
+		return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
+	}
 	kind, index, rel := parseToolSpec(spec)
 	if kind == "invalid" || rel == "" || !validRel(rel) {
 		return "", contract.Fail(contract.CodeInvalidInput, "技能路径不合法")
@@ -99,6 +113,11 @@ func (s *SkillService) resolveSpec(tool skills.DetectedTool, spec string, allowB
 		if abs, ok := resolve(tool.InstallDir); ok && pathExists(abs) {
 			return abs, nil
 		}
+		for _, pd := range tool.ProjectDirs {
+			if abs, ok := resolve(pd.Dir); ok && pathExists(abs) {
+				return abs, nil
+			}
+		}
 		for _, dir := range tool.ScanDirs {
 			if abs, ok := resolve(dir); ok && pathExists(abs) {
 				return abs, nil
@@ -119,7 +138,7 @@ func (s *SkillService) resolveSpec(tool skills.DetectedTool, spec string, allowB
 // resolveToolSkill validates toolId + wire path for removal paths and rejects
 // builtin directories (PRD FR-SKM-UNINST: builtin skills are read-only).
 func (s *SkillService) resolveToolSkill(ctx context.Context, toolID, spec string) (skills.DetectedTool, string, *contract.Failure) {
-	for _, tool := range s.detector().Detect() {
+	for _, tool := range s.skillTools() {
 		if tool.ID != toolID {
 			continue
 		}
@@ -135,7 +154,7 @@ func (s *SkillService) resolveToolSkill(ctx context.Context, toolID, spec string
 // resolveAnyToolSkill is the read-side variant used by Reveal and Adopt: it
 // may point into a builtin directory, and disabled tools are still readable.
 func (s *SkillService) resolveAnyToolSkill(ctx context.Context, toolID, spec string) (skills.DetectedTool, string, *contract.Failure) {
-	for _, tool := range s.detector().Detect() {
+	for _, tool := range s.skillTools() {
 		if tool.ID != toolID {
 			continue
 		}
