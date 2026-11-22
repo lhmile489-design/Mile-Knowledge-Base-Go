@@ -996,6 +996,14 @@ export interface SkillPreviewResult {
   failure?: Failure;
 }
 
+/** SkillRebuildResult is M104. CorruptCopy is the kept file name, never a path. */
+export interface SkillRebuildResult {
+  written: number;
+  skipped: number;
+  corruptCopy?: string;
+  failure?: Failure;
+}
+
 /** SkillRegistryResult is M76. */
 export interface SkillRegistryResult {
   tools: SkillTool[];
@@ -1899,6 +1907,11 @@ export const SkillService = {
    * staging area and list the skills the user can pick (FR-SKM-SRC).
    */
   readGithub: bind<[string, string], SkillStageResult>("SkillService.ReadGithub", (vaultID: string, input: string) => [vaultID, input]),
+  /**
+   * RebuildManifest is M104: rewrite the vault manifest from this machine's
+   * records (技术设计 18.6). The old file is kept as a .corrupt copy first.
+   */
+  rebuildManifest: bind<[string], SkillRebuildResult>("SkillService.RebuildManifest", (vaultID: string) => [vaultID]),
   /**
    * Registry is M76: the built-in tools, the registered custom tools and
    * projects plus detection, with redacted paths (API §14.1).

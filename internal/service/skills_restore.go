@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/contract"
+	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/pathguard"
 	"github.com/lhmile489-design/Mile-Knowledge-Base-Go/internal/skills"
 )
 
@@ -514,4 +515,73 @@ func (s *SkillService) downloadRestoreArchive(ctx context.Context, stage skills.
 		return f.Message
 	}
 	return ""
+}
+
+// RebuildManifest is M104: rewrite the vault manifest from this machine's
+// records (技术设计 18.6). The old file is kept as a .corrupt copy first.
+func (s *SkillService) RebuildManifest(ctx context.Context, vaultID string) contract.SkillRebuildResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
+	if f := validateID(vaultID); f != nil {
+		return contract.SkillRebuildResult{Failure: f}
+	}
+	root, f := s.app.Vaults.Root(vaultID)
+	if f != nil {
+		return contract.SkillRebuildResult{Failure: contract.Fail(contract.CodeVaultUnavailable, "知识库不可用")}
+	}
+	current := skills.LoadManifest(root)
+	if current.Status == skills.ManifestVersionUnknown {
+		return contract.SkillRebuildResult{Failure: contract.Fail(contract.CodeUnsupported, "分发清单来自更新版本的应用，请升级后再重建")}
+	}
+
+	now := s.now()
+	rebuilt := skills.Manifest{Items: []skills.ManifestItem{}}
+	skipped := 0
+	// Tool sources first, distributions second: a knowledge-base distribution
+	// is authoritative when both describe the same target.
+	for _, source := range skills.LoadToolSources(filepath.Join(s.app.DataDir, "skills")).Records {
+		if !isDirectoryQuick(source.TargetPath) {
+			skipped++
+			continue
+		}
+		target, ok := s.manifestTarget(source.ToolID, source.TargetPath)
+		if !ok {
+			skipped++
+			continue
+		}
+		rebuilt.Upsert(manifestGitHubItem(target, filepath.Base(source.TargetPath),
+			source.Owner, source.Repo, source.Ref, source.Path,
+			source.Commit, source.PathCommit, now))
+	}
+	state := skills.LoadState(s.statePath())
+	for _, dist := range state.Distributions {
+		if dist.VaultID != vaultID {
+			continue
+		}
+		target, ok := s.manifestTarget(dist.ToolID, dist.TargetPath)
+		if !ok {
+			skipped++
+			continue
+		}
+		rebuilt.Upsert(manifestKBItem(target, dist.Name, dist.SkillPath, dist.Mode, now))
+	}
+
+	corruptCopy := ""
+	if current.Status != skills.ManifestMissing {
+		path, pf := pathguard.Resolve(root, ".mile-kb/skill-distributions.json")
+		if pf != nil {
+			return contract.SkillRebuildResult{Failure: contract.Fail(contract.CodeIOFailure, "分发清单路径不可用")}
+		}
+		name := "skill-distributions.json.corrupt-" + now.UTC().Format("20060102T150405Z")
+		if err := os.Rename(path, filepath.Join(filepath.Dir(path), name)); err != nil {
+			return contract.SkillRebuildResult{Failure: contract.Fail(contract.CodeIOFailure, "无法保留原分发清单副本")}
+		}
+		corruptCopy = name
+	}
+	written := len(rebuilt.Items)
+	if f := skills.SaveManifest(root, &rebuilt); f != nil {
+		return contract.SkillRebuildResult{Failure: f, CorruptCopy: corruptCopy}
+	}
+	s.clearManifestStale()
+	return contract.SkillRebuildResult{Written: written, Skipped: skipped, CorruptCopy: corruptCopy}
 }
