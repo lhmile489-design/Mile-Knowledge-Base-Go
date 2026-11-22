@@ -75,16 +75,27 @@ func ScanTools(opts ScanOptions) ([]contract.SkillToolScan, []contract.SkillScan
 			dir     string
 			builtin bool
 			base    string
+			subdir  string
+			source  string
 		}
-		targets := make([]target, 0, 1+len(tool.ScanDirs)+len(tool.BuiltinDirs))
-		if tool.InstallDir != "" {
-			targets = append(targets, target{tool.InstallDir, false, "install"})
-		}
-		for index, dir := range tool.ScanDirs {
-			targets = append(targets, target{dir, false, "scan:" + strconv.Itoa(index)})
-		}
-		for index, dir := range tool.BuiltinDirs {
-			targets = append(targets, target{dir, true, "builtin:" + strconv.Itoa(index)})
+		targets := make([]target, 0, 1+len(tool.ScanDirs)+len(tool.BuiltinDirs)+len(tool.ProjectDirs))
+		if tool.Kind == TargetProject {
+			// A project group scans only the conventional subdirectories that
+			// exist; each row records which tool owns its subdirectory (17.4).
+			for _, pd := range tool.ProjectDirs {
+				source, _ := ProjectDirTool(pd.Rel)
+				targets = append(targets, target{dir: pd.Dir, base: "project:" + pd.Rel, subdir: pd.Rel, source: source})
+			}
+		} else {
+			if tool.InstallDir != "" {
+				targets = append(targets, target{dir: tool.InstallDir, base: "install"})
+			}
+			for index, dir := range tool.ScanDirs {
+				targets = append(targets, target{dir: dir, base: "scan:" + strconv.Itoa(index)})
+			}
+			for index, dir := range tool.BuiltinDirs {
+				targets = append(targets, target{dir: dir, builtin: true, base: "builtin:" + strconv.Itoa(index)})
+			}
 		}
 		for _, item := range targets {
 			for _, root := range ExpandWildcard(item.dir) {
@@ -96,6 +107,10 @@ func ScanTools(opts ScanOptions) ([]contract.SkillToolScan, []contract.SkillScan
 						continue
 					}
 					seen[key] = true
+					if item.subdir != "" {
+						skill.Subdir = item.subdir
+						skill.SourceToolID = item.source
+					}
 					group.Skills = append(group.Skills, skill)
 				}
 			}

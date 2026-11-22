@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -428,4 +429,55 @@ func containsString(items []string, value string) bool {
 		}
 	}
 	return false
+}
+
+// MergeTargets appends the registered custom tools and projects to the
+// detected built-ins (FR-SKM-CUSTOM/PROJ, 技术设计 17.4). Custom tools come
+// before projects; each kind keeps creation order. A registered directory
+// that is gone stays listed with Missing=true and yields an empty group.
+func MergeTargets(tools []DetectedTool, targets []Target) []DetectedTool {
+	ordered := make([]Target, len(targets))
+	copy(ordered, targets)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		if ordered[i].Kind != ordered[j].Kind {
+			return ordered[i].Kind == TargetCustom
+		}
+		if ordered[i].CreatedAt != ordered[j].CreatedAt {
+			return ordered[i].CreatedAt < ordered[j].CreatedAt
+		}
+		return ordered[i].ID < ordered[j].ID
+	})
+	out := make([]DetectedTool, len(tools), len(tools)+len(ordered))
+	copy(out, tools)
+	for _, target := range ordered {
+		out = append(out, targetTool(target))
+	}
+	return out
+}
+
+func targetTool(target Target) DetectedTool {
+	entry := DetectedTool{
+		ID: target.ID, Name: target.Name, Status: StatusDetected,
+		Kind: target.Kind, Official: true, Enabled: true,
+	}
+	if target.Kind == TargetProject {
+		entry.IconKey = "folder"
+		entry.Missing = !isDirectory(target.Path)
+		entry.InstallDir = filepath.Join(target.Path, filepath.FromSlash(target.InstallRel))
+		for _, rel := range projectDirsForCheck(target) {
+			dir := filepath.Join(target.Path, filepath.FromSlash(rel))
+			if isDirectory(dir) {
+				entry.ProjectDirs = append(entry.ProjectDirs, ProjectDir{Rel: rel, Dir: dir})
+			}
+		}
+		return entry
+	}
+	entry.Missing = !isDirectory(target.Path)
+	entry.InstallDir = target.Path
+	return entry
+}
+
+func isDirectory(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }

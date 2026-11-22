@@ -35,6 +35,13 @@ type Detector struct {
 	Uninstall        []UninstallEntry
 }
 
+// ProjectDir is one existing project-relative skill directory of a project
+// target (M6, 技术设计 17.4).
+type ProjectDir struct {
+	Rel string
+	Dir string
+}
+
 // DetectedTool is one registry row plus its resolved paths and status.
 type DetectedTool struct {
 	ID          string
@@ -42,10 +49,13 @@ type DetectedTool struct {
 	IconKey     string
 	Shared      bool
 	Status      string
+	Kind        string // builtin | custom | project (M6)
+	Missing     bool   // M6: a registered custom/project directory is gone
 	InstallDir  string
 	AppDir      string
 	ScanDirs    []string
 	BuiltinDirs []string
+	ProjectDirs []ProjectDir // M6: project targets only
 	Readers     []string
 	Official    bool
 	Enabled     bool
@@ -196,7 +206,7 @@ func (d *Detector) detect(tool Tool) DetectedTool {
 	}
 	return DetectedTool{
 		ID: tool.ID, Name: tool.Name, IconKey: tool.IconKey, Shared: tool.Shared,
-		Status: status, InstallDir: install, AppDir: appDir, ScanDirs: scan, BuiltinDirs: builtin, Readers: tool.Readers,
+		Status: status, Kind: "builtin", InstallDir: install, AppDir: appDir, ScanDirs: scan, BuiltinDirs: builtin, Readers: tool.Readers,
 		Official: tool.Official, Enabled: tool.Enabled,
 	}
 }

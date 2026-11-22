@@ -13,7 +13,7 @@ import (
 // runs. It is derived data — a broken or old file is dropped and rebuilt.
 
 const (
-	scanCacheVersion    = 1
+	scanCacheVersion    = 2 // v2: SkillTool.kind/missing, ToolSkill.sourceToolId/subdir (M6, API §14.1)
 	scanCacheMaxBytes   = 2 << 20
 	scanCacheMaxEntries = 2000
 )
