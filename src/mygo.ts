@@ -570,6 +570,18 @@ export interface PickSkillSourceResult {
   failure?: Failure;
 }
 
+/** PickTargetFolderResult is M98. Token is opaque, valid 10 minutes. */
+export interface PickTargetFolderResult {
+  cancelled: boolean;
+  token?: string;
+  displayName?: string;
+  /** redacted */
+  path?: string;
+  /** existing conventional subdirs (exists=true) */
+  dirs?: SkillTargetDir[];
+  failure?: Failure;
+}
+
 /** PlanRequest is the M29 input. */
 export interface PlanRequest {
   vaultId: string;
@@ -983,9 +995,37 @@ export interface SkillRemote {
   error?: string;
 }
 
+/** SkillRemoveTargetResult is M100. Files inside the directory are kept. */
+export interface SkillRemoveTargetResult {
+  removed: boolean;
+  distributionsRemoved: number;
+  sourcesRemoved: number;
+  failure?: Failure;
+}
+
 /** SkillRestoreResult is M83. */
 export interface SkillRestoreResult {
   restoredTo: string;
+  failure?: Failure;
+}
+
+/**
+ * SkillSaveTargetInput is M99's request. On create Token is required; on edit
+ * an empty Token keeps the registered directory.
+ */
+export interface SkillSaveTargetInput {
+  id?: string;
+  /** custom | project; immutable once created */
+  kind: string;
+  name: string;
+  token?: string;
+  /** project only */
+  installDir?: string;
+}
+
+/** SkillSaveTargetResult is M99. */
+export interface SkillSaveTargetResult {
+  target?: SkillTarget;
   failure?: Failure;
 }
 
@@ -1061,6 +1101,42 @@ export interface SkillStageSkip {
   path: string;
   /** symlink | special */
   reason: string;
+}
+
+/** SkillTarget is one registered custom tool or project (FR-SKM-CUSTOM/PROJ). */
+export interface SkillTarget {
+  /** t-<12 hex> */
+  id: string;
+  /** custom | project */
+  kind: string;
+  name: string;
+  /** redacted for display; never the absolute path */
+  path: string;
+  /** project: project-relative install subdir */
+  installDir?: string;
+  /** registered dir still on disk */
+  exists: boolean;
+  /** quick count, SKILL.md content is not read */
+  skillCount: number;
+  /** project only */
+  dirs?: SkillTargetDir[];
+  createdAt: string;
+}
+
+/** SkillTargetDir is one conventional subdirectory of a project target. */
+export interface SkillTargetDir {
+  /** project-relative, slash-separated, e.g. ".claude/skills" */
+  rel: string;
+  /** false only for installDir before it is created */
+  exists: boolean;
+  /** immediate subdirectories holding a SKILL.md */
+  skills: number;
+}
+
+/** SkillTargetsResult is M97. */
+export interface SkillTargetsResult {
+  items: SkillTarget[];
+  failure?: Failure;
 }
 
 /**
@@ -1703,11 +1779,15 @@ export const SkillService = {
   install: bind<[string, string, string[], SkillInstallTarget], SkillOpResult>("SkillService.Install", (vaultID: string, stageID: string, ids: string[], target: SkillInstallTarget) => [vaultID, stageID, ids, target]),
   /** InstallPreview is M90: what M91 would write for the picked candidates. */
   installPreview: bind<[string, string, string[], SkillInstallTarget], SkillPreviewResult>("SkillService.InstallPreview", (vaultID: string, stageID: string, ids: string[], target: SkillInstallTarget) => [vaultID, stageID, ids, target]),
+  /** ListTargets is M97: every registration, custom tools before projects. */
+  listTargets: bind<[], SkillTargetsResult>("SkillService.ListTargets", () => []),
   /**
    * Log is M84: the newest records, newest first, with paths redacted for the
    * page and restorable recomputed from the backup area.
    */
   log: bind<[number], SkillLogResult>("SkillService.Log", (limit: number) => [limit]),
+  /** PickTargetFolder is M98: the native picker behind an opaque token. */
+  pickTargetFolder: bind<[], PickTargetFolderResult>("SkillService.PickTargetFolder", () => []),
   /** PickZip is M89: the same pipeline for a local .zip file. */
   pickZip: bind<[string], SkillStageResult>("SkillService.PickZip", (vaultID: string) => [vaultID]),
   /**
@@ -1715,8 +1795,16 @@ export const SkillService = {
    * staging area and list the skills the user can pick (FR-SKM-SRC).
    */
   readGithub: bind<[string, string], SkillStageResult>("SkillService.ReadGithub", (vaultID: string, input: string) => [vaultID, input]),
-  /** Registry is M76: the built-in tools plus detection, with redacted paths. */
+  /**
+   * Registry is M76: the built-in tools, the registered custom tools and
+   * projects plus detection, with redacted paths (API §14.1).
+   */
   registry: bind<[], SkillRegistryResult>("SkillService.Registry", () => []),
+  /**
+   * RemoveTarget is M100: drop the registration and the records that point at
+   * it. Files inside the directory are never touched (AC-SKM-17).
+   */
+  removeTarget: bind<[string], SkillRemoveTargetResult>("SkillService.RemoveTarget", (id: string) => [id]),
   /** Restore is M83. */
   restore: bind<[string], SkillRestoreResult>("SkillService.Restore", (backupID: string) => [backupID]),
   /**
@@ -1724,6 +1812,13 @@ export const SkillService = {
    * through the same guard as removal; nothing is written.
    */
   reveal: bind<[string, string], Failure>("SkillService.Reveal", (toolID: string, rel: string) => [toolID, rel]),
+  /** RevealTarget is M101: open Explorer at the registered directory; read-only. */
+  revealTarget: bind<[string], Failure>("SkillService.RevealTarget", (id: string) => [id]),
+  /**
+   * SaveTarget is M99: create (token required) or edit (empty token keeps the
+   * registered directory). Everything is validated again on this side.
+   */
+  saveTarget: bind<[SkillSaveTargetInput], SkillSaveTargetResult>("SkillService.SaveTarget", (input: SkillSaveTargetInput) => [input]),
   /** Scan is M77: cached-first with a background refresh (API.md §12.2). */
   scan: bind<[string], SkillScanResult>("SkillService.Scan", (vaultID: string) => [vaultID]),
   /** Uninstall is M81. */

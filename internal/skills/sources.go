@@ -283,6 +283,26 @@ func RemoveToolSource(skillsDir, targetPath string) *contract.Failure {
 	return writeToolSources(skillsDir, merged)
 }
 
+// RemoveToolSources drops every record of one tool or registered target and
+// reports how many were removed (M6, API §14.2 M100). Files are untouched.
+func RemoveToolSources(skillsDir, toolID string) (int, *contract.Failure) {
+	existing := LoadToolSources(skillsDir)
+	kept := make([]ToolSource, 0, len(existing.Records))
+	for _, record := range existing.Records {
+		if record.ToolID != toolID {
+			kept = append(kept, record)
+		}
+	}
+	removed := len(existing.Records) - len(kept)
+	if removed == 0 {
+		return 0, nil
+	}
+	if f := writeToolSources(skillsDir, kept); f != nil {
+		return 0, f
+	}
+	return removed, nil
+}
+
 func writeToolSources(skillsDir string, records []ToolSource) *contract.Failure {
 	if err := os.MkdirAll(skillsDir, 0o755); err != nil {
 		return contract.Fail(contract.CodeIOFailure, "无法创建应用数据目录")

@@ -77,6 +77,13 @@ import {
   type SkillUpdatePreviewResult,
   type SkillUpdateFile,
   type SkillConfirmUpdateResult,
+  type SkillTarget,
+  type SkillTargetDir,
+  type SkillTargetsResult,
+  type PickTargetFolderResult,
+  type SkillSaveTargetInput,
+  type SkillSaveTargetResult,
+  type SkillRemoveTargetResult,
 } from "../mygo";
 
 export type { SkillScan, SkillScanResult, SkillRegistryResult, SkillTool, SkillCategory, ToolSkill, SkillsChangedEvent, SkillDistributeTarget, SkillPreviewResult, SkillOpResult };
@@ -85,6 +92,7 @@ export type { SkillToolScan, SkillUninstallPreview };
 export type { SkillStageResult, SkillStage, SkillStageCandidate, SkillStageSkip, SkillOrigin, SkillRemote };
 export type { SkillStageProgressEvent, SkillInstallTarget, SkillUpdateCheckResult };
 export type { SkillUpdateTarget, SkillUpdatePreviewResult, SkillUpdateFile, SkillConfirmUpdateResult };
+export type { SkillTarget, SkillTargetDir, SkillTargetsResult, PickTargetFolderResult, SkillSaveTargetInput, SkillSaveTargetResult, SkillRemoveTargetResult };
 
 export type { AppSettings, IndexStatus, KbHealthReport, LinkGraphResult, MutationPlan, MutationReport, PlanResult, AuditListResult, TransactionSummary, RestorePreview, RestoreResult, ProvenanceListResult, ProvenanceRecordShape, ProvenanceStateResult, SearchHit, SearchQuery, SearchResult, ChooseVaultResult, PickFolderResult, ReadResult, RecentDocumentsResult, RenderResult, SettingsResult, TreeResult, VaultListResult, WriteOutcome };
 
@@ -179,6 +187,11 @@ export const skillsApi = {
     guard(async () => unwrap(await SkillService.confirmKbUpdate(vaultId, stageId))),
   updateTool: (stageId: string) =>
     guard(async () => unwrap(await SkillService.updateTool(stageId))),
+  listTargets: () => guard(async () => unwrap(await SkillService.listTargets())),
+  pickTargetFolder: () => guard(async () => unwrap(await SkillService.pickTargetFolder())),
+  saveTarget: (input: SkillSaveTargetInput) => guard(async () => unwrap(await SkillService.saveTarget(input))),
+  removeTarget: (id: string) => guard(async () => unwrap(await SkillService.removeTarget(id))),
+  revealTarget: (id: string) => guard(async () => SkillService.revealTarget(id)),
 };
 
 export const vaultApi = {

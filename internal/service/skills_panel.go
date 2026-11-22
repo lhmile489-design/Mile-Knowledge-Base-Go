@@ -35,6 +35,9 @@ type SkillService struct {
 	checking bool
 	// rateLimitResetAt remembers the quota reset of the last round (M93).
 	rateLimitResetAt string
+	// targetPicks holds M98 folder tokens (10 minutes, cleared on save).
+	targetPicksMu sync.Mutex
+	targetPicks   map[string]targetPick
 }
 
 // NewSkillService wires the service; tests replace detector and now.
@@ -45,6 +48,7 @@ func NewSkillService(app *App) *SkillService {
 		detector:     skills.NewSystemDetector,
 		githubClient: func(version string) *skills.GithubClient { return skills.NewGithubClient(version) },
 		openDialog:   autoOpenDialog,
+		targetPicks:  map[string]targetPick{},
 	}
 }
 
@@ -52,21 +56,23 @@ func (s *SkillService) cachePath() string {
 	return filepath.Join(s.app.DataDir, "skills", "scan-cache.json")
 }
 
-// Registry is M76: the built-in tools plus detection, with redacted paths.
+// Registry is M76: the built-in tools, the registered custom tools and
+// projects plus detection, with redacted paths (API §14.1).
 func (s *SkillService) Registry(ctx context.Context) contract.SkillRegistryResult {
 	detector := s.detector()
-	tools := detector.Detect()
+	tools := skills.MergeTargets(detector.Detect(), s.loadTargets().Targets)
 	out := make([]contract.SkillTool, 0, len(tools))
 	for _, tool := range tools {
 		out = append(out, contract.SkillTool{
 			ID:         tool.ID,
 			Name:       tool.Name,
 			IconKey:    tool.IconKey,
-			InstallDir: redactToolPath(tool.InstallDir, detector),
-			ScanDirs:   redactToolPaths(tool.ScanDirs, detector),
+			InstallDir: maskPath(tool.InstallDir, detector),
+			ScanDirs:   maskPaths(tool.ScanDirs, detector),
 			Readers:    tool.Readers,
 			Status:     tool.Status,
-			Kind:       "builtin",
+			Kind:       tool.Kind,
+			Missing:    tool.Missing,
 			Official:   tool.Official,
 			Enabled:    tool.Enabled,
 		})
@@ -123,7 +129,8 @@ func (s *SkillService) startBackgroundScan(vaultID, cachePath string) {
 // runScan builds the payload, writes the cache and returns the fresh scan.
 func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.SkillScan {
 	detector := s.detector()
-	tools := detector.Detect()
+	loaded := s.loadTargets()
+	tools := skills.MergeTargets(detector.Detect(), loaded.Targets)
 	state := skills.LoadState(filepath.Join(s.app.DataDir, "skills", "state.json"))
 	kb, refs, root := s.kbSkills(ctx, vaultID, state.Distributions)
 	groups, warnings := skills.ScanTools(skills.ScanOptions{
@@ -136,13 +143,16 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 		ToolSources:   skills.LoadToolSources(filepath.Join(s.app.DataDir, "skills")).Records,
 		UpdateCache:   s.updateCache(),
 	})
-	// Tool paths never leave Go unredacted (API §1, §12).
+	// Tool paths never leave Go unredacted (API §1, §12, §14).
 	for i := range groups {
 		for j := range groups[i].Skills {
 			skill := &groups[i].Skills[j]
-			skill.Path = redactToolPath(skill.Path, detector)
-			skill.Target = redactToolPath(skill.Target, detector)
+			skill.Path = maskPath(skill.Path, detector)
+			skill.Target = maskPath(skill.Target, detector)
 		}
+	}
+	for _, warning := range loaded.Warnings {
+		warnings = append(warnings, contract.SkillScanWarning{Text: warning})
 	}
 	cachedAt := s.now().UTC().Format(time.RFC3339)
 	scan := contract.SkillScan{CachedAt: cachedAt, Kb: kb, Tools: groups, Warnings: warnings}

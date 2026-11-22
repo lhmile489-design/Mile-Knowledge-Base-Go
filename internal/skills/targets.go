@@ -188,6 +188,12 @@ func targetDirs(record Target) []string {
 	return dirs
 }
 
+// ProjectTargetDirs is the ordered directory list of a project registration:
+// ProjectSkillDirs plus installRel (M97's dirs, 技术设计 17.4).
+func ProjectTargetDirs(installRel string) []string {
+	return projectDirsForCheck(Target{Kind: TargetProject, InstallRel: installRel})
+}
+
 // projectDirsForCheck is ProjectSkillDirs plus the record's installRel.
 func projectDirsForCheck(record Target) []string {
 	dirs := ProjectSkillDirs()
@@ -475,6 +481,26 @@ func targetTool(target Target) DetectedTool {
 	entry.Missing = !isDirectory(target.Path)
 	entry.InstallDir = target.Path
 	return entry
+}
+
+// CountSkills is the quick per-directory count behind M97's skillCount: an
+// immediate subdirectory counts when it holds SKILL.md or AGENTS.md. The file
+// content is never read, and dot entries are skipped like the scan does.
+func CountSkills(dir string) int {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0
+	}
+	count := 0
+	for _, entry := range entries {
+		if !entry.IsDir() || skipEntry(entry.Name()) {
+			continue
+		}
+		if hasSkillFile(filepath.Join(dir, entry.Name())) {
+			count++
+		}
+	}
+	return count
 }
 
 func isDirectory(path string) bool {
