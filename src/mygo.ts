@@ -926,6 +926,22 @@ export interface SkillLogResult {
   failure?: Failure;
 }
 
+/**
+ * SkillManifestTarget is the machine-independent destination recorded in the
+ * vault manifest (数据库设计 3.9): built-in tools keep the registry id, custom
+ * tools and projects keep their registered name (plus the project subdir).
+ */
+export interface SkillManifestTarget {
+  /** builtin | custom | project */
+  kind: string;
+  /** builtin: registry id */
+  toolId?: string;
+  /** custom / project: registered name */
+  name?: string;
+  /** project: project-relative install subdir */
+  subdir?: string;
+}
+
 /** SkillOpItem is one target's result of a distribute/uninstall (M79/M81). */
 export interface SkillOpItem {
   targetId: string;
@@ -1000,6 +1016,63 @@ export interface SkillRemoveTargetResult {
   removed: boolean;
   distributionsRemoved: number;
   sourcesRemoved: number;
+  failure?: Failure;
+}
+
+/**
+ * SkillRestoreItem is one manifest entry judged against this machine (技术设计
+ * 18.5). ID is derived from the target key and the skill name, stable within
+ * one manifest.
+ */
+export interface SkillRestoreItem {
+  /** r-<12 hex> */
+  id: string;
+  source: string;
+  name: string;
+  /** source=kb */
+  skillPath?: string;
+  /** source=kb: link | copy */
+  mode?: string;
+  /** source=github */
+  origin?: SkillOrigin;
+  target: SkillManifestTarget;
+  /** display only */
+  targetLabel: string;
+  /** resolved tool / target id */
+  targetId?: string;
+  /** create | exists | conflict | skip */
+  state: string;
+  /** exists / conflict / skip detail */
+  reason?: string;
+  /** github + create/conflict */
+  needsNetwork?: boolean;
+  selectable: boolean;
+  defaultSelected: boolean;
+}
+
+/** SkillRestoreLocal is one local distribution the manifest does not have. */
+export interface SkillRestoreLocal {
+  name: string;
+  targetLabel: string;
+}
+
+/** SkillRestorePreview is M102's payload. */
+export interface SkillRestorePreview {
+  /** ok | missing | unreadable | too-large | version-unknown */
+  status: string;
+  updatedAt?: string;
+  items: SkillRestoreItem[];
+  /** create + conflict */
+  pending: number;
+  localOnly: SkillRestoreLocal[];
+  unmatched: string[];
+  warnings: string[];
+  canRebuild: boolean;
+}
+
+/** SkillRestorePreviewResult is M102. */
+export interface SkillRestorePreviewResult {
+  preview?: SkillRestorePreview;
   failure?: Failure;
 }
 
@@ -1809,6 +1882,8 @@ export const SkillService = {
   removeTarget: bind<[string], SkillRemoveTargetResult>("SkillService.RemoveTarget", (id: string) => [id]),
   /** Restore is M83. */
   restore: bind<[string], SkillRestoreResult>("SkillService.Restore", (backupID: string) => [backupID]),
+  /** RestorePreview is M102. */
+  restorePreview: bind<[string], SkillRestorePreviewResult>("SkillService.RestorePreview", (vaultID: string) => [vaultID]),
   /**
    * Reveal opens Explorer at a tool skill directory (M87). The path is resolved
    * through the same guard as removal; nothing is written.
