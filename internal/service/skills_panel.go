@@ -66,6 +66,7 @@ func (s *SkillService) Registry(ctx context.Context) contract.SkillRegistryResul
 			ScanDirs:   redactToolPaths(tool.ScanDirs, detector),
 			Readers:    tool.Readers,
 			Status:     tool.Status,
+			Kind:       "builtin",
 			Official:   tool.Official,
 			Enabled:    tool.Enabled,
 		})

@@ -5,8 +5,8 @@ import type { KbSkill, SkillTool } from "../../lib/transport";
 const { KbSkillsPage } = await import("./KbSkillsPage");
 
 const tools: SkillTool[] = [
-  { id: "agents", name: "通用目录", iconKey: "globe", scanDirs: [], readers: [], status: "detected", official: true, enabled: true },
-  { id: "claude-code", name: "Claude Code", iconKey: "claude-code", scanDirs: [], readers: [], status: "detected", official: true, enabled: true },
+  { id: "agents", name: "通用目录", iconKey: "globe", scanDirs: [], readers: [], status: "detected", kind: "builtin", official: true, enabled: true },
+  { id: "claude-code", name: "Claude Code", iconKey: "claude-code", scanDirs: [], readers: [], status: "detected", kind: "builtin", official: true, enabled: true },
 ];
 
 const skills: KbSkill[] = [

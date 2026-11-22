@@ -1120,6 +1120,8 @@ type SkillTool struct {
 	ScanDirs   []string `json:"scanDirs"`
 	Readers    []string `json:"readers,omitempty"` // tools that read the shared ~/.agents/skills
 	Status     string   `json:"status"`            // detected | leftover | missing
+	Kind       string   `json:"kind"`              // M6: builtin | custom | project
+	Missing    bool     `json:"missing,omitempty"` // M6: registered dir is gone (custom/project)
 	Official   bool     `json:"official"`          // false = official support not verified
 	Enabled    bool     `json:"enabled"`           // MiniMax Code defaults to false
 }
@@ -1143,18 +1145,20 @@ type KbSkill struct {
 
 // ToolSkill is one skill found in a tool directory (FR-SKM-SCAN).
 type ToolSkill struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Path        string       `json:"path"`
-	ToolID      string       `json:"toolId"`
-	Origin      string       `json:"origin"`               // linked | link-broken | copied | independent | builtin | external-link
-	Sync        string       `json:"sync,omitempty"`       // in-sync | vault-updated | tool-updated | both-updated | missing
-	Target      string       `json:"target,omitempty"`     // redacted target of a link
-	SourcePath  string       `json:"sourcePath,omitempty"` // copied: the vault skill it came from
-	Builtin     bool         `json:"builtin,omitempty"`
-	Base        string       `json:"base,omitempty"`   // install | scan:<n> | builtin:<n> (API §12.3)
-	Rel         string       `json:"rel,omitempty"`    // path inside that root, slash-separated
-	Remote      *SkillRemote `json:"remote,omitempty"` // M5: GitHub origin and update state
+	Name         string       `json:"name"`
+	Description  string       `json:"description"`
+	Path         string       `json:"path"`
+	ToolID       string       `json:"toolId"`
+	Origin       string       `json:"origin"`               // linked | link-broken | copied | independent | builtin | external-link
+	Sync         string       `json:"sync,omitempty"`       // in-sync | vault-updated | tool-updated | both-updated | missing
+	Target       string       `json:"target,omitempty"`     // redacted target of a link
+	SourcePath   string       `json:"sourcePath,omitempty"` // copied: the vault skill it came from
+	Builtin      bool         `json:"builtin,omitempty"`
+	Base         string       `json:"base,omitempty"`         // install | scan:<n> | builtin:<n> | project:<dir> (API §12.3, §14)
+	Rel          string       `json:"rel,omitempty"`          // path inside that root, slash-separated
+	SourceToolID string       `json:"sourceToolId,omitempty"` // M6: project rows, the tool the subdir belongs to
+	Subdir       string       `json:"subdir,omitempty"`       // M6: project rows, project-relative subdir
+	Remote       *SkillRemote `json:"remote,omitempty"`       // M5: GitHub origin and update state
 }
 
 // SkillCategory groups knowledge-base skills by category.
@@ -1216,7 +1220,7 @@ type SkillUninstallPreview struct {
 type SkillLogRecord struct {
 	ID         string `json:"id"`
 	At         string `json:"at"`
-	Op         string `json:"op"` // distribute | uninstall | overwrite | adopt | restore | clean
+	Op         string `json:"op"` // distribute | uninstall | overwrite | adopt | restore | clean | install | update | unregister
 	Skill      string `json:"skill"`
 	ToolID     string `json:"toolId,omitempty"`
 	Location   string `json:"location"`
@@ -1420,4 +1424,66 @@ type SkillDistributeTarget struct {
 type SkillToolRef struct {
 	ToolID string `json:"toolId"`
 	Path   string `json:"path"`
+}
+
+// ---- R2 custom targets and project sources (M6, API.md §14) ----
+
+// SkillTargetDir is one conventional subdirectory of a project target.
+type SkillTargetDir struct {
+	Rel    string `json:"rel"`    // project-relative, slash-separated, e.g. ".claude/skills"
+	Exists bool   `json:"exists"` // false only for installDir before it is created
+	Skills int    `json:"skills"` // immediate subdirectories holding a SKILL.md
+}
+
+// SkillTarget is one registered custom tool or project (FR-SKM-CUSTOM/PROJ).
+type SkillTarget struct {
+	ID         string           `json:"id"`   // t-<12 hex>
+	Kind       string           `json:"kind"` // custom | project
+	Name       string           `json:"name"`
+	Path       string           `json:"path"`                 // redacted for display; never the absolute path
+	InstallDir string           `json:"installDir,omitempty"` // project: project-relative install subdir
+	Exists     bool             `json:"exists"`               // registered dir still on disk
+	SkillCount int              `json:"skillCount"`           // quick count, SKILL.md content is not read
+	Dirs       []SkillTargetDir `json:"dirs,omitempty"`       // project only
+	CreatedAt  string           `json:"createdAt"`
+}
+
+// SkillTargetsResult is M97.
+type SkillTargetsResult struct {
+	Items   []SkillTarget `json:"items"`
+	Failure *Failure      `json:"failure,omitempty"`
+}
+
+// PickTargetFolderResult is M98. Token is opaque, valid 10 minutes.
+type PickTargetFolderResult struct {
+	Cancelled   bool             `json:"cancelled"`
+	Token       string           `json:"token,omitempty"`
+	DisplayName string           `json:"displayName,omitempty"`
+	Path        string           `json:"path,omitempty"` // redacted
+	Dirs        []SkillTargetDir `json:"dirs,omitempty"` // existing conventional subdirs (exists=true)
+	Failure     *Failure         `json:"failure,omitempty"`
+}
+
+// SkillSaveTargetInput is M99's request. On create Token is required; on edit
+// an empty Token keeps the registered directory.
+type SkillSaveTargetInput struct {
+	ID         string `json:"id,omitempty"`
+	Kind       string `json:"kind"` // custom | project; immutable once created
+	Name       string `json:"name"`
+	Token      string `json:"token,omitempty"`
+	InstallDir string `json:"installDir,omitempty"` // project only
+}
+
+// SkillSaveTargetResult is M99.
+type SkillSaveTargetResult struct {
+	Target  *SkillTarget `json:"target,omitempty"`
+	Failure *Failure     `json:"failure,omitempty"`
+}
+
+// SkillRemoveTargetResult is M100. Files inside the directory are kept.
+type SkillRemoveTargetResult struct {
+	Removed              bool     `json:"removed"`
+	DistributionsRemoved int      `json:"distributionsRemoved"`
+	SourcesRemoved       int      `json:"sourcesRemoved"`
+	Failure              *Failure `json:"failure,omitempty"`
 }

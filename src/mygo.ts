@@ -894,7 +894,7 @@ export interface SkillInstallTarget {
 export interface SkillLogRecord {
   id: string;
   at: string;
-  /** distribute | uninstall | overwrite | adopt | restore | clean */
+  /** distribute | uninstall | overwrite | adopt | restore | clean | install | update | unregister */
   op: string;
   skill: string;
   toolId?: string;
@@ -1080,6 +1080,10 @@ export interface SkillTool {
   readers?: string[];
   /** detected | leftover | missing */
   status: string;
+  /** M6: builtin | custom | project */
+  kind: string;
+  /** M6: registered dir is gone (custom/project) */
+  missing?: boolean;
   /** false = official support not verified */
   official: boolean;
   /** MiniMax Code defaults to false */
@@ -1230,10 +1234,14 @@ export interface ToolSkill {
   /** copied: the vault skill it came from */
   sourcePath?: string;
   builtin?: boolean;
-  /** install | scan:<n> | builtin:<n> (API §12.3) */
+  /** install | scan:<n> | builtin:<n> | project:<dir> (API §12.3, §14) */
   base?: string;
   /** path inside that root, slash-separated */
   rel?: string;
+  /** M6: project rows, the tool the subdir belongs to */
+  sourceToolId?: string;
+  /** M6: project rows, project-relative subdir */
+  subdir?: string;
   /** M5: GitHub origin and update state */
   remote?: SkillRemote;
 }
