@@ -122,7 +122,7 @@ GitHub 项受网络影响，不设门槛，只记实测。实测后按 G-PERF �
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-22 | 计划 | v0.1 草案；PRD v2.6（用户当天审核通过）；D-018；技术设计 §18、API §15、数据库设计 3.9 与 4.6 M7 增补、UI 稿 9.6、DESIGN 11.7 草稿；路线 3.9 | 未提交 | 文档 UTF-8 无 BOM；契约与现有代码核对（分发、卸载、安装、更新、来源记录、`Registry.Active()`、`SKILLS_FAKE_GITHUB`） | 用户 2026-11-22 按建议批准（含 Q-M7-1–5、B-M7-01–03），放行 T00 |
-| 2026-11-22 | T00 | 原型 5 状态（`skills-panel.html` 新增 `restore-*`）与 `capture-proto-m7.py`；10 张 1440×900 截图在 `design/r2/shots-m7/`；`internal/contract` 新增 `SkillManifestTarget` / `SkillRestoreItem` / `SkillRestorePreview` / `SkillRestoreSelection` 等 8 个类型，M103 的出参命名 `SkillManifestRestoreResult`（M83 已占用 `SkillRestoreResult`）；`bun run generate` 通过（方法未实现前绑定不出现，同 M6 T00 口径） | 待填 | 原型首轮两处布局问题已修（`tico('custom')` 抛错导致 5.7KB 空图；横幅挤占主体行）；UI 稿 9.6.1 记录 5 条实现细节；`go build` / `go vet` 通过 | 待用户审核原型与契约；T01 未放行 |
+| 2026-11-22 | T00 | 原型 5 状态（`skills-panel.html` 新增 `restore-*`）与 `capture-proto-m7.py`；10 张 1440×900 截图在 `design/r2/shots-m7/`；`internal/contract` 新增 `SkillManifestTarget` / `SkillRestoreItem` / `SkillRestorePreview` / `SkillRestoreSelection` 等 8 个类型，M103 的出参命名 `SkillManifestRestoreResult`（M83 已占用 `SkillRestoreResult`）；`bun run generate` 通过（方法未实现前绑定不出现，同 M6 T00 口径） | `3d02764`（本地，未推送） | 原型首轮两处布局问题已修（`tico('custom')` 抛错导致 5.7KB 空图；横幅挤占主体行）；UI 稿 9.6.1 记录 5 条实现细节；`go build` / `go vet` 通过 | 待用户审核原型与契约；T01 未放行 |
 
 ## 9. 自查
 
