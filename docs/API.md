@@ -1083,7 +1083,7 @@ type SkillTarget = {
   id: string;                     // t-<12 hex>
   kind: SkillTargetKind;
   name: string;                   // 1–40 字符，单段
-  path: string;                   // 脱敏：~ 前缀，或 <盘符>:\…\<最后 2 段>；不含绝对路径
+  path: string;                   // 脱敏：<home> / <local-app-data> 前缀（与 M4 同口径），其它路径 <盘符>:\…\<最后 2 段>；不含绝对路径
   installDir?: string;            // 只有 project：当前分发安装子目录（项目内相对）
   exists: boolean;                // 登记目录当前是否存在
   skillCount: number;             // 直接子目录里含 SKILL.md 的数量（快速统计）
