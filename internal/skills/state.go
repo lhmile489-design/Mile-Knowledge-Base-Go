@@ -157,6 +157,27 @@ func SaveState(path string, state State) error {
 	return os.Rename(tmp, path)
 }
 
+// RemoveDistributions drops every record of one tool or registered target
+// and reports how many were removed (M6, API §14.2 M100).
+func RemoveDistributions(path, toolID string) (int, *contract.Failure) {
+	state := LoadState(path)
+	kept := make([]Distribution, 0, len(state.Distributions))
+	for _, record := range state.Distributions {
+		if record.ToolID != toolID {
+			kept = append(kept, record)
+		}
+	}
+	removed := len(state.Distributions) - len(kept)
+	if removed == 0 {
+		return 0, nil
+	}
+	state.Distributions = kept
+	if err := SaveState(path, *state); err != nil {
+		return 0, contract.Fail(contract.CodeIOFailure, "无法写入分发记录")
+	}
+	return removed, nil
+}
+
 // AddDistribution appends or replaces the record for the same tool+target.
 func (s *State) AddDistribution(record Distribution) {
 	for i, existing := range s.Distributions {

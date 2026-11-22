@@ -276,6 +276,8 @@ func hasExtension(rel string) bool {
 // ConfirmKbUpdate is M95: only when the skill now equals the staged version
 // does the source record move forward.
 func (s *SkillService) ConfirmKbUpdate(ctx context.Context, vaultID, stageID string) contract.SkillConfirmUpdateResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	if f := validateID(vaultID); f != nil {
 		return contract.SkillConfirmUpdateResult{Failure: f}
 	}
@@ -336,6 +338,8 @@ func (s *SkillService) ConfirmKbUpdate(ctx context.Context, vaultID, stageID str
 // UpdateTool is M96: back up the tool skill, copy the staged version in, and
 // move the backup back if the copy fails (16.6).
 func (s *SkillService) UpdateTool(ctx context.Context, stageID string) contract.SkillOpResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	stage, f := s.stageStore().Get(stageID)
 	if f != nil {
 		return contract.SkillOpResult{Failure: f}

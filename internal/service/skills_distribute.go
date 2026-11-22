@@ -29,6 +29,8 @@ func (s *SkillService) DistributePreview(ctx context.Context, vaultID, skillPath
 
 // Distribute is M79.
 func (s *SkillService) Distribute(ctx context.Context, vaultID, skillPath string, targets []contract.SkillDistributeTarget, mode string) contract.SkillOpResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	opts, f := s.distributeOptions(ctx, vaultID, skillPath, targets, mode)
 	if f != nil {
 		return contract.SkillOpResult{Failure: f}

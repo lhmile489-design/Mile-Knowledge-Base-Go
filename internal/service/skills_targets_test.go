@@ -168,9 +168,17 @@ func TestSkillTargetsRemoveCleansRecords(t *testing.T) {
 		t.Fatal(f)
 	}
 
+	before, err := skills.TreeHash(custom)
+	if err != nil {
+		t.Fatal(err)
+	}
 	res := svc.RemoveTarget(ctx, id)
 	if res.Failure != nil || !res.Removed || res.DistributionsRemoved != 1 || res.SourcesRemoved != 1 {
 		t.Fatalf("remove = %+v", res)
+	}
+	after, err := skills.TreeHash(custom)
+	if err != nil || after != before {
+		t.Fatalf("directory bytes changed: %s -> %s (%v)", before, after, err)
 	}
 	if got := skills.LoadState(statePath); len(got.Distributions) != 0 {
 		t.Fatalf("distributions left: %+v", got.Distributions)
@@ -196,5 +204,54 @@ func TestSkillTargetsRemoveCleansRecords(t *testing.T) {
 	}
 	if again := svc.RemoveTarget(ctx, id); again.Failure == nil || again.Failure.Code != contract.CodeNotFound {
 		t.Fatalf("second remove = %+v", again)
+	}
+}
+
+func TestReregisteredTargetIsScannedAgain(t *testing.T) {
+	home := t.TempDir()
+	svc, vaultID := skillServiceWithHome(t, home)
+	ctx := context.Background()
+	seedVaultSkill(t, svc.app.Vaults.List().Vaults[0].Root, "skills/前端/demo")
+
+	custom := filepath.Join(home, "droid")
+	if err := os.MkdirAll(custom, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	saved := svc.SaveTarget(ctx, contract.SkillSaveTargetInput{Kind: "custom", Name: "Droid", Token: svc.newTargetPick(custom)})
+	if saved.Failure != nil {
+		t.Fatalf("save = %+v", saved)
+	}
+	if op := svc.Distribute(ctx, vaultID, "skills/前端/demo", []contract.SkillDistributeTarget{{TargetID: saved.Target.ID}}, "copy"); op.Failure != nil {
+		t.Fatalf("distribute = %+v", op)
+	}
+	if res := svc.RemoveTarget(ctx, saved.Target.ID); res.Failure != nil {
+		t.Fatalf("remove = %+v", res)
+	}
+	// The copy stays on disk; re-registering the same directory makes the scan
+	// see it again — as an independent skill, because its record is gone.
+	again := svc.SaveTarget(ctx, contract.SkillSaveTargetInput{Kind: "custom", Name: "Droid Again", Token: svc.newTargetPick(custom)})
+	if again.Failure != nil {
+		t.Fatalf("re-register = %+v", again)
+	}
+	scan := svc.Scan(ctx, vaultID)
+	if scan.Failure != nil {
+		t.Fatalf("scan = %+v", scan)
+	}
+	found := false
+	for _, group := range scan.Scan.Tools {
+		if group.ToolID != again.Target.ID {
+			continue
+		}
+		for _, skill := range group.Skills {
+			if skill.Name == "demo" {
+				found = true
+				if skill.Origin != "independent" {
+					t.Fatalf("origin after re-register = %q, want independent", skill.Origin)
+				}
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("leftover copy not scanned: %+v", scan.Scan.Tools)
 	}
 }

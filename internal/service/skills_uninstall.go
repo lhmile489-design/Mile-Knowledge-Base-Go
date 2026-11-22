@@ -212,6 +212,8 @@ func (s *SkillService) UninstallPreview(ctx context.Context, toolID, rel string)
 
 // Uninstall is M81.
 func (s *SkillService) Uninstall(ctx context.Context, toolID, rel string) contract.SkillOpResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	_, abs, f := s.resolveToolSkill(ctx, toolID, rel)
 	if f != nil {
 		return contract.SkillOpResult{Failure: f}
@@ -246,6 +248,8 @@ func (s *SkillService) Uninstall(ctx context.Context, toolID, rel string) contra
 
 // Restore is M83.
 func (s *SkillService) Restore(ctx context.Context, backupID string) contract.SkillRestoreResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	restored, err := skills.RestoreBackup(s.backupStore(), backupID)
 	switch {
 	case errors.Is(err, skills.ErrRestoreConflict):
@@ -273,6 +277,8 @@ func (s *SkillService) Backups(ctx context.Context) contract.SkillBackupsResult 
 
 // CleanBackups is M86.
 func (s *SkillService) CleanBackups(ctx context.Context, ids []string) contract.SkillBackupsResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	if len(ids) == 0 || len(ids) > 200 {
 		return contract.SkillBackupsResult{Failure: contract.Fail(contract.CodeInvalidInput, "备份数量不合法")}
 	}

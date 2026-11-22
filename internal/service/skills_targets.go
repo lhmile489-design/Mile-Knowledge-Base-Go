@@ -162,6 +162,8 @@ func (s *SkillService) PickTargetFolder(ctx context.Context) contract.PickTarget
 // SaveTarget is M99: create (token required) or edit (empty token keeps the
 // registered directory). Everything is validated again on this side.
 func (s *SkillService) SaveTarget(ctx context.Context, input contract.SkillSaveTargetInput) contract.SkillSaveTargetResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	loaded := s.loadTargets()
 	targets := loaded.Targets
 	exceptID := input.ID
@@ -258,6 +260,8 @@ func (s *SkillService) SaveTarget(ctx context.Context, input contract.SkillSaveT
 // RemoveTarget is M100: drop the registration and the records that point at
 // it. Files inside the directory are never touched (AC-SKM-17).
 func (s *SkillService) RemoveTarget(ctx context.Context, id string) contract.SkillRemoveTargetResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	loaded := s.loadTargets()
 	var record skills.Target
 	found := false
@@ -274,22 +278,10 @@ func (s *SkillService) RemoveTarget(ctx context.Context, id string) contract.Ski
 		return contract.SkillRemoveTargetResult{Failure: contract.Fail(contract.CodeNotFound, "登记不存在")}
 	}
 
-	statePath := filepath.Join(s.app.DataDir, "skills", "state.json")
-	state := skills.LoadState(statePath)
-	distributions := make([]skills.Distribution, 0, len(state.Distributions))
-	for _, record := range state.Distributions {
-		if record.ToolID != id {
-			distributions = append(distributions, record)
-		}
+	removedDistributions, f := skills.RemoveDistributions(filepath.Join(s.app.DataDir, "skills", "state.json"), id)
+	if f != nil {
+		return contract.SkillRemoveTargetResult{Failure: f}
 	}
-	removedDistributions := len(state.Distributions) - len(distributions)
-	if removedDistributions > 0 {
-		state.Distributions = distributions
-		if err := skills.SaveState(statePath, *state); err != nil {
-			return contract.SkillRemoveTargetResult{Failure: contract.Fail(contract.CodeIOFailure, "无法写入分发记录")}
-		}
-	}
-
 	removedSources, f := skills.RemoveToolSources(filepath.Join(s.app.DataDir, "skills"), id)
 	if f != nil {
 		return contract.SkillRemoveTargetResult{Failure: f}

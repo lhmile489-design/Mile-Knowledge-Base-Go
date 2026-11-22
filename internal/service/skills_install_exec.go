@@ -67,6 +67,8 @@ func (s *SkillService) InstallPreview(ctx context.Context, vaultID, stageID stri
 
 // Install is M91.
 func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids []string, target contract.SkillInstallTarget) contract.SkillOpResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	stage, picked, f := s.stageSelection(ctx, vaultID, stageID, ids)
 	if f != nil {
 		return contract.SkillOpResult{Failure: f}

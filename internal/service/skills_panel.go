@@ -38,6 +38,9 @@ type SkillService struct {
 	// targetPicks holds M98 folder tokens (10 minutes, cleared on save).
 	targetPicksMu sync.Mutex
 	targetPicks   map[string]targetPick
+	// opMu serializes write operations so a registration cannot be removed
+	// while a distribute/uninstall/install is in flight (技术设计 17.6).
+	opMu sync.Mutex
 }
 
 // NewSkillService wires the service; tests replace detector and now.

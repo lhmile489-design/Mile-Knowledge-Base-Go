@@ -16,6 +16,8 @@ import (
 
 // Adopt is M82.
 func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category string, linkBack bool, extras []contract.SkillToolRef) contract.SkillAdoptResult {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	if f := validateID(vaultID); f != nil {
 		return contract.SkillAdoptResult{Failure: f}
 	}
