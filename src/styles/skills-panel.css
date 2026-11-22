@@ -1308,3 +1308,7 @@
 .targets-empty p {
   margin: 0;
 }
+
+.targets-form .targets-form-foot {
+  justify-content: flex-end;
+}

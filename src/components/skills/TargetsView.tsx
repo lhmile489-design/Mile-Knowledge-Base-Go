@@ -273,8 +273,7 @@ export function TargetsView({
             </span>
           </div>
 
-          <footer className="install-foot">
-            <span />
+          <footer className="install-foot targets-form-foot">
             <span className="spacer" />
             <button type="button" className="btn-quiet" onClick={() => setForm(null)} data-testid="targets-cancel">
               取消
