@@ -73,10 +73,11 @@
 | Go 测试 | 单元测试与静态检查 | `bun run test:go` / `bun run lint:go`；格式另跑 `gofmt -l .` | 已验证（2026-11-21：642 项，18 包；vet 与 gofmt 无输出） |
 | 竞态检测 | `go test -race` | `bun run test:go-race` | 未验证（需要 cgo，本机未跑；不在常规门禁内） |
 | 模糊测试 | 路径与渲染（`FuzzValidateRel`、`FuzzRender`） | `bun run test:fuzz`（`scripts/test-fuzz.sh`，每个目标默认 60s，`FUZZ_TIME=3s` 可缩短） | 已验证（2026-11-18：正向通过；故意失败的对照返回非零） |
-| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m2、ac-m3、ac-m35、ac-m4、ac-m5；`E2E_SKIP_BUILD=1` 跳过构建） | 全量 251 项全过（2026-11-22：15/16/22/47/37/60/54，EXIT=0） |
+| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m2、ac-m3、ac-m35、ac-m4、ac-m5、ac-m6；`E2E_SKIP_BUILD=1` 跳过构建） | 全量 297 项全过（2026-11-22：15/16/22/47/37/60/54/46，EXIT=0） |
 | M3.5 验收 | 主题色：全新安装默认橙、选蓝立即生效与重启、自定义色、乱码回落 | `bash scripts/e2e/ac-m35.sh`（内含 `scripts/e2e/accent-contrast.js` 的真实组件对比度） | 已验证 37/37（2026-11-20） |
 | M4 验收 | 技能管理：注册表/扫描/分发/卸载/收编/备份/浮层（AC-SKM-1–11） | `bash scripts/e2e/ac-m4.sh`（假 HOME + 假注册表，不写真实工具目录） | 已验证 60/60（2026-11-20） |
 | M5 验收 | GitHub / zip 安装、更新、整包拒绝、断网零写入（AC-SKM-12–16） | `bash scripts/e2e/ac-m5.sh`（本地假 GitHub；需要 e2e 构建） | 已验证 54/54（2026-11-22） |
+| M6 验收 | 自定义工具与项目：登记、知识库与重叠拒绝、分发、移除后文件保留（AC-SKM-17/18） | `bash scripts/e2e/ac-m6.sh`（假 HOME + 目录队列 `SKILLS_FAKE_PICK_DIR=@文件`；需要 e2e 构建） | 已验证 46/46（2026-11-22） |
 | M2 验收 | 假供应商闭环（不写凭据管理器） | `bash scripts/e2e/ac-m2.sh`（需要先做 e2e 构建；自带假供应商） | 已验证 22/22（2026-11-19） |
 | 新旧版兼容 | 事务与 provenance 字节互通 | `bash scripts/compat/legacy-compat.sh`（需要旧版仓库与 bun，只读复制到临时目录） | 已验证 7/7 |
 | M0 性能 | 冷启动 / 大库 / 滚动 / 外部改动 | `bash scripts/e2e/perf.sh` | 已验证（见 docs/PLAN-M0.md §6） |
