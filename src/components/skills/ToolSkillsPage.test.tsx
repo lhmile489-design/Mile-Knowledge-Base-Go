@@ -223,3 +223,46 @@ describe("ToolSkillsPage GitHub updates", () => {
     await waitFor(() => expect(screen.queryByTestId("tool-update-dialog")).toBeNull());
   });
 });
+
+describe("ToolSkillsPage M6 targets", () => {
+  it("shows a project chip, attributes rows to the source tool and opens the manager", () => {
+    const onManageTargets = vi.fn();
+    const projectTools = [
+      ...tools,
+      {
+        id: "t-222222222222", name: "acme-site", iconKey: "folder", installDir: "D:\…\acme-site\.claude\skills",
+        installRel: ".claude/skills", scanDirs: [], readers: [], status: "detected", kind: "project", official: true, enabled: true,
+      },
+    ];
+    const projectGroups = [
+      {
+        toolId: "t-222222222222",
+        skills: [
+          {
+            name: "pdf", description: "", path: "D:\…\acme-site\.claude\skills\pdf", toolId: "t-222222222222",
+            origin: "independent", base: "project:.claude/skills", rel: "pdf", sourceToolId: "claude-code", subdir: ".claude/skills",
+          },
+        ],
+      },
+    ];
+    render(
+      <ToolSkillsPage
+        vaultId="v1"
+        groups={projectGroups as never}
+        tools={projectTools as never}
+        onChanged={() => {}}
+        onManageTargets={onManageTargets}
+      />,
+    );
+    expect(screen.getByTestId("tool-chip-t-222222222222")).toBeTruthy();
+    expect(screen.getByTestId("tool-manage-count").textContent).toContain("自定义 0 · 项目 1");
+    fireEvent.click(screen.getByTestId("manage-targets"));
+    expect(onManageTargets).toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("tool-chip-t-222222222222"));
+    const row = screen.getByTestId("tool-skill-pdf-t-222222222222");
+    const icon = row.querySelector(".tool-row-icon");
+    expect(icon?.getAttribute("title")).toBe("Claude Code · .claude/skills");
+    fireEvent.click(screen.getByTestId("tool-uninstall-pdf-t-222222222222"));
+    expect(uninstallPreview).toHaveBeenCalledWith("t-222222222222", "project:.claude/skills:pdf");
+  });
+});

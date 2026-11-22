@@ -76,6 +76,7 @@ func (s *SkillService) Registry(ctx context.Context) contract.SkillRegistryResul
 			Status:     tool.Status,
 			Kind:       tool.Kind,
 			Missing:    tool.Missing,
+			InstallRel: tool.InstallRel,
 			Official:   tool.Official,
 			Enabled:    tool.Enabled,
 		})

@@ -1,4 +1,4 @@
-import { Globe } from "@phosphor-icons/react";
+import { FolderOpen, Globe } from "@phosphor-icons/react";
 import type { SkillTool } from "../../lib/transport";
 
 // Brand SVGs ship in src/assets/agents with NOTICE (DESIGN.md 11.2; D-014
@@ -25,6 +25,9 @@ export function ToolIcon({
   if (!tool) return null;
   if (tool.id === "agents") {
     return <Globe size={size} aria-hidden className="tool-icon tool-icon-globe" />;
+  }
+  if (tool.iconKey === "folder") {
+    return <FolderOpen size={size} aria-hidden className="tool-icon tool-icon-folder" />;
   }
   const source = sourceFor(tool.iconKey);
   if (!source) {

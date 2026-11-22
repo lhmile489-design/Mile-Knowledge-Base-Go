@@ -10,6 +10,7 @@ import {
   type SkillTool,
 } from "../../lib/transport";
 import { categoryProblem } from "../../lib/skillImport";
+import { installTargets, tailOf } from "../../lib/skillsView";
 import { SkillImportWizard } from "../SkillImportWizard";
 import { ToolIcon } from "./ToolIcon";
 
@@ -143,13 +144,7 @@ export function InstallView({
     });
   }, [reading]);
 
-  const eligibleTools = useMemo(
-    () =>
-      tools
-        .filter((tool) => tool.enabled && (tool.id === "agents" || (tool.status === "detected" && Boolean(tool.installDir))))
-        .sort((a, b) => (a.id === "agents" ? -1 : b.id === "agents" ? 1 : a.name.localeCompare(b.name))),
-    [tools],
-  );
+  const eligibleTools = useMemo(() => installTargets(tools), [tools]);
 
   // Tool targets: preview tells which tiles exist (and need 覆盖).
   useEffect(() => {
@@ -482,6 +477,7 @@ export function InstallView({
               {targets.map((tool) => {
                 const item = preview?.find((entry) => entry.targetId === tool.id);
                 const blocked = item?.action === "exists" || item?.action === "conflict";
+                const missing = Boolean(tool.missing);
                 const checked = toolTargets.has(tool.id);
                 return (
                   <div
@@ -489,28 +485,34 @@ export function InstallView({
                     className="skills-target"
                     role="checkbox"
                     aria-checked={checked}
-                    aria-disabled={blocked && !overwrite.has(tool.id)}
+                    aria-disabled={missing || (blocked && !overwrite.has(tool.id))}
                     tabIndex={0}
                     data-testid={`install-tool-${tool.id}`}
                     onClick={() => {
-                      if (blocked && !overwrite.has(tool.id)) return;
+                      if (missing || (blocked && !overwrite.has(tool.id))) return;
                       setToolTargets((current) => toggle(current, tool.id));
                     }}
                     onKeyDown={(event) => {
                       if (event.key !== "Enter" && event.key !== " ") return;
                       event.preventDefault();
-                      if (blocked && !overwrite.has(tool.id)) return;
+                      if (missing || (blocked && !overwrite.has(tool.id))) return;
                       setToolTargets((current) => toggle(current, tool.id));
                     }}
                   >
                     <ToolIcon tool={tool} size={18} />
                     <span className="skills-target-name">{tool.name}</span>
                     <span className="skills-target-note">
-                      {item
-                        ? item.detail || (item.action === "overwrite" ? "将覆盖" : item.action === "create" ? "新增" : "")
-                        : tool.id === "agents"
-                          ? "共用目录"
-                          : "已检测到"}
+                      {missing
+                        ? "目录不存在"
+                        : item
+                          ? item.detail || (item.action === "overwrite" ? "将覆盖" : item.action === "create" ? "新增" : "")
+                          : tool.kind === "project"
+                            ? `写入 ${tool.installRel ?? ""}`
+                            : tool.kind === "custom"
+                              ? tailOf(tool.installDir)
+                              : tool.id === "agents"
+                                ? "共用目录"
+                                : "已检测到"}
                     </span>
                     {blocked ? (
                       <label className="skills-target-overwrite" onClick={(event) => event.stopPropagation()}>

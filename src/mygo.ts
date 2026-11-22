@@ -1160,6 +1160,8 @@ export interface SkillTool {
   kind: string;
   /** M6: registered dir is gone (custom/project) */
   missing?: boolean;
+  /** M6: project install subdir for the target grid */
+  installRel?: string;
   /** false = official support not verified */
   official: boolean;
   /** MiniMax Code defaults to false */

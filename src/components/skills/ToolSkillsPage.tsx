@@ -170,7 +170,12 @@ export function ToolSkillsPage({
             const tool = toolFor(toolId);
             return (
               <div key={skill.path} className="tool-row" data-testid={`tool-skill-${skill.name}-${toolId}`}>
-                <ToolIcon tool={tool} size={18} />
+                <span
+                  className="tool-row-icon"
+                  title={skill.sourceToolId && tool ? `${toolFor(skill.sourceToolId)?.name ?? skill.sourceToolId}${skill.subdir ? ` · ${skill.subdir}` : ""}` : undefined}
+                >
+                  <ToolIcon tool={skill.sourceToolId ? toolFor(skill.sourceToolId) : tool} size={18} />
+                </span>
                 <span className="tool-row-name">{skill.name}</span>
                 <span className="tool-row-path" title={skill.path}>
                   {skill.path}
@@ -192,7 +197,7 @@ export function ToolSkillsPage({
                       <ArrowClockwise size={14} aria-hidden />
                     </button>
                   ) : null}
-                  {skill.origin === "copied" && skill.sync === "vault-updated" && skill.sourcePath ? (
+                  {skill.origin === "copied" && skill.sync === "vault-updated" && skill.sourcePath && tool?.kind !== "project" ? (
                     <button
                       type="button"
                       className="icon-button"

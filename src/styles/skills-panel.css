@@ -452,6 +452,15 @@
   color: var(--raw-muted);
 }
 
+.tool-icon-folder {
+  color: var(--raw-muted);
+}
+
+.tool-row-icon {
+  display: grid;
+  place-items: center;
+}
+
 .tool-icon-letter {
   display: grid;
   place-items: center;
@@ -461,7 +470,7 @@
   line-height: 1;
 }
 
-[data-theme='dark'] .tool-icon:not(.tool-icon-globe):not(.tool-icon-letter) {
+[data-theme='dark'] .tool-icon:not(.tool-icon-globe):not(.tool-icon-letter):not(.tool-icon-folder) {
   padding: 1px;
   background: #e6e7ea;
 }

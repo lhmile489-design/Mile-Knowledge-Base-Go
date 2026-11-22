@@ -75,3 +75,33 @@ describe("DistributeDialog", () => {
     expect(onClose).toHaveBeenCalled();
   });
 });
+
+describe("DistributeDialog M6 targets", () => {
+  const m6Tools = [
+    { id: "agents", name: "通用目录", iconKey: "globe", scanDirs: [], readers: [], status: "detected", kind: "builtin", official: true, enabled: true },
+    { id: "claude-code", name: "Claude Code", iconKey: "claude-code", installDir: "<home>/.claude/skills", scanDirs: [], readers: [], status: "detected", kind: "builtin", official: true, enabled: true },
+    { id: "t-111111111111", name: "Droid", iconKey: "", installDir: "<home>/droid", scanDirs: [], readers: [], status: "detected", kind: "custom", official: true, enabled: true },
+    { id: "t-222222222222", name: "acme-site", iconKey: "folder", installDir: "D:\…\acme-site\.claude\skills", installRel: ".claude/skills", scanDirs: [], readers: [], status: "detected", kind: "project", official: true, enabled: true },
+    { id: "t-333333333333", name: "gone-proj", iconKey: "folder", installDir: "D:\…\gone\.claude\skills", installRel: ".claude/skills", scanDirs: [], readers: [], status: "detected", kind: "project", missing: true, official: true, enabled: true },
+  ];
+
+  it("lists registered targets with their install notes and disables missing ones", async () => {
+    preview.mockResolvedValue({ items: [] });
+    render(<DistributeDialog vaultId="v1" skills={[skill]} tools={m6Tools as never} onClose={vi.fn()} onDone={vi.fn()} />);
+    const projectCell = await screen.findByTestId("distribute-target-t-222222222222");
+    expect(projectCell.textContent).toContain("写入 .claude/skills");
+    expect(screen.getByTestId("distribute-target-t-111111111111").textContent).toContain("droid");
+    const missingCell = screen.getByTestId("distribute-target-t-333333333333");
+    expect(missingCell.getAttribute("aria-disabled")).toBe("true");
+    expect(missingCell.textContent).toContain("目录不存在");
+    // Shared directory first, registered targets after the built-ins.
+    const order = [...document.querySelectorAll(".skills-target")].map((node) => node.getAttribute("data-testid"));
+    expect(order).toEqual([
+      "distribute-target-agents",
+      "distribute-target-claude-code",
+      "distribute-target-t-111111111111",
+      "distribute-target-t-222222222222",
+      "distribute-target-t-333333333333",
+    ]);
+  });
+});

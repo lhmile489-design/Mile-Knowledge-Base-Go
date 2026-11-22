@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { skillsApi, type KbSkill, type SkillPreviewItem, type SkillTool } from "../../lib/transport";
 import { ToolIcon } from "./ToolIcon";
+import { installTargets, tailOf } from "../../lib/skillsView";
 
 type Mode = "link" | "copy";
 
@@ -30,12 +31,7 @@ export function DistributeDialog({
   const [preview, setPreview] = useState<SkillPreviewItem[] | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const targets = useMemo(() => {
-    const list = tools.filter(
-      (tool) => tool.enabled && (tool.id === "agents" || (tool.status === "detected" && Boolean(tool.installDir))),
-    );
-    return list.sort((a, b) => (a.id === "agents" ? -1 : b.id === "agents" ? 1 : a.name.localeCompare(b.name)));
-  }, [tools]);
+  const targets = useMemo(() => installTargets(tools), [tools]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -156,30 +152,40 @@ export function DistributeDialog({
               {targets.map((tool) => {
                 const item = targetFor(tool.id);
                 const blocked = item?.action === "exists" || item?.action === "conflict";
+                const missing = Boolean(tool.missing);
                 const checked = selected.has(tool.id);
+                const note = missing
+                  ? "目录不存在"
+                  : item
+                    ? item.detail || (item.action === "overwrite" ? "将覆盖" : "")
+                    : tool.kind === "project"
+                      ? `写入 ${tool.installRel ?? ""}`
+                      : tool.kind === "custom"
+                        ? tailOf(tool.installDir)
+                        : "";
                 return (
                   <div
                     key={tool.id}
                     className="skills-target"
                     role="checkbox"
                     aria-checked={checked}
-                    aria-disabled={blocked && !checked}
+                    aria-disabled={missing || (blocked && !checked)}
                     tabIndex={0}
                     data-testid={`distribute-target-${tool.id}`}
                     onClick={() => {
-                      if (blocked && !checked) return;
+                      if (missing || (blocked && !checked)) return;
                       toggle(tool.id);
                     }}
                     onKeyDown={(event) => {
                       if (event.key !== "Enter" && event.key !== " ") return;
                       event.preventDefault();
-                      if (blocked && !checked) return;
+                      if (missing || (blocked && !checked)) return;
                       toggle(tool.id);
                     }}
                   >
                     <ToolIcon tool={tool} size={18} />
                     <span className="skills-target-name">{tool.name}</span>
-                    {item ? <span className="skills-target-note">{item.detail || (item.action === "overwrite" ? "将覆盖" : "")}</span> : null}
+                    {note ? <span className="skills-target-note">{note}</span> : null}
                     {blocked ? (
                       <label className="skills-target-overwrite" onClick={(event) => event.stopPropagation()}>
                         <input

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, Lock, X } from "@phosphor-icons/react";
 import type { AboutInfoResult } from "../../mygo";
-import { settingsApi, TransportError, windowApi } from "../../lib/transport";
+import { settingsApi, skillsApi, TransportError, windowApi } from "../../lib/transport";
+import { useAppStore } from "../../stores/appStore";
 import { EngineBadge } from "../chat/EngineBadge";
 import { SettingGroup, SettingRow } from "./SettingRow";
 import { SkillBackupsRow } from "./SkillBackupsRow";
@@ -15,6 +16,7 @@ export function AboutSection({ onClose }: { readonly onClose: () => void }) {
   const [about, setAbout] = useState<AboutInfoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [targetCounts, setTargetCounts] = useState<{ custom: number; project: number } | null>(null);
 
   useEffect(() => {
     settingsApi
@@ -24,6 +26,20 @@ export function AboutSection({ onClose }: { readonly onClose: () => void }) {
         setError(null);
       })
       .catch((err) => setError(err instanceof TransportError ? err.message : String(err)));
+  }, []);
+
+  // M6 T08: one line about the registered skill directories; the manager
+  // itself lives in the skills panel (Q-M6-2).
+  useEffect(() => {
+    skillsApi
+      .listTargets()
+      .then((value) => {
+        setTargetCounts({
+          custom: value.items.filter((item) => item.kind === "custom").length,
+          project: value.items.filter((item) => item.kind === "project").length,
+        });
+      })
+      .catch(() => setTargetCounts(null));
   }, []);
 
   useEffect(() => {
@@ -89,6 +105,24 @@ export function AboutSection({ onClose }: { readonly onClose: () => void }) {
                 >
                   GitHub
                 </button>
+              }
+            />
+            <SettingRow
+              label="技能目录"
+              control={
+                <span className="settings-widths" data-testid="about-targets">
+                  {targetCounts
+                    ? `自定义 ${targetCounts.custom} 个 · 项目 ${targetCounts.project} 个`
+                    : "—"}
+                  <button
+                    type="button"
+                    className="btn line"
+                    onClick={() => useAppStore.getState().openTargetsManager()}
+                    data-testid="about-manage-targets"
+                  >
+                    管理
+                  </button>
+                </span>
               }
             />
           </SettingGroup>

@@ -1119,12 +1119,13 @@ type SkillTool struct {
 	IconKey    string   `json:"iconKey"` // brand svg key; "globe" for the shared dir, "" for a letter placeholder
 	InstallDir string   `json:"installDir,omitempty"`
 	ScanDirs   []string `json:"scanDirs"`
-	Readers    []string `json:"readers,omitempty"` // tools that read the shared ~/.agents/skills
-	Status     string   `json:"status"`            // detected | leftover | missing
-	Kind       string   `json:"kind"`              // M6: builtin | custom | project
-	Missing    bool     `json:"missing,omitempty"` // M6: registered dir is gone (custom/project)
-	Official   bool     `json:"official"`          // false = official support not verified
-	Enabled    bool     `json:"enabled"`           // MiniMax Code defaults to false
+	Readers    []string `json:"readers,omitempty"`    // tools that read the shared ~/.agents/skills
+	Status     string   `json:"status"`               // detected | leftover | missing
+	Kind       string   `json:"kind"`                 // M6: builtin | custom | project
+	Missing    bool     `json:"missing,omitempty"`    // M6: registered dir is gone (custom/project)
+	InstallRel string   `json:"installRel,omitempty"` // M6: project install subdir for the target grid
+	Official   bool     `json:"official"`             // false = official support not verified
+	Enabled    bool     `json:"enabled"`              // MiniMax Code defaults to false
 }
 
 // KbSkillDistribution is one tool this knowledge-base skill reached (M78).

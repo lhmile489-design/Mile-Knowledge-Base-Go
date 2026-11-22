@@ -27,6 +27,8 @@ type AppState = {
   settingsOpen: boolean;
   skillsPanelOpen: boolean;
   skillWizardOpen: boolean;
+  /** Bumped when another page asks the panel to open the target manager. */
+  targetsRequest: number;
 
   boot: () => Promise<void>;
   refreshVaults: () => Promise<void>;
@@ -41,6 +43,7 @@ type AppState = {
   openSettings: () => void;
   closeSettings: () => void;
   openSkillsPanel: () => void;
+  openTargetsManager: () => void;
   closeSkillsPanel: () => void;
   openSkillWizard: () => void;
   closeSkillWizard: () => void;
@@ -70,6 +73,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsOpen: false,
   skillsPanelOpen: false,
   skillWizardOpen: false,
+  targetsRequest: 0,
   bootError: null,
 
   boot: async () => {
@@ -179,6 +183,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
   openSkillsPanel: () => set({ skillsPanelOpen: true }),
+  openTargetsManager: () => set((state) => ({ skillsPanelOpen: true, targetsRequest: state.targetsRequest + 1 })),
   closeSkillsPanel: () => set({ skillsPanelOpen: false }),
   openSkillWizard: () => set({ skillWizardOpen: true }),
   closeSkillWizard: () => set({ skillWizardOpen: false }),

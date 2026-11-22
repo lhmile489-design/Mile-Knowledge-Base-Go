@@ -44,6 +44,7 @@ export function SkillsPanel() {
   const [updatePath, setUpdatePath] = useState<string | null>(null);
   const [updateInfo, setUpdateInfo] = useState<SkillUpdateCheckResult | null>(null);
   const [targetsOpen, setTargetsOpen] = useState(false);
+  const targetsRequest = useAppStore((state) => state.targetsRequest);
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
   const [resultLines, setResultLines] = useState<string[] | null>(null);
   const [box, setBox] = useState<{ right: number; width: number; height: number } | null>(null);
@@ -71,6 +72,15 @@ export function SkillsPanel() {
     window.addEventListener("resize", compute);
     return () => window.removeEventListener("resize", compute);
   }, [open]);
+
+  // Another page (settings → 关于与诊断) can ask for the target manager (M6 T08).
+  useEffect(() => {
+    if (targetsRequest === 0) return;
+    setPage("tools");
+    setInstallOpen(false);
+    setUpdatePath(null);
+    setTargetsOpen(true);
+  }, [targetsRequest]);
 
   // A panel opened without a vault never fetched the registry; do it here so
   // the tools page works everywhere (PRD FR-SKM-PANEL).
