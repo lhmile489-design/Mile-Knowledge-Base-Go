@@ -927,6 +927,15 @@ export interface SkillLogResult {
 }
 
 /**
+ * SkillManifestRestoreResult is M103 (SkillRestoreResult is M83's backup
+ * restore).
+ */
+export interface SkillManifestRestoreResult {
+  items: SkillRestoreOpItem[];
+  failure?: Failure;
+}
+
+/**
  * SkillManifestTarget is the machine-independent destination recorded in the
  * vault manifest (数据库设计 3.9): built-in tools keep the registry id, custom
  * tools and projects keep their registered name (plus the project subdir).
@@ -1056,6 +1065,17 @@ export interface SkillRestoreLocal {
   targetLabel: string;
 }
 
+/** SkillRestoreOpItem is one executed item of M103. */
+export interface SkillRestoreOpItem {
+  id: string;
+  name: string;
+  targetLabel: string;
+  /** linked | copied | installed | skipped | failed */
+  result: string;
+  detail?: string;
+  backupId?: string;
+}
+
 /** SkillRestorePreview is M102's payload. */
 export interface SkillRestorePreview {
   /** ok | missing | unreadable | too-large | version-unknown */
@@ -1080,6 +1100,15 @@ export interface SkillRestorePreviewResult {
 export interface SkillRestoreResult {
   restoredTo: string;
   failure?: Failure;
+}
+
+/**
+ * SkillRestoreSelection is one selected item of M103. Conflict items need
+ * Overwrite=true.
+ */
+export interface SkillRestoreSelection {
+  id: string;
+  overwrite?: boolean;
 }
 
 /**
@@ -1882,6 +1911,12 @@ export const SkillService = {
   removeTarget: bind<[string], SkillRemoveTargetResult>("SkillService.RemoveTarget", (id: string) => [id]),
   /** Restore is M83. */
   restore: bind<[string], SkillRestoreResult>("SkillService.Restore", (backupID: string) => [backupID]),
+  /**
+   * Restore is M103: execute the selected manifest items (技术设计 18.8). The
+   * manifest is re-read and every item is judged again; the manifest itself is
+   * never modified here.
+   */
+  restoreManifest: bind<[string, SkillRestoreSelection[], string], SkillManifestRestoreResult>("SkillService.RestoreManifest", (vaultID: string, selections: SkillRestoreSelection[], requestID: string) => [vaultID, selections, requestID]),
   /** RestorePreview is M102. */
   restorePreview: bind<[string], SkillRestorePreviewResult>("SkillService.RestorePreview", (vaultID: string) => [vaultID]),
   /**

@@ -45,7 +45,6 @@ func TestAccentUnknownFieldsPreserved(t *testing.T) {
 	if f != nil {
 		t.Fatal(f)
 	}
-	
 	if got := s.Get().Accent.Preset; got != "blue" {
 		t.Fatalf("accent = %q, want blue", got)
 	}
