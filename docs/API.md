@@ -939,6 +939,7 @@ type SkillPreviewItem = {
 };
 type SkillOpItem = {
   targetId: string; toolId: string;
+  name?: string;   // 技能名，仅用于显示；装进工具时填候选名（Q-M7-6，M7）
   result: 'linked' | 'copied' | 'skipped' | 'failed' | 'removed';
   detail?: string; backupId?: string;
 };

@@ -1205,7 +1205,8 @@ type SkillPreviewItem struct {
 type SkillOpItem struct {
 	TargetID string `json:"targetId"`
 	ToolID   string `json:"toolId"`
-	Result   string `json:"result"` // linked | copied | skipped | failed
+	Name     string `json:"name,omitempty"` // skill name for display (tool installs, Q-M7-6)
+	Result   string `json:"result"`         // linked | copied | skipped | failed
 	Detail   string `json:"detail,omitempty"`
 	BackupID string `json:"backupId,omitempty"`
 }

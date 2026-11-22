@@ -955,6 +955,8 @@ export interface SkillManifestTarget {
 export interface SkillOpItem {
   targetId: string;
   toolId: string;
+  /** skill name for display (tool installs, Q-M7-6) */
+  name?: string;
   /** linked | copied | skipped | failed */
   result: string;
   detail?: string;

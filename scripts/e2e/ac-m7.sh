@@ -298,9 +298,7 @@ wait_match "A claude target on" "document.querySelector('[data-testid=\"install-
 click '[data-testid="install-submit"]' >/dev/null
 wait_match "A install result" "document.querySelector('[data-testid=\"install-result\"]') !== null" '"value":true' 80
 echo "A install result: $(ev "(() => { const el=document.querySelector('[data-testid=\"install-result\"]'); return el ? el.textContent.trim() : ''; })()")"
-# Known M5 display quirk: tools installs show the tool id in the result line
-# (claude-code → Claude Code：已安装); the skill name is asserted via the manifest.
-check "A installed" "document.querySelector('[data-testid=\"install-result\"]').textContent.includes('Claude Code：已安装')" '"value":true' 
+check "A installed" "document.querySelector('[data-testid=\"install-result\"]').textContent.includes('pdf → Claude Code：已安装')" '"value":true' 
 
 REPORT_A=$(manifest_report "$VAULT_A")
 echo "A manifest: $REPORT_A"

@@ -298,7 +298,8 @@ export function InstallView({
               ? "跳过"
               : "失败";
         const where = item.toolId === "kb" ? "知识库" : (tool?.name ?? item.toolId);
-        return `${candidate?.name ?? item.targetId} → ${where}：${verb}${item.detail ? `（${item.detail}）` : ""}`;
+        const label = candidate?.name ?? item.name ?? item.targetId;
+        return `${label} → ${where}：${verb}${item.detail ? `（${item.detail}）` : ""}`;
       });
       setResultLines(lines);
       onChanged();

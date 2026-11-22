@@ -212,7 +212,7 @@ describe("InstallView candidates", () => {
     installPreview.mockResolvedValue({
       items: [{ targetId: "claude-code", toolId: "claude-code", name: "pdf", action: "exists", detail: "目标已存在" }],
     });
-    install.mockResolvedValue({ items: [{ targetId: "skills/pdf", toolId: "claude-code", result: "copied" }] });
+    install.mockResolvedValue({ items: [{ targetId: "claude-code", toolId: "claude-code", name: "pdf", result: "copied" }] });
     renderView();
     await openGithubStage();
 
@@ -232,6 +232,9 @@ describe("InstallView candidates", () => {
       kind: "tools",
       targets: [{ targetId: "claude-code", allowOverwrite: true }],
     });
+    // Q-M7-6: the result line names the skill, not the tool id.
+    await waitFor(() => expect(screen.getByTestId("install-result")).toBeTruthy());
+    expect(screen.getByTestId("install-result").textContent).toContain("pdf → Claude Code：已安装");
   });
 
   it("drops the stage when the user backs out", async () => {

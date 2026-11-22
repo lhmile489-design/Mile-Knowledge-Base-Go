@@ -126,6 +126,10 @@ func TestSkillServiceInstallIntoTool(t *testing.T) {
 	if result.Failure != nil || len(result.Items) != 1 || result.Items[0].Result != "copied" {
 		t.Fatalf("install = %+v", result)
 	}
+	// Q-M7-6: the result line must name the skill, not the tool id.
+	if result.Items[0].Name != "pdf" {
+		t.Fatalf("result name = %q, want pdf", result.Items[0].Name)
+	}
 	installed := filepath.Join(home, ".claude", "skills", "pdf", "SKILL.md")
 	if _, err := os.Stat(installed); err != nil {
 		t.Fatalf("tool copy missing: %v", err)

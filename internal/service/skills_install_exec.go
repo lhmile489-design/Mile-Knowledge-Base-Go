@@ -153,6 +153,7 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 			})
 			for index, item := range perTarget {
 				item.Detail = strings.TrimSpace(item.Detail)
+				item.Name = candidate.Name
 				items = append(items, item)
 				location := redactToolPath(filepath.Join(targets[index].InstallDir, candidate.Name), detector)
 				result := "ok"
