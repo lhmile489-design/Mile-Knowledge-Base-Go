@@ -120,7 +120,7 @@
 | 日期 | 任务 | 结果 | 提交 | 验证 | 下一项与放行状态 |
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-22 | 计划 | v0.1 草案；PRD v2.5 草案（Q-SKM-4 转入 M7、FR-SKM-PROJ 改为按注册表推导）；路线 3.8 改写、新增 3.9 M7（原 3.9 顺延为 3.10）；D-017 | 未提交 | 自查见第 9 节 | 用户 2026-11-22 按建议批准，放行 T00 |
-| 2026-11-22 | T00（1/2 契约草案） | 技术设计 §17（注册表项目级目录草案、路径 7 条规则、扫描并入、写路径 `project:<dir>:<rel>`、移除清理、安全、性能、测试）；API §14（M97–M101、`SkillTarget`、`SkillTool.kind` / `ToolSkill.sourceToolId` / `subdir`）；数据库设计 4.6 M6 增补（`targets.json`、scan-cache v2、日志 `unregister`）；UI 稿 9.5（4 个原型状态 + 文字补充）；DESIGN 11.6；原型新增 4 状态，8 张原型截图在 `design/r2/shots-m6/`（`scripts/visual/capture-proto-m6.py`，headless Edge，1440×900，浅 / 深） | 未提交 | 截图 8 张尺寸 1440×900；既有 `tools` 状态无回归；新文件 UTF-8 无 BOM；Q-M6-7 新增（重复加载口径） | T00 2/2：`internal/contract`（`SkillTarget` 等 8 个类型、`SkillTool.kind` / `missing`、`ToolSkill.sourceToolId` / `subdir`、`op` 并集）加进 contract；`mygo generate` 重写 `src/mygo.ts`（新类型要等 T04 有方法引用才会出现在绑定里）；Go 构建通过 | 待放行 T01 |
+| 2026-11-22 | T00（1/2 契约草案） | 技术设计 §17（注册表项目级目录草案、路径 7 条规则、扫描并入、写路径 `project:<dir>:<rel>`、移除清理、安全、性能、测试）；API §14（M97–M101、`SkillTarget`、`SkillTool.kind` / `ToolSkill.sourceToolId` / `subdir`）；数据库设计 4.6 M6 增补（`targets.json`、scan-cache v2、日志 `unregister`）；UI 稿 9.5（4 个原型状态 + 文字补充）；DESIGN 11.6；原型新增 4 状态，8 张原型截图在 `design/r2/shots-m6/`（`scripts/visual/capture-proto-m6.py`，headless Edge，1440×900，浅 / 深） | `3ea31bd` + `abc9eb7`（本地，未推送） | 截图 8 张尺寸 1440×900；既有 `tools` 状态无回归；新文件 UTF-8 无 BOM；typecheck、绑定对拍、Vitest 264、Go 测试 / vet / gofmt 全过；Q-M6-7 新增（重复加载口径） | T00 2/2：`internal/contract`（`SkillTarget` 等 8 个类型、`SkillTool.kind` / `missing`、`ToolSkill.sourceToolId` / `subdir`、`op` 并集）加进 contract；`mygo generate` 重写 `src/mygo.ts`（新类型要等 T04 有方法引用才会出现在绑定里）；Go 构建通过 | 待放行 T01 |
 
 ## 9. 自查
 
