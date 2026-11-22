@@ -478,6 +478,27 @@ R2 的视觉验收以 `design/r2/shots/` 的 18 张截图为基准，方法同 �
 
 对比度：没有新的前景色，全部复用 11.3 已实测的 `--raw-faint` / `--raw-muted` / fault / 胶囊配色；T10 真实截图复测（2026-11-22）：路径 6.22、统计文字 8.09 / 7.17、缺失胶囊 7.47 / 7.77、表单错误 6.47 / 6.03（浅 / 深），全部 ≥ 4.5。
 
+### 11.7 M7 增补：还原横幅与还原预览（草稿，随 PLAN-M7 审核）
+
+页面结构与状态见 docs/UI设计稿.md 9.6。全部在技能浮层的「工具技能」页内；类名用真实实现的前缀（M6 实现时 `.skm-*` 原型名已落为 `.targets-*` / `.tool-*` / `.skills-*`，本节直接用实现口径）：
+
+| 部分 | 做法 |
+| --- | --- |
+| 待还原横幅 | 新增 `.restore-banner`：一行，高 ≥ 40，左侧 16×16 信息图标，文字 `--text-body-sm`、`--raw-strong`；底色与描边用 `.pill[data-tone="info"]` 那套 info 浅底，不用 `--raw-accent-soft`（那是选中行的底色，会混淆）；右侧按钮 `.btn-quiet`「查看并还原」 |
+| 清单无法读取横幅 | 同一结构，`data-tone="warn"`：warn 浅底 + warn 文字口径（`color-mix(warn 70%, --raw-strong)`，同 11.6「目录不存在」）；按钮「用本机记录重建」仍是 `.btn-quiet`，不是危险按钮（重建保留原文件副本） |
+| 还原子视图 | 复用 `.skills-subview` / `.skills-subview-head` / `.skills-subview-foot`；面包屑「工具技能 / 从清单还原」 |
+| 分组 | 复用 `.skills-group-title`：「新建 3」「冲突 1」「已一致 5」「跳过 2」；组顺序固定，空组不显示 |
+| 还原行 | 新增 `.restore-row`：4 列（勾选 28 / 名称 + 目标 / 来源说明 / 原因），行高 ≥ 44，发丝线分隔，同 `.tool-row`；不可勾选的行勾选框位置留空，不放禁用勾选框；目标图标复用 `.tool-icon`（项目用 `sourceToolId` 的图标，自定义用 `.tool-icon-folder`） |
+| 「需要联网」 | `.pill[data-tone="info"]` 小胶囊，放在来源说明后面；不用颜色单独表达，文字始终在 |
+| 冲突说明 | 冲突组标题下一行 `--text-caption`、`--raw-muted`：「勾选的项会先备份原目录再覆盖」 |
+| 原因文字 | `--text-caption`、`--raw-faint`，单行省略，`title` 放全文 |
+| 本机有、清单没有 | 可折叠段落（`<details>`），标题 `--text-caption`、`--raw-muted`；内容只读列表，不带勾选 |
+| 进度 | 复用 M5 的 `.install-progress` / `.install-progress-line` |
+| 结果 | 复用 `.skills-result`；「未匹配」一行用 `--raw-muted`，不用 fault 色（不算失败）；失败项原因用 fault 文字色 |
+| 重建确认 | 复用现有确认卡与 `.btn-accent`「重建清单」（不是 `.btn-danger`：不会丢失数据） |
+
+对比度：没有新的前景色，info / warn 胶囊与 `--raw-faint` / `--raw-muted` 都沿用 11.3、11.6 已实测的配色；T00 原型截图与实现后真实截图各复测一次，门槛同 12.3。
+
 ## 12. R2 增补：主题色
 
 > 状态：用户 2026-11-20 审核通过。需求见 PRD 第 16 节（FR-ACCENT），入口见 docs/UI设计稿.md 第 10 节。本节修改 §3.1 的强调色定义：强调色从「单一靛蓝」变为「可选，默认橙色」，其余原则不变。

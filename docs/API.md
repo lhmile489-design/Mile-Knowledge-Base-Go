@@ -1136,3 +1136,87 @@ type PickTargetFolderResult = {
 
 - Go 单测：技术设计 17.9 的清单；M97 的脱敏路径不含 `%USERPROFILE%` 字面；M99 编辑不改 `createdAt`；M100 后 `state.json` / `sources.json` 无该 id 的记录且目录字节不变。
 - e2e：AC-SKM-17、18；重叠与知识库内路径拒绝；真实工具目录零写入（`scripts/e2e/ac-m6.sh`）。
+
+## 15. R2 增补：跨机还原分发（M7）
+
+> 状态：草稿，随 docs/PLAN-M7.md v0.1 审核。需求见 PRD 第 15 节 FR-SKM-SYNC 与 AC-SKM-20–25（v2.6）；实现见技术设计第 18 节；清单文件见数据库设计 3.9。M4–M6 的类型与方法不变，只做本节列出的增加。
+
+### 15.1 类型
+
+```ts
+type SkillManifestTarget =
+  | { kind: 'builtin'; toolId: string }
+  | { kind: 'custom'; name: string }
+  | { kind: 'project'; name: string; subdir: string };   // subdir 形如 '.claude/skills'
+
+type SkillManifestStatus = 'ok' | 'missing' | 'unreadable' | 'too-large' | 'version-unknown';
+
+type SkillRestoreState = 'create' | 'exists' | 'conflict' | 'skip';
+
+type SkillRestoreItem = {
+  id: string;                     // r-<12 hex>：由「目标键 + 技能名」算出，同一份清单内稳定唯一
+  source: 'kb' | 'github';
+  name: string;                   // 工具目录里的技能名
+  skillPath?: string;             // source='kb'：知识库相对路径
+  mode?: 'link' | 'copy';         // source='kb'：清单记的方式
+  origin?: { owner: string; repo: string; ref: string; path: string; commit: string };  // source='github'
+  target: SkillManifestTarget;
+  targetLabel: string;            // 显示用：'Claude Code'、'项目 Mile KB Go · .claude/skills'、'Droid'
+  targetId?: string;              // 本机解析到的工具 id 或登记 id（匹配上才有）
+  state: SkillRestoreState;
+  reason?: string;                // exists / conflict / skip 的说明（技术设计 18.5 的文案）
+  needsNetwork?: boolean;         // source='github' 且 state='create' 或 'conflict'
+  selectable: boolean;            // create / conflict 为 true
+  defaultSelected: boolean;       // 只有 create 为 true
+};
+
+type SkillRestorePreview = {
+  status: SkillManifestStatus;
+  updatedAt?: string;             // 清单最后写入时间（status='ok' 时）
+  items: SkillRestoreItem[];      // status 不是 'ok' 时为空
+  pending: number;                // create + conflict 的数量（横幅的 N）
+  localOnly: { name: string; targetLabel: string }[];   // 本机有、清单没有（只读参考）
+  unmatched: string[];            // 未匹配的登记名称，去重
+  warnings: string[];             // 不合法而被忽略的项等
+  canRebuild: boolean;            // status 为 missing / ok / unreadable / too-large 时为 true
+};
+
+type SkillRestoreSelection = { id: string; overwrite?: boolean };   // conflict 项必须 overwrite=true 才执行
+
+// M103 的出参在 Go 侧叫 SkillManifestRestoreResult（M83 的备份恢复已占用
+// SkillRestoreResult）；线上字段不变：{ items: SkillRestoreOpItem[]; failure?: Failure }。
+
+type SkillRestoreOpItem = {
+  id: string;
+  name: string;
+  targetLabel: string;
+  result: 'linked' | 'copied' | 'installed' | 'skipped' | 'failed';
+  detail?: string;
+  backupId?: string;              // 覆盖时的备份
+};
+```
+
+### 15.2 方法
+
+| 方法 | 入参 | 出参 | 说明 |
+| --- | --- | --- | --- |
+| M102 `restorePreview` | `vaultId` | `{preview?: SkillRestorePreview; failure?: Failure}` | 读清单并逐项判定（技术设计 18.5）；只读文件系统，不联网、不写盘。工具页打开时调用，用 `pending` 与 `status` 决定横幅 |
+| M103 `restore` | `vaultId`、`selections: SkillRestoreSelection[]`、`requestId` | `{items: SkillRestoreOpItem[]; failure?: Failure}` | 在锁内重新判定后逐项执行（技术设计 18.8）；GitHub 项的下载进度走 E13（同一 `requestId`）；可用 AbortSignal 取消，已完成的项保留；不改清单；有成功项时清扫描缓存、发 E12 |
+| M104 `rebuildManifest` | `vaultId` | `{written: number; skipped: number; corruptCopy?: string; failure?: Failure}` | 用本机分发记录与工具来源记录重写清单（技术设计 18.6）；原文件改名为 `.corrupt-<时间>`，`corruptCopy` 只返回文件名；`version-unknown` 时返回 `unsupported` |
+
+### 15.3 校验与错误
+
+- `vaultId`：同 M77；知识库不可用 → `vault-unavailable`。
+- `selections`：1–500 项，`id` 必须是 `r-` + 12 位十六进制，重复的 `id` 只算一次；格式不对 → `invalid-input`。`id` 在执行时的判定里不存在或已不可选 → 该项 `skipped`（原因写明），不整体失败。
+- 清单 `status` 不是 `ok` 时 M103 返回 `unsupported`（「分发清单无法读取」），不执行任何项。
+- 网络：GitHub 项的失败沿用 §13.3（`network-failure` / `too-large` / `unsafe-archive`），只记在该项的 `detail` 里，不让整个请求失败。
+- 写清单失败（M79、M81、M91、M96、收编换链接之后）不改变这些方法的结果；下一次 M102 的 `warnings` 写明「分发清单未能更新」。
+
+### 15.4 事件与前端动作
+
+不新增事件。M103 完成后前端主动重新调 M77 与 M102（不只依赖 E12，1.3.1 结论）。M104 完成后重新调 M102。
+
+### 15.5 验证
+
+- Go 单测与服务测试：技术设计 18.10 的清单；M102 结果里不含任何绝对路径；M103 复核（预览后目标被占用 → `skipped`）。
+- e2e：AC-SKM-20–25（`scripts/e2e/ac-m7.sh`，两套临时 APPDATA + 假 HOME + 本地假 GitHub）。

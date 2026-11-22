@@ -240,6 +240,29 @@
   .skm-tgt .r:hover .ops, .skm-tgt .r[data-hover] .ops { opacity: 1; }
   .skm-errline { margin-top: 2px; font-size: var(--text-caption); color: var(--fault); }
 
+  /* M7：跨机还原 */
+  .skm-stack { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 0; }
+  .restore-banner { display: flex; align-items: center; gap: 10px; margin: 10px 16px 0; padding: 8px 10px 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--info) 34%, var(--raw-line)); border-radius: var(--radius-card);
+    background: color-mix(in srgb, var(--info) 8%, var(--raw-card)); font-size: var(--text-body-sm); color: var(--raw-strong); }
+  .restore-banner > .ico { color: var(--info); flex: none; }
+  .restore-banner .txt { flex: 1; min-width: 0; }
+  .restore-banner[data-tone='warn'] { border-color: color-mix(in srgb, var(--warn) 40%, var(--raw-line)); background: color-mix(in srgb, var(--warn) 7%, var(--raw-card)); }
+  .restore-banner[data-tone='warn'] > .ico { color: color-mix(in srgb, var(--warn) 78%, var(--raw-strong)); }
+  .restore-group-note { margin: -2px 2px 8px; font-size: var(--text-caption); color: var(--raw-muted); }
+  .restore-row { display: grid; grid-template-columns: 20px minmax(0, 1fr) minmax(0, 210px); gap: 10px; align-items: start;
+    min-height: 44px; padding: 7px 10px; font-size: var(--text-body-sm); }
+  .restore-row + .restore-row { box-shadow: inset 0 1px 0 var(--skm-line); }
+  .restore-row .nm { font-weight: 600; color: var(--raw-strong); display: flex; align-items: center; gap: 6px; }
+  .restore-row .tgt { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--raw-muted); font-size: var(--text-meta); }
+  .restore-row .src { color: var(--raw-faint); font-size: var(--text-caption); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .restore-row .why { grid-column: 2 / -1; color: var(--raw-faint); font-size: var(--text-caption); margin-top: 1px; }
+  .restore-row .box { width: 16px; height: 16px; margin-top: 3px; border-radius: 4px; border: 1.5px solid var(--raw-line-strong); }
+  .restore-row .box[data-on='1'] { border-color: var(--raw-accent-btn); background: var(--raw-accent-btn); color: var(--raw-on-accent); display: grid; place-items: center; }
+  .restore-row[data-dim='1'] .nm { font-weight: 500; color: var(--raw-muted); }
+  .restore-more { margin: 14px 2px 0; font-size: var(--text-caption); color: var(--raw-muted); }
+  .restore-more .l { padding: 3px 0 0 14px; color: var(--raw-faint); }
+
   /* 原型导航：截图时用 ?shot=1 隐藏 */
   .proto-nav { position: fixed; right: 12px; bottom: 12px; z-index: 99; display: flex; flex-wrap: wrap; gap: 4px; max-width: 420px; padding: 8px;
     background: var(--raw-card); border: 1px solid var(--raw-line); border-radius: 10px; box-shadow: var(--shadow-float); font-size: 12px; }
@@ -694,6 +717,86 @@ function targetsRemove() {
   </div></div>`;
 }
 
+/* ---------- M7：跨机还原 ---------- */
+function restoreBanner(n) {
+  return `<div class="restore-banner">${ico('info')}<span class="txt">知识库清单里有 <b>${n}</b> 项尚未在本机还原</span><button class="btn-quiet">查看并还原</button></div>`;
+}
+function restoreWarnBanner() {
+  return `<div class="restore-banner" data-tone="warn">${ico('warn')}<span class="txt">分发清单无法读取，之后的分发不会写入清单</span><button class="btn-quiet">用本机记录重建</button></div>`;
+}
+function restoreTarget(tool, label) {
+  const icon = tool === 'project' || tool === 'custom' ? ico('folder', 'ico-sm') : tico(tool);
+  return `<span class="tgt">${icon}${label}</span>`;
+}
+function restoreRow(r, dim = false) {
+  const box = r.on === undefined ? '<span></span>' : `<span class="box"${r.on ? ` data-on="1"` : ''}>${r.on ? ico('check', 'ico-sm') : ''}</span>`;
+  return `<div class="restore-row"${dim ? ' data-dim="1"' : ''}>${box}
+    <span style="min-width:0"><span class="nm">${r.nm}</span>${restoreTarget(r.tool, r.label)}${r.why ? `<span class="why">${r.why}</span>` : ''}</span>
+    <span class="src">${r.src}${r.net ? pill('info', '需要联网') : ''}</span></div>`;
+}
+const RESTORE_PREVIEW = [
+  ['新建', 2, [
+    { on: 1, nm: 'vue技能', tool: 'claude', label: 'Claude Code', src: '知识库 · 链接', why: '链接到本机知识库 skills/前端/vue技能' },
+    { on: 1, nm: 'pdf', tool: 'claude', label: '项目 Mile KB Go · .claude/skills', src: 'GitHub · anthropics/skills@3f2a9c1', net: true, why: '按记录的提交下载安装，需要联网' },
+  ]],
+  ['冲突', 1, [
+    { on: 0, nm: 'caveman', tool: 'cursor', label: 'Cursor', src: '知识库 · 拷贝', why: '目标位置已有同名目录（独立），勾选后先备份再覆盖' },
+  ], '勾选的项会先备份原目录再覆盖，可从操作记录恢复。'],
+  ['已一致', 2, [
+    { nm: 'docx', tool: 'claude', label: 'Claude Code', src: '知识库 · 拷贝' },
+    { nm: 'xlsx', tool: 'kiro', label: 'Kiro', src: 'GitHub · anthropics/skills@8b1d004' },
+  ]],
+  ['跳过', 1, [
+    { nm: 'brainstorming', tool: 'custom', label: '自定义 · Droid', src: '知识库 · 链接', why: '本机没有登记「Droid」' },
+  ]],
+];
+function restoreGroups(dim = false) {
+  return RESTORE_PREVIEW.map(([title, n, rows, note]) => `<div class="skm-group">${title}<span class="n">${n}</span></div>${note ? `<div class="restore-group-note">${note}</div>` : ''}${rows.map(r => restoreRow(r, dim || r.on === undefined)).join('')}`).join('');
+}
+function restoreHead() {
+  return `<div class="skm-head"><button class="icon-button" aria-label="返回">${ico('back')}</button>
+      <div class="skm-sub"><span class="crumb">工具技能 /</span>从清单还原</div><span style="flex:1"></span>
+      <button class="icon-button" aria-label="关闭">${ico('x')}</button></div>`;
+}
+function restorePreview() {
+  return restoreHead() + `<div class="skm-body">
+      ${restoreGroups()}
+      <div class="restore-more">本机有、清单没有（1）<div class="l">caveman → Kiro（清单里已没有这一项，还原不会卸载它）</div></div>
+    </div>
+    <div class="skm-foot"><span>已选 3 项，其中 1 项需要联网</span><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('restore')}还原所选</button></div>`;
+}
+function restoreRunning() {
+  return restoreHead() + `<div class="skm-body">
+      <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-body-sm);color:var(--raw-muted)">${ico('restore', 'ico-sm')}正在下载 anthropics/skills@3f2a9c1 并安装 pdf…</div>
+      <div class="skm-progress"><i></i></div>
+      <div style="height:10px"></div>
+      ${restoreGroups(true)}
+    </div>
+    <div class="skm-foot"><span>已完成 1 项 · 剩余 2 项</span><span class="spacer"></span><button class="btn-quiet">取消</button></div>`;
+}
+function restoreResult() {
+  return restoreHead() + `<div class="skm-body">
+      <div style="margin:2px 2px 10px;font-size:var(--text-body);color:var(--raw-strong)">已还原 2 项，跳过 1 项，失败 0 项</div>
+      <div class="skm-log">
+        <div class="l"><span class="time">10:42</span>${ico('link')}<span class="txt">链接 <b>vue技能</b> → Claude Code</span><span style="color:var(--raw-faint);font-size:var(--text-caption)">已还原</span></div>
+        <div class="l"><span class="time">10:42</span>${ico('github')}<span class="txt">安装 <b>pdf</b> → 项目 Mile KB Go · .claude/skills</span><span style="color:var(--raw-faint);font-size:var(--text-caption)">已还原 · 已写来源记录</span></div>
+        <div class="l"><span class="time">10:42</span>${ico('folder')}<span class="txt">跳过 <b>caveman</b> → Cursor（目标已存在，未勾选覆盖）</span><span style="color:var(--raw-faint);font-size:var(--text-caption)">跳过</span></div>
+      </div>
+      <div style="margin:12px 2px 0;font-size:var(--text-caption);color:var(--raw-muted)">1 项未匹配：Droid（本机没有这个登记，不算失败）</div>
+      <div class="restore-more">覆盖过的项可从操作记录恢复。<div class="l">pdf 已写入本机来源记录，「工具技能」里会显示 GitHub 来源与更新状态。</div></div>
+    </div>
+    <div class="skm-foot"><span class="spacer"></span><button class="btn-primary">完成</button></div>`;
+}
+function restoreUnreadable() {
+  return head('tools') + `<div class="skm-stack">${restoreWarnBanner()}${chips('all')}<div class="skm-body">${toolRows(1)}</div></div>` + toolsFoot() + `
+  <div class="skm-scrim"><div class="skm-confirm" role="alertdialog" aria-label="重建分发清单">
+    <h3>用本机记录重建分发清单</h3>
+    <div class="item">${ico('info')}<span><b>按本机记录重写</b></span><span class="what">会使用本机 3 条分发记录与 1 条 GitHub 来源记录生成清单。登记已移除的记录无法生成目标，会跳过。</span></div>
+    <div class="item">${ico('folder')}<span><b>原文件保留副本</b></span><span class="what"><code>skill-distributions.json.corrupt-20261122T090000Z</code> 留在同一目录，确认无误后可自己删除。</span></div>
+    <div class="row"><button class="btn-quiet">取消</button><button class="btn-primary">${ico('restore')}重建清单</button></div>
+  </div></div>`;
+}
+
 /* ---------- 无知识库 ---------- */
 function novault() {
   return head('kb') + `<div class="skm-body"><div class="skm-empty"><div class="big">${ico('stack')}</div><h4>还没有打开知识库</h4><p>打开一个知识库后才能管理知识库技能。工具技能不依赖知识库，切到「工具技能」可以查看和卸载。</p><button class="btn-quiet">打开知识库…</button></div></div><div class="skm-foot"><span>检测到 18 个工具</span></div>`;
@@ -718,6 +821,11 @@ const STATES = {
   'targets-custom': () => workbench(targetsCustom()),
   'targets-project': () => workbench(targetsProject()),
   'targets-remove': () => workbench(targetsRemove()),
+  'restore-banner': () => workbench(head('tools') + `<div class="skm-stack">${restoreBanner(3)}${chips('all')}<div class="skm-body">${toolRows(1)}</div></div>` + toolsFoot()),
+  'restore-preview': () => workbench(restorePreview()),
+  'restore-running': () => workbench(restoreRunning()),
+  'restore-result': () => workbench(restoreResult()),
+  'restore-unreadable': () => workbench(restoreUnreadable()),
   novault: () => workbench(novault(), true, 0),
   closed: () => workbench('', false, 2),
 };

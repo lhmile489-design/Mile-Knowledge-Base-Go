@@ -1489,3 +1489,91 @@ type SkillRemoveTargetResult struct {
 	SourcesRemoved       int      `json:"sourcesRemoved"`
 	Failure              *Failure `json:"failure,omitempty"`
 }
+
+// ---- R2 cross-machine restore (M7, API.md §15) ----
+
+// SkillManifestTarget is the machine-independent destination recorded in the
+// vault manifest (数据库设计 3.9): built-in tools keep the registry id, custom
+// tools and projects keep their registered name (plus the project subdir).
+type SkillManifestTarget struct {
+	Kind   string `json:"kind"`             // builtin | custom | project
+	ToolID string `json:"toolId,omitempty"` // builtin: registry id
+	Name   string `json:"name,omitempty"`   // custom / project: registered name
+	Subdir string `json:"subdir,omitempty"` // project: project-relative install subdir
+}
+
+// SkillRestoreItem is one manifest entry judged against this machine (技术设计
+// 18.5). ID is derived from the target key and the skill name, stable within
+// one manifest.
+type SkillRestoreItem struct {
+	ID              string              `json:"id"` // r-<12 hex>
+	Source          string              `json:"source"`
+	Name            string              `json:"name"`
+	SkillPath       string              `json:"skillPath,omitempty"` // source=kb
+	Mode            string              `json:"mode,omitempty"`      // source=kb: link | copy
+	Origin          *SkillOrigin        `json:"origin,omitempty"`    // source=github
+	Target          SkillManifestTarget `json:"target"`
+	TargetLabel     string              `json:"targetLabel"`            // display only
+	TargetID        string              `json:"targetId,omitempty"`     // resolved tool / target id
+	State           string              `json:"state"`                  // create | exists | conflict | skip
+	Reason          string              `json:"reason,omitempty"`       // exists / conflict / skip detail
+	NeedsNetwork    bool                `json:"needsNetwork,omitempty"` // github + create/conflict
+	Selectable      bool                `json:"selectable"`
+	DefaultSelected bool                `json:"defaultSelected"`
+}
+
+// SkillRestoreLocal is one local distribution the manifest does not have.
+type SkillRestoreLocal struct {
+	Name        string `json:"name"`
+	TargetLabel string `json:"targetLabel"`
+}
+
+// SkillRestorePreview is M102's payload.
+type SkillRestorePreview struct {
+	Status     string              `json:"status"` // ok | missing | unreadable | too-large | version-unknown
+	UpdatedAt  string              `json:"updatedAt,omitempty"`
+	Items      []SkillRestoreItem  `json:"items"`
+	Pending    int                 `json:"pending"` // create + conflict
+	LocalOnly  []SkillRestoreLocal `json:"localOnly"`
+	Unmatched  []string            `json:"unmatched"`
+	Warnings   []string            `json:"warnings"`
+	CanRebuild bool                `json:"canRebuild"`
+}
+
+// SkillRestorePreviewResult is M102.
+type SkillRestorePreviewResult struct {
+	Preview *SkillRestorePreview `json:"preview,omitempty"`
+	Failure *Failure             `json:"failure,omitempty"`
+}
+
+// SkillRestoreSelection is one selected item of M103. Conflict items need
+// Overwrite=true.
+type SkillRestoreSelection struct {
+	ID        string `json:"id"`
+	Overwrite bool   `json:"overwrite,omitempty"`
+}
+
+// SkillRestoreOpItem is one executed item of M103.
+type SkillRestoreOpItem struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	TargetLabel string `json:"targetLabel"`
+	Result      string `json:"result"` // linked | copied | installed | skipped | failed
+	Detail      string `json:"detail,omitempty"`
+	BackupID    string `json:"backupId,omitempty"`
+}
+
+// SkillManifestRestoreResult is M103 (SkillRestoreResult is M83's backup
+// restore).
+type SkillManifestRestoreResult struct {
+	Items   []SkillRestoreOpItem `json:"items"`
+	Failure *Failure             `json:"failure,omitempty"`
+}
+
+// SkillRebuildResult is M104. CorruptCopy is the kept file name, never a path.
+type SkillRebuildResult struct {
+	Written     int      `json:"written"`
+	Skipped     int      `json:"skipped"`
+	CorruptCopy string   `json:"corruptCopy,omitempty"`
+	Failure     *Failure `json:"failure,omitempty"`
+}
