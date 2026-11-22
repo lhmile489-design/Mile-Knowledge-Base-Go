@@ -49,7 +49,7 @@
 | 编号 | 目标 | 修改范围 | 依赖 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | T00 | 契约起草与落盘 | 技术设计 §17、API §14（M97 起）、数据库设计 4.6 M6 增补（`skills/targets.json`）、UI 稿 9.5、DESIGN 11.6、原型（按 Q-M6-5）；审核通过后写 `internal/contract` | 用户批准本计划 | 契约按批准的 Q-M6 选择写成并经用户审核；新类型、方法进入 contract；`mygo generate` 通过 | 已验证（契约 2026-11-22 审核通过；`internal/contract` 与绑定已落盘） |
-| T01 | 注册表项目级目录 | `internal/skills/registry.go`、技术设计 13.2 表格、测试 | T00 | 每个内置工具有 `ProjectDirs`（官方写明的标「已核实」，其余标推导）；去重后的项目目录清单有测试锁定 | 待做 |
+| T01 | 注册表项目级目录 | `internal/skills/registry.go`、技术设计 13.6、`registry_test.go` | T00 | 每个内置工具有 `ProjectDirs`（官方写明的标「已核实」，其余标推导）；去重后的项目目录清单有测试锁定 | 已验证 |
 | T02 | 登记存储与路径规则 | `internal/skills/targets.go`（新）、测试 | T01 | `targets.json` 原子写、坏条目丢弃；名称单段规则；路径必须本机、存在、非重解析点、不在知识库、不与内置 / 已登记目录重叠（相同、父、子都拒绝，大小写不敏感，按真实路径比较） | 待做 |
 | T03 | 探测与扫描并入 | `internal/skills/{detect,scan}.go`、测试 | T02 | 自定义工具生成 `DetectedTool`（`kind=custom`，ID `c-<12 hex>`）；项目生成一个分组（ID `p-<12 hex>`），扫描各约定子目录，行带 `sourceToolId`；扫描缓存版本递增 | 待做 |
 | T04 | 登记服务 | `internal/service/skills_targets.go`（新）、M97–M101、transport | T03 | 列出 / 选目录（令牌，10 分钟）/ 保存 / 移除；保存与移除后清扫描缓存，前端轮询刷新（不依赖后台 E12，见 1.3.1 结论）；`mygo generate` | 待做 |
@@ -69,7 +69,7 @@
 
 > 通用纪律：Go 与 TS 的业务逻辑测试先行；测试只用临时目录与假 HOME，不读写真实工具目录、真实项目与真实应用数据；中文 UI、无 emoji；提交前扫描密钥与真实路径。
 
-- **T01**：`ProjectDirs` 放在注册表条目里（例如 Claude Code `.claude/skills`、OpenCode `.opencode/skills`、Pi `.pi/skills`、Windsurf `.windsurf/skills`、通用目录 `.agents/skills`），不能直接把用户级目录去掉 `~/` 得到；官方没写项目级目录的工具不列。
+- **T01**：`ProjectDirs` 放在注册表条目里，不能直接把用户级目录去掉 `~/` 得到；官方没写项目级目录的工具不列。核实结果：19 个目录，见技术设计 13.6；计划草稿里的 `.pi/skills` 不成立（Pi 官方只写 `.agents/skills`）。
 - **T02**：重叠判断用真实路径（`filepath.EvalSymlinks` 之后再比较），大小写不敏感；内置工具的安装目录、扫描目录、内置目录都算「已登记」。保存时把名称与路径一起重新校验，不信前端。
 - **T03**：项目分组只扫描实际存在的约定子目录；同一个技能目录不会因为两个工具共用同一子目录（如 `.agents/skills`）出现两次。项目根下其他目录一概不读。
 - **T04**：选目录沿用 M12 `pickFolder` 的令牌模式，前端拿不到绝对路径；保存时只收令牌。**不要依赖后台 goroutine 发出的 E12**（1.3.1 已证实不送达），需要刷新时由前端调 M77，store 已有 `scanning` 轮询。
