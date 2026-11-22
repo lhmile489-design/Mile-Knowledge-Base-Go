@@ -51,7 +51,7 @@
 | T00 | 契约起草与落盘 | 技术设计 §17、API §14（M97 起）、数据库设计 4.6 M6 增补（`skills/targets.json`）、UI 稿 9.5、DESIGN 11.6、原型（按 Q-M6-5）；审核通过后写 `internal/contract` | 用户批准本计划 | 契约按批准的 Q-M6 选择写成并经用户审核；新类型、方法进入 contract；`mygo generate` 通过 | 已验证（契约 2026-11-22 审核通过；`internal/contract` 与绑定已落盘） |
 | T01 | 注册表项目级目录 | `internal/skills/registry.go`、技术设计 13.6、`registry_test.go` | T00 | 每个内置工具有 `ProjectDirs`（官方写明的标「已核实」，其余标推导）；去重后的项目目录清单有测试锁定 | 已验证 |
 | T02 | 登记存储与路径规则 | `internal/skills/targets.go`（新）、`targets_test.go` | T01 | `targets.json` 原子写、坏条目丢弃；名称单段规则；路径必须本机、存在、非重解析点、不在知识库、不与内置 / 已登记目录重叠（相同、父、子都拒绝，大小写不敏感，按真实路径比较） | 已验证 |
-| T03 | 探测与扫描并入 | `internal/skills/{detect,scan}.go`、测试 | T02 | 自定义工具生成 `DetectedTool`（`kind=custom`，ID `c-<12 hex>`）；项目生成一个分组（ID `p-<12 hex>`），扫描各约定子目录，行带 `sourceToolId`；扫描缓存版本递增 | 待做 |
+| T03 | 探测与扫描并入 | `internal/skills/{detect,scan,state}.go`、`targets_scan_test.go` | T02 | 自定义工具生成 `DetectedTool`（`kind=custom`，ID = 登记 id `t-<12 hex>`，T00 定稿）；项目生成一个分组（ID = 登记 id），扫描实际存在的约定子目录，行带 `sourceToolId` / `subdir`；扫描缓存版本递增 | 已验证 |
 | T04 | 登记服务 | `internal/service/skills_targets.go`（新）、M97–M101、transport | T03 | 列出 / 选目录（令牌，10 分钟）/ 保存 / 移除；保存与移除后清扫描缓存，前端轮询刷新（不依赖后台 E12，见 1.3.1 结论）；`mygo generate` | 待做 |
 | T05 | 写操作目标扩展 | `skills_distribute.go`、`skills_uninstall.go`、`skills_adopt.go`、`skills_install_exec.go`、`skills_update_exec.go`、测试 | T04 | wire spec 新增 `project:<rel>`；分发 / 卸载 / 收编 / 安装 / 更新都能解析新目标；内置保护与覆盖备份规则不变 | 待做 |
 | T06 | 移除登记的清理 | `skills_targets.go`、`state.go`、`sources.go`、测试 | T05 | 按 Q-M6-3：删分发记录与 B 区来源记录，写 `unregister` 日志，目录文件字节不变 | 待做 |
