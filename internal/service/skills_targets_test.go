@@ -132,7 +132,7 @@ func TestSkillTargetsProjectAndTokenExpiry(t *testing.T) {
 	}
 	svc.now = func() time.Time { return time.Now().Add(11 * time.Minute) }
 	expired := svc.SaveTarget(ctx, contract.SkillSaveTargetInput{Kind: "project", Name: "Late", Token: token})
-	if expired.Failure == nil || expired.Failure.Code != contract.CodeInvalidInput {
+	if expired.Failure == nil || expired.Failure.Code != contract.CodeNotFound {
 		t.Fatalf("expired token = %+v", expired)
 	}
 }
@@ -253,5 +253,20 @@ func TestReregisteredTargetIsScannedAgain(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("leftover copy not scanned: %+v", scan.Scan.Tools)
+	}
+}
+
+func TestMaskPathShortForms(t *testing.T) {
+	detector := &skills.Detector{Home: `C:\Users\someone`, LocalAppData: `C:\Users\someone\AppData\Local`}
+	cases := map[string]string{
+		`D:\site`:                          `D:\…\site`,
+		`D:\`:                              `D:\…\`,
+		`C:\Users\someone\x`:               `<home>\x`,
+		`C:\Users\someone\AppData\Local\y`: `<local-app-data>\y`,
+	}
+	for input, want := range cases {
+		if got := maskPath(input, detector); got != want {
+			t.Fatalf("maskPath(%q) = %q, want %q", input, got, want)
+		}
 	}
 }

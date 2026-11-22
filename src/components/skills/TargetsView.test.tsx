@@ -5,6 +5,7 @@ const listTargets = vi.fn();
 const pickTargetFolder = vi.fn();
 const saveTarget = vi.fn();
 const removeTarget = vi.fn();
+const revealTarget = vi.fn();
 
 vi.mock("../../lib/transport", () => {
   class TransportError extends Error {}
@@ -15,6 +16,7 @@ vi.mock("../../lib/transport", () => {
       pickTargetFolder: () => pickTargetFolder(),
       saveTarget: (input: unknown) => saveTarget(input),
       removeTarget: (id: string) => removeTarget(id),
+      revealTarget: (id: string) => revealTarget(id),
     },
   };
 });
@@ -58,6 +60,7 @@ beforeEach(() => {
   pickTargetFolder.mockReset();
   saveTarget.mockReset();
   removeTarget.mockReset();
+  revealTarget.mockReset().mockResolvedValue({});
 });
 
 afterEach(cleanup);
@@ -74,6 +77,8 @@ describe("TargetsView", () => {
     expect(screen.getByText("18 个技能 · 2 个子目录")).toBeTruthy();
     expect(screen.getByText("目录不存在")).toBeTruthy();
     expect(screen.getByTestId("targets-count").textContent).toContain("自定义 1 · 项目 1");
+    fireEvent.click(screen.getByTestId("target-reveal-t-111111111111"));
+    expect(revealTarget).toHaveBeenCalledWith("t-111111111111");
   });
 
   it("creates a custom tool through the folder token", async () => {

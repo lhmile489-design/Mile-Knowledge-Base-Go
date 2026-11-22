@@ -76,9 +76,16 @@ export function ToolSkillsPage({
 
   const specOf = (skill: ToolSkill) => (skill.base && skill.rel ? `${skill.base}:${skill.rel}` : skill.name);
   const toolFor = (id: string) => tools.find((tool) => tool.id === id);
-  const sameName = (skill: ToolSkill) =>
+  const activeTarget = chip === "all" ? undefined : toolFor(chip);
+  // Masked paths are not unique across projects; identity uses the wire base.
+  const identityOf = (skill: ToolSkill, toolId: string) =>
+    `${toolId}:${skill.subdir ?? ""}:${skill.rel ?? skill.name}`;
+  const sameName = (skill: ToolSkill, toolId: string) =>
     rows
-      .filter((row) => row.skill.name === skill.name && row.skill.path !== skill.path)
+      .filter(
+        (row) =>
+          row.skill.name === skill.name && identityOf(row.skill, row.toolId) !== identityOf(skill, toolId),
+      )
       .map((row) => ({ toolId: row.toolId, path: specOf(row.skill) }));
 
   const reDistribute = async (skill: ToolSkill) => {
@@ -154,6 +161,13 @@ export function ToolSkillsPage({
         </button>
       ) : null}
 
+      {activeTarget && activeTarget.kind !== "builtin" ? (
+        <div className="kb-group-title" data-testid="tool-group-caption">
+          {activeTarget.kind === "project" ? "项目" : "自定义"} · {activeTarget.name}
+          <span className="tool-chip-count">{rows.length}</span>
+        </div>
+      ) : null}
+
       {rows.length === 0 ? (
         <div className="skills-empty">
           <p>{detectedCount === 0 ? "没有检测到已安装的工具。" : "没有可显示的工具技能。"}</p>
@@ -169,7 +183,7 @@ export function ToolSkillsPage({
             const updatable = skill.remote?.updateState === "update-available";
             const tool = toolFor(toolId);
             return (
-              <div key={skill.path} className="tool-row" data-testid={`tool-skill-${skill.name}-${toolId}`}>
+              <div key={identityOf(skill, toolId)} className="tool-row" data-testid={`tool-skill-${skill.name}-${toolId}`}>
                 <span
                   className="tool-row-icon"
                   title={skill.sourceToolId && tool ? `${toolFor(skill.sourceToolId)?.name ?? skill.sourceToolId}${skill.subdir ? ` · ${skill.subdir}` : ""}` : undefined}
@@ -278,7 +292,7 @@ export function ToolSkillsPage({
           skill={adopt}
           spec={specOf(adopt)}
           builtin={adopt.origin === "builtin"}
-          extras={sameName(adopt)}
+          extras={sameName(adopt, adopt.toolId)}
           onClose={() => setAdopt(null)}
           onDone={() => {
             setAdopt(null);

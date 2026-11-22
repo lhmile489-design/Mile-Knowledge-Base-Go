@@ -99,8 +99,8 @@ func TestDistributeToCustomAndProject(t *testing.T) {
 	}
 	// Unknown registration id is refused.
 	unknown := svc.UninstallPreview(ctx, "t-ffffffffffff", "install:demo")
-	if unknown.Failure == nil || unknown.Failure.Code != contract.CodeInvalidInput {
-		t.Fatalf("unknown target = %+v", unknown)
+	if unknown.Failure == nil || unknown.Failure.Code != contract.CodeNotFound {
+		t.Fatalf("removed target = %+v", unknown)
 	}
 }
 

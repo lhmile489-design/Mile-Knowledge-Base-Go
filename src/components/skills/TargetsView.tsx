@@ -357,6 +357,16 @@ export function TargetsView({
                     <button
                       type="button"
                       className="icon-button"
+                      aria-label={`打开目录 ${target.name}`}
+                      title="打开所在目录"
+                      onClick={() => void skillsApi.revealTarget(target.id).catch(() => undefined)}
+                      data-testid={`target-reveal-${target.id}`}
+                    >
+                      <FolderOpen size={13} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-button"
                       aria-label={`编辑 ${target.name}`}
                       title="编辑"
                       onClick={() => openEdit(target)}

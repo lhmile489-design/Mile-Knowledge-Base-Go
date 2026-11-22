@@ -42,11 +42,18 @@ func (s *SkillService) targetEnv(targets []skills.Target) skills.TargetEnv {
 	for _, item := range s.app.Vaults.List().Vaults {
 		roots = append(roots, item.Root)
 	}
+	var builtin []skills.BuiltinDirRef
+	for _, tool := range detector.Detect() {
+		for _, dir := range tool.BuiltinDirs {
+			builtin = append(builtin, skills.BuiltinDirRef{Tool: tool.Name, Dir: dir})
+		}
+	}
 	return skills.TargetEnv{
 		Home:         detector.Home,
 		LocalAppData: detector.LocalAppData,
 		VaultRoots:   roots,
 		Targets:      targets,
+		BuiltinDirs:  builtin,
 	}
 }
 
@@ -71,10 +78,14 @@ func maskPath(value string, detector *skills.Detector) string {
 			parts = append(parts, part)
 		}
 	}
-	if len(parts) < 2 {
-		return value
+	switch len(parts) {
+	case 0:
+		return volume + `\…\`
+	case 1:
+		return volume + `\…\` + parts[0]
+	default:
+		return volume + `\…\` + parts[len(parts)-2] + `\` + parts[len(parts)-1]
 	}
-	return volume + `:\…\` + parts[len(parts)-2] + `\` + parts[len(parts)-1]
 }
 
 func maskPaths(values []string, detector *skills.Detector) []string {
@@ -290,8 +301,7 @@ func (s *SkillService) RemoveTarget(ctx context.Context, id string) contract.Ski
 	if err := skills.SaveTargets(s.targetsFile(), kept); err != nil {
 		return contract.SkillRemoveTargetResult{Failure: contract.Fail(contract.CodeIOFailure, "无法写入登记")}
 	}
-	detector := s.detector()
-	s.logOperation("unregister", record.Name, record.ID, maskPath(record.Path, detector), "", "ok", "",
+	s.logOperation("unregister", record.Name, record.ID, record.Path, "", "ok", "",
 		fmt.Sprintf("删除 %d 条分发记录、%d 条来源记录", removedDistributions, removedSources))
 	_ = os.Remove(s.cachePath())
 	s.emitChanged()
@@ -317,6 +327,15 @@ func (s *SkillService) RevealTarget(ctx context.Context, id string) contract.Fai
 		return contract.Failure{}
 	}
 	return *contract.Fail(contract.CodeNotFound, "登记不存在")
+}
+
+// unknownToolFailure separates a removed registration (not-found, API §14.3)
+// from an id that never existed.
+func unknownToolFailure(toolID string) *contract.Failure {
+	if skills.IsTargetID(toolID) {
+		return contract.Fail(contract.CodeNotFound, "登记已移除")
+	}
+	return contract.Fail(contract.CodeInvalidInput, "未知的工具")
 }
 
 // skillTools is the merged tool list every write path resolves against
@@ -374,7 +393,7 @@ func (s *SkillService) targetPickPath(token string) (string, *contract.Failure) 
 	item, ok := s.targetPicks[token]
 	if !ok || s.now().After(item.expiresAt) {
 		delete(s.targetPicks, token)
-		return "", contract.Fail(contract.CodeInvalidInput, "选择已过期，请重新选择目录")
+		return "", contract.Fail(contract.CodeNotFound, "选择已过期，请重新选择目录")
 	}
 	return item.path, nil
 }

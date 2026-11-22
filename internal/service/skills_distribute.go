@@ -116,7 +116,7 @@ func (s *SkillService) distributeOptions(ctx context.Context, vaultID, skillPath
 	for _, input := range targets {
 		tool, ok := byID[input.TargetID]
 		if !ok {
-			return skills.DistributeOptions{}, contract.Fail(contract.CodeInvalidInput, "未知的工具")
+			return skills.DistributeOptions{}, unknownToolFailure(input.TargetID)
 		}
 		if !tool.Enabled {
 			return skills.DistributeOptions{}, contract.Fail(contract.CodeSkillProtected, "该工具未启用")

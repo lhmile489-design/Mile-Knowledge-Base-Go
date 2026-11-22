@@ -266,3 +266,14 @@ func jsonRecord(record Target) string {
 	}
 	return string(body)
 }
+
+func TestTargetPathDetectedBuiltinDirs(t *testing.T) {
+	env, root := targetEnv(t)
+	appDir := newDir(t, filepath.Join(root, "Programs", "ZCode", "resources", "glm", "packages", "1", "skills"))
+	env.BuiltinDirs = []BuiltinDirRef{{Tool: "ZCode", Dir: appDir}}
+	inside := newDir(t, filepath.Join(appDir, "official"))
+	wantCode(t, ValidateTargetPath(env, TargetCustom, inside, "", ""), contract.CodeSkillConflict)
+	if f := ValidateTargetPath(env, TargetCustom, newDir(t, filepath.Join(root, "plain")), "", ""); f != nil {
+		t.Fatalf("plain dir rejected: %+v", f)
+	}
+}

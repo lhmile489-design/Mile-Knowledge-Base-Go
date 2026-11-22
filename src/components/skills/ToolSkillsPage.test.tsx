@@ -259,6 +259,7 @@ describe("ToolSkillsPage M6 targets", () => {
     fireEvent.click(screen.getByTestId("manage-targets"));
     expect(onManageTargets).toHaveBeenCalled();
     fireEvent.click(screen.getByTestId("tool-chip-t-222222222222"));
+    expect(screen.getByTestId("tool-group-caption").textContent).toContain("项目 · acme-site");
     const row = screen.getByTestId("tool-skill-pdf-t-222222222222");
     const icon = row.querySelector(".tool-row-icon");
     expect(icon?.getAttribute("title")).toBe("Claude Code · .claude/skills");

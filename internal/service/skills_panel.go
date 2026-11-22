@@ -134,7 +134,7 @@ func (s *SkillService) startBackgroundScan(vaultID, cachePath string) {
 func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.SkillScan {
 	detector := s.detector()
 	loaded := s.loadTargets()
-	tools := s.skillTools()
+	tools := skills.MergeTargets(detector.Detect(), loaded.Targets)
 	state := skills.LoadState(filepath.Join(s.app.DataDir, "skills", "state.json"))
 	kb, refs, root := s.kbSkills(ctx, vaultID, state.Distributions)
 	groups, warnings := skills.ScanTools(skills.ScanOptions{

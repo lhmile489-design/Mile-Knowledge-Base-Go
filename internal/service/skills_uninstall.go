@@ -148,7 +148,7 @@ func (s *SkillService) resolveToolSkill(ctx context.Context, toolID, spec string
 		abs, f := s.resolveSpec(tool, spec, false)
 		return tool, abs, f
 	}
-	return skills.DetectedTool{}, "", contract.Fail(contract.CodeInvalidInput, "未知的工具")
+	return skills.DetectedTool{}, "", unknownToolFailure(toolID)
 }
 
 // resolveAnyToolSkill is the read-side variant used by Reveal and Adopt: it
@@ -161,7 +161,7 @@ func (s *SkillService) resolveAnyToolSkill(ctx context.Context, toolID, spec str
 		abs, f := s.resolveSpec(tool, spec, true)
 		return tool, abs, f
 	}
-	return skills.DetectedTool{}, "", contract.Fail(contract.CodeInvalidInput, "未知的工具")
+	return skills.DetectedTool{}, "", unknownToolFailure(toolID)
 }
 
 func pathExists(path string) bool {

@@ -227,12 +227,21 @@ func projectDirsForCheck(record Target) []string {
 	return dirs
 }
 
+// BuiltinDirRef is one resolved built-in tool directory (detection result;
+// covers install dirs, scan-only dirs and the app-bundled dirs of ZCode and
+// MiniMax Code that the registry templates alone cannot expand).
+type BuiltinDirRef struct {
+	Tool string
+	Dir  string
+}
+
 // TargetEnv is what registration validation needs from the rest of the app.
 type TargetEnv struct {
-	Home         string   // expands "~" in registry templates
-	LocalAppData string   // expands "%LOCALAPPDATA%"
-	VaultRoots   []string // every registered vault root
-	Targets      []Target // currently registered targets
+	Home         string          // expands "~" in registry templates
+	LocalAppData string          // expands "%LOCALAPPDATA%"
+	VaultRoots   []string        // every registered vault root
+	Targets      []Target        // currently registered targets
+	BuiltinDirs  []BuiltinDirRef // detected directories, optional
 }
 
 // ValidateTargetName checks the display name (技术设计 17.3).
@@ -431,6 +440,9 @@ func builtinDirs(env TargetEnv) []builtinDir {
 		for _, dir := range tool.BuiltinDirs {
 			out = append(out, builtinDir{tool.Name, expand(dir)})
 		}
+	}
+	for _, ref := range env.BuiltinDirs {
+		out = append(out, builtinDir{ref.Tool, ref.Dir})
 	}
 	return out
 }

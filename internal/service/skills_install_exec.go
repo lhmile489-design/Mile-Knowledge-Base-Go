@@ -262,7 +262,7 @@ func (s *SkillService) resolveInstallTargets(inputs []contract.SkillDistributeTa
 	for _, input := range inputs {
 		tool, ok := byID[input.TargetID]
 		if !ok {
-			return nil, contract.Fail(contract.CodeInvalidInput, "未知的工具")
+			return nil, unknownToolFailure(input.TargetID)
 		}
 		if !tool.Enabled {
 			return nil, contract.Fail(contract.CodeSkillProtected, "该工具未启用")
