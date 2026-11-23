@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CaretRight, DotsThree, Lock, PlugsConnected, Sparkle, Star, X } from "@phosphor-icons/react";
 import type { ProviderDraft, ProvidersResult } from "../../mygo";
 import {
@@ -43,18 +43,25 @@ export function ModelServiceSection({
   const [keyEditor, setKeyEditor] = useState<{ name: string; envName: string } | null>(null);
   const [keyValue, setKeyValue] = useState("");
   const [keyBusy, setKeyBusy] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // 菜单：点外面或按 Esc 关闭（与旧版一致）。
+  // 菜单：点外面或按 Esc 关闭（与旧版一致）。按压事件在菜单内不能关，
+  // 否则菜单项会在 click 之前被卸载，删除和更换 Key 都点不到。
   useEffect(() => {
     if (!menu) return;
     const close = (): void => setMenu(null);
+    const onPointerDown = (event: PointerEvent): void => {
+      const target = event.target as Node | null;
+      if (target && menuRef.current && menuRef.current.contains(target)) return;
+      close();
+    };
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === "Escape") close();
     };
-    document.addEventListener("mousedown", close);
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", close);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
     };
   }, [menu]);
@@ -291,7 +298,7 @@ export function ModelServiceSection({
                     >
                       编辑
                     </button>
-                    <div className="provider-more">
+                    <div className="provider-more" ref={menu === provider.name ? menuRef : undefined}>
                       <button
                         type="button"
                         className="icon-button"
