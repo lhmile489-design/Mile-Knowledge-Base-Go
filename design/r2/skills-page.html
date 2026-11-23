@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>R2 技能页（独立页面）设计稿</title>
+<!--
+  技能页设计稿（PRD 第 17 节 v2.7 草案，D-019；2026-11-24）。
+  方向用户 2026-11-24 已认可；本稿补齐页面状态，供 UI 稿第 11 节与 DESIGN 第 13 节审核。
+  超出 DESIGN.md §2 现行契约的三处只在技能页试点（DESIGN 第 13 节）：
+    1. 卡片、列表、横幅用毛玻璃；2. 页面背景有柔和色场（径向渐变）；3. 入场与悬停动效最长 520ms。
+  参数：
+    ?state=kb | kb-select | tools | distribute | uninstall | novault | scanning | search-empty
+    ?theme=dark   ?w=960&h=720（窄窗口）   ?motion=off   ?glass=off   ?shot=1（隐藏原型导航）
+-->
+<link rel="stylesheet" href="../../src/styles/tokens.css">
+<style>
+  html, body { margin: 0; background: var(--raw-canvas); font-family: var(--font-ui); color: var(--raw-text); }
+  * { box-sizing: border-box; }
+  button { font-family: inherit; }
+
+  /* ---------- 试点令牌（DESIGN 第 13 节；只在技能页使用） ---------- */
+  :root {
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring-soft: cubic-bezier(0.34, 1.36, 0.64, 1);
+    --dur-enter: 520ms;
+    --dur-hover: 320ms;
+    --dur-slide: 460ms;
+    --stagger: 38ms;
+    --glass-card: color-mix(in srgb, var(--raw-card) 50%, transparent);
+    --glass-card-hover: color-mix(in srgb, var(--raw-card) 66%, transparent);
+    --glass-strong: color-mix(in srgb, var(--raw-card) 78%, transparent);
+    --glass-edge: rgb(255 255 255 / .7);
+    --glass-blur: 18px;
+    --field-a: color-mix(in srgb, var(--raw-accent) 36%, transparent);
+    --field-b: color-mix(in srgb, var(--info) 24%, transparent);
+    --field-c: color-mix(in srgb, var(--live) 16%, transparent);
+  }
+  [data-theme='dark'] {
+    --glass-card: color-mix(in srgb, var(--raw-raised) 46%, transparent);
+    --glass-card-hover: color-mix(in srgb, var(--raw-raised) 62%, transparent);
+    --glass-strong: color-mix(in srgb, var(--raw-raised) 80%, transparent);
+    --glass-edge: rgb(255 255 255 / .09);
+    --field-a: color-mix(in srgb, var(--raw-accent) 22%, transparent);
+    --field-b: color-mix(in srgb, var(--info) 20%, transparent);
+    --field-c: color-mix(in srgb, var(--live) 10%, transparent);
+  }
+
+  /* ---------- 外壳 ---------- */
+  .app { position: relative; width: var(--app-w, 1440px); height: var(--app-h, 900px); overflow: hidden; background: var(--raw-canvas);
+    display: grid; grid-template-rows: var(--titlebar-h) minmax(0, 1fr); }
+  .titlebar { display: flex; align-items: center; gap: 12px; padding-left: 12px; position: relative; z-index: 2; }
+  .titlebar .brand { display: flex; align-items: center; gap: 8px; font-size: var(--text-body); font-weight: 600; color: var(--raw-text); white-space: nowrap; }
+  .titlebar .brand img { width: 18px; height: 18px; }
+  .titlebar .vault-tag { font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: .32em; color: var(--raw-faint); }
+  .titlebar .vault-name { flex: 1; min-width: 0; font-size: var(--text-body-sm); color: var(--raw-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .accent-dot { width: 14px; height: 14px; border-radius: 999px; background: var(--raw-accent); flex: none; box-shadow: 0 0 0 3px var(--raw-raised); }
+  .win { display: flex; }
+  .win span { width: 46px; height: 40px; display: grid; place-items: center; color: var(--raw-text); }
+
+  /* 「工作台 / 技能」切换胶囊：滑块弹性滑动 */
+  .nav-switch { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--radius-pill); background: var(--raw-raised); position: relative; flex: none; }
+  .nav-switch button { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 12px; border: 0; border-radius: var(--radius-pill);
+    background: transparent; color: var(--raw-muted); font-size: var(--text-body-sm); font-weight: 600; cursor: pointer; transition: color var(--dur) var(--ease); }
+  .nav-switch button[aria-current='page'] { color: var(--raw-strong); }
+  .nav-switch .thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; border-radius: var(--radius-pill); background: var(--raw-card);
+    box-shadow: 0 1px 2px rgb(20 22 28 / .08); transition: transform var(--dur-slide) var(--ease-spring-soft), width var(--dur-slide) var(--ease-spring-soft); }
+  [data-theme='dark'] .nav-switch .thumb { background: var(--raw-line-strong); box-shadow: none; }
+  .badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: inline-grid; place-items: center;
+    background: color-mix(in srgb, var(--warn) 18%, var(--raw-card)); color: color-mix(in srgb, var(--warn) 78%, var(--raw-strong));
+    font-size: var(--text-caption); font-weight: 700; line-height: 1; }
+
+  /* ---------- 技能页 ---------- */
+  .page { position: relative; margin: 0 8px 8px; border-radius: var(--radius-panel); border: 1px solid var(--raw-line);
+    background: var(--raw-panel-editor); overflow: hidden; display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 0; isolation: isolate; }
+  .narrow .page { grid-template-columns: 56px minmax(0, 1fr); }
+
+  /* 色场：不滚动，给毛玻璃一个可以模糊的背景 */
+  .field { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .field i { position: absolute; border-radius: 50%; filter: blur(40px); opacity: .9; will-change: transform; }
+  .field .a { width: 620px; height: 620px; left: 300px; top: -220px; background: radial-gradient(circle, var(--field-a), transparent 68%); animation: drift-a 26s var(--ease) infinite alternate; }
+  .field .b { width: 560px; height: 560px; right: -160px; top: 180px; background: radial-gradient(circle, var(--field-b), transparent 68%); animation: drift-b 32s var(--ease) infinite alternate; }
+  .field .c { width: 520px; height: 520px; left: 520px; bottom: -280px; background: radial-gradient(circle, var(--field-c), transparent 68%); animation: drift-c 28s var(--ease) infinite alternate; }
+  @keyframes drift-a { to { transform: translate3d(80px, 60px, 0) scale(1.08); } }
+  @keyframes drift-b { to { transform: translate3d(-90px, -40px, 0) scale(.94); } }
+  @keyframes drift-c { to { transform: translate3d(60px, -70px, 0) scale(1.05); } }
+
+  /* 左侧导航 */
+  .side { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; border-right: 1px solid var(--raw-line); background: color-mix(in srgb, var(--raw-panel-sidebar) 82%, transparent); min-height: 0; }
+  .side-head { padding: 20px 18px 14px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-caption); letter-spacing: .14em; font-weight: 600; color: var(--raw-faint); }
+  .eyebrow::before { content: ''; width: 6px; height: 6px; background: var(--raw-accent); }
+  .side-title { margin: 8px 0 0; font-size: var(--text-display); font-weight: 650; letter-spacing: -.01em; color: var(--raw-strong); }
+  .side-sub { margin: 4px 0 0; font-size: var(--text-meta); color: var(--raw-muted); }
+  .side-nav { padding: 6px 10px; overflow: auto; display: grid; align-content: start; gap: 2px; }
+  .side-label { margin: 14px 8px 6px; font-size: var(--text-caption); letter-spacing: .1em; font-weight: 600; color: var(--raw-faint); }
+  .side-item { position: relative; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-control); background: transparent;
+    color: var(--raw-text); font-size: var(--text-body-sm); text-align: left; cursor: pointer; white-space: nowrap; transition: background-color 220ms var(--ease), color 220ms var(--ease); }
+  .side-item:hover { background: color-mix(in srgb, var(--raw-raised) 70%, transparent); }
+  .side-item[aria-current='true'] { background: var(--raw-accent-soft); color: var(--raw-accent-text); font-weight: 600; }
+  .side-item[aria-disabled='true'] { color: var(--raw-faint); cursor: not-allowed; }
+  .side-item[aria-disabled='true']:hover { background: transparent; }
+  .side-item .n { margin-left: auto; font-size: var(--text-caption); color: var(--raw-faint); font-variant-numeric: tabular-nums; }
+  .side-item[aria-current='true'] .n { color: inherit; opacity: .75; }
+  .side-item img, .side-item .tool-ico { width: 16px; height: 16px; }
+  .side-item .dot { position: absolute; top: 6px; left: 22px; width: 7px; height: 7px; border-radius: 999px; background: var(--warn); box-shadow: 0 0 0 2px var(--raw-panel-sidebar); }
+  .side-foot { padding: 12px 14px 14px; border-top: 1px solid var(--raw-line); display: grid; gap: 8px; }
+  .meter { height: 6px; border-radius: 999px; background: var(--raw-raised); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 71%; border-radius: inherit; background: var(--raw-accent); transform-origin: left; animation: grow 900ms var(--ease-out-expo) 260ms both; }
+  @keyframes grow { from { transform: scaleX(0); } }
+  .side-foot .line { display: flex; justify-content: space-between; gap: 8px; font-size: var(--text-meta); color: var(--raw-muted); }
+  .side-foot .line b { color: var(--raw-strong); font-variant-numeric: tabular-nums; }
+  /* 窄窗口：导航收成图标栏 */
+  .narrow .side-head, .narrow .side-label, .narrow .side-item .label, .narrow .side-item .n, .narrow .side-foot .line { display: none; }
+  .narrow .side-nav { padding: 12px 8px; gap: 4px; }
+  .narrow .side-item { justify-content: center; padding: 0; height: 36px; }
+  .narrow .side-sep { height: 1px; margin: 8px 6px; background: var(--raw-line); }
+  .side-sep { display: none; }
+  .narrow .side-sep { display: block; }
+  .narrow .side-foot { padding: 12px 10px 14px; }
+
+  /* 主区 */
+  .main { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 16px 24px 12px; min-width: 0; }
+  .toolbar h2 { margin: 0; font-size: var(--text-title); font-weight: 650; color: var(--raw-strong); white-space: nowrap; }
+  .toolbar .count { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-meta); color: var(--raw-faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .toolbar .spacer { flex: 1; }
+  .search { display: flex; align-items: center; gap: 6px; width: 300px; min-width: 160px; height: 32px; padding: 0 10px; border: 1px solid var(--raw-line-strong); border-radius: var(--radius-control);
+    background: color-mix(in srgb, var(--raw-card) 80%, transparent); color: var(--raw-faint); font-size: var(--text-body-sm);
+    transition: border-color 220ms var(--ease); }
+  .search[data-filled] { color: var(--raw-text); border-color: var(--raw-accent); }
+  .search kbd { margin-left: auto; font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); }
+  .narrow .search { width: 220px; }
+  .view-toggle .segmented-item { padding-inline: 8px; }
+  .content { overflow: auto; padding: 4px 24px 28px; min-height: 0; }
+
+  /* 面包屑（子视图） */
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--text-body-sm); color: var(--raw-muted); }
+  .crumbs .back { width: 30px; height: 30px; border-radius: var(--radius-control); border: 1px solid var(--raw-line); background: var(--glass-strong); color: var(--raw-text);
+    display: grid; place-items: center; cursor: pointer; transition: transform 320ms var(--ease-spring-soft); }
+  .crumbs .back:hover { transform: translateX(-2px); }
+  .crumbs .sep { color: var(--raw-faint); }
+  .crumbs b { font-weight: 650; color: var(--raw-strong); font-size: var(--text-title); }
+
+  .banner { display: flex; align-items: center; gap: 10px; margin: 2px 0 6px; padding: 10px 14px; border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--info) 30%, var(--raw-line)); background: var(--glass-strong);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4); backdrop-filter: blur(var(--glass-blur)) saturate(1.4); font-size: var(--text-body-sm); }
+  .banner .ico { color: var(--info); }
+  .banner .spacer { flex: 1; }
+
+  .group { display: flex; align-items: baseline; gap: 8px; margin: 22px 2px 10px; font-size: var(--text-meta); font-weight: 600; color: var(--raw-muted); }
+  .group .n { font-weight: 500; color: var(--raw-faint); }
+  .group::after { content: ''; flex: 1; height: 1px; background: var(--raw-line); transform: translateY(-3px); }
+  .group .grp-act { order: 2; font-size: var(--text-caption); font-weight: 600; color: var(--raw-accent-text); background: none; border: 0; cursor: pointer; padding: 0; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+
+  /* ---------- 毛玻璃卡片 ---------- */
+  .card { position: relative; display: grid; grid-template-rows: auto auto 1fr auto; gap: 8px; min-height: 148px; padding: 14px 14px 12px;
+    border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
+    background: var(--glass-card);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5); backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+    box-shadow: inset 0 1px 0 var(--glass-edge), 0 1px 2px rgb(20 22 28 / .04);
+    transform: translate3d(0, 0, 0);
+    transition: transform var(--dur-hover) var(--ease-spring-soft), background-color var(--dur-hover) var(--ease),
+      border-color var(--dur-hover) var(--ease), box-shadow var(--dur-hover) var(--ease);
+    overflow: hidden; }
+  [data-theme='dark'] .card { box-shadow: inset 0 1px 0 var(--glass-edge); }
+  .card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+    background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--raw-accent) 14%, transparent), transparent 60%);
+    transition: opacity var(--dur-hover) var(--ease); }
+  .card:hover { transform: translate3d(0, -3px, 0); background: var(--glass-card-hover);
+    border-color: color-mix(in srgb, var(--raw-accent) 28%, var(--raw-line)); box-shadow: inset 0 1px 0 var(--glass-edge), 0 14px 30px rgb(20 22 28 / .10); }
+  [data-theme='dark'] .card:hover { box-shadow: inset 0 1px 0 var(--glass-edge), 0 14px 30px rgb(0 0 0 / .35); }
+  .card:hover::before { opacity: 1; }
+  .card:active { transform: translate3d(0, -1px, 0) scale(.985); transition-duration: 90ms; }
+  .card[data-tone='warn'] { border-color: color-mix(in srgb, var(--warn) 40%, var(--raw-line)); }
+  .card[data-selected] { border-color: var(--raw-accent); background: color-mix(in srgb, var(--raw-accent-soft) 70%, transparent); }
+
+  .card .top { display: flex; align-items: center; gap: 10px; min-width: 0; padding-right: 22px; }
+  .glyph { width: 32px; height: 32px; flex: none; border-radius: 10px; display: grid; place-items: center; color: var(--raw-accent-text);
+    background: color-mix(in srgb, var(--raw-accent-soft) 80%, transparent); border: 1px solid color-mix(in srgb, var(--raw-accent) 18%, transparent);
+    transition: transform var(--dur-slide) var(--ease-spring-soft); }
+  .card:hover .glyph { transform: rotate(-8deg) scale(1.06); }
+  .card .name { min-width: 0; font-size: var(--text-body); font-weight: 650; color: var(--raw-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .cat { font-size: var(--text-caption); color: var(--raw-faint); }
+  .card .desc { font-size: var(--text-meta); line-height: 1.55; color: var(--raw-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card .meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .card .meta .spacer { flex: 1; }
+  .card .kebab { position: absolute; top: 10px; right: 8px; width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent; color: var(--raw-muted);
+    display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity 220ms var(--ease); }
+  .card:hover .kebab, .card:focus-within .kebab { opacity: 1; }
+  .card .check { position: absolute; top: 14px; right: 12px; width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--raw-line-strong); background: var(--raw-card);
+    display: grid; place-items: center; color: var(--raw-on-accent); transition: transform 320ms var(--ease-spring-soft), background-color 160ms var(--ease); }
+  .card[data-selected] .check { background: var(--raw-accent-btn); border-color: var(--raw-accent-btn); transform: scale(1.06); }
+  .stack { display: flex; }
+  .stack > * { width: 20px; height: 20px; border-radius: 6px; margin-left: -6px; border: 2px solid var(--raw-card); background: var(--raw-card);
+    transition: margin var(--dur-hover) var(--ease-spring-soft); }
+  .stack > :first-child { margin-left: 0; }
+  .card:hover .stack > * { margin-left: -2px; }
+  .card:hover .stack > :first-child { margin-left: 0; }
+  .none { font-size: var(--text-meta); color: var(--raw-faint); }
+  .act { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border: 1px solid var(--raw-line); border-radius: 8px;
+    background: color-mix(in srgb, var(--raw-card) 80%, transparent); color: var(--raw-text); font-size: var(--text-meta); font-weight: 600; cursor: pointer;
+    opacity: 0; transform: translate3d(6px, 0, 0); transition: opacity 260ms var(--ease), transform 420ms var(--ease-spring-soft), background-color 200ms var(--ease); }
+  .card:hover .act, .card:focus-within .act { opacity: 1; transform: none; }
+  .act:hover { background: var(--raw-raised); }
+  .act .ico { transition: transform 420ms var(--ease-spring-soft); }
+  .act:hover .ico { transform: translateX(2px); }
+
+  .card.add { place-content: center; justify-items: center; gap: 8px; text-align: center; border-style: dashed; border-color: var(--raw-line-strong);
+    background: color-mix(in srgb, var(--raw-card) 30%, transparent); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; color: var(--raw-muted); cursor: pointer; }
+  .card.add .glyph { background: var(--raw-raised); border-color: transparent; color: var(--raw-muted); }
+  .card.add:hover { color: var(--raw-accent-text); border-color: var(--raw-accent); }
+  .card.add:hover .glyph { transform: rotate(90deg) scale(1.04); color: var(--raw-accent-text); }
+  .card.add b { font-size: var(--text-body-sm); }
+  .card.add span { font-size: var(--text-caption); color: var(--raw-faint); }
+
+  /* 骨架卡（扫描中）：只动 background-position */
+  .card.skel { min-height: 148px; }
+  .skel .bar { height: 10px; border-radius: 6px;
+    background: linear-gradient(90deg, var(--raw-raised) 0%, color-mix(in srgb, var(--raw-raised) 40%, var(--raw-card)) 50%, var(--raw-raised) 100%);
+    background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+  .spin { width: 10px; height: 10px; border-radius: 999px; border: 1.5px solid currentColor; border-right-color: transparent; animation: turn .9s linear infinite; }
+  @keyframes turn { to { transform: rotate(360deg); } }
+
+  /* ---------- 入场：逐张错开、快起慢收 ---------- */
+  .reveal { opacity: 0; transform: translate3d(0, 14px, 0) scale(.98); filter: blur(6px);
+    animation: rise var(--dur-enter) var(--ease-out-expo) forwards; animation-delay: calc(var(--i, 0) * var(--stagger) + 120ms); }
+  @keyframes rise { to { opacity: 1; transform: none; filter: blur(0); } }
+
+  /* ---------- 工具列表 ---------- */
+  .list { border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent); background: var(--glass-card);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5); backdrop-filter: blur(var(--glass-blur)) saturate(1.5); box-shadow: inset 0 1px 0 var(--glass-edge); overflow: hidden; }
+  .row { display: grid; grid-template-columns: 22px minmax(140px, 220px) minmax(0, 1fr) 150px 96px; align-items: center; gap: 12px; height: 46px; padding: 0 14px;
+    font-size: var(--text-body-sm); transition: background-color 220ms var(--ease); }
+  .row + .row { border-top: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent); }
+  .row:hover, .row[data-hover] { background: color-mix(in srgb, var(--raw-accent-soft) 45%, transparent); }
+  .row .nm { font-weight: 600; color: var(--raw-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .path { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .acts { display: flex; justify-content: flex-end; gap: 4px; opacity: 0; transform: translateX(6px); transition: opacity 240ms var(--ease), transform 380ms var(--ease-spring-soft); }
+  .row:hover .acts, .row[data-hover] .acts { opacity: 1; transform: none; }
+  .row .acts button { width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--raw-muted); display: grid; place-items: center; cursor: pointer; }
+  .row .acts button:hover { background: var(--raw-raised); color: var(--raw-strong); }
+  .row img, .row .tool-ico { width: 18px; height: 18px; }
+  .tool-head { display: flex; align-items: center; gap: 8px; margin: 18px 2px 8px; font-size: var(--text-meta); font-weight: 600; color: var(--raw-muted); }
+  .tool-head:first-child { margin-top: 4px; }
+  .tool-head img, .tool-head .tool-ico { width: 16px; height: 16px; }
+  .tool-head .n { color: var(--raw-faint); font-weight: 500; }
+
+  /* ---------- 分发子视图 ---------- */
+  .sub-label { display: flex; align-items: baseline; gap: 8px; margin: 18px 2px 10px; font-size: var(--text-meta); font-weight: 600; color: var(--raw-muted); }
+  .sub-label:first-child { margin-top: 4px; }
+  .sub-label .hint { font-weight: 400; color: var(--raw-faint); }
+  .method { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 10px; }
+  .method button { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 2px 10px; padding: 12px 14px; text-align: left; border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent); background: var(--glass-card);
+    -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur)); cursor: pointer; color: var(--raw-text);
+    transition: border-color 220ms var(--ease), transform 320ms var(--ease-spring-soft); }
+  .method button:hover { transform: translateY(-2px); }
+  .method button[aria-checked='true'] { border-color: var(--raw-accent); background: color-mix(in srgb, var(--raw-accent-soft) 70%, transparent); }
+  .method .r { width: 16px; height: 16px; margin-top: 2px; border-radius: 999px; border: 1.5px solid var(--raw-line-strong); background: var(--raw-card); display: grid; place-items: center; }
+  .method [aria-checked='true'] .r { border-color: var(--raw-accent-btn); }
+  .method [aria-checked='true'] .r::after { content: ''; width: 8px; height: 8px; border-radius: 999px; background: var(--raw-accent-btn); }
+  .method .t { font-size: var(--text-body-sm); font-weight: 650; color: var(--raw-strong); }
+  .method .s { grid-column: 2; font-size: var(--text-meta); color: var(--raw-muted); line-height: 1.5; }
+  .targets { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .target { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; align-items: center;
+    padding: 11px 12px; border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent); background: var(--glass-card);
+    -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur)); cursor: pointer; text-align: left; color: var(--raw-text);
+    transition: border-color 220ms var(--ease), transform 320ms var(--ease-spring-soft), background-color 220ms var(--ease); }
+  .target:hover { transform: translateY(-2px); }
+  .target:active { transform: scale(.97); transition-duration: 90ms; }
+  .target img, .target .tool-ico { width: 22px; height: 22px; grid-row: span 2; }
+  .target .t { font-size: var(--text-body-sm); font-weight: 650; color: var(--raw-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 22px; }
+  .target .s { font-size: var(--text-caption); color: var(--raw-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .target[aria-checked='true'] { border-color: var(--raw-accent); background: color-mix(in srgb, var(--raw-accent-soft) 70%, transparent); }
+  .target[aria-checked='true'] .s { color: var(--raw-accent-text); }
+  .target[aria-disabled='true'] { cursor: not-allowed; background: color-mix(in srgb, var(--raw-sunken) 60%, transparent); }
+  .target[aria-disabled='true']:hover { transform: none; }
+  .target[aria-disabled='true'] .t { color: var(--raw-muted); }
+  .target[data-wide] { grid-column: span 2; }
+  .target .tick { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center;
+    border: 1.5px solid var(--raw-line-strong); background: var(--raw-card); color: var(--raw-on-accent); transition: transform 320ms var(--ease-spring-soft); }
+  .target[aria-checked='true'] .tick { background: var(--raw-accent-btn); border-color: var(--raw-accent-btn); transform: scale(1.06); }
+  .target .readers { grid-column: 2; display: flex; gap: 3px; margin-top: 4px; }
+  .target .readers img, .target .readers .tool-ico { width: 14px; height: 14px; grid-row: auto; border-radius: 3px; }
+  .more-link { margin-top: 10px; font-size: var(--text-meta); color: var(--raw-accent-text); font-weight: 600; background: none; border: 0; padding: 4px 2px; cursor: pointer; }
+  .note { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--raw-line)); background: color-mix(in srgb, var(--warn) 7%, var(--glass-strong));
+    font-size: var(--text-meta); line-height: 1.55; color: var(--raw-text); }
+  .note .ico { color: var(--warn); margin-top: 1px; }
+
+  /* 底部操作条：浮在主区底部，毛玻璃 */
+  .dock { position: absolute; left: 24px; right: 24px; bottom: 16px; z-index: 3; display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 16px;
+    border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent); background: var(--glass-strong);
+    -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5);
+    box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float); font-size: var(--text-body-sm); color: var(--raw-muted);
+    animation: dock-in var(--dur-enter) var(--ease-spring-soft) 200ms both; }
+  @keyframes dock-in { from { opacity: 0; transform: translate3d(0, 24px, 0); } }
+  .dock b { color: var(--raw-strong); font-variant-numeric: tabular-nums; }
+  .dock .spacer { flex: 1; }
+  .has-dock .content { padding-bottom: 88px; }
+
+  /* ---------- 确认卡（覆盖整页） ---------- */
+  .scrim { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: color-mix(in srgb, var(--raw-canvas) 36%, transparent);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: fade 240ms var(--ease) both; }
+  @keyframes fade { from { opacity: 0; } }
+  .confirm { width: 540px; max-width: calc(100% - 48px); display: grid; gap: 12px; padding: 18px; border-radius: var(--radius-card);
+    background: var(--glass-strong); border: 1px solid var(--raw-line-strong); -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5);
+    box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float); animation: pop var(--dur-enter) var(--ease-spring-soft) both; }
+  @keyframes pop { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.96); } }
+  .confirm h3 { margin: 0; font-size: var(--text-body); color: var(--raw-strong); }
+  .confirm .item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 2px 8px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--raw-sunken) 80%, transparent); font-size: var(--text-body-sm); }
+  .confirm .item img, .confirm .item .tool-ico { width: 18px; height: 18px; }
+  .confirm .item .what { grid-column: 2; font-size: var(--text-meta); color: var(--raw-muted); line-height: 1.5; }
+  .confirm .item .what code { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--raw-faint); }
+  .confirm .row-btns { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-danger { display: inline-flex; align-items: center; gap: 6px; padding: 0.3125rem 0.75rem; border-radius: var(--radius-control);
+    border: 1px solid color-mix(in srgb, var(--fault) 45%, var(--raw-line)); background: color-mix(in srgb, var(--fault) 10%, var(--raw-card));
+    color: var(--fault); font-size: var(--text-body); font-weight: 600; cursor: pointer; }
+
+  /* ---------- 空状态 ---------- */
+  .empty { height: 100%; min-height: 420px; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 24px; }
+  .empty .big { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: var(--raw-accent-text);
+    background: var(--glass-strong); border: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+    -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur)); box-shadow: inset 0 1px 0 var(--glass-edge);
+    animation: float 4.8s var(--ease) infinite alternate; }
+  @keyframes float { to { transform: translate3d(0, -6px, 0); } }
+  .empty h4 { margin: 4px 0 0; font-size: var(--text-title); color: var(--raw-strong); }
+  .empty p { margin: 0; max-width: 400px; font-size: var(--text-body-sm); line-height: 1.6; color: var(--raw-muted); }
+  .empty .actions { display: flex; gap: 8px; margin-top: 6px; }
+
+  .ico { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ico-sm { width: 14px; height: 14px; }
+  .ico-lg { width: 22px; height: 22px; }
+  .tool-ico { border-radius: 4px; flex: none; display: block; }
+  [data-theme='dark'] img.tool-ico { background: #e6e7ea; padding: 1px; }
+
+  /* ---------- 开关：对照、降级与无障碍 ---------- */
+  [data-glass='off'] .card, [data-glass='off'] .list, [data-glass='off'] .banner, [data-glass='off'] .target, [data-glass='off'] .method button,
+  [data-glass='off'] .dock, [data-glass='off'] .confirm, [data-glass='off'] .empty .big {
+    -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--raw-card); }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card, .list, .banner, .target, .method button, .dock, .confirm { background: var(--raw-card); } }
+  [data-motion='off'] *, [data-motion='off'] *::before, [data-motion='off'] *::after { animation: none !important; transition: none !important; }
+  [data-motion='off'] .reveal { opacity: 1; transform: none; filter: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+    .field i, .empty .big { animation: none !important; }
+  }
+
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .proto-nav { position: fixed; right: 12px; bottom: 12px; z-index: 99; display: flex; flex-wrap: wrap; gap: 4px; max-width: 520px; padding: 8px;
+    background: var(--raw-card); border: 1px solid var(--raw-line); border-radius: 10px; box-shadow: var(--shadow-float); font-size: 12px; }
+  .proto-nav a { color: var(--raw-accent-text); text-decoration: none; padding: 2px 6px; }
+  .proto-nav a[aria-current='true'] { background: var(--raw-accent-soft); border-radius: 6px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const P = new URLSearchParams(location.search);
+const STATES = ['kb', 'kb-select', 'tools', 'distribute', 'uninstall', 'novault', 'scanning', 'search-empty'];
+const STATE = STATES.includes(P.get('state')) ? P.get('state') : 'kb';
+const root = document.documentElement;
+root.dataset.theme = P.get('theme') === 'dark' ? 'dark' : 'light';
+root.dataset.motion = P.get('motion') === 'off' ? 'off' : 'on';
+root.dataset.glass = P.get('glass') === 'off' ? 'off' : 'on';
+const APP_W = Math.max(744, Number(P.get('w')) || 1440);
+const APP_H = Math.max(640, Number(P.get('h')) || 900);
+const NARROW = APP_W < 1024;
+
+const I = {
+  stack: '<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/>',
+  layout: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  x: '<path d="m6 6 12 12M18 6 6 18"/>',
+  send: '<path d="M5 12h12M13 6l6 6-6 6"/>',
+  back: '<path d="M15 6 9 12l6 6"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
+  trash: '<path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l1 12a2 2 0 0 0 2 1.8h5a2 2 0 0 0 2-1.8l1-12M9 7V4.5h6V7"/>',
+  folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"/>',
+  warn: '<path d="M12 4 2.8 19.5h18.4L12 4Z"/><path d="M12 10v4.5M12 17.3v.2"/>',
+  restore: '<path d="M5 12a7 7 0 1 0 2.1-5"/><path d="M5 4.5V8h3.5"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 3.9 5.2 3.9 8.5s-1.3 6.1-3.9 8.5c-2.6-2.4-3.9-5.2-3.9-8.5S9.4 5.9 12 3.5Z"/>',
+  code: '<path d="m8.5 8-4 4 4 4M15.5 8l4 4-4 4M13.5 5l-3 14"/>',
+  server: '<rect x="4" y="4.5" width="16" height="6" rx="1.5"/><rect x="4" y="13.5" width="16" height="6" rx="1.5"/><path d="M7.5 7.5h.01M7.5 16.5h.01"/>',
+  spark: '<path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4M6 6l2.6 2.6M15.4 15.4 18 18M6 18l2.6-2.6M15.4 8.6 18 6"/>',
+  inbox: '<path d="M12 4v10M8 10l4 4 4-4"/><path d="M4 14v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  dots: '<circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="18" r=".6"/>',
+  vault: '<path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2Z"/><path d="M9 4.5v15M12.5 9.5h3.5M12.5 13h3.5"/>',
+  sliders: '<path d="M5 7h9M18 7h1M5 17h3M12 17h7"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+};
+const ico = (n, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
+const T = {
+  claude: ['Claude Code', 'claude-code'], codex: ['Codex', 'codex'], cursor: ['Cursor', 'cursor'], trae: ['Trae', 'trae'],
+  qoder: ['Qoder', 'qoder'], kiro: ['Kiro', 'kiro'], codebuddy: ['CodeBuddy', 'codebuddy'], windsurf: ['Windsurf', 'windsurf'],
+  gemini: ['Gemini CLI', 'gemini'], opencode: ['OpenCode', 'opencode'], workbuddy: ['WorkBuddy', 'workbuddy'], augment: ['Augment', 'augment'],
+};
+const tico = (k, cls = 'tool-ico') => k === 'agents'
+  ? `<span class="${cls}" style="display:grid;place-items:center;background:var(--raw-raised);color:var(--raw-muted)">${ico('globe', 'ico-sm')}</span>`
+  : `<img class="${cls}" src="agents/${T[k][1]}.svg" alt="">`;
+const pill = (tone, text, icon = '') => `<span class="pill" data-tone="${tone}">${icon ? ico(icon, 'ico-sm') : ''}${text}</span>`;
+
+const KB = [
+  ['前端', 'code', [
+    ['vue技能', 'Vue 3 选项式组件、生命周期与请求封装约定', ['claude', 'cursor', 'kiro'], ''],
+    ['frontend-design', '有辨识度的前端视觉方向：字体、配色与动效', ['claude', 'qoder'], ''],
+    ['dark-mode-design', '深色模式的层级、对比度与表面阶梯', ['codebuddy'], 'stale'],
+    ['react-best-practices', 'React 组件与性能的 70 条规则', [], ''],
+  ]],
+  ['后端', 'server', [
+    ['go-service', 'Go 服务的路径校验、文本读写与应用数据', ['claude', 'agents'], ''],
+    ['kb-index-sqlite', 'SQLite FTS5 检索索引、分词与链接图', ['claude'], ''],
+    ['api-design', '契约先行：接口文档与前端对接点', ['claude', 'kiro', 'qoder', 'cursor'], ''],
+  ]],
+  ['通用', 'spark', [
+    ['systematic-debugging', '复现、定位、最小化、假设、验证、修复、回归', ['agents', 'claude', 'kiro'], ''],
+    ['writing-plans', '多步骤任务动手前的计划写法', [], ''],
+    ['doc-coauthoring', '结构化协作写文档：提案、规格与决策记录', ['claude'], ''],
+  ]],
+];
+const SELECTED = ['vue技能', 'frontend-design', 'kb-index-sqlite'];
+
+let idx = 0;
+const next = () => idx++;
+
+function card([name, desc, tools, st], cat, glyph, select) {
+  const icons = tools.map(t => tico(t)).join('');
+  const sel = select && SELECTED.includes(name);
+  return `<article class="card reveal" style="--i:${next()}"${st === 'stale' ? ' data-tone="warn"' : ''}${sel ? ' data-selected' : ''} tabindex="0">
+    <div class="top"><span class="glyph">${ico(glyph)}</span><div style="min-width:0"><div class="name">${name}</div><div class="cat">${cat}</div></div></div>
+    <div class="desc">${desc}</div>
+    <div></div>
+    <div class="meta">${tools.length ? `<span class="stack">${icons}</span>` : '<span class="none">未分发</span>'}${st === 'stale' ? pill('warn', '有更新') : ''}<span class="spacer"></span>${select ? '' : `<button class="act">分发${ico('send', 'ico-sm')}</button>`}</div>
+    ${select ? `<span class="check">${sel ? ico('check', 'ico-sm') : ''}</span>` : `<button class="kebab" aria-label="更多">${ico('dots')}</button>`}
+  </article>`;
+}
+
+function kbContent(select) {
+  const banner = select ? '' : `<div class="banner reveal" style="--i:${next()}">${ico('restore')}<span>这个知识库记录了 3 项分发，本机还没有</span><span class="spacer"></span><button class="btn-quiet">预览还原</button></div>`;
+  return banner + KB.map(([cat, glyph, items]) => `<div class="group reveal" style="--i:${next()}">${cat}<span class="n">${items.length}</span>${select ? '<button class="grp-act">全选本组</button>' : ''}</div>
+      <div class="cards">${items.map(it => card(it, cat, glyph, select)).join('')}${cat === '通用' && !select ? `<article class="card add reveal" style="--i:${next()}"><span class="glyph">${ico('plus')}</span><b>安装新技能</b><span>GitHub 地址、zip 包或本地文件夹</span></article>` : ''}</div>`).join('');
+}
+
+function skeleton() {
+  const one = () => `<article class="card skel reveal" style="--i:${next()}"><div class="top"><span class="glyph" style="background:var(--raw-raised);border-color:transparent"></span><div style="flex:1;display:grid;gap:6px"><div class="bar" style="width:70%"></div><div class="bar" style="width:36%;height:8px"></div></div></div><div class="bar" style="width:92%"></div><div class="bar" style="width:64%"></div><div class="bar" style="width:40%;height:16px"></div></article>`;
+  return [['前端', 4], ['后端', 3]].map(([cat, n]) => `<div class="group reveal" style="--i:${next()}">${cat}<span class="n">…</span></div><div class="cards">${Array.from({ length: n }, one).join('')}</div>`).join('');
+}
+
+const ROWS = {
+  claude: [
+    ['vue技能', pill('live', '链接到知识库', 'link'), '~\\.claude\\skills\\vue技能 → 知识库/skills/前端/vue技能'],
+    ['brainstorming', pill('idle', '链接到外部', 'link'), '→ ~\\.config\\library\\skills\\brainstorming'],
+    ['old-review', pill('fault', '链接失效'), '→ 知识库/skills/通用/old-review（不存在）'],
+    ['api-design', pill('live', '链接到知识库', 'link'), '~\\.claude\\skills\\api-design'],
+  ],
+  kiro: [
+    ['systematic-debugging', pill('live', '链接到知识库', 'link'), '~\\.kiro\\skills\\systematic-debugging'],
+    ['vue技能', pill('live', '知识库拷贝'), '~\\.kiro\\skills\\vue技能'],
+  ],
+  codebuddy: [
+    ['dark-mode-design', pill('warn', '知识库有更新'), '~\\.codebuddy\\skills\\dark-mode-design'],
+  ],
+  qoder: [
+    ['pdf', pill('info', 'GitHub'), '~\\.qoder\\skills\\pdf · anthropics/skills'],
+    ['frontend-design', pill('live', '链接到知识库', 'link'), '~\\.qoder\\skills\\frontend-design'],
+  ],
+  agents: [
+    ['shared-style', pill('idle', '独立'), '~\\.agents\\skills\\shared-style'],
+  ],
+};
+function toolsContent() {
+  return Object.entries(ROWS).map(([t, rows]) => `<div class="tool-head reveal" style="--i:${next()}">${tico(t)}${t === 'agents' ? '通用目录' : T[t][0]}<span class="n">${rows.length}</span></div>
+    <div class="list reveal" style="--i:${next()}">${rows.map(([nm, p, path], i) => `<div class="row"${t === 'claude' && i === 1 ? ' data-hover' : ''}>${tico(t)}<span class="nm">${nm}</span><span class="path">${path}</span>${p}<span class="acts"><button aria-label="打开所在目录" title="打开所在目录">${ico('folder')}</button><button aria-label="收进知识库" title="收进知识库">${ico('inbox')}</button><button aria-label="卸载" title="卸载">${ico('trash')}</button></span></div>`).join('')}</div>`).join('');
+}
+
+function distributeContent() {
+  const tgt = (k, sub, state, extra = '') => `<button class="target reveal" style="--i:${next()}" role="checkbox" aria-checked="${state === 'on'}"${state === 'off-dis' ? ' aria-disabled="true"' : ''}${extra}>${tico(k)}<span class="t">${k === 'agents' ? '通用目录' : T[k][0]}</span><span class="s">${sub}</span><span class="tick">${state === 'on' ? ico('check', 'ico-sm') : ''}</span></button>`;
+  return `<div class="sub-label reveal" style="--i:${next()}">分发方式</div>
+    <div class="method reveal" style="--i:${next()}">
+      <button role="radio" aria-checked="true"><span class="r"></span><span class="t">目录联接（推荐）</span><span class="s">工具读到的就是知识库里那份，改动立即生效</span></button>
+      <button role="radio" aria-checked="false"><span class="r"></span><span class="t">拷贝</span><span class="s">工具里放一份独立副本，记录基线，知识库更新时提示</span></button>
+    </div>
+    <div class="sub-label reveal" style="--i:${next()}">分发到<span class="hint">已分发的预先勾上；目标已有独立同名技能的不能选</span></div>
+    <div class="targets">
+      <button class="target reveal" style="--i:${next()}" role="checkbox" aria-checked="false" data-wide>${tico('agents')}<span class="t">通用目录 ~/.agents/skills</span><span class="s">这些工具都会读它</span><span class="readers">${['codex', 'gemini', 'opencode', 'augment', 'workbuddy'].map(k => tico(k)).join('')}</span><span class="tick"></span></button>
+      ${tgt('claude', '已分发 · 链接', 'on')}
+      ${tgt('cursor', '已分发 · 链接', 'on')}
+      ${tgt('kiro', '新增', 'on')}
+      ${tgt('qoder', '可分发', 'off')}
+      ${tgt('codebuddy', '目标已存在（独立）', 'off-dis')}
+      ${tgt('trae', '可分发', 'off')}
+      ${tgt('windsurf', '可分发', 'off')}
+    </div>
+    <button class="more-link">显示未检测到的 14 个工具</button>
+    <div class="note reveal" style="--i:${next()}">${ico('warn')}<span>Codex 同时读通用目录和自己的目录。两处都分发时它会加载两次同名技能，建议只选一处。</span></div>`;
+}
+
+function emptyNoVault() {
+  return `<div class="empty"><span class="big reveal" style="--i:${next()}">${ico('vault', 'ico-lg')}</span>
+    <h4 class="reveal" style="--i:${next()}">还没有打开知识库</h4>
+    <p class="reveal" style="--i:${next()}">知识库技能放在知识库的 skills 目录里。打开一个知识库后，这里会按分类列出它们；左侧的工具目录现在就可以查看和卸载。</p>
+    <div class="actions reveal" style="--i:${next()}"><button class="btn-primary">${ico('folder')}打开知识库…</button><button class="btn-quiet">查看工具目录</button></div></div>`;
+}
+
+function emptySearch() {
+  return `<div class="empty"><span class="big reveal" style="--i:${next()}">${ico('search', 'ico-lg')}</span>
+    <h4 class="reveal" style="--i:${next()}">没有匹配的技能</h4>
+    <p class="reveal" style="--i:${next()}">在 10 个知识库技能的名称和描述里都没找到「pdf-tools」。工具目录里的技能可以在左侧「全部工具」里搜。</p>
+    <div class="actions reveal" style="--i:${next()}"><button class="btn-quiet">清除搜索</button></div></div>`;
+}
+
+function uninstallConfirm() {
+  return `<div class="scrim"><div class="confirm" role="alertdialog" aria-label="卸载确认">
+    <h3>从 Claude Code 卸载 brainstorming</h3>
+    <div class="item">${tico('claude')}<b>brainstorming</b><span class="what">这是指向外部目录的链接：只删除链接 <code>~\\.claude\\skills\\brainstorming</code>，链接指向的 <code>~\\.config\\library\\skills\\brainstorming</code> 不动。</span></div>
+    <div class="item">${ico('restore')}<b>可以恢复</b><span class="what">操作记录会保留这一条，需要时在「安装 → 最近操作」里恢复。</span></div>
+    <div class="row-btns"><button class="btn-quiet">取消</button><button class="btn-danger">${ico('trash')}卸载 1 项</button></div>
+  </div></div>`;
+}
+
+function side() {
+  const kbView = ['kb', 'kb-select', 'distribute', 'scanning', 'search-empty', 'novault'].includes(STATE);
+  const noVault = STATE === 'novault';
+  const cats = [['全部技能', 'stack', noVault ? '' : 10, kbView && !noVault], ['前端', 'code', 4], ['后端', 'server', 3], ['通用', 'spark', 3]];
+  const tools = [['claude', 69, true], ['kiro', 71], ['cursor', 62], ['qoder', 65], ['codebuddy', 65, true]];
+  const item = (iconHtml, label, n, cur, extra = '') => `<button class="side-item" aria-current="${!!cur}"${extra} title="${label}">${iconHtml}<span class="label">${label}</span>${n === '' ? '' : `<span class="n">${n}</span>`}</button>`;
+  return `<aside class="side">
+    <div class="side-head"><div class="eyebrow">SKILLS</div><h1 class="side-title">技能</h1><p class="side-sub">知识库是源，工具目录是去处</p></div>
+    <nav class="side-nav" aria-label="技能导航">
+      <div class="side-label">知识库</div>
+      ${noVault
+        ? item(ico('stack'), '全部技能', '', true)
+        : cats.map(([n, g, c, cur]) => item(ico(g), n, c, cur)).join('')}
+      <div class="side-sep"></div>
+      <div class="side-label">工具目录</div>
+      ${item(ico('layout'), '全部工具', 712, STATE === 'tools' || STATE === 'uninstall')}
+      ${tools.map(([k, c, dot]) => item(tico(k) + (dot ? '<span class="dot" aria-hidden="true"></span>' : ''), T[k][0], c, false)).join('')}
+      ${item(ico('sliders'), '管理目录…', '', false, ' style="color:var(--raw-muted)"')}
+    </nav>
+    <div class="side-foot">${noVault
+      ? '<div class="line"><span>打开知识库后显示分发进度</span></div>'
+      : '<div class="line"><span>已分发</span><b>17 / 24</b></div><div class="meter"><i></i></div><div class="line"><span>1 个有更新 · 1 个链接失效</span></div>'}</div>
+  </aside>`;
+}
+
+function mainArea() {
+  const searchBox = (placeholder, value) => `<div class="search"${value ? ' data-filled' : ''}>${ico('search')}${value || placeholder}${value ? `<span style="margin-left:auto;display:grid;place-items:center;color:var(--raw-faint)">${ico('x', 'ico-sm')}</span>` : '<kbd>Ctrl K</kbd>'}</div>`;
+  const viewToggle = `<div class="segmented view-toggle" aria-label="显示方式"><button class="segmented-item" aria-selected="true" aria-label="网格">${ico('grid', 'ico-sm')}</button><button class="segmented-item" aria-label="列表">${ico('list', 'ico-sm')}</button></div>`;
+  switch (STATE) {
+    case 'tools':
+    case 'uninstall':
+      return { tool: `<h2>全部工具</h2><span class="count">712 个 · 25 个工具，检测到 11 个</span><span class="spacer"></span>${searchBox('搜索技能名')}<button class="btn-primary">${ico('plus')}安装</button>`, body: toolsContent() };
+    case 'distribute':
+      return {
+        tool: `<div class="crumbs"><button class="back" aria-label="返回">${ico('back')}</button><span>全部技能</span><span class="sep">/</span><span>vue技能</span><span class="sep">/</span><b>分发到…</b></div><span class="spacer"></span>`,
+        body: distributeContent(),
+        dock: `<span>新增 <b>1</b> 处，保留已有 <b>2</b> 处</span><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('send')}分发</button>`,
+      };
+    case 'kb-select':
+      return {
+        tool: `<h2>全部技能</h2><span class="count">10 个 · 3 个分类</span><span class="spacer"></span>${searchBox('搜索名称或描述')}${viewToggle}`,
+        body: kbContent(true),
+        dock: `<span>已选 <b>3</b> 个技能</span><span class="spacer"></span><button class="btn-quiet">取消</button><button class="btn-primary">${ico('send')}分发到…</button>`,
+      };
+    case 'novault':
+      return { tool: `<h2>全部技能</h2><span class="spacer"></span><button class="btn-primary">${ico('plus')}安装</button>`, body: emptyNoVault() };
+    case 'scanning':
+      return { tool: `<h2>全部技能</h2><span class="count"><span class="spin" aria-hidden="true"></span>正在扫描…</span><span class="spacer"></span>${searchBox('搜索名称或描述')}${viewToggle}<button class="btn-primary">${ico('plus')}安装</button>`, body: skeleton() };
+    case 'search-empty':
+      return { tool: `<h2>全部技能</h2><span class="count">0 / 10 个</span><span class="spacer"></span>${searchBox('', 'pdf-tools')}${viewToggle}<button class="btn-primary">${ico('plus')}安装</button>`, body: emptySearch() };
+    default:
+      return { tool: `<h2>全部技能</h2><span class="count">10 个 · 3 个分类</span><span class="spacer"></span>${searchBox('搜索名称或描述')}${viewToggle}<button class="btn-primary">${ico('plus')}安装</button>`, body: kbContent(false) };
+  }
+}
+
+function render() {
+  idx = 0;
+  const m = mainArea();
+  document.getElementById('root').innerHTML = `
+  <div class="app${NARROW ? ' narrow' : ''}" style="--app-w:${APP_W}px;--app-h:${APP_H}px">
+    <header class="titlebar">
+      <div class="brand"><img src="../../resources/icon.png" alt="">${NARROW ? '' : 'Mile Knowledge Base'}${NARROW ? '' : '<span class="vault-tag">VAULT</span>'}</div>
+      <div class="vault-name">${STATE === 'novault' ? '未选择知识库' : '我的知识库'}</div>
+      <div class="nav-switch" role="navigation" aria-label="页面">
+        <span class="thumb" id="thumb"></span>
+        <button data-page="work">${ico('layout', 'ico-sm')}工作台</button>
+        <button data-page="skills" aria-current="page">${ico('stack', 'ico-sm')}技能<span class="badge" aria-label="2 项需要处理">2</span></button>
+      </div>
+      <span class="accent-dot" aria-label="主题色：橙"></span>
+      <div class="segmented" role="tablist" aria-label="主题"><button class="segmented-item" aria-selected="${root.dataset.theme === 'light'}">浅色</button><button class="segmented-item" aria-selected="${root.dataset.theme === 'dark'}">深色</button><button class="segmented-item">系统</button></div>
+      <div class="win"><span>&#8211;</span><span>&#9633;</span><span>&#10005;</span></div>
+    </header>
+    <div class="page">
+      <div class="field" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i></div>
+      ${side()}
+      <main class="main${m.dock ? ' has-dock' : ''}">
+        <div class="toolbar">${m.tool}</div>
+        <div class="content">${m.body}</div>
+        ${m.dock ? `<div class="dock">${m.dock}</div>` : ''}
+      </main>
+      ${STATE === 'uninstall' ? uninstallConfirm() : ''}
+    </div>
+  </div>`;
+  placeThumb();
+  bindPointerGlow();
+}
+
+function placeThumb() {
+  const thumb = document.getElementById('thumb');
+  const cur = document.querySelector('.nav-switch [aria-current="page"]');
+  if (!thumb || !cur) return;
+  const move = (b) => { thumb.style.width = b.offsetWidth + 'px'; thumb.style.transform = `translateX(${b.offsetLeft - 3}px)`; };
+  move(cur);
+  document.querySelectorAll('.nav-switch button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.nav-switch button').forEach(x => x.removeAttribute('aria-current'));
+    b.setAttribute('aria-current', 'page');
+    move(b);
+  });
+}
+
+function bindPointerGlow() {
+  document.querySelectorAll('.card:not(.add):not(.skel)').forEach(el => {
+    el.addEventListener('pointermove', e => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      el.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+  });
+}
+
+render();
+
+if (P.get('shot') !== '1') {
+  const q = (o) => { const n = new URLSearchParams(P); Object.entries(o).forEach(([k, v]) => v === null ? n.delete(k) : n.set(k, v)); return '?' + n.toString(); };
+  const nav = document.createElement('div');
+  nav.className = 'proto-nav';
+  const labels = { kb: '知识库技能', 'kb-select': '批量选择', tools: '工具技能', distribute: '分发子视图', uninstall: '卸载确认', novault: '无知识库', scanning: '扫描中', 'search-empty': '搜索无结果' };
+  nav.innerHTML = STATES.map(s => `<a href="${q({ state: s === 'kb' ? null : s })}" aria-current="${s === STATE}">${labels[s]}</a>`).join('')
+    + [['浅色', q({ theme: null })], ['深色', q({ theme: 'dark' })],
+      [NARROW ? '宽窗口' : '窄窗口 960', NARROW ? q({ w: null, h: null }) : q({ w: '960', h: '720' })],
+      ['毛玻璃 开/关', q({ glass: root.dataset.glass === 'off' ? null : 'off' })],
+      ['动效 开/关', q({ motion: root.dataset.motion === 'off' ? null : 'off' })],
+      ['重播入场', 'javascript:location.reload()']].map(([t, h]) => `<a href="${h}">${t}</a>`).join('');
+  document.body.appendChild(nav);
+}
+</script>
+</body>
+</html>
