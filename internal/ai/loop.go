@@ -112,7 +112,9 @@ func RunTurn(ctx context.Context, session *Session, userText, recap string, deps
 	}()
 
 	config := deps.Configs[session.Agent]
-	provider, model, resolveErr := ResolveProvider(deps.Providers, session.Model, config.Model)
+	// The saved config is the source of truth; session.Model only carries the
+	// last resolved model as a fallback.
+	provider, model, resolveErr := ResolveProvider(deps.Providers, config.Model, session.Model)
 	if resolveErr != nil {
 		deps.emit(TurnEvent{Kind: EventError, Message: resolveErr.Message})
 		return "error", resolveErr

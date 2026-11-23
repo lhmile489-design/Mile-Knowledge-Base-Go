@@ -113,7 +113,9 @@ func (s *AgentService) List(agent, vaultID string) contract.AgentListResult {
 	configs, _ := ai.ReadAgents(root)
 	config := configs[agent]
 	session := s.app.Agents.Get(agent, vaultID)
-	if _, model, resolveErr := ai.ResolveProvider(providers, session.Model, config.Model); resolveErr == nil {
+	// The saved agent config wins; session.Model is only the last resolved
+	// cache, so a model picked in the UI takes effect on the next List.
+	if _, model, resolveErr := ai.ResolveProvider(providers, config.Model, session.Model); resolveErr == nil {
 		session.Model = model
 	}
 	session.Effort = config.Effort

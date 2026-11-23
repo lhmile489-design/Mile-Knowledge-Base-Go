@@ -346,3 +346,29 @@ func TestDefaultLimits(t *testing.T) {
 		t.Fatalf("tool result cap: %d", ToolResultMaxChars)
 	}
 }
+
+func TestRunTurnSavedModelWinsOverStaleCache(t *testing.T) {
+	var gotModel string
+	server, _ := sseServer(t, func(w http.ResponseWriter, r *http.Request, _ int) {
+		body, _ := io.ReadAll(r.Body)
+		var payload struct {
+			Model string `json:"model"`
+		}
+		_ = json.Unmarshal(body, &payload)
+		gotModel = payload.Model
+		writeSSE(w, `data: {"choices":[{"delta":{"content":"好"}}]}`, `data: [DONE]`)
+	})
+	deps := loopDeps(server, &fakeRunner{}, nil)
+	deps.Providers = []Provider{{Name: "p", Kind: "openai", BaseURL: server.URL, Models: []string{"m1", "m2"}, DefaultModel: "m1"}}
+	config := deps.Configs["scout"]
+	config.Model = "m2"
+	deps.Configs["scout"] = config
+	session := NewRegistry().Get("scout", "v1")
+	session.Model = "m1" // stale cache from an earlier turn
+	if _, err := RunTurn(context.Background(), session, "嗨", "", deps); err != nil {
+		t.Fatal(err)
+	}
+	if gotModel != "m2" || session.Model != "m2" {
+		t.Fatalf("request model = %q, session = %q", gotModel, session.Model)
+	}
+}

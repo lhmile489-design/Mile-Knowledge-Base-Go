@@ -485,6 +485,7 @@ type BlockResult struct {
 
 - 入参 `agent ∈ curator|scout|distiller|general`。
 - 出参 `AgentListResult{session: AgentSessionInfo, engine: EngineStatus}`；`AgentSessionInfo{agent, sessionId, vaultId, model, effort, approval, availableModels, availableEfforts, busy}`（agent.ts:97-115）。`availableEfforts` 恒为空数组（自研引擎不声明档位，D-002）→ 前端强度控件据此禁用。
+- `model` 以保存的 Agent 配置为准：在 Agents 设置或对话「运行参数」里选模型（M63 写 `agents.json`）后，下一次 `list` 与下一回合即使用该模型；配置为空或不在已配置服务里时回退到第一个可用服务的默认模型。
 - `EngineStatus`（M38 与 E10 共用同一定义）：`{phase:'starting'\|'ready'\|'offline', message?, capabilities?}`。
   - 枚举沿用旧版 `SidecarPhase`（`starting|ready|offline|restarting`，agent.ts:64）去掉 `restarting`：它是子进程崩溃重启的中间态，新版引擎在 Go 进程内运行、没有进程级重启（技术设计 §4.6），故不保留。
   - `phase='offline'` 时 `message` 必填，如实说明原因，覆盖 PRD §7 的「未配置」与「出错」：未配置供应商（旧版在回合内报错「还没有配置模型服务」nativeProvider.ts:36，新版升级为引擎状态显示）、初始化失败、引擎内部错误。

@@ -131,6 +131,34 @@ func TestAgentListEngineStatus(t *testing.T) {
 	}
 }
 
+func TestAgentListSavedModelWins(t *testing.T) {
+	app, vaultID, root := mutationTestApp(t)
+	svc := NewAgentService(app)
+	settings := NewSettingsService(app)
+	ctx := context.Background()
+
+	if f := ai.WriteProviders(root, []ai.Provider{{
+		Name: "fake", Kind: "openai", BaseURL: "https://example.com",
+		Models: []string{"m1", "m2"}, DefaultModel: "m1",
+	}}); f != nil {
+		t.Fatal(f)
+	}
+	first := svc.List("curator", vaultID)
+	if first.Session == nil || first.Session.Model != "m1" {
+		t.Fatalf("first list: %+v", first.Session)
+	}
+
+	// Picking a model in the chat writes the agent config; the next List must
+	// adopt it instead of keeping the resolved cache.
+	model := "m2"
+	if res := settings.AppConfigPatchAgent(ctx, vaultID, "curator", contract.AgentPatch{Model: &model}); res.Failure != nil {
+		t.Fatal(res.Failure)
+	}
+	if after := svc.List("curator", vaultID); after.Session == nil || after.Session.Model != "m2" {
+		t.Fatalf("saved model did not win: %+v", after.Session)
+	}
+}
+
 func TestRoutePreviewBinding(t *testing.T) {
 	app, _, _ := mutationTestApp(t)
 	svc := NewAgentService(app)
