@@ -5,6 +5,7 @@ import { WelcomeView } from "../components/WelcomeView";
 import { NoticeStack } from "../components/NoticeStack";
 import { SkillImportWizard } from "../components/SkillImportWizard";
 import { SkillsPanel } from "../components/skills/SkillsPanel";
+import { TitleBar } from "../components/TitleBar";
 import { useAppStore } from "../stores/appStore";
 
 export function App() {
@@ -12,6 +13,7 @@ export function App() {
   const bootError = useAppStore((state) => state.bootError);
   const activeVaultId = useAppStore((state) => state.activeVaultId);
   const settingsOpen = useAppStore((state) => state.settingsOpen);
+  const page = useAppStore((state) => state.page);
   const boot = useAppStore((state) => state.boot);
 
   useEffect(() => {
@@ -33,9 +35,29 @@ export function App() {
   }
   // D-006: with every registered vault unavailable there is no active vault,
   // so the welcome page (with fault cards) shows instead of an empty shell.
+  // M8 T01: the title bar lives here once; the workbench stays mounted (and
+  // hidden) while the skills page is showing, so streams, drafts and scroll
+  // positions survive the trip (PRD AC-PAGE-1).
+  const workbenchVisible = page === "work";
   return (
     <>
-      {settingsOpen ? <SettingsPage /> : activeVaultId ? <Workbench /> : <WelcomeView />}
+      <div className="app-shell" style={{ gridTemplateRows: "var(--titlebar-h) minmax(0, 1fr)" }}>
+        <TitleBar />
+        {settingsOpen ? (
+          <SettingsPage />
+        ) : activeVaultId ? (
+          <div
+            className="page-host"
+            data-testid="workbench-host"
+            hidden={!workbenchVisible}
+            inert={workbenchVisible ? undefined : true}
+          >
+            <Workbench />
+          </div>
+        ) : (
+          <WelcomeView />
+        )}
+      </div>
       <SkillsPanel />
       <SkillImportWizard />
       <NoticeStack />

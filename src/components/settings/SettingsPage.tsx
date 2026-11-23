@@ -5,7 +5,6 @@ import { settingsApi, TransportError } from "../../lib/transport";
 import { dirtyDraftIds, draftLabel } from "../../lib/settingsDrafts";
 import { useAppStore } from "../../stores/appStore";
 import { useSettingsStore, type SettingsSection } from "../../stores/settingsStore";
-import { TitleBar } from "../TitleBar";
 import { ModelServiceSection } from "./ModelServiceSection";
 import { AgentsSection } from "./AgentsSection";
 import { AboutSection } from "./AboutSection";
@@ -36,6 +35,9 @@ const NAV_GROUPS = ["应用", "AI", "知识库", "其他"] as const;
 /** Settings overlay (M2 T17/T18; M3 T04 = shell + page-level save bar). */
 export function SettingsPage() {
   const closeSettings = useAppStore((state) => state.closeSettings);
+  const pendingPage = useAppStore((state) => state.pendingPage);
+  const commitPendingPage = useAppStore((state) => state.commitPendingPage);
+  const cancelPendingPage = useAppStore((state) => state.cancelPendingPage);
   const vaultId = useAppStore((state) => state.activeVaultId);
   const vaults = useAppStore((state) => state.vaults);
   const vault = vaults.find((item) => item.id === vaultId);
@@ -100,6 +102,16 @@ export function SettingsPage() {
     if (requestLeave("close")) closeSettings();
   }, [closeSettings, requestLeave]);
 
+  // M8 T01: a page switch requested from the title bar waits for the same
+  // leave guard; confirming in the dialog then closes settings and commits.
+  useEffect(() => {
+    if (!pendingPage) return;
+    if (requestLeave("close")) {
+      closeSettings();
+      commitPendingPage();
+    }
+  }, [pendingPage, requestLeave, closeSettings, commitPendingPage]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
@@ -107,6 +119,7 @@ export function SettingsPage() {
           // 对话框打开时 Esc 等于「继续编辑」。
           event.preventDefault();
           resolveLeave(false);
+          cancelPendingPage();
           navRefs.current[section]?.focus();
           return;
         }
@@ -122,7 +135,7 @@ export function SettingsPage() {
     };
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [closeSettings, requestLeave, resolveLeave, saveDrafts, vaultId, dirty.length, leaveTarget, section]);
+  }, [closeSettings, requestLeave, resolveLeave, cancelPendingPage, saveDrafts, vaultId, dirty.length, leaveTarget, section]);
 
   const onNavKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
@@ -144,8 +157,7 @@ export function SettingsPage() {
   const sectionNeedsVault = current?.needsVault ?? false;
 
   return (
-    <div className="app-shell settings-shell" style={{ gridTemplateRows: "var(--titlebar-h) minmax(0, 1fr)" }}>
-      <TitleBar />
+    <div className="settings-shell">
       <div className="settings-grid">
         <aside
           className="workbench-panel"
@@ -268,6 +280,7 @@ export function SettingsPage() {
                 className="btn-quiet"
                 onClick={() => {
                   resolveLeave(false);
+                  cancelPendingPage();
                   navRefs.current[section]?.focus();
                 }}
                 data-testid="settings-leave-stay"
@@ -281,6 +294,7 @@ export function SettingsPage() {
                   const target = resolveLeave(true);
                   if (target === "close") {
                     closeSettings();
+                    commitPendingPage();
                     return;
                   }
                   if (target) {

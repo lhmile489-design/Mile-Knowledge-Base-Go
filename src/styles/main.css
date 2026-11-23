@@ -47,6 +47,18 @@ body {
   background: var(--raw-canvas);
 }
 
+/* M8 T01: keeps the workbench mounted while the skills page is showing. */
+.page-host {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+
+.page-host[hidden] {
+  display: none;
+}
+
 .workbench-grid {
   display: grid;
   min-width: 0;

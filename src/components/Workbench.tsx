@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SidebarSimple } from "@phosphor-icons/react";
-import { TitleBar } from "./TitleBar";
 import { VaultSidebar } from "./VaultSidebar";
 import { EditorPane } from "./EditorPane";
 import { SearchPanel } from "./SearchPanel";
@@ -156,8 +155,7 @@ export function Workbench() {
   }, [docCollapsed, setLayout]);
 
   return (
-    <div className="app-shell" style={{ gridTemplateRows: "var(--titlebar-h) minmax(0, 1fr)" }}>
-      <TitleBar />
+    <>
       <div
         className="workbench-grid"
         style={{
@@ -217,6 +215,6 @@ export function Workbench() {
       <HealthPanel />
       <MutationPlanCard />
       <RestorePreviewCard />
-    </div>
+    </>
   );
 }

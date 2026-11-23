@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { ArrowClockwise, ClockCounterClockwise, FolderOpen, Trash, Warning } from "@phosphor-icons/react";
-import { TitleBar } from "./TitleBar";
 import { OnboardingGuide } from "./OnboardingGuide";
 import { useAppStore } from "../stores/appStore";
 import { TransportError } from "../lib/transport";
@@ -48,8 +47,7 @@ export function WelcomeView() {
   }, [guideOpen, firstRun]);
 
   return (
-    <div className="app-shell" style={{ gridTemplateRows: "var(--titlebar-h) minmax(0, 1fr)" }}>
-      <TitleBar />
+    <>
       <main className="welcome-shell" aria-label="欢迎">
         <div className="welcome-grid">
           <section className="surface-card overview-tile welcome-hero" aria-labelledby="welcome-heading">
@@ -142,6 +140,6 @@ export function WelcomeView() {
           />
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

@@ -10,6 +10,7 @@ import type { AccentSetting, UnavailableVault, Vault } from "../mygo";
 import { applyAccentTo, deriveAccent } from "../lib/accent";
 
 export type ThemeMode = "light" | "dark" | "system";
+export type Page = "work" | "skills";
 export type HealthTab = "unresolvedLinks" | "orphans" | "duplicates" | "untitled";
 export type Notice = { id: number; text: string; level: string };
 
@@ -25,6 +26,10 @@ type AppState = {
   healthTab: HealthTab;
   auditOpen: boolean;
   settingsOpen: boolean;
+  /** Root page (M8 T01): the workbench or the skills page; never persisted. */
+  page: Page;
+  /** A page request that waits for the settings leave guard (M8 T01). */
+  pendingPage: Page | null;
   skillsPanelOpen: boolean;
   skillWizardOpen: boolean;
   /** Bumped when another page asks the panel to open the target manager. */
@@ -42,6 +47,9 @@ type AppState = {
   retryVault: (id: string) => Promise<void>;
   openSettings: () => void;
   closeSettings: () => void;
+  showPage: (page: Page) => void;
+  commitPendingPage: () => void;
+  cancelPendingPage: () => void;
   openSkillsPanel: () => void;
   openTargetsManager: () => void;
   closeSkillsPanel: () => void;
@@ -71,6 +79,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   healthTab: "unresolvedLinks",
   auditOpen: false,
   settingsOpen: false,
+  page: "work",
+  pendingPage: null,
   skillsPanelOpen: false,
   skillWizardOpen: false,
   targetsRequest: 0,
@@ -182,6 +192,21 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+  // Switching to the skills page while settings is open must go through the
+  // settings leave guard, so the request parks in pendingPage (M8 T01).
+  showPage: (page) => {
+    if (page === "skills" && get().settingsOpen) {
+      set({ pendingPage: page });
+      return;
+    }
+    set({ page });
+  },
+  commitPendingPage: () => {
+    const pending = get().pendingPage;
+    if (!pending) return;
+    set({ page: pending, pendingPage: null });
+  },
+  cancelPendingPage: () => set({ pendingPage: null }),
   openSkillsPanel: () => set({ skillsPanelOpen: true }),
   openTargetsManager: () => set((state) => ({ skillsPanelOpen: true, targetsRequest: state.targetsRequest + 1 })),
   closeSkillsPanel: () => set({ skillsPanelOpen: false }),

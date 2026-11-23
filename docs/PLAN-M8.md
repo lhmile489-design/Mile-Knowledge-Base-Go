@@ -48,7 +48,7 @@
 | 编号 | 目标 | 修改范围 | 依赖 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | T00 | 毛玻璃滚动性能 spike | `spikes/m8-glass/`（新，独立页面，不进业务代码）、`spikes/m8-glass/RESULT.md` | 用户批准本计划 | 真窗口（mygo + WebView2，e2e 构建）里 200 张毛玻璃卡片滚动的帧间隔 p95 与慢帧比例，毛玻璃开 / 关各测 3 轮；核实 WebView2 是否跟随 Windows「动画效果」开关；给出校准后的门槛建议 | 已验证（2 尺寸 × 3 轮 × 开 / 关：p95 均 5.1 ms、慢帧 0，两组无可测差异；门槛已改为刷新间隔倍数；动画设置「开」一侧一致，「关」一侧留给 T11 请用户验证） |
-| T01 | 页面状态与外壳 | `appStore.ts`（`page`、`showPage`、旧名字别名）、`App.tsx`（标题栏提到根、工作台保持挂载并 `hidden` + `inert`）、`TitleBar.tsx`、`Workbench.tsx` / `SettingsPage.tsx` / `WelcomeView.tsx` 去掉各自的标题栏 | T00 | Vitest：`showPage` 的设置页草稿取消 / 确认、启动默认工作台、隐藏的工作台带 `hidden` 与 `inert`；既有 e2e 全部通过 | 待做 |
+| T01 | 页面状态与外壳 | `appStore.ts`（`page`、`showPage`、旧名字别名）、`App.tsx`（标题栏提到根、工作台保持挂载并 `hidden` + `inert`）、`TitleBar.tsx`、`Workbench.tsx` / `SettingsPage.tsx` / `WelcomeView.tsx` 去掉各自的标题栏 | T00 | Vitest：`showPage` 的设置页草稿取消 / 确认、启动默认工作台、隐藏的工作台带 `hidden` 与 `inert`；既有 e2e 全部通过 | 已验证（`page` / `pendingPage` / `showPage` / `commitPendingPage` / `cancelPendingPage`；标题栏提到根组件，三个页面不再各画一份；工作台在技能页期间挂载并带 `hidden` + `inert`；设置页草稿走同一离开确认；新测试 10 条，全量 Vitest 291、Go 全过、全量 e2e 365） |
 | T02 | 切换胶囊 | `PageSwitch.tsx`（新，替代 `SkillButton`）、标题栏样式 | T01 | 角标规则不变；`aria-current`、键盘可达；滑块弹性滑动与关闭动画时直接跳；组件测试 | 待做 |
 | T03 | 技能页骨架与导航 | `SkillsPage.tsx`、`SkillsNav.tsx`（新）、`skills-page.css`（新，含试点令牌）、样式范围检查脚本（接入 `test:web`） | T02 | 两组导航、选中、需要处理的小圆点、分发进度；窗口 < 1024px 图标栏；进入页面焦点在导航当前项；试点令牌只在 `.skills-page` 内（检查脚本正反对照） | 待做 |
 | T04 | 知识库视图 | `KbSkillsPage.tsx`（卡片结构与类名）、`skills-page.css` | T03 | 卡片网格 2–4 列、分组、悬停操作与 ⋯ 菜单、批量选择与底部操作条、安装卡、还原横幅位置；打开 `SKILL.md` / 在侧栏定位改为先回工作台；组件测试更新 | 待做 |
@@ -123,6 +123,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-24 | 计划 | v0.1；PRD 第 17 节 v2.7、UI 稿第 11 节、DESIGN 第 13 节已审核通过；技术设计第 19 节；路线 3.9.1 | 计划记录提交（本地，未推送） | 现状盘点（`App.tsx` 三选一渲染、三处 `TitleBar`、浮层定位与焦点、子视图两种承载方式、e2e 与截图脚本的入口引用数）；文档 UTF-8 无 BOM | 用户 2026-11-24 按建议批准本计划与技术设计第 19 节（Q-M8-1–3、B-M8-01–03 均按建议）；T00 待放行 |
 | 2026-11-24 | T00 | `spikes/m8-glass/`（新）：独立 mygo spike 页面复刻技能页材质（200 张毛玻璃卡片 + 色场），automation eval 驱动 6 秒滚动并采帧间隔；两尺寸 × 3 轮 × 开 / 关共 12 组：p95 全为 5.1 ms（= 1 个刷新间隔）、慢帧 0，毛玻璃与不透明无可测差异；`loadEventEnd` 239–240 ms；系统「动画效果」= 开，页面 `prefers-reduced-motion` = no-preference（一致）；门槛改为 `scrollP95Frames ≤ 1.5`、`slowFrameRatio ≤ 5%`，自动降级改为「前 120 帧 p95 > 2R 且慢帧 > 5%」；RESULT 记录方法、原始数据与局限（脚本驱动滚动、后台窗口、未覆盖 4K / 低端集显） | 待提交（本地） | `bash spikes/m8-glass/run.sh` 两尺寸各 6 组全部 `done:true`；数据见 spikes/m8-glass/RESULT.md；期间修了三处驱动问题（结果值是 JSON 字符串导致轮询匹配失败、Git Bash 的 `$!` 不是 Windows PID 导致僵尸实例占端口、第二次运行先等到端口释放） | 待放行 T01 |
+| 2026-11-24 | T01 | `appStore` 增加 `page`（默认 work，不持久化）、`pendingPage`、`showPage` / `commitPendingPage` / `cancelPendingPage`；设置页打开时 `showPage("skills")` 进入等待，由 SettingsPage 的既有离开确认（requestLeave）决定：无草稿直接关闭并跳转，有草稿弹确认，放弃后关闭并跳转、继续编辑则清掉等待；`App.tsx` 把 `TitleBar` 提到根组件并在三个页面去掉各自的标题栏，工作台改为 `page-host` 包裹、`page !== "work"` 时 `hidden` + `inert`（CSS 加 `.page-host[hidden]{display:none}` 防止被 grid 覆盖）；`Workbench` / `SettingsPage` / `WelcomeView` 的根元素收进父级网格；旧名字 `openSkillsPanel` 等本期保持不变，T09 再接别名。测试：`appStore.page.test.ts` 3 条、`App.test.tsx` 4 条（含工作台隐藏 / inert、设置页替换、欢迎页）、`SettingsPage.pending.test.tsx` 3 条（无草稿、放弃、继续编辑） | 待提交（本地） | `tsc` 通过；Vitest 44 文件 / 291 项全过；Go 全过；全量 e2e 365 项（15/16/22/47/37/60/54/46/68）EXIT=0 | 待放行 T02 |
 
 ## 9. 自查
 
