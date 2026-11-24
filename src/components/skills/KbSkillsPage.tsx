@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Check, DotsThree, FolderSimple, GithubLogo, ListBullets, Plus, SquaresFour } from "@phosphor-icons/react";
 import type { KbSkill, SkillCategory, SkillTool } from "../../lib/transport";
 import { remotePill, sourceOf } from "../../lib/skillRemote";
@@ -176,9 +176,10 @@ export function KbSkillsPage({
                     ) : null}
                   </div>
                   <div className={view === "grid" ? "kb-grid" : "kb-list"} data-testid={`kb-${view}-${group.category}`}>
-                    {group.skills.map((skill) => (
+                    {group.skills.map((skill, cardIndex) => (
                       <KbSkillCard
                         key={skill.path}
+                        index={cardIndex}
                         skill={skill}
                         tools={tools}
                         selecting={selecting}
@@ -239,6 +240,7 @@ function statusOf(skill: KbSkill): { label: string; tone: "live" | "warn" | "idl
 }
 
 function KbSkillCard({
+  index,
   skill,
   tools,
   selecting,
@@ -250,6 +252,7 @@ function KbSkillCard({
   onDistribute,
   onUpdate,
 }: {
+  readonly index: number;
   readonly skill: KbSkill;
   readonly tools: SkillTool[];
   readonly selecting: boolean;
@@ -273,6 +276,12 @@ function KbSkillCard({
       className="kb-card"
       data-selected={selected ? "true" : "false"}
       data-testid={`kb-card-${skill.name}`}
+      style={{ "--i": Math.min(index, 24) } as CSSProperties}
+      onPointerMove={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        event.currentTarget.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+        event.currentTarget.style.setProperty("--my", `${event.clientY - rect.top}px`);
+      }}
     >
       {selecting ? (
         <button

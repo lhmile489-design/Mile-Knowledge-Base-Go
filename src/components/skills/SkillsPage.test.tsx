@@ -138,6 +138,12 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     await waitFor(() => expect(screen.getByTestId("distribute-dialog")).toBeTruthy());
   });
 
+  it("keeps the glass on by default and mounts the colour field", () => {
+    render(<SkillsPage />);
+    expect(screen.getByTestId("skills-page").getAttribute("data-glass")).toBe("on");
+    expect(document.querySelector(".skills-field")).toBeTruthy();
+  });
+
   it("opens the targets manager for a pending targets request and consumes it", async () => {
     useAppStore.setState({ targetsRequest: 1 });
     render(<SkillsPage />);
