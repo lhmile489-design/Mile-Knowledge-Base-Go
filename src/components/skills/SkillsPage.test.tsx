@@ -14,6 +14,7 @@ vi.mock("../../lib/transport", () => {
       registry: (...args: unknown[]) => registry(...args),
       scan: (...args: unknown[]) => scan(...args),
       restorePreview: (...args: unknown[]) => restorePreview(...args),
+      listTargets: vi.fn(async () => ({ items: [], dirs: [] })),
       confirmKbUpdate: vi.fn(),
       discardStage: vi.fn(async () => undefined),
     },
@@ -135,6 +136,13 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     render(<SkillsPage />);
     fireEvent.click(withinCard("vue").getByRole("button", { name: "分发" }));
     await waitFor(() => expect(screen.getByTestId("distribute-dialog")).toBeTruthy());
+  });
+
+  it("opens the targets manager for a pending targets request and consumes it", async () => {
+    useAppStore.setState({ targetsRequest: 1 });
+    render(<SkillsPage />);
+    await waitFor(() => expect(screen.getByTestId("targets-view")).toBeTruthy());
+    expect(useAppStore.getState().targetsRequest).toBe(0);
   });
 
   it("returns from the distribute subview to the list with Esc", async () => {

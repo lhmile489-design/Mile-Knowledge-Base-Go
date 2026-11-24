@@ -1,5 +1,26 @@
 import { Fragment, type ReactNode } from "react";
 
+/** Breadcrumb trail shared by the subview shell and the page views. */
+export function SkillsCrumbs({ crumbs }: { readonly crumbs: string[] }) {
+  return (
+    <nav className="skills-crumbs" aria-label="位置">
+      {crumbs.map((crumb, index) => {
+        const current = index === crumbs.length - 1;
+        return (
+          <Fragment key={`${crumb}-${index}`}>
+            {index > 0 ? (
+              <span className="skills-crumb-sep" aria-hidden>
+                /
+              </span>
+            ) : null}
+            <span className={current ? "skills-crumb is-current" : "skills-crumb"}>{crumb}</span>
+          </Fragment>
+        );
+      })}
+    </nav>
+  );
+}
+
 /** Full-page subview shell for the skills page (M8 T06): breadcrumb + back,
  * scrolling body and a fixed action bar. The callers keep their own Esc
  * handling and submission logic; this only replaces the floating card. */
@@ -26,21 +47,7 @@ export function SkillsSubview({
         <button type="button" className="skills-subview-back" aria-label={backLabel} onClick={onBack} disabled={backDisabled}>
           ←
         </button>
-        <nav className="skills-crumbs" aria-label="位置">
-          {crumbs.map((crumb, index) => {
-            const current = index === crumbs.length - 1;
-            return (
-              <Fragment key={`${crumb}-${index}`}>
-                {index > 0 ? (
-                  <span className="skills-crumb-sep" aria-hidden>
-                    /
-                  </span>
-                ) : null}
-                <span className={current ? "skills-crumb is-current" : "skills-crumb"}>{crumb}</span>
-              </Fragment>
-            );
-          })}
-        </nav>
+        <SkillsCrumbs crumbs={crumbs} />
       </header>
       <div className="skills-subview-body">{children}</div>
       <footer className="skills-subview-foot">{footer}</footer>

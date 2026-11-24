@@ -41,6 +41,22 @@ describe("appStore page (M8 T01)", () => {
     expect(useAppStore.getState().pendingPage).toBeNull();
   });
 
+  it("routes the settings targets entry to the skills page and honours the leave guard", () => {
+    useAppStore.getState().openTargetsManager();
+    expect(useAppStore.getState().page).toBe("skills");
+    expect(useAppStore.getState().targetsRequest).toBe(1);
+
+    useAppStore.setState({ page: "work", settingsOpen: true, targetsRequest: 0 });
+    useAppStore.getState().openTargetsManager();
+    expect(useAppStore.getState().page).toBe("work");
+    expect(useAppStore.getState().pendingPage).toBe("skills");
+    useAppStore.getState().cancelPendingPage();
+    expect(useAppStore.getState().pendingPage).toBeNull();
+    expect(useAppStore.getState().targetsRequest).toBe(0);
+    useAppStore.getState().consumeTargetsRequest();
+    expect(useAppStore.getState().targetsRequest).toBe(0);
+  });
+
   it("cancelling the request keeps the workbench", () => {
     useAppStore.setState({ settingsOpen: true });
     useAppStore.getState().showPage("skills");

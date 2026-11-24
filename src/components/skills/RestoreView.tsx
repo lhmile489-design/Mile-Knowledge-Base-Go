@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SkillsCrumbs } from "./SkillsSubview";
 import { ArrowLeft, ArrowClockwise, WarningCircle } from "@phosphor-icons/react";
 import { events, type SkillStageProgressEvent } from "../../mygo";
 import {
@@ -195,7 +196,7 @@ export function RestoreView({
         <button type="button" className="icon-button" aria-label="返回" onClick={back} data-testid="restore-back">
           <ArrowLeft size={14} aria-hidden />
         </button>
-        <strong>从清单还原</strong>
+        <SkillsCrumbs crumbs={["工具技能", "从清单还原"]} />
       </header>
 
       <div className="restore-body">
@@ -361,7 +362,7 @@ export function RestoreView({
       ) : null}
 
       {confirmRebuild ? (
-        <div className="skills-subview" data-testid="restore-rebuild-dialog">
+        <div className="skills-subview skills-confirm-layer" data-testid="restore-rebuild-dialog">
           <div className="skills-subview-card">
             <header className="skills-subview-head">
               <span className="skills-subview-title">用本机记录重建分发清单</span>

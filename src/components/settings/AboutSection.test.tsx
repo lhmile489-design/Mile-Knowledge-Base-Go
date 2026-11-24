@@ -44,11 +44,12 @@ describe("AboutSection M6 row", () => {
         { id: "t-333333333333", kind: "project", name: "site2", path: "D:\\…\\site2", exists: true, skillCount: 0 },
       ],
     });
-    const before = useAppStore.getState().targetsRequest;
+    useAppStore.setState({ settingsOpen: false, page: "work", targetsRequest: 0 });
     render(<AboutSection onClose={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId("about-targets").textContent).toContain("自定义 1 个 · 项目 2 个"));
     fireEvent.click(screen.getByTestId("about-manage-targets"));
-    expect(useAppStore.getState().targetsRequest).toBe(before + 1);
-    expect(useAppStore.getState().skillsPanelOpen).toBe(true);
+    expect(useAppStore.getState().targetsRequest).toBe(1);
+    expect(useAppStore.getState().page).toBe("skills");
+    expect(useAppStore.getState().skillsPanelOpen).toBe(false);
   });
 });

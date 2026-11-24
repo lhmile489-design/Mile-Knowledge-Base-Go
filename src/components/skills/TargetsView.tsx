@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SkillsCrumbs } from "./SkillsSubview";
 import { ArrowLeft, FolderOpen, Pencil, Plus, Trash } from "@phosphor-icons/react";
 import { skillsApi, type SkillTarget, type SkillTargetDir } from "../../lib/transport";
 
@@ -183,15 +184,18 @@ export function TargetsView({
         >
           <ArrowLeft size={14} aria-hidden />
         </button>
-        <strong>
-          {form
-            ? form.id
-              ? `编辑「${form.name || "未命名"}」`
-              : form.kind === "project"
-                ? "登记项目"
-                : "新增自定义工具"
-            : "管理目录"}
-        </strong>
+        <SkillsCrumbs
+          crumbs={[
+            "工具技能",
+            form
+              ? form.id
+                ? `编辑「${form.name || "未命名"}」`
+                : form.kind === "project"
+                  ? "登记项目"
+                  : "新增自定义工具"
+              : "管理目录",
+          ]}
+        />
       </header>
 
       {error ? (
@@ -397,7 +401,7 @@ export function TargetsView({
       )}
 
       {confirmTarget ? (
-        <div className="skills-subview" data-testid="target-remove-dialog">
+        <div className="skills-subview skills-confirm-layer" data-testid="target-remove-dialog">
           <div className="skills-subview-card">
             <header className="skills-subview-head">
               <span className="skills-subview-title">移除登记「{confirmTarget.name}」</span>

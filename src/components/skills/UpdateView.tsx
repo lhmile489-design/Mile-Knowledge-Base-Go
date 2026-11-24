@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { SkillsCrumbs } from "./SkillsSubview";
 import { ArrowLeft, GithubLogo, Info, WarningCircle } from "@phosphor-icons/react";
 import {
   TransportError,
@@ -70,6 +71,16 @@ export function UpdateView({
     };
   }, [vaultId, skillPath]);
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      onClose();
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
+
   const propose = () => {
     if (!preview?.plan || !preview.stageId) return;
     proposedRef.current = true;
@@ -83,7 +94,7 @@ export function UpdateView({
         <button type="button" className="icon-button" aria-label="返回技能列表" onClick={onClose}>
           <ArrowLeft size={14} aria-hidden />
         </button>
-        <span className="update-crumb">知识库技能 / 更新「{skillName}」</span>
+        <SkillsCrumbs crumbs={["知识库技能", `更新「${skillName}」`]} />
       </header>
 
       {loading ? <p className="skills-dialog-line">正在读取新版本…</p> : null}

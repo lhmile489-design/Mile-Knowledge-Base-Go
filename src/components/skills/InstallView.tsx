@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Archive, ArrowLeft, FileZip, FolderOpen, GithubLogo, WarningCircle } from "@phosphor-icons/react";
 import { events, type SkillStageProgressEvent } from "../../mygo";
+import { SkillsCrumbs } from "./SkillsSubview";
 import {
   TransportError,
   skillsApi,
@@ -202,6 +203,19 @@ export function InstallView({
     setSource(null);
   };
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      if (stage) leaveStage();
+      else onBack();
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+    // leaveStage follows the current stage
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, onBack]);
+
   const enterStage = (value: SkillStage) => {
     setStage(value);
     setSelected(new Set(value.candidates.filter((candidate) => candidate.state === "ok").map((candidate) => candidate.id)));
@@ -364,7 +378,7 @@ export function InstallView({
           >
             <ArrowLeft size={14} aria-hidden />
           </button>
-          <strong>安装</strong>
+          <SkillsCrumbs crumbs={["全部技能", "安装"]} />
           <span className="spacer" />
           <button type="button" className="btn-quiet" onClick={onBack}>
             关闭
@@ -590,7 +604,7 @@ export function InstallView({
         <button type="button" className="icon-button" aria-label="返回技能列表" onClick={onBack}>
           <ArrowLeft size={14} aria-hidden />
         </button>
-        <strong>安装</strong>
+        <SkillsCrumbs crumbs={["全部技能", "安装"]} />
       </header>
       <p className="field-hint">选择一个来源。装进知识库，或直接装进工具。</p>
 

@@ -69,7 +69,7 @@ export function UninstallDialog({
   };
 
   return (
-    <div className="skills-subview" data-testid="uninstall-dialog">
+    <div className="skills-subview skills-confirm-layer" data-testid="uninstall-dialog">
       <div className="skills-subview-card">
         <header className="skills-subview-head">
           <span className="skills-subview-title">卸载「{skillName}」</span>

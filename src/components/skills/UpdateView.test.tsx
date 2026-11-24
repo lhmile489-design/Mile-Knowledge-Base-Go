@@ -71,6 +71,13 @@ function renderView(onProposed = vi.fn(), onClose = vi.fn()) {
 }
 
 describe("UpdateView", () => {
+  it("cancels the subview with Escape", async () => {
+    const { onClose } = renderView();
+    await waitFor(() => expect(screen.getByTestId("update-files")).toBeTruthy());
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("lists the diff and proposes the plan", async () => {
     const { onProposed } = renderView();
     await waitFor(() => expect(screen.getByTestId("update-files")).toBeTruthy());

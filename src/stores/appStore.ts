@@ -52,6 +52,7 @@ type AppState = {
   cancelPendingPage: () => void;
   openSkillsPanel: () => void;
   openTargetsManager: () => void;
+  consumeTargetsRequest: () => void;
   closeSkillsPanel: () => void;
   openSkillWizard: () => void;
   closeSkillWizard: () => void;
@@ -206,9 +207,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!pending) return;
     set({ page: pending, pendingPage: null });
   },
-  cancelPendingPage: () => set({ pendingPage: null }),
+  cancelPendingPage: () => set({ pendingPage: null, targetsRequest: 0 }),
   openSkillsPanel: () => set({ skillsPanelOpen: true }),
-  openTargetsManager: () => set((state) => ({ skillsPanelOpen: true, targetsRequest: state.targetsRequest + 1 })),
+  // M8 T07: the settings entry goes to the skills-page targets view; when the
+  // settings page is open the switch still goes through its leave guard.
+  openTargetsManager: () => {
+    set((state) => ({ targetsRequest: state.targetsRequest + 1 }));
+    if (get().settingsOpen) set({ pendingPage: "skills" });
+    else set({ page: "skills" });
+  },
+  consumeTargetsRequest: () => set({ targetsRequest: 0 }),
   closeSkillsPanel: () => set({ skillsPanelOpen: false }),
   openSkillWizard: () => set({ skillWizardOpen: true }),
   closeSkillWizard: () => set({ skillWizardOpen: false }),

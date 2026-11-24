@@ -11,6 +11,7 @@ import { InstallView } from "./InstallView";
 import { KbSkillsPage } from "./KbSkillsPage";
 import { RestoreView } from "./RestoreView";
 import { SkillsNav, type SkillsSelection } from "./SkillsNav";
+import { TargetsView } from "./TargetsView";
 import { ToolSkillsPage } from "./ToolSkillsPage";
 import { UpdateView } from "./UpdateView";
 
@@ -61,6 +62,15 @@ export function SkillsPage() {
     return subscribeSkillsChanged(() => refreshScan());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vaultId]);
+
+  // The settings entry (and the panel's transitional entry) asks for the
+  // target manager; the request is consumed so a later visit starts on the list.
+  const targetsRequest = useAppStore((state) => state.targetsRequest);
+  useEffect(() => {
+    if (targetsRequest === 0) return;
+    setSelection({ kind: "targets" });
+    useAppStore.getState().consumeTargetsRequest();
+  }, [targetsRequest]);
 
   useEffect(() => {
     if (!scan) return;
@@ -287,6 +297,22 @@ export function SkillsPage() {
                     setRestoreOpen(false);
                     setUpdatePath(skill.path);
                   }}
+                />
+              ) : (
+                <div className="skills-empty" data-testid="skills-no-vault">
+                  <p>还没有打开知识库。</p>
+                  <button type="button" className="btn-accent" onClick={() => void chooseVault()}>
+                    打开知识库…
+                  </button>
+                </div>
+              )
+            ) : selection.kind === "targets" ? (
+              vaultId ? (
+                <TargetsView
+                  vaultId={vaultId}
+                  onBack={() => setSelection({ kind: "tools", toolId: null })}
+                  onChanged={refreshScan}
+                  onResult={(lines) => setResultLines(lines)}
                 />
               ) : (
                 <div className="skills-empty" data-testid="skills-no-vault">
