@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { usePageLockStore } from "../../stores/pageLockStore";
 import { SkillsModal } from "./SkillsModal";
 
 afterEach(cleanup);
@@ -236,6 +237,59 @@ describe("SkillsModal (M9 T01)", () => {
       </Harness>,
     );
     expect(document.activeElement).toBe(screen.getByLabelText("第二步输入"));
+  });
+
+  it("stacks an overlay card: the dialog goes inert, focus moves into the overlay and back, Tab stays in it", () => {
+    const onBack = vi.fn().mockReturnValue(true);
+    const overlay = (
+      <div role="alertdialog" aria-label="覆盖确认">
+        <button type="button">不覆盖这一处</button>
+        <button type="button">备份后覆盖</button>
+      </div>
+    );
+    const { rerender } = render(<Harness onBack={onBack} />);
+    const input = screen.getByLabelText("地址");
+    input.focus();
+
+    rerender(<Harness onBack={onBack} overlay={overlay} />);
+    expect(dialog().hasAttribute("inert")).toBe(true);
+    expect(screen.getByTestId("skills-modal-over")).toBeTruthy();
+    const keep = screen.getByRole("button", { name: "不覆盖这一处" });
+    const confirm = screen.getByRole("button", { name: "备份后覆盖" });
+    expect(document.activeElement).toBe(keep);
+
+    // Tab wraps inside the overlay, not into the dialog behind it.
+    confirm.focus();
+    expect(fireEvent.keyDown(confirm, { key: "Tab" })).toBe(false);
+    expect(document.activeElement).toBe(keep);
+    expect(fireEvent.keyDown(keep, { key: "Tab", shiftKey: true })).toBe(false);
+    expect(document.activeElement).toBe(confirm);
+
+    // Esc goes to onBack first, exactly like a content step.
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onBack).toHaveBeenCalledTimes(1);
+
+    rerender(<Harness onBack={onBack} />);
+    expect(dialog().hasAttribute("inert")).toBe(false);
+    expect(screen.queryByTestId("skills-modal-over")).toBeNull();
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("a click on the overlay never closes the dialog", () => {
+    const onClose = vi.fn();
+    render(<Harness onClose={onClose} overlay={<button type="button">好</button>} />);
+    const over = screen.getByTestId("skills-modal-over");
+    fireEvent.mouseDown(over);
+    fireEvent.click(over);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("holds the page lock while open and gives it back on close", () => {
+    expect(usePageLockStore.getState().locks).toBe(0);
+    const { unmount } = render(<Harness />);
+    expect(usePageLockStore.getState().locks).toBe(1);
+    unmount();
+    expect(usePageLockStore.getState().locks).toBe(0);
   });
 
   it("becomes closable again once busy ends", () => {

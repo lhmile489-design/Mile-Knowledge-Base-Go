@@ -25,7 +25,9 @@ export function KbSkillsPage({
   readonly scanning?: boolean;
   readonly onOpenSkill: (path: string) => void;
   readonly onLocate: (path: string) => void;
-  readonly onDistribute: (paths: string[]) => void;
+  /** `onFinished` is passed for a batch only: the page calls it once the batch
+   * succeeded so the selection ends (PRD AC-UX-7). */
+  readonly onDistribute: (paths: string[], onFinished?: () => void) => void;
   readonly onInstall: () => void;
   readonly onUpdate: (skill: KbSkill) => void;
 }) {
@@ -237,7 +239,7 @@ export function KbSkillsPage({
             type="button"
             className="btn-primary"
             disabled={selected.size === 0}
-            onClick={() => onDistribute([...selected])}
+            onClick={() => onDistribute([...selected], stopSelecting)}
             data-testid="kb-batch-distribute"
           >
             分发到…

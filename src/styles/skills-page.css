@@ -1412,6 +1412,136 @@
   margin-left: 0;
 }
 
+/* 分发弹窗：技能标签、方式行、目标格、结果表。 */
+.skills-page .skills-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skills-page .skills-chips .chip {
+  cursor: default;
+}
+
+.skills-page .skills-chips .chip:hover {
+  border-color: var(--raw-line);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-modal .skills-subview-row {
+  padding: 0;
+}
+
+.skills-page .skills-modal .skills-targets {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  padding: 0;
+  overflow: visible;
+}
+
+.skills-page .skills-dist-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skills-page .skills-dist-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--raw-sunken) 80%, transparent);
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.skills-page .skills-dist-row[data-tone='live'] > svg {
+  color: var(--live);
+}
+
+.skills-page .skills-dist-row[data-tone='fault'] > svg {
+  color: var(--fault);
+}
+
+.skills-page .skills-dist-what {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-page .skills-dist-how {
+  color: var(--raw-muted);
+  font-size: var(--text-meta);
+}
+
+.skills-page .skills-dist-detail {
+  grid-column: 2 / -1;
+  color: var(--raw-muted);
+  font-size: var(--text-meta);
+  overflow-wrap: anywhere;
+}
+
+/* 覆盖确认卡：叠在弹窗之上（第二层遮罩更浅）。 */
+.skills-page .skills-modal-scrim.is-over {
+  z-index: 6;
+  background: color-mix(in srgb, var(--raw-canvas) 30%, transparent);
+}
+
+.skills-page .skills-confirm {
+  display: grid;
+  gap: 12px;
+  width: min(460px, calc(100% - 32px));
+  padding: 18px 20px;
+  border: 1px solid var(--raw-line-strong);
+  border-radius: 14px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
+  animation: skills-pop var(--dur-enter) var(--ease-spring-soft) both;
+}
+
+.skills-page[data-glass='off'] .skills-confirm {
+  background: var(--raw-card);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.skills-page .skills-confirm h3 {
+  margin: 0;
+  font-size: var(--text-title);
+  font-weight: 650;
+  color: var(--raw-strong);
+}
+
+.skills-page .skills-confirm-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 2px;
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-confirm-item b {
+  overflow-wrap: anywhere;
+  color: var(--raw-strong);
+  font-weight: 600;
+}
+
+.skills-page .skills-confirm-item > span {
+  grid-column: 2;
+}
+
+.skills-page .skills-confirm-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .skills-page .skills-modal-foot button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;

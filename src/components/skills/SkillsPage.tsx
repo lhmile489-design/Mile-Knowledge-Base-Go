@@ -39,6 +39,8 @@ export function SkillsPage() {
   const tools = useSkillsStore((state) => state.tools);
   const [selection, setSelection] = useState<SkillsSelection>({ kind: "kb", category: null });
   const [distributePaths, setDistributePaths] = useState<string[] | null>(null);
+  // Set by a batch distribute; run once the batch finished so selection ends.
+  const batchFinished = useRef<(() => void) | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
   const [updatePath, setUpdatePath] = useState<string | null>(null);
   const [restoreOpen, setRestoreOpen] = useState(false);
@@ -260,20 +262,7 @@ export function SkillsPage() {
           </div>
         ) : null}
 
-        {distributePaths && vaultId ? (
-          <DistributeDialog
-            vaultId={vaultId}
-            skills={(scan?.kb ?? [])
-              .flatMap((group) => group.skills)
-              .filter((skill) => distributePaths.includes(skill.path))}
-            tools={tools}
-            onClose={() => setDistributePaths(null)}
-            onResult={(lines) => setResultLines(lines)}
-            onDone={() => {
-              void useSkillsStore.getState().loadScan(vaultId);
-            }}
-          />
-        ) : updatePath && vaultId ? (
+        {updatePath && vaultId ? (
           <UpdateView
             vaultId={vaultId}
             skillPath={updatePath}
@@ -306,7 +295,10 @@ export function SkillsPage() {
                   scanning={scan?.scanning ?? false}
                   onOpenSkill={openSkill}
                   onLocate={locateSkill}
-                  onDistribute={(paths) => setDistributePaths(paths)}
+                  onDistribute={(paths, onFinished) => {
+                    batchFinished.current = onFinished ?? null;
+                    setDistributePaths(paths);
+                  }}
                   onInstall={() => {
                     setUpdatePath(null);
                     setRestoreOpen(false);
@@ -369,6 +361,24 @@ export function SkillsPage() {
           </>
         )}
       </main>
+
+      {distributePaths && vaultId ? (
+        <DistributeDialog
+          vaultId={vaultId}
+          skills={(scan?.kb ?? [])
+            .flatMap((group) => group.skills)
+            .filter((skill) => distributePaths.includes(skill.path))}
+          tools={tools}
+          onClose={() => {
+            batchFinished.current = null;
+            setDistributePaths(null);
+          }}
+          onDone={(succeeded) => {
+            void useSkillsStore.getState().loadScan(vaultId);
+            if (succeeded) batchFinished.current?.();
+          }}
+        />
+      ) : null}
 
       {installOpen && vaultId ? (
         <InstallView

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from "react";
 import { X } from "@phosphor-icons/react";
+import { usePageLockStore } from "../../stores/pageLockStore";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -29,7 +30,10 @@ function initialFocusTarget(card: HTMLElement): HTMLElement {
  * when it handled the key), then `onClose`. While `busy` the dialog cannot be
  * closed at all — Esc, the close button and the scrim do nothing (PRD Q-UX-6).
  * `focusKey` names the current step: when it changes the content was swapped,
- * so focus is placed again as on open (a re-render alone never moves focus). */
+ * so focus is placed again as on open (a re-render alone never moves focus).
+ * `overlay` stacks a second card (the overwrite confirmation) above the dialog:
+ * the dialog goes inert, focus and Tab move into the overlay, Esc still goes to
+ * `onBack` so the content can dismiss it, and focus returns to where it was. */
 export function SkillsModal({
   title,
   step,
@@ -39,6 +43,7 @@ export function SkillsModal({
   head,
   footer,
   focusKey,
+  overlay,
   children,
 }: {
   readonly title: string;
@@ -49,11 +54,13 @@ export function SkillsModal({
   readonly head?: ReactNode;
   readonly footer?: ReactNode;
   readonly focusKey?: string;
+  readonly overlay?: ReactNode;
   readonly children: ReactNode;
 }) {
   const titleId = useId();
   const scrimRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   const downOnScrim = useRef(false);
 
   // A new step replaces the content; place focus again (not on first render,
@@ -64,6 +71,26 @@ export function SkillsModal({
     lastFocusKey.current = focusKey;
     if (cardRef.current) initialFocusTarget(cardRef.current).focus();
   }, [focusKey]);
+
+  // The title-bar page switch stays locked while a dialog is open.
+  useEffect(() => usePageLockStore.getState().acquire(), []);
+
+  // An overlay takes focus while it is up and hands it back afterwards.
+  const hasOverlay = Boolean(overlay);
+  useEffect(() => {
+    if (!hasOverlay) return;
+    const layer = overlayRef.current;
+    const card = cardRef.current;
+    if (!layer || !card) return;
+    const before = document.activeElement instanceof HTMLElement && card.contains(document.activeElement) ? document.activeElement : null;
+    (layer.querySelector<HTMLElement>(FOCUSABLE) ?? layer).focus();
+    return () => {
+      // The dialog is still inert until the next render commits; lift it first.
+      card.removeAttribute("inert");
+      if (before?.isConnected) before.focus();
+      else initialFocusTarget(card).focus();
+    };
+  }, [hasOverlay]);
 
   // The key handler is bound once; it reads the latest props through here.
   const latest = useRef({ busy, onClose, onBack });
@@ -93,7 +120,9 @@ export function SkillsModal({
       node = parent;
     }
 
-    const focusables = () => Array.from(card.querySelectorAll<HTMLElement>(FOCUSABLE));
+    // Tab cycles inside the overlay while one is up, else inside the dialog.
+    const region = () => overlayRef.current ?? card;
+    const focusables = () => Array.from(region().querySelectorAll<HTMLElement>(FOCUSABLE));
     initialFocusTarget(card).focus();
 
     const onKey = (event: KeyboardEvent) => {
@@ -113,11 +142,11 @@ export function SkillsModal({
       const last = items[items.length - 1];
       if (!first || !last) {
         event.preventDefault();
-        card.focus();
+        region().focus();
         return;
       }
       const active = document.activeElement;
-      if (!active || !card.contains(active)) {
+      if (!active || !region().contains(active)) {
         event.preventDefault();
         (event.shiftKey ? last : first).focus();
       } else if (event.shiftKey && active === first) {
@@ -158,7 +187,15 @@ export function SkillsModal({
       onMouseDown={onScrimDown}
       onClick={onScrimClick}
     >
-      <div ref={cardRef} className="skills-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
+      <div
+        ref={cardRef}
+        className="skills-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        inert={hasOverlay ? true : undefined}
+      >
         <header className="skills-modal-head">
           <div className="skills-modal-title">
             <h3 id={titleId}>{title}</h3>
@@ -184,6 +221,11 @@ export function SkillsModal({
         </div>
         {footer ? <footer className="skills-modal-foot">{footer}</footer> : null}
       </div>
+      {hasOverlay ? (
+        <div ref={overlayRef} className="skills-modal-scrim is-over" data-testid="skills-modal-over" tabIndex={-1}>
+          {overlay}
+        </div>
+      ) : null}
     </div>
   );
 }

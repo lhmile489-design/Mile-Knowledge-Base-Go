@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { SquaresFour, Stack } from "@phosphor-icons/react";
 import { badgeCount } from "../lib/skillsView";
 import { useAppStore } from "../stores/appStore";
+import { usePageLockStore } from "../stores/pageLockStore";
 import { useSkillsStore } from "../stores/skillsStore";
 
 /** Inset of the thumb inside the pill track; mirrors `.page-switch` padding. */
@@ -15,6 +16,13 @@ export function PageSwitch() {
   const showPage = useAppStore((state) => state.showPage);
   const vaultId = useAppStore((state) => state.activeVaultId);
   const scan = useSkillsStore((state) => state.scan);
+  const locked = usePageLockStore((state) => state.locks > 0);
+  const lockProps = locked
+    ? ({ "aria-disabled": true, title: "先关闭当前弹窗再切换页面" } as const)
+    : {};
+  const go = (next: "work" | "skills") => {
+    if (!locked) showPage(next);
+  };
 
   // The badge needs a scan; keep the first one cached-first and cheap, and a
   // vault switch invalidates the knowledge-base half (same as M4–M7).
@@ -71,7 +79,8 @@ export function PageSwitch() {
         ref={workRef}
         className="page-switch-item"
         aria-current={page === "work" ? "page" : undefined}
-        onClick={() => showPage("work")}
+        onClick={() => go("work")}
+        {...lockProps}
       >
         <SquaresFour size={14} aria-hidden />
         <span>工作台</span>
@@ -83,7 +92,8 @@ export function PageSwitch() {
         data-testid="open-skills"
         aria-label={skillsLabel}
         aria-current={page === "skills" ? "page" : undefined}
-        onClick={() => showPage("skills")}
+        onClick={() => go("skills")}
+        {...lockProps}
       >
         <Stack size={14} aria-hidden />
         <span>技能</span>

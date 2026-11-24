@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { KbSkill, SkillTool } from "../../lib/transport";
 
 const { KbSkillsPage } = await import("./KbSkillsPage");
@@ -106,7 +106,32 @@ describe("KbSkillsPage (M8 T04 layout)", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "选择 go" }));
     expect(screen.getByTestId("kb-batchbar").textContent).toContain("已选 2 个");
     fireEvent.click(screen.getByTestId("kb-batch-distribute"));
-    expect(onDistribute).toHaveBeenCalledWith(["skills/前端/vue", "skills/后端/go"]);
+    expect(onDistribute).toHaveBeenCalledWith(["skills/前端/vue", "skills/后端/go"], expect.any(Function));
+    // The selection stays while the dialog is open (the page keeps it behind the dialog).
+    expect(screen.getByTestId("kb-batchbar")).toBeTruthy();
+  });
+
+  it("leaves batch selection only when the page says the batch finished", () => {
+    const onDistribute = vi.fn();
+    renderPage({ onDistribute });
+    fireEvent.click(screen.getByRole("button", { name: "更多操作：vue" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "批量选择" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "选择 vue" }));
+    fireEvent.click(screen.getByTestId("kb-batch-distribute"));
+    const finished = onDistribute.mock.calls[0]?.[1] as () => void;
+    expect(screen.getByTestId("kb-batchbar")).toBeTruthy();
+    act(() => finished());
+    expect(screen.queryByTestId("kb-batchbar")).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: "选择 vue" })).toBeNull();
+  });
+
+  it("a single card distributes without a batch callback", () => {
+    const onDistribute = vi.fn();
+    renderPage({ onDistribute });
+    const card = screen.getByTestId("kb-card-vue");
+    const button = Array.from(card.querySelectorAll("button")).find((item) => item.textContent?.trim() === "分发");
+    fireEvent.click(button as HTMLElement);
+    expect(onDistribute).toHaveBeenCalledWith(["skills/前端/vue"]);
   });
 
   it("selects a whole group and can cancel the batch", () => {

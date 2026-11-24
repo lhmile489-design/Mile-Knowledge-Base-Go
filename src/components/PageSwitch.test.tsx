@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const registry = vi.fn();
 const scan = vi.fn();
@@ -26,6 +26,7 @@ vi.mock("../lib/transport", () => {
 const { PageSwitch } = await import("./PageSwitch");
 const { useAppStore } = await import("../stores/appStore");
 const { useSkillsStore } = await import("../stores/skillsStore");
+const { usePageLockStore } = await import("../stores/pageLockStore");
 
 const emptyScan = { cachedAt: "2026-11-24T09:00:00Z", scanning: false, kb: [], tools: [] };
 
@@ -104,5 +105,26 @@ describe("page switch pill (M8 T02)", () => {
     fireEvent.click(screen.getByRole("button", { name: "技能" }));
     expect(useAppStore.getState().page).toBe("work");
     expect(useAppStore.getState().pendingPage).toBe("skills");
+  });
+
+  // M9: a skills dialog is writing or waiting for input; leaving the page
+  // would unmount it halfway.
+  it("ignores clicks and says why while a dialog holds the page lock", () => {
+    useAppStore.setState({ page: "skills" });
+    render(<PageSwitch />);
+    let release: () => void = () => undefined;
+    act(() => {
+      release = usePageLockStore.getState().acquire();
+    });
+    const work = screen.getByRole("button", { name: "工作台" });
+    fireEvent.click(work);
+    expect(useAppStore.getState().page).toBe("skills");
+    expect(work.getAttribute("aria-disabled")).toBe("true");
+    expect(work.getAttribute("title")).toContain("先关闭");
+
+    act(() => release());
+    expect(work.hasAttribute("aria-disabled")).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "工作台" }));
+    expect(useAppStore.getState().page).toBe("work");
   });
 });

@@ -6,6 +6,8 @@ const scan = vi.fn();
 const restorePreview = vi.fn();
 const checkUpdates = vi.fn();
 const readDoc = vi.fn();
+const distributePreview = vi.fn();
+const distribute = vi.fn();
 
 vi.mock("../../lib/transport", () => {
   class TransportError extends Error {}
@@ -20,6 +22,8 @@ vi.mock("../../lib/transport", () => {
       confirmKbUpdate: vi.fn(),
       discardStage: vi.fn(async () => undefined),
       log: vi.fn(async () => ({ records: [] })),
+      distributePreview: (...args: unknown[]) => distributePreview(...args),
+      distribute: (...args: unknown[]) => distribute(...args),
     },
     docApi: {
       read: (...args: unknown[]) => readDoc(...args),
@@ -75,7 +79,7 @@ const emptyPreview = { preview: { status: "ok", items: [], pending: 0, localOnly
 beforeEach(() => {
   registry.mockReset().mockResolvedValue({
     tools: [
-      { id: "claude-code", name: "Claude Code", iconKey: "claude-code", scanDirs: [], status: "detected", kind: "builtin", official: true, enabled: true },
+      { id: "claude-code", name: "Claude Code", iconKey: "claude-code", installDir: "<home>/.claude/skills", scanDirs: [], status: "detected", kind: "builtin", official: true, enabled: true },
       { id: "cursor", name: "Cursor", iconKey: "cursor", scanDirs: [], status: "detected", kind: "builtin", official: true, enabled: true },
     ],
   });
@@ -83,6 +87,8 @@ beforeEach(() => {
   restorePreview.mockReset().mockResolvedValue(emptyPreview);
   checkUpdates.mockReset().mockResolvedValue({ checkedAt: new Date().toISOString(), checking: false, groups: 0, unchecked: 0 });
   readDoc.mockReset().mockResolvedValue({ doc: { text: "", revision: 1, hash: "h", size: 0 } });
+  distributePreview.mockReset().mockResolvedValue({ items: [] });
+  distribute.mockReset().mockResolvedValue({ items: [{ targetId: "claude-code", toolId: "claude-code", result: "linked" }] });
   useAppStore.setState({ activeVaultId: "v1", page: "skills" });
   useSkillsStore.setState({ tools: [], scan: scanPayload as never, loading: false, error: null });
 });
@@ -136,10 +142,14 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     expect(screen.getByTestId("skills-main").contains(screen.getByTestId("restore-banner"))).toBe(true);
   });
 
-  it("opens the existing distribute dialog for a card", async () => {
+  it("opens the distribute dialog over the list for a card", async () => {
     render(<SkillsPage />);
+    const card = screen.getByTestId("kb-card-vue");
     fireEvent.click(withinCard("vue").getByRole("button", { name: "分发" }));
-    await waitFor(() => expect(screen.getByTestId("distribute-dialog")).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "分发「vue」" })).toBeTruthy());
+    expect(screen.getByTestId("skills-page").contains(screen.getByTestId("skills-modal"))).toBe(true);
+    expect(screen.getByTestId("kb-card-vue")).toBe(card);
+    expect(screen.getByTestId("skills-main").hasAttribute("inert")).toBe(true);
   });
 
   it("keeps the glass on by default and mounts the colour field", () => {
@@ -172,13 +182,52 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     expect(useAppStore.getState().targetsRequest).toBe(0);
   });
 
-  it("returns from the distribute subview to the list with Esc", async () => {
+  it("closes the distribute dialog with Esc and leaves the list as it was", async () => {
     render(<SkillsPage />);
     fireEvent.click(withinCard("vue").getByRole("button", { name: "分发" }));
     await waitFor(() => expect(screen.getByTestId("distribute-dialog")).toBeTruthy());
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByTestId("distribute-dialog")).toBeNull());
     expect(screen.getByTestId("kb-card-vue")).toBeTruthy();
+    expect(screen.getByTestId("skills-main").hasAttribute("inert")).toBe(false);
+  });
+
+  it("batch distribute: the result stays in the dialog, 完成 refreshes the scan and ends the selection", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "更多操作：vue" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "批量选择" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "选择 vue" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "选择 go" }));
+    fireEvent.click(screen.getByTestId("kb-batch-distribute"));
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "分发 2 个技能" })).toBeTruthy());
+    // The batch selection stays behind the dialog.
+    expect(screen.getByTestId("kb-batchbar")).toBeTruthy();
+
+    fireEvent.click(await screen.findByTestId("distribute-target-claude-code"));
+    fireEvent.click(screen.getByTestId("distribute-submit"));
+    await waitFor(() => expect(screen.getByTestId("distribute-result")).toBeTruthy());
+    expect(distribute).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId("kb-batchbar")).toBeTruthy();
+    // No page banner for the result any more; it lives in the dialog.
+    expect(screen.queryByTestId("skills-banner")).toBeNull();
+
+    scan.mockClear();
+    fireEvent.click(screen.getByTestId("distribute-done"));
+    await waitFor(() => expect(screen.queryByTestId("skills-modal")).toBeNull());
+    expect(screen.queryByTestId("kb-batchbar")).toBeNull();
+    await waitFor(() => expect(scan).toHaveBeenCalledWith("v1"));
+  });
+
+  it("cancelling a batch distribute keeps the selection", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "更多操作：vue" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "批量选择" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "选择 vue" }));
+    fireEvent.click(screen.getByTestId("kb-batch-distribute"));
+    await waitFor(() => expect(screen.getByTestId("distribute-dialog")).toBeTruthy());
+    fireEvent.click(screen.getByTestId("distribute-cancel"));
+    await waitFor(() => expect(screen.queryByTestId("skills-modal")).toBeNull());
+    expect(screen.getByTestId("kb-batchbar").textContent).toContain("已选 1 个");
   });
 
   it("opens install as a dialog over the list: the list stays mounted, the page goes inert, focus returns", async () => {

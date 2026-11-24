@@ -209,8 +209,9 @@ set_mode() { # link | copy → click the mode radio by its label
 }
 submit_distribute() {
   click '[data-testid="distribute-submit"]' >/dev/null
-  wait_match "distributed" "document.querySelector('[data-testid=\"skills-banner\"]')?.textContent.includes('已')" '"value":true' 60
-  close_banner
+  wait_match "distributed" "document.querySelector('[data-testid=\"distribute-result\"]')?.textContent.includes('已')" '"value":true' 60
+  click '[data-testid="distribute-done"]' >/dev/null
+  wait_match "distribute dialog closed" "document.querySelector('[data-testid=\"skills-modal\"]') === null" '"value":true' 20
 }
 open_restore() {
   click '[data-testid="restore-banner-open"]'
@@ -275,8 +276,9 @@ card_distribute "前端" "vue"
 select_target "claude-code"
 check "A link target selected" "document.querySelector('[data-testid=\"distribute-summary\"]').textContent.includes('已选 1')" '"value":true'
 click '[data-testid="distribute-submit"]' >/dev/null
-wait_match "A link distributed" "document.querySelector('[data-testid=\"skills-banner\"]')?.textContent.includes('已联接')" '"value":true' 60
-close_banner
+wait_match "A link distributed" "document.querySelector('[data-testid=\"distribute-result\"]')?.textContent.includes('已联接')" '"value":true' 60
+click '[data-testid="distribute-done"]' >/dev/null
+wait_match "A distribute dialog closed" "document.querySelector('[data-testid=\"skills-modal\"]') === null" '"value":true' 20
 card_distribute "前端" "vue"
 select_target "$PROJECT_TID"
 select_target "$CUSTOM_TID"

@@ -230,8 +230,9 @@ select_target "$CUSTOM_TID"
 select_target "$PROJECT_TID"
 check "two targets selected" "document.querySelector('[data-testid=\"distribute-summary\"]').textContent.includes('已选 2')" '"value":true'
 click '[data-testid="distribute-submit"]'
-wait_match "distributed" "document.querySelector('[data-testid=\"skills-banner\"]')?.textContent.includes('已联接')" '"value":true' 40
-close_banner
+wait_match "distributed" "document.querySelector('[data-testid=\"distribute-result\"]')?.textContent.includes('已联接')" '"value":true' 40
+click '[data-testid="distribute-done"]' >/dev/null
+wait_match "distribute dialog closed" "document.querySelector('[data-testid=\"skills-modal\"]') === null" '"value":true' 20
 [ -e "$CUSTOM/vue" ] && { pass=$((pass+1)); echo "PASS custom link written"; } || { fail=$((fail+1)); echo "FAIL custom link written"; }
 [ -e "$PROJECT/.claude/skills/vue" ] && { pass=$((pass+1)); echo "PASS project link written"; } || { fail=$((fail+1)); echo "FAIL project link written"; }
 printf '\nM6 验收更新。\n' >> "$VAULT/skills/前端/vue/SKILL.md"
