@@ -52,6 +52,7 @@ vi.mock("../components/WelcomeView", () => ({ WelcomeView: () => <div data-testi
 vi.mock("../components/NoticeStack", () => ({ NoticeStack: () => null }));
 vi.mock("../components/SkillImportWizard", () => ({ SkillImportWizard: () => null }));
 vi.mock("../components/skills/SkillsPanel", () => ({ SkillsPanel: () => null }));
+vi.mock("../components/skills/SkillsPage", () => ({ SkillsPage: () => <div data-testid="skills-stub" /> }));
 
 const { App } = await import("./App");
 const { useAppStore } = await import("../stores/appStore");
@@ -108,6 +109,16 @@ describe("App shell (M8 T01)", () => {
     expect(host.hasAttribute("hidden")).toBe(true);
     expect(host.hasAttribute("inert")).toBe(true);
     expect(screen.getByTestId("workbench-stub")).toBeTruthy();
+  });
+
+  it("mounts the skills page while the workbench stays hidden (M8 T03)", async () => {
+    render(<App />);
+    await screen.findByTestId("workbench-stub");
+    act(() => useAppStore.getState().showPage("skills"));
+    expect(screen.getByTestId("skills-stub")).toBeTruthy();
+    expect(screen.getByTestId("skills-host")).toBeTruthy();
+    expect(screen.getByTestId("workbench-host").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("workbench-host").hasAttribute("inert")).toBe(true);
   });
 
   it("keeps the settings page as a replacement, not a hidden layer", async () => {

@@ -1,18 +1,48 @@
-import type { SkillScan, SkillTool } from "./transport";
+import type { SkillScan, SkillTool, SkillToolScan } from "./transport";
+
+/** What needs attention in one tool group (M8 T03, same rule as the badge):
+ * broken links and copies whose knowledge base moved on. */
+export function toolNeedsAttention(group: SkillToolScan): boolean {
+  return group.skills.some(
+    (skill) => skill.origin === "link-broken" || (skill.origin === "copied" && skill.sync === "vault-updated"),
+  );
+}
+
+/** Attention counts behind the badge and the skills-page footer. */
+export function attentionCounts(scan: SkillScan | null): { updates: number; broken: number } {
+  let updates = 0;
+  let broken = 0;
+  if (!scan) return { updates, broken };
+  for (const group of scan.tools) {
+    for (const skill of group.skills) {
+      if (skill.origin === "link-broken") broken += 1;
+      if (skill.origin === "copied" && skill.sync === "vault-updated") updates += 1;
+    }
+  }
+  return { updates, broken };
+}
 
 /** The title-bar badge counts what needs attention (PRD FR-SKM-PANEL):
  * copies whose knowledge base moved on, plus broken links. Opening the panel
  * never clears it. */
 export function badgeCount(scan: SkillScan | null): number {
-  if (!scan) return 0;
-  let count = 0;
-  for (const group of scan.tools) {
+  const { updates, broken } = attentionCounts(scan);
+  return updates + broken;
+}
+
+/** Knowledge-base skills that reached at least one tool, for the navigation
+ * footer (UI 稿 11.1 「已分发 17 / 24」). */
+export function distributionProgress(scan: SkillScan | null): { distributed: number; total: number } {
+  if (!scan) return { distributed: 0, total: 0 };
+  let distributed = 0;
+  let total = 0;
+  for (const group of scan.kb) {
     for (const skill of group.skills) {
-      if (skill.origin === "link-broken") count += 1;
-      if (skill.origin === "copied" && skill.sync === "vault-updated") count += 1;
+      total += 1;
+      if ((skill.distributed?.length ?? 0) > 0) distributed += 1;
     }
   }
-  return count;
+  return { distributed, total };
 }
 
 /** Total skills per page, used by the tab labels. */

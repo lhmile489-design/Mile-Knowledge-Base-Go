@@ -4,6 +4,7 @@ import { SettingsPage } from "../components/settings/SettingsPage";
 import { WelcomeView } from "../components/WelcomeView";
 import { NoticeStack } from "../components/NoticeStack";
 import { SkillImportWizard } from "../components/SkillImportWizard";
+import { SkillsPage } from "../components/skills/SkillsPage";
 import { SkillsPanel } from "../components/skills/SkillsPanel";
 import { TitleBar } from "../components/TitleBar";
 import { useAppStore } from "../stores/appStore";
@@ -45,17 +46,26 @@ export function App() {
         <TitleBar />
         {settingsOpen ? (
           <SettingsPage />
-        ) : activeVaultId ? (
-          <div
-            className="page-host"
-            data-testid="workbench-host"
-            hidden={!workbenchVisible}
-            inert={workbenchVisible ? undefined : true}
-          >
-            <Workbench />
-          </div>
         ) : (
-          <WelcomeView />
+          <>
+            {activeVaultId ? (
+              <div
+                className="page-host"
+                data-testid="workbench-host"
+                hidden={!workbenchVisible}
+                inert={workbenchVisible ? undefined : true}
+              >
+                <Workbench />
+              </div>
+            ) : page === "skills" ? null : (
+              <WelcomeView />
+            )}
+            {page === "skills" ? (
+              <div className="page-host" data-testid="skills-host">
+                <SkillsPage />
+              </div>
+            ) : null}
+          </>
         )}
       </div>
       <SkillsPanel />

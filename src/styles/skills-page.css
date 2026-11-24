@@ -1,0 +1,265 @@
+/* R2 技能页（M8）：页面外壳与左侧导航。
+   The pilot tokens below (DESIGN 13.2) live only inside `.skills-page`; the
+   checker in scripts/check-skill-tokens.mjs fails the build if any of them is
+   referenced outside this file or outside a `.skills-page` block. */
+
+.skills-page {
+  --glass-card: color-mix(in srgb, var(--raw-card) 50%, transparent);
+  --glass-card-hover: color-mix(in srgb, var(--raw-card) 66%, transparent);
+  --glass-strong: color-mix(in srgb, var(--raw-card) 78%, transparent);
+  --glass-edge: rgb(255 255 255 / 0.7);
+  --glass-blur: 18px;
+  --field-a: color-mix(in srgb, var(--raw-accent) 36%, transparent);
+  --field-b: color-mix(in srgb, var(--info) 24%, transparent);
+  --field-c: color-mix(in srgb, var(--live) 16%, transparent);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring-soft: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --dur-enter: 520ms;
+  --dur-slide: 460ms;
+  --dur-hover: 320ms;
+  --stagger: 38ms;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  margin: 0 8px 8px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-panel);
+  background: var(--raw-panel-editor);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+[data-theme='dark'] .skills-page {
+  --glass-card: color-mix(in srgb, var(--raw-raised) 46%, transparent);
+  --glass-card-hover: color-mix(in srgb, var(--raw-raised) 62%, transparent);
+  --glass-strong: color-mix(in srgb, var(--raw-raised) 80%, transparent);
+  --glass-edge: rgb(255 255 255 / 0.09);
+  --field-a: color-mix(in srgb, var(--raw-accent) 22%, transparent);
+  --field-b: color-mix(in srgb, var(--info) 20%, transparent);
+  --field-c: color-mix(in srgb, var(--live) 10%, transparent);
+}
+
+/* ---------- 左侧导航 ---------- */
+.skills-page .skills-nav {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  border-right: 1px solid var(--raw-line);
+  background: color-mix(in srgb, var(--raw-panel-sidebar) 82%, transparent);
+}
+
+.skills-page .skills-nav-head {
+  padding: 20px 18px 14px;
+}
+
+.skills-page .skills-nav-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--raw-faint);
+}
+
+.skills-page .skills-nav-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--raw-accent);
+}
+
+.skills-page .skills-nav-title {
+  margin: 8px 0 0;
+  font-size: var(--text-display);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--raw-strong);
+}
+
+.skills-page .skills-nav-sub {
+  margin: 4px 0 0;
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-nav-list {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: 6px 10px;
+  overflow: auto;
+}
+
+.skills-page .skills-nav-group {
+  margin: 14px 8px 6px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--raw-faint);
+}
+
+.skills-page .skills-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--raw-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 220ms var(--ease),
+    color 220ms var(--ease);
+}
+
+.skills-page .skills-nav-item:hover {
+  background: color-mix(in srgb, var(--raw-raised) 70%, transparent);
+}
+
+.skills-page .skills-nav-item[aria-current='page'] {
+  background: var(--raw-accent-soft);
+  color: var(--raw-accent-text);
+  font-weight: 600;
+}
+
+.skills-page .skills-nav-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.skills-page .skills-nav-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.skills-page .skills-nav-count {
+  margin-left: auto;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.skills-page .skills-nav-item[aria-current='page'] .skills-nav-count {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.skills-page .skills-nav-dot {
+  position: absolute;
+  top: 6px;
+  left: 22px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--warn);
+  box-shadow: 0 0 0 2px var(--raw-panel-sidebar);
+}
+
+.skills-page .skills-nav-sep {
+  display: none;
+}
+
+.skills-page .skills-nav-foot {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--raw-line);
+}
+
+.skills-page .skills-nav-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-nav-progress b {
+  color: var(--raw-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.skills-page .skills-nav-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--raw-raised);
+  overflow: hidden;
+}
+
+.skills-page .skills-nav-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--raw-accent);
+}
+
+.skills-page .skills-nav-attention {
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}
+
+/* ---------- 主区（T04/T05 接入内容） ---------- */
+.skills-page .skills-main {
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+
+/* ---------- 窄窗口：导航收成 56px 图标栏（UI 稿 11.2） ---------- */
+@media (max-width: 1023px) {
+  .skills-page {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .skills-page .skills-nav-head,
+  .skills-page .skills-nav-group,
+  .skills-page .skills-nav-label,
+  .skills-page .skills-nav-count,
+  .skills-page .skills-nav-progress,
+  .skills-page .skills-nav-attention {
+    display: none;
+  }
+
+  .skills-page .skills-nav-list {
+    padding: 12px 8px;
+    gap: 4px;
+  }
+
+  .skills-page .skills-nav-item {
+    justify-content: center;
+    height: 36px;
+    padding: 0;
+  }
+
+  .skills-page .skills-nav-sep {
+    display: block;
+    height: 1px;
+    margin: 8px 6px;
+    background: var(--raw-line);
+  }
+
+  .skills-page .skills-nav-dot {
+    top: 6px;
+    left: auto;
+    right: 7px;
+  }
+
+  .skills-page .skills-nav-foot {
+    padding: 12px 10px 14px;
+  }
+}
