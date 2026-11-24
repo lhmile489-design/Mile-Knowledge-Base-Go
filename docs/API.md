@@ -1,6 +1,7 @@
 # 接口设计契约
 
 > 状态：v1.0 草案（阶段 08），已通过设计交接检查并修订，用户 2026-11-18 审核通过；全部接口「已设计、未实现」。
+> 漂移：2026-11-24 上行「未实现」写于阶段 08。M0–M8 已按本文实现并交付（含第 11–15 节 R2 增补）；各接口实施状态以对应 docs/PLAN-M*.md 账本为准。
 > 适用迭代：R1 重构对齐版；业务依据 [PRD.md](PRD.md) v1.5；技术依据 [技术设计.md](技术设计.md) v1.0。
 > 形式：本应用是单进程桌面应用，「接口」不是 HTTP API，而是 mygo 绑定服务（前端得到 Promise）、`mygo.Channel[T]`（流式）与定向 Event（Go 推前端）。前端只经 `src/lib/transport.ts` 调用生成的 `src/mygo.ts`。
 > 持久化格式（`.mile-kb/` 文件、SQLite 索引、应用数据文件）不在本文，见 [数据库设计.md](数据库设计.md)。
@@ -1222,3 +1223,19 @@ type SkillRestoreOpItem = {
 
 - Go 单测与服务测试：技术设计 18.10 的清单；M102 结果里不含任何绝对路径；M103 复核（预览后目标被占用 → `skipped`）。
 - e2e：AC-SKM-20–25（`scripts/e2e/ac-m7.sh`，两套临时 APPDATA + 假 HOME + 本地假 GitHub）。
+
+## 16. R2 增补：技能页体验升级（M9）
+
+> 状态：已审核通过（2026-11-24，随 docs/PLAN-M9.md v0.1 批准）。需求见 PRD 第 18 节（v2.8）；设计见技术设计第 20 节。
+
+- **不新增方法、事件与错误码。** 详情抽屉复用 M17 `DocService.read` 与 M36 `RenderService.renderDocument`（读取 `<技能路径>/SKILL.md`，规则与阅读模式相同：> 1 MiB 不渲染、HTML 转义、远程图片默认不加载）；抽屉的分发情况与来源取自 M77 扫描结果里的 `KbSkill.distributed[]` 与 `KbSkill.remote`。安装、分发弹窗调用的方法与现在的整页子视图完全相同：分发 M78 `distributePreview` / M79 `distribute`（成功后照旧写分发清单，第 15 节）；安装 M88–M92（GitHub / zip 读取、预览、安装、丢弃暂存）与本地文件夹的 M14 `pickSkillSource` / M15 `importSkills`。
+- **M60 `get` / M61 `patch` 的 `settings.layout` 增加两个布尔字段**（Q-UX-3）：
+
+| 字段 | 类型 | 默认 | 说明 |
+| --- | --- | --- | --- |
+| `layout.skillsKbCollapsed` | boolean | `false` | 技能页导航「知识库」组折叠 |
+| `layout.skillsToolsCollapsed` | boolean | `false` | 技能页导航「工具目录」组折叠 |
+
+  - `patch` 时与其他 `layout` 字段一样整体提交（前端 `setLayout` 合并当前值）；布尔值不需要夹取；缺字段视为 `false`。
+  - 生成物：`internal/contract.LayoutSettings` 加字段后 `mygo generate`，`src/mygo.ts` 的 `LayoutSettings` 随之更新，`check:bindings` 对拍。
+- 验证：Go 测试覆盖新字段的读写与默认值；e2e AC-UX-10 覆盖重启后保留。
