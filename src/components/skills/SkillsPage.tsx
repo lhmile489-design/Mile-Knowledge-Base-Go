@@ -340,32 +340,23 @@ export function SkillsPage() {
                 </div>
               )
             ) : selection.kind === "tools" ? (
-              vaultId ? (
-                <ToolSkillsPage
-                  vaultId={vaultId}
-                  groups={
-                    selection.toolId
-                      ? (scan?.tools ?? []).filter((group) => group.toolId === selection.toolId)
-                      : (scan?.tools ?? [])
-                  }
-                  tools={tools}
-                  onChanged={refreshScan}
-                  onResult={(lines) => setResultLines(lines)}
-                  onInstall={() => {
-                    setDistributePaths(null);
-                    setUpdatePath(null);
-                    setRestoreOpen(false);
-                    setInstallOpen(true);
-                  }}
-                />
-              ) : (
-                <div className="skills-empty" data-testid="skills-no-vault">
-                  <p>还没有打开知识库。</p>
-                  <button type="button" className="btn-accent" onClick={() => void chooseVault()}>
-                    打开知识库…
-                  </button>
-                </div>
-              )
+              <ToolSkillsPage
+                vaultId={vaultId}
+                groups={
+                  selection.toolId
+                    ? (scan?.tools ?? []).filter((group) => group.toolId === selection.toolId)
+                    : (scan?.tools ?? [])
+                }
+                tools={tools}
+                onChanged={refreshScan}
+                onResult={(lines) => setResultLines(lines)}
+                onInstall={vaultId ? () => {
+                  setDistributePaths(null);
+                  setUpdatePath(null);
+                  setRestoreOpen(false);
+                  setInstallOpen(true);
+                } : undefined}
+              />
             ) : null}
           </>
         )}

@@ -1076,7 +1076,7 @@
   }
 
   .skills-page .skills-field span {
-    animation: none;
+    animation: none !important;
   }
 
   .skills-page .kb-card {

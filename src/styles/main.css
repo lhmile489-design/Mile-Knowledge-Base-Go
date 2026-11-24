@@ -43,6 +43,7 @@ body {
 /* Workbench shell: title bar above, the three panels below, gutters all round
    (DESIGN.md §4; the legacy Workbench used the same grid). */
 .app-shell {
+  position: relative;
   display: grid;
   height: 100%;
   min-width: 0;
@@ -57,8 +58,30 @@ body {
   min-width: 0;
 }
 
-.page-host[hidden] {
-  display: none;
+/* Both pages share the content cell. The workbench keeps its full layout and
+   is covered by the opaque skills host instead of being hidden, so scroll
+   offsets and virtual rows survive the trip (M8 T10; display:none and
+   visibility:hidden both reset them). inert keeps it out of the tab order and
+   off the accessibility tree. */
+.app-shell > .page-host {
+  grid-row: 2;
+  grid-column: 1;
+  position: relative;
+}
+
+/* Tailwind's preflight hides [hidden] with !important inside @layer base;
+   this rule sits in the same layer after it, so the workbench stays laid out
+   under the page (M8 T10). */
+@layer base {
+  .page-host[hidden] {
+    display: grid !important;
+    z-index: 0;
+  }
+}
+
+.app-shell > .page-host + .page-host {
+  z-index: 1;
+  background: var(--raw-canvas);
 }
 
 .workbench-grid {
