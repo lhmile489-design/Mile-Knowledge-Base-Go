@@ -232,7 +232,8 @@
   .skills-page .skills-nav-count,
   .skills-page .skills-nav-progress,
   .skills-page .skills-nav-attention,
-  .skills-page .skills-nav-status {
+  .skills-page .skills-nav-status,
+  .skills-page .skills-nav-updates {
     display: none;
   }
 
@@ -1214,4 +1215,19 @@
     flex: none;
     white-space: nowrap;
   }
+}
+
+.skills-page .skills-nav-updates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-caption);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-nav-updates .btn-quiet {
+  height: 24px;
+  padding: 0 8px;
+  font-size: var(--text-caption);
 }

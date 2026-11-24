@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { FolderSimple, SlidersHorizontal, SquaresFour, Stack } from "@phosphor-icons/react";
-import type { SkillScan, SkillTool } from "../../lib/transport";
+import type { SkillScan, SkillTool, SkillUpdateCheckResult } from "../../lib/transport";
+import { checkedLabel, clockOf } from "../../lib/skillRemote";
 import { attentionCounts, distributionProgress, toolNeedsAttention, totals } from "../../lib/skillsView";
 import { ToolIcon } from "./ToolIcon";
 
@@ -27,12 +28,14 @@ interface SkillsNavProps {
   readonly scan: SkillScan | null;
   readonly tools: SkillTool[];
   readonly hasVault: boolean;
+  readonly update?: SkillUpdateCheckResult | null;
+  readonly onCheckUpdates?: () => void;
 }
 
 /** Left navigation of the skills page (UI 稿 11.1): knowledge-base categories,
  * tool directories, the targets manager entry and the distribution footer.
  * Below 1024px the CSS turns it into a 56px icon rail. */
-export function SkillsNav({ selection, onSelect, scan, tools, hasVault }: SkillsNavProps) {
+export function SkillsNav({ selection, onSelect, scan, tools, hasVault, update, onCheckUpdates }: SkillsNavProps) {
   const current = selectionKey(selection);
   const counts = totals(scan);
   const progress = distributionProgress(scan);
@@ -136,6 +139,32 @@ export function SkillsNav({ selection, onSelect, scan, tools, hasVault }: Skills
         <div className="skills-nav-status" data-testid="skills-status">
           {scan?.scanning ? "后台扫描中…" : scan ? `上次扫描 ${scan.cachedAt}` : "尚未扫描"}
         </div>
+        {hasVault && onCheckUpdates ? (
+          <div className="skills-nav-updates">
+            <span data-testid="skills-checked">
+              {update?.checking ? "检查中…" : checkedLabel(update?.checkedAt) || "尚未检查"}
+            </span>
+            <button
+              type="button"
+              className="btn-quiet"
+              disabled={update?.checking ?? false}
+              onClick={onCheckUpdates}
+              data-testid="skills-check-updates"
+            >
+              检查更新
+            </button>
+            {update && update.unchecked > 0 ? (
+              <span className="skills-nav-attention" data-testid="skills-unchecked">
+                {update.unchecked} 个来源这次没查
+              </span>
+            ) : null}
+            {update?.rateLimitResetAt ? (
+              <span className="skills-nav-attention" data-testid="skills-rate-limit">
+                额度用完，{clockOf(update.rateLimitResetAt)} 后再试
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </aside>
   );

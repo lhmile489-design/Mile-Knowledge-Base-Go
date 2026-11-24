@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 const registry = vi.fn();
 const scan = vi.fn();
 const restorePreview = vi.fn();
+const checkUpdates = vi.fn();
 const readDoc = vi.fn();
 
 vi.mock("../../lib/transport", () => {
@@ -14,7 +15,7 @@ vi.mock("../../lib/transport", () => {
       registry: (...args: unknown[]) => registry(...args),
       scan: (...args: unknown[]) => scan(...args),
       restorePreview: (...args: unknown[]) => restorePreview(...args),
-      checkUpdates: vi.fn(async () => ({ checkedAt: "2026-11-24T09:00:00Z", groups: 0, unchecked: 0 })),
+      checkUpdates: (...args: unknown[]) => checkUpdates(...args),
       listTargets: vi.fn(async () => ({ items: [], dirs: [] })),
       confirmKbUpdate: vi.fn(),
       discardStage: vi.fn(async () => undefined),
@@ -79,6 +80,7 @@ beforeEach(() => {
   });
   scan.mockReset().mockResolvedValue({ scan: scanPayload });
   restorePreview.mockReset().mockResolvedValue(emptyPreview);
+  checkUpdates.mockReset().mockResolvedValue({ checkedAt: new Date().toISOString(), checking: false, groups: 0, unchecked: 0 });
   readDoc.mockReset().mockResolvedValue({ doc: { text: "", revision: 1, hash: "h", size: 0 } });
   useAppStore.setState({ activeVaultId: "v1", page: "skills" });
   useSkillsStore.setState({ tools: [], scan: scanPayload as never, loading: false, error: null });
@@ -143,6 +145,23 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     render(<SkillsPage />);
     expect(screen.getByTestId("skills-page").getAttribute("data-glass")).toBe("on");
     expect(document.querySelector(".skills-field")).toBeTruthy();
+  });
+
+  it("offers the manual update check and shows the footer states", async () => {
+    render(<SkillsPage />);
+    await waitFor(() => expect(checkUpdates).toHaveBeenCalledWith("v1", false));
+    checkUpdates.mockResolvedValueOnce({
+      checkedAt: new Date().toISOString(),
+      checking: false,
+      groups: 2,
+      unchecked: 2,
+      rateLimitResetAt: new Date(Date.now() + 60000).toISOString(),
+    });
+    fireEvent.click(screen.getByTestId("skills-check-updates"));
+    await waitFor(() => expect(checkUpdates).toHaveBeenLastCalledWith("v1", true));
+    await waitFor(() => expect(screen.getByTestId("skills-unchecked").textContent).toContain("2 个来源"));
+    expect(screen.getByTestId("skills-rate-limit").textContent).toContain("额度用完");
+    expect(screen.getByTestId("skills-checked").textContent).toContain("刚刚检查过");
   });
 
   it("opens the targets manager for a pending targets request and consumes it", async () => {

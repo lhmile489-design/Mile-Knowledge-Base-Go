@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { events } from "../../mygo";
-import { skillsApi, type KbSkill, type SkillRestorePreview } from "../../lib/transport";
+import { skillsApi, type KbSkill, type SkillRestorePreview, type SkillUpdateCheckResult } from "../../lib/transport";
 import { useAppStore } from "../../stores/appStore";
 import { useDocStore } from "../../stores/docStore";
 import { useMutationStore } from "../../stores/mutationStore";
@@ -45,6 +45,7 @@ export function SkillsPage() {
   const [restore, setRestore] = useState<SkillRestorePreview | null>(null);
   const [resultLines, setResultLines] = useState<string[] | null>(null);
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<SkillUpdateCheckResult | null>(null);
   const shellRef = useRef<HTMLElement | null>(null);
   const glass = useSkillsGlass(shellRef);
   const pendingPlan = useMutationStore((state) => state.pending);
@@ -56,20 +57,26 @@ export function SkillsPage() {
   };
 
   // Q-SKM-2: entering the page checks for updates (cached for 60 minutes).
-  const checkUpdates = () => {
-    if (vaultId) void skillsApi.checkUpdates(vaultId, false).catch(() => undefined);
+  // The footer shows the result and offers a manual check.
+  const refreshUpdates = async (force: boolean) => {
+    if (!vaultId) return;
+    try {
+      setUpdateInfo(await skillsApi.checkUpdates(vaultId, force));
+    } catch {
+      // Keep the previous footer state when a check fails.
+    }
   };
 
   useEffect(() => {
     refreshScan();
-    checkUpdates();
+    void refreshUpdates(false);
     // A vault switch can drop the selected category or tool; fall back to all.
     setSelection((current) =>
       current.kind === "kb" && current.category ? { kind: "kb", category: null } : current,
     );
     return subscribeSkillsChanged(() => {
       refreshScan();
-      checkUpdates();
+      void refreshUpdates(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vaultId]);
@@ -235,6 +242,8 @@ export function SkillsPage() {
         scan={scan}
         tools={tools}
         hasVault={Boolean(vaultId)}
+        update={updateInfo}
+        onCheckUpdates={() => void refreshUpdates(true)}
       />
 
       <main className="skills-main" data-testid="skills-main" aria-label="技能内容">

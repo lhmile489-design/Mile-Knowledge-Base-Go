@@ -154,6 +154,12 @@ echo "== AC-PAGE-2: switch, subview, Esc, back with focus"
 click '[data-testid="open-skills"]'
 wait_match "skills page open" "document.querySelector('[data-testid=\"skills-page\"]') !== null" '"value":true' 20
 check "page fills below the title bar" "(() => { const r=document.querySelector('[data-testid=\"skills-page\"]').getBoundingClientRect(); return r.top >= 40 && r.width > window.innerWidth - 24; })()" '"value":true'
+check "workbench stays inert under the page" "document.querySelector('[data-testid=\"workbench-host\"]')?.hasAttribute('inert') === true" '"value":true'
+check "page covers the workbench opaquely" "(() => { const host=document.querySelector('[data-testid=\"skills-host\"]'); const hit=document.elementFromPoint(Math.round(window.innerWidth/2), Math.round(window.innerHeight/2)); return getComputedStyle(host).backgroundColor !== 'rgba(0, 0, 0, 0)' && !hit?.closest('[data-testid=\"workbench-host\"]'); })()" '"value":true'
+wait_match "update check entry" "!!document.querySelector('[data-testid=\"skills-check-updates\"]')" '"value":true' 20
+click '[data-testid="skills-check-updates"]'
+sleep 0.6
+check "manual update check stays usable" "(() => { const b=document.querySelector('[data-testid=\"skills-check-updates\"]'); return !!b && !b.disabled; })()" '"value":true'
 wait_match "kb cards" "document.querySelector('[data-testid^=\"kb-card-\"]') !== null" '"value":true' 40
 ev "(() => { const card=document.querySelector('[data-testid^=\"kb-card-\"]'); const b=[...card.querySelectorAll('button')].find((x)=>x.textContent.trim()==='分发'); if(!b) throw new Error('missing distribute'); b.click(); return true; })()" >/dev/null
 wait_match "distribute subview" "document.querySelector('[data-testid=\"distribute-dialog\"]') !== null" '"value":true' 20
