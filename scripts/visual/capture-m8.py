@@ -10,6 +10,7 @@ Usage (from the repo root, with no other Mile Knowledge Base instance):
 """
 
 import importlib.util
+import ctypes
 import io
 import json
 import os
@@ -105,6 +106,9 @@ def motion_off():
 
 def save(name):
     time.sleep(1.2)
+    # Park the pointer outside the window so no card keeps its hover state.
+    ctypes.windll.user32.SetCursorPos(0, 0)
+    time.sleep(0.2)
     png = APP.driver.capture()
     (SHOTS / f"{name}.png").write_bytes(png)
     log(f"  captured {name}")
