@@ -1085,7 +1085,8 @@
 .skills-page[data-glass='off'] .restore-banner,
 .skills-page[data-glass='off'] .kb-batchbar,
 .skills-page[data-glass='off'] .skills-subview-foot,
-.skills-page[data-glass='off'] .skills-subview-card {
+.skills-page[data-glass='off'] .skills-subview-card,
+.skills-page[data-glass='off'] .skills-modal {
   background: var(--raw-card);
   box-shadow: none;
   -webkit-backdrop-filter: none;
@@ -1109,7 +1110,8 @@
   .skills-page .restore-banner,
   .skills-page .kb-batchbar,
   .skills-page .skills-subview-foot,
-  .skills-page .skills-subview-card {
+  .skills-page .skills-subview-card,
+  .skills-page .skills-modal {
     background: var(--raw-card);
     box-shadow: none;
     -webkit-backdrop-filter: none;
@@ -1284,4 +1286,140 @@
   height: 24px;
   padding: 0 8px;
   font-size: var(--text-caption);
+}
+
+/* ---------- 居中弹窗外壳（M9 T01；DESIGN 14.2–14.4） ---------- */
+.skills-page .skills-modal-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--raw-canvas) 40%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: skills-fade 240ms var(--ease-out-expo) both;
+}
+
+.skills-page .skills-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, calc(100% - 32px));
+  max-height: calc(100% - 48px);
+  overflow: hidden;
+  border: 1px solid var(--raw-line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
+  animation: skills-pop var(--dur-enter) var(--ease-spring-soft) both;
+}
+
+.skills-page .skills-modal:focus {
+  outline: none;
+}
+
+.skills-page .skills-modal-head {
+  display: grid;
+  gap: 12px;
+  flex: none;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+}
+
+.skills-page .skills-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skills-page .skills-modal-title h3 {
+  margin: 0;
+  font-size: var(--text-title);
+  font-weight: 650;
+  color: var(--raw-strong);
+}
+
+.skills-page .skills-modal-step {
+  font-size: var(--text-meta);
+  color: var(--raw-faint);
+}
+
+.skills-page .skills-modal-title .icon-btn {
+  margin-left: auto;
+}
+
+.skills-page .skills-modal-title .icon-btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.skills-page .skills-modal-head .segmented {
+  justify-self: start;
+}
+
+/* 正文用纵向 flex：overflow:hidden 的列表放在高度受限的网格里最小高度会算成 0
+   而被压扁，所以子项一律不压缩，由正文自己滚动。 */
+.skills-page .skills-modal-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 14px;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 18px 18px;
+}
+
+.skills-page .skills-modal-body > * {
+  flex: none;
+}
+
+.skills-page .skills-modal-foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+  background: color-mix(in srgb, var(--raw-card) 50%, transparent);
+  font-size: var(--text-body-sm);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-modal-foot button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.skills-page[data-glass='off'] .skills-modal-scrim {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .skills-page .skills-modal-scrim {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@keyframes skills-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes skills-pop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
