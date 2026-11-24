@@ -188,9 +188,9 @@ fill() {
   ev "(() => { const el=document.querySelector('[data-testid=\"$1\"]'); if(!el) throw new Error('missing'); const setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set; setter.call(el,$(jsq "$2")); el.dispatchEvent(new Event('input',{bubbles:true})); return true; })()" >/dev/null
 }
 close_banner() { ev "(() => { const b = document.querySelector('[data-testid=\"skills-banner-close\"]'); if (b) b.click(); return true; })()" >/dev/null; }
-open_panel() { ev "window.__mkbApp.getState().openSkillsPanel(); true" >/dev/null; wait_match "panel open" "document.querySelector('[data-testid=\"skills-panel\"]') !== null" '"value":true' 20; }
-open_tools() { ev "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('工具技能')); if(tab) tab.click(); return true; })()" >/dev/null; sleep 0.5; }
-open_kb() { ev "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('知识库技能')); if(tab) tab.click(); return true; })()" >/dev/null; sleep 0.5; }
+open_panel() { ev "window.__mkbApp.getState().showPage('skills'); true" >/dev/null; wait_match "skills page open" "document.querySelector('[data-testid=\"skills-page\"]') !== null" '"value":true' 20; }
+open_tools() { ev "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部工具\"]'); if(b) b.click(); return true; })()" >/dev/null; sleep 0.5; }
+open_kb() { ev "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部技能\"]'); if(b) b.click(); return true; })()" >/dev/null; sleep 0.5; }
 try_index() { wait_match "index" "!document.body.innerText.includes('未索引')" '"value":true' 90; }
 target_id() {
   ev "(() => { const row=[...document.querySelectorAll('[data-testid^=\"target-row-t-\"]')].find((el)=>el.textContent.includes($(jsq "$1"))); return row ? row.getAttribute('data-testid').slice('target-row-'.length) : ''; })()" | grep -o '"value":"[^"]*"' | cut -d'"' -f4
@@ -245,7 +245,7 @@ wait_match "A overview" "document.querySelector('[data-testid=\"overview-grid\"]
 try_index
 open_panel
 open_tools
-click '[data-testid="manage-targets"]'
+click '[data-testid="skills-nav"] button[title="管理目录…"]'
 wait_match "A targets view" "document.querySelector('[data-testid=\"targets-view\"]') !== null" '"value":true' 20
 click '[data-testid="targets-add-custom"]'
 wait_match "A custom form" "document.querySelector('[data-testid=\"target-name\"]') !== null" '"value":true' 20
@@ -284,7 +284,7 @@ set_mode "拷贝"
 submit_distribute
 
 # GitHub skill straight into Claude Code.
-click '.skills-install'
+click '[data-testid="kb-install-top"]'
 wait_match "A install view" "document.querySelector('[data-testid=\"install-github\"]') !== null" '"value":true' 30
 click '[data-testid="install-github"]' >/dev/null
 fill install-github-input "anthropics/skills"
@@ -349,7 +349,7 @@ wait_match "B overview" "document.querySelector('[data-testid=\"overview-grid\"]
 try_index
 open_panel
 open_tools
-click '[data-testid="manage-targets"]'
+click '[data-testid="skills-nav"] button[title="管理目录…"]'
 wait_match "B targets view" "document.querySelector('[data-testid=\"targets-view\"]') !== null" '"value":true' 20
 click '[data-testid="targets-add-project"]'
 wait_match "B project form" "document.querySelector('[data-testid=\"target-name\"]') !== null" '"value":true' 20
@@ -400,7 +400,7 @@ click '[data-testid="restore-done"]'
 sleep 0.5
 
 # --- AC-SKM-24: corrupt manifest, banner, rebuild ---------------------------
-ev "window.__mkbApp.getState().closeSkillsPanel(); true" >/dev/null
+ev "window.__mkbApp.getState().showPage('work'); true" >/dev/null
 python -I - "$(manifest_path "$VAULT_B")" <<'PY'
 import sys
 path = sys.argv[1]

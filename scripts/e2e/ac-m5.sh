@@ -208,9 +208,9 @@ click() { ev "(() => { const el = document.querySelector($(jsq "$1")); if (!el) 
 fill() { # testid value
   ev "(() => { const el=document.querySelector('[data-testid=\"$1\"]'); if(!el) throw new Error('missing'); const setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set; setter.call(el,$(jsq "$2")); el.dispatchEvent(new Event('input',{bubbles:true})); return true; })()" >/dev/null
 }
-open_panel() { ev "window.__mkbApp.getState().openSkillsPanel(); true" >/dev/null; wait_match "panel open" "document.querySelector('[data-testid=\"skills-panel\"]') !== null" '"value":true' 20; }
+open_panel() { ev "window.__mkbApp.getState().showPage('skills'); true" >/dev/null; wait_match "skills page open" "document.querySelector('[data-testid=\"skills-page\"]') !== null" '"value":true' 20; }
 open_install() {
-  ev "(() => { const b=[...document.querySelectorAll('[data-testid=\"skills-panel\"] button')].find((x)=>x.textContent.trim()==='安装'); if(!b) throw new Error('missing install'); b.click(); return true; })()" >/dev/null
+  ev "(() => { const b=document.querySelector('[data-testid=\"kb-install-top\"]'); if(!b) throw new Error('missing install'); b.click(); return true; })()" >/dev/null
   wait_match "install view" "document.querySelector('[data-testid=\"install-github\"]') !== null" '"value":true' 30
 }
 github_read() { # address wait-label

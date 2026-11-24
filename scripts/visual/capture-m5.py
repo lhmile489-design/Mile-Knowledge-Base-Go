@@ -261,13 +261,13 @@ def main():
         })()"""
 
         def states(theme):
-            driver.js("window.__mkbApp.getState().openSkillsPanel(); true")
-            driver.wait("!!document.querySelector('[data-testid=\"skills-panel\"]')", 20)
+            driver.js("window.__mkbApp.getState().showPage('skills'); true")
+            driver.wait("!!document.querySelector('[data-testid=\"skills-page\"]')", 20)
             time.sleep(0.4)
             # The panel remembers its last tab; both passes start on the KB page.
-            click_text('[data-testid="skills-panel"]', "知识库技能")
+            click_text('[data-testid="skills-nav"]', "全部技能")
             time.sleep(0.4)
-            click_text('[data-testid="skills-panel"]', "安装")
+            driver.js("document.querySelector('[data-testid=\"kb-install-top\"]').click(); true")
             driver.wait("!!document.querySelector('[data-testid=\"install-github\"]')", 20)
 
             click('[data-testid="install-github"]')
@@ -328,7 +328,7 @@ def main():
             click('[data-testid="update-cancel"]')
             time.sleep(0.4)
 
-            click_text('[data-testid="skills-panel"]', "工具技能")
+            click_text('[data-testid="skills-nav"]', "全部工具")
             driver.wait("!!document.querySelector('[data-testid=\"tool-skill-pdf-claude-code\"]')", 20)
             click('[data-testid="tool-update-pdf-claude-code"]')
             driver.wait("!!document.querySelector('[data-testid=\"tool-update-dialog\"]')", 10)

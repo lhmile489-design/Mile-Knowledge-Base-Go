@@ -130,12 +130,12 @@ def main():
             driver.js(cap.js_set_value(f'[data-testid="{testid}"]', value, "input"))
 
         def open_targets():
-            driver.js("window.__mkbApp.getState().openSkillsPanel(); true")
-            driver.wait("!!document.querySelector('[data-testid=\"skills-panel\"]')", 20)
+            driver.js("window.__mkbApp.getState().showPage('skills'); true")
+            driver.wait("!!document.querySelector('[data-testid=\"skills-page\"]')", 20)
             time.sleep(0.4)
-            click_text('[data-testid="skills-panel"]', "工具技能")
+            click_text('[data-testid="skills-nav"]', "全部工具")
             time.sleep(0.4)
-            click('[data-testid="manage-targets"]')
+            click('[data-testid="skills-nav"] button[title="管理目录…"]')
             driver.wait("!!document.querySelector('[data-testid=\"targets-view\"]')", 20)
             time.sleep(0.4)
 

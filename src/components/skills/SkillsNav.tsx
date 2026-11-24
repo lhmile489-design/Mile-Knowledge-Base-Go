@@ -80,7 +80,7 @@ export function SkillsNav({ selection, onSelect, scan, tools, hasVault }: Skills
         <p className="skills-nav-sub">知识库是源，工具目录是去处</p>
       </div>
 
-      <nav className="skills-nav-list" aria-label="技能导航">
+      <nav className="skills-nav-list" aria-label="技能导航" data-testid="skills-nav">
         <div className="skills-nav-group">知识库</div>
         {item("kb:all", { kind: "kb", category: null }, <Stack size={16} />, "全部技能", counts.kb)}
         {hasVault
@@ -133,6 +133,9 @@ export function SkillsNav({ selection, onSelect, scan, tools, hasVault }: Skills
         ) : (
           <div className="skills-nav-attention">打开知识库后显示分发进度</div>
         )}
+        <div className="skills-nav-status" data-testid="skills-status">
+          {scan?.scanning ? "后台扫描中…" : scan ? `上次扫描 ${scan.cachedAt}` : "尚未扫描"}
+        </div>
       </div>
     </aside>
   );

@@ -139,11 +139,11 @@ fill() { # testid value
   ev "(() => { const el=document.querySelector('[data-testid=\"$1\"]'); if(!el) throw new Error('missing'); const setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set; setter.call(el,$(jsq "$2")); el.dispatchEvent(new Event('input',{bubbles:true})); return true; })()" >/dev/null
 }
 close_banner() { ev "(() => { const b = document.querySelector('[data-testid=\"skills-banner-close\"]'); if (b) b.click(); return true; })()" >/dev/null; }
-open_panel() { ev "window.__mkbApp.getState().openSkillsPanel(); true" >/dev/null; wait_match "panel open" "document.querySelector('[data-testid=\"skills-panel\"]') !== null" '"value":true' 20; }
-open_tools() { ev "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('工具技能')); if(tab) tab.click(); return true; })()" >/dev/null; sleep 0.5; }
-open_kb() { ev "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('知识库技能')); if(tab) tab.click(); return true; })()" >/dev/null; sleep 0.5; }
+open_panel() { ev "window.__mkbApp.getState().showPage('skills'); true" >/dev/null; wait_match "skills page open" "document.querySelector('[data-testid=\"skills-page\"]') !== null" '"value":true' 20; }
+open_tools() { ev "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部工具\"]'); if(b) b.click(); return true; })()" >/dev/null; sleep 0.5; }
+open_kb() { ev "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部技能\"]'); if(b) b.click(); return true; })()" >/dev/null; sleep 0.5; }
 open_targets() {
-  click '[data-testid="manage-targets"]'
+  click '[data-testid="skills-nav"] button[title="管理目录…"]'
   wait_match "targets view" "document.querySelector('[data-testid=\"targets-view\"]') !== null" '"value":true' 20
 }
 target_id() { # name fragment → t-xxx
@@ -240,7 +240,7 @@ CUSTOM_BEFORE=$(hash_dir "$CUSTOM")
 
 open_tools
 click "[data-testid=\"tool-chip-$CUSTOM_TID\"]"
-open_targets_from_tools() { click '[data-testid="manage-targets"]'; wait_match "targets view 2" "document.querySelector('[data-testid=\"targets-view\"]') !== null" '"value":true' 20; }
+open_targets_from_tools() { click '[data-testid="skills-nav"] button[title="管理目录…"]'; wait_match "targets view 2" "document.querySelector('[data-testid=\"targets-view\"]') !== null" '"value":true' 20; }
 open_targets_from_tools
 click "[data-testid=\"target-remove-$CUSTOM_TID\"]"
 wait_match "remove dialog" "document.querySelector('[data-testid=\"target-remove-dialog\"]') !== null" '"value":true' 20
@@ -256,10 +256,10 @@ wait_match "custom chip gone" "[...document.querySelectorAll('[data-testid^=\"to
 check "project chip remains" "document.querySelector('[data-testid=\"tool-chip-$PROJECT_TID\"]') !== null" '"value":true'
 
 # --- settings entry opens the manager directly ------------------------------
-ev "window.__mkbApp.getState().closeSkillsPanel(); true" >/dev/null
+ev "window.__mkbApp.getState().showPage('work'); true" >/dev/null
 ev "window.__mkbApp.getState().openTargetsManager(); true" >/dev/null
 wait_match "manager via settings entry" "document.querySelector('[data-testid=\"targets-view\"]') !== null" '"value":true' 20
-ev "window.__mkbApp.getState().closeSkillsPanel(); true" >/dev/null
+ev "window.__mkbApp.getState().showPage('work'); true" >/dev/null
 stop_app
 
 # --- real tool directories unchanged ----------------------------------------

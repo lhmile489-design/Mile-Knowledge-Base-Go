@@ -40,6 +40,7 @@ export function ToolSkillsPage({
   onResult,
   onManageTargets,
   onOpenRestore,
+  onInstall,
 }: {
   readonly vaultId: string;
   readonly groups: SkillToolScan[];
@@ -48,6 +49,7 @@ export function ToolSkillsPage({
   readonly onResult?: (lines: string[]) => void;
   readonly onManageTargets?: () => void;
   readonly onOpenRestore?: () => void;
+  readonly onInstall?: () => void;
 }) {
   const [chip, setChip] = useState("all");
   const [showHidden, setShowHidden] = useState(false);
@@ -186,6 +188,14 @@ export function ToolSkillsPage({
           管理目录
         </button>
       </div>
+      {onInstall ? (
+        <div className="tool-toolbar">
+          <span className="spacer" />
+          <button type="button" className="btn-primary" data-testid="kb-install-top" onClick={onInstall}>
+            安装
+          </button>
+        </div>
+      ) : null}
       <div className="tool-chips" role="tablist" aria-label="工具筛选">
         <button
           type="button"

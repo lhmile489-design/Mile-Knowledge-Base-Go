@@ -97,14 +97,13 @@ describe("page switch pill (M8 T02)", () => {
     expect(screen.getByRole("navigation", { name: "页面" })).toBeTruthy();
   });
 
-  // Transitional until T09 rewrites the e2e entry: with settings open the
-  // legacy floating panel still opens above it (AC-SKM-11).
-  it("opens the floating panel over settings until the entry migration", () => {
+  // Settings open: the request parks in pendingPage and the settings page's
+  // leave guard decides (PRD Q-PAGE-1 / AC-PAGE-3).
+  it("parks the switch behind the settings leave guard", () => {
     useAppStore.setState({ settingsOpen: true });
     render(<PageSwitch />);
     fireEvent.click(screen.getByRole("button", { name: "技能" }));
-    expect(useAppStore.getState().skillsPanelOpen).toBe(true);
     expect(useAppStore.getState().page).toBe("work");
-    expect(useAppStore.getState().pendingPage).toBeNull();
+    expect(useAppStore.getState().pendingPage).toBe("skills");
   });
 });

@@ -55,13 +55,22 @@ export function SkillsPage() {
     void useSkillsStore.getState().refresh(vaultId);
   };
 
+  // Q-SKM-2: entering the page checks for updates (cached for 60 minutes).
+  const checkUpdates = () => {
+    if (vaultId) void skillsApi.checkUpdates(vaultId, false).catch(() => undefined);
+  };
+
   useEffect(() => {
     refreshScan();
+    checkUpdates();
     // A vault switch can drop the selected category or tool; fall back to all.
     setSelection((current) =>
       current.kind === "kb" && current.category ? { kind: "kb", category: null } : current,
     );
-    return subscribeSkillsChanged(() => refreshScan());
+    return subscribeSkillsChanged(() => {
+      refreshScan();
+      checkUpdates();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vaultId]);
 
@@ -217,6 +226,7 @@ export function SkillsPage() {
       <SkillsNav
         selection={selection}
         onSelect={(next) => {
+          setDistributePaths(null);
           setInstallOpen(false);
           setUpdatePath(null);
           setRestoreOpen(false);
@@ -341,6 +351,12 @@ export function SkillsPage() {
                   tools={tools}
                   onChanged={refreshScan}
                   onResult={(lines) => setResultLines(lines)}
+                  onInstall={() => {
+                    setDistributePaths(null);
+                    setUpdatePath(null);
+                    setRestoreOpen(false);
+                    setInstallOpen(true);
+                  }}
                 />
               ) : (
                 <div className="skills-empty" data-testid="skills-no-vault">

@@ -100,26 +100,6 @@ start_app() { # extra env NAME=VALUE ...
   APP_PID=$(powershell -NoProfile -Command "(Get-Process -Name 'Mile Knowledge Base' | Sort-Object StartTime -Descending | Select-Object -First 1).Id" | tr -d '\r')
 }
 
-# The automation driver never activates the window; focus-dependent assertions
-# (AC-SKM-11) only work when WebView2 is in the foreground.
-foreground_app() {
-  [ -n "${APP_PID:-}" ] || return 0
-  cat > "$WORK/focus.ps1" <<'PS'
-param([int]$ProcId)
-Add-Type -Namespace Win -Name Fg -MemberDefinition @'
-[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
-[DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-'@
-$p = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
-if ($p -and $p.MainWindowHandle -ne 0) {
-  [Win.Fg]::ShowWindow($p.MainWindowHandle, 9) | Out-Null
-  [Win.Fg]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
-}
-try { (New-Object -ComObject WScript.Shell).AppActivate($ProcId) | Out-Null } catch {}
-PS
-  powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/focus.ps1")" -ProcId "$APP_PID" >/dev/null 2>&1
-  sleep 0.5
-}
 stop_app() {
   if [ -n "${APP_PID:-}" ]; then powershell -NoProfile -Command "Stop-Process -Id $APP_PID -Force" >/dev/null 2>&1; fi
   APP_PID=""
@@ -150,9 +130,9 @@ wait_match() {
 jsq() { python -I -c "import json,sys;print(json.dumps(sys.argv[1]))" "$1"; }
 click() { ev "(() => { const el = document.querySelector($(jsq "$1")); if (!el) throw new Error('missing'); el.click(); return true; })()"; }
 close_banner() { ev "(() => { const b = document.querySelector('[data-testid=\"skills-banner-close\"]'); if (b) b.click(); return true; })()" >/dev/null; }
-open_panel() { ev "window.__mkbApp.getState().openSkillsPanel(); true" >/dev/null; wait_match "panel open" "document.querySelector('[data-testid=\"skills-panel\"]') !== null" '"value":true' 20; }
-open_tools() { ev "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('工具技能')); if(tab) tab.click(); return true; })()" >/dev/null; sleep 0.5; }
-open_kb() { ev "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('知识库技能')); if(tab) tab.click(); return true; })()" >/dev/null; sleep 0.5; }
+open_panel() { ev "window.__mkbApp.getState().showPage('skills'); true" >/dev/null; wait_match "skills page open" "document.querySelector('[data-testid=\"skills-page\"]') !== null" '"value":true' 20; }
+open_tools() { ev "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部工具\"]'); if(b) b.click(); return true; })()" >/dev/null; sleep 0.5; }
+open_kb() { ev "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部技能\"]'); if(b) b.click(); return true; })()" >/dev/null; sleep 0.5; }
 card_distribute() { # category name
   ev "(() => { const card=document.querySelector('[data-testid=\"kb-grid-$1\"] [data-testid=\"kb-card-$2\"]'); const b=card && [...card.querySelectorAll('button')].find((x)=>x.textContent.trim()==='分发'); if(!b) throw new Error('missing distribute'); b.click(); return true; })()" >/dev/null
   wait_match "distribute dialog" "document.querySelector('[data-testid=\"distribute-dialog\"]') !== null" '"value":true' 20
@@ -223,7 +203,7 @@ wait_match "AC-SKM-6 uninstall new" "document.querySelector('[data-testid=\"unin
 click '[data-testid="uninstall-confirm"]'
 wait_match "AC-SKM-6 removed new" "document.querySelector('[data-testid=\"skills-banner\"]') !== null" '"value":true' 30
 close_banner
-ev "(() => { const b=[...document.querySelectorAll('[data-testid=\"skills-panel\"] button')].find((x)=>x.textContent.trim()==='安装'); if(b) b.click(); return true; })()" >/dev/null
+ev "(() => { const b=document.querySelector('[data-testid=\"kb-install-top\"]'); if(b) b.click(); return true; })()" >/dev/null
 wait_match "install view" "document.querySelector('[data-testid=\"install-records\"]') !== null" '"value":true' 20
 click '[data-testid^="install-restore-"]'
 wait_match "AC-SKM-6 restore" "document.querySelector('[data-testid=\"install-notice\"]') !== null" '"value":true' 30
@@ -252,7 +232,7 @@ click '[data-testid="uninstall-confirm"]'
 wait_match "AC-SKM-8 removed" "document.querySelector('[data-testid=\"skills-banner\"]') !== null" '"value":true' 30
 close_banner
 [ ! -e "$HOME_DIR/.claude/skills/indepone" ] && { pass=$((pass+1)); echo "PASS AC-SKM-8 backed up"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-8 not removed"; }
-ev "(() => { const b=[...document.querySelectorAll('[data-testid=\"skills-panel\"] button')].find((x)=>x.textContent.trim()==='安装'); if(b) b.click(); return true; })()" >/dev/null
+ev "(() => { const b=document.querySelector('[data-testid=\"kb-install-top\"]'); if(b) b.click(); return true; })()" >/dev/null
 wait_match "AC-SKM-8 records" "document.querySelector('[data-testid=\"install-records\"]') !== null" '"value":true' 20
 click '[data-testid^="install-restore-"]'
 wait_match "AC-SKM-8 restore" "document.querySelector('[data-testid=\"install-notice\"]') !== null" '"value":true' 30
@@ -283,27 +263,10 @@ check "AC-SKM-10 no uninstall for builtin" "document.querySelector('[data-testid
 REJECT=$(ev "window.__mkbApi.skills.uninstall('trae','builtinone').then(()=> 'unexpected').catch((e)=>String(e.code||e.message))")
 echo "$REJECT" | grep -q 'skill-protected' && { pass=$((pass+1)); echo "PASS AC-SKM-10 api rejects"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-10 api rejects :: $REJECT"; }
 
-# AC-SKM-11: panel over settings; Esc returns from the subview, then closes.
-ev "window.__mkbApp.getState().closeSkillsPanel(); true" >/dev/null
-ev "window.__mkbApp.getState().openSettings(); true" >/dev/null
-wait_match "settings open" "document.querySelector('[data-panel=\"settings-nav\"]') !== null" '"value":true' 30
-foreground_app
-click '[data-testid="open-skills"]'
-wait_match "AC-SKM-11 panel over settings" "document.querySelector('[data-testid=\"skills-panel\"]') !== null" '"value":true' 20
-open_kb
-card_distribute "前端" "vue"
-ev "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); true" >/dev/null
-sleep 0.4
-check "AC-SKM-11 first Esc back to list" "document.querySelector('[data-testid=\"distribute-dialog\"]') === null && document.querySelector('[data-testid=\"skills-panel\"]') !== null" '"value":true'
-ev "(() => { const pill=document.querySelector('[data-testid=\"open-skills\"]'); window.__pillFocused=false; if (pill) pill.addEventListener('focus', () => { window.__pillFocused = true; }, { once: true }); return true; })()" >/dev/null
-ev "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); true" >/dev/null
-sleep 0.4
-check "AC-SKM-11 second Esc closes" "document.querySelector('[data-testid=\"skills-panel\"]') === null" '"value":true'
-# WebView2 keeps document.activeElement on body while the window itself is in
-# the background, so assert the focus() call landed on the pill instead.
-wait_match "AC-SKM-11 focus back on pill" "window.__pillFocused === true" '"value":true' 20
-check "AC-SKM-11 no sidebar import entry" "document.body.innerText.indexOf('导入技能') < 0" '"value":true'
-ev "window.__mkbApp.getState().closeSettings(); true" >/dev/null
+# AC-SKM-11 was replaced by AC-PAGE-2 (M8 T10): the old floating panel over
+# settings no longer exists; the page switch goes through the settings leave
+# guard instead. Only the sidebar assertion remains here.
+check "no sidebar import entry" "document.body.innerText.indexOf('导入技能') < 0" '"value":true'
 stop_app
 
 # --- AC-SKM-4: junction failure falls back to copy --------------------------

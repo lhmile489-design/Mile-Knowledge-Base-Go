@@ -140,7 +140,7 @@ export function OverviewGrid() {
           type="button"
           className="overview-tile overview-button"
           data-testid="overview-skills"
-          onClick={() => useAppStore.getState().openSkillsPanel()}
+          onClick={() => useAppStore.getState().showPage("skills")}
         >
           <span className="overview-title">技能分类</span>
           <span className="overview-main">{skillCategories}</span>

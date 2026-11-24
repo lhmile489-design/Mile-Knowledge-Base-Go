@@ -231,7 +231,8 @@
   .skills-page .skills-nav-label,
   .skills-page .skills-nav-count,
   .skills-page .skills-nav-progress,
-  .skills-page .skills-nav-attention {
+  .skills-page .skills-nav-attention,
+  .skills-page .skills-nav-status {
     display: none;
   }
 
@@ -1099,4 +1100,17 @@
   .skills-page .kb-card:hover .kb-card-stack .tool-icon:first-child {
     margin-left: 0;
   }
+}
+
+.skills-page .skills-nav-status {
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.skills-page .tool-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }

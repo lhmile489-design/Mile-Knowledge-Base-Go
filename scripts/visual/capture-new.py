@@ -552,10 +552,10 @@ def main():
               const parse = (s) => (s.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
               const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126*f(c[0])+0.7152*f(c[1])+0.0722*f(c[2]); };
               const ratio = (a, b) => { const x = lum(parse(a)), y = lum(parse(b)); const hi = Math.max(x, y), lo = Math.min(x, y); return (hi + 0.05) / (lo + 0.05); };
-              const panel = document.querySelector('[data-testid="skills-panel"]');
+              const panel = document.querySelector('[data-testid="skills-page"]');
               if (!panel) return '[]';
               const bg = getComputedStyle(panel).backgroundColor;
-              const pick = ['.skills-foot span', '.kb-group-title', '.kb-card-desc', '.tool-row-path', '.skills-tabs .segmented-item[aria-selected="true"]'];
+              const pick = ['.skills-nav-status', '.kb-group-title', '.kb-card-desc', '.tool-row-path', '.skills-nav-item[aria-current="page"]'];
               return JSON.stringify(pick.map((sel) => { const el = panel.querySelector(sel); return el ? [sel, +ratio(getComputedStyle(el).color, bg).toFixed(2)] : [sel, null]; }));
             })()"""
 
@@ -563,16 +563,16 @@ def main():
                 d.js("window.__mkbApp.getState().closeSkillsPanel(); true")
                 time.sleep(0.4)
                 cap(f"closed-{theme}")
-                d.js("window.__mkbApp.getState().openSkillsPanel(); true")
+                d.js("window.__mkbApp.getState().showPage('skills'); true")
                 time.sleep(0.5)
                 d.js(
-                    "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('知识库技能')); if(tab) tab.click(); return true; })()"
+                    "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部技能\"]'); if(b) b.click(); return true; })()"
                 )
                 d.wait("document.querySelector('[data-testid=\"kb-card-vue\"]') !== null", 30)
                 time.sleep(0.8)
                 log(f"  contrast {theme}: " + str(d.js(CONTRAST_JS)))
                 cap(f"kb-{theme}")
-                d.js("(() => { const b=document.querySelector('[data-testid=\"kb-batch-toggle\"]'); if(b) b.click(); return true; })()")
+                d.js("(() => { const k=document.querySelector('[aria-label^=\"更多操作：\"]'); if(k) k.click(); const b=document.querySelector('[data-testid=\"kb-batch-toggle\"]'); if(b) b.click(); return true; })()")
                 time.sleep(0.4)
                 d.js(
                     "(() => { const boxes=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=checkbox][aria-label^=\"选择 \"]')];"
@@ -580,15 +580,15 @@ def main():
                 )
                 time.sleep(0.4)
                 cap(f"kb-select-{theme}")
-                d.js("(() => { const b=document.querySelector('[data-testid=\"kb-batch-toggle\"]'); if(b) b.click(); return true; })()")
+                d.js("(() => { const k=document.querySelector('[aria-label^=\"更多操作：\"]'); if(k) k.click(); const b=document.querySelector('[data-testid=\"kb-batch-toggle\"]'); if(b) b.click(); return true; })()")
                 time.sleep(0.3)
                 d.js(
-                    "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('工具技能')); if(tab) tab.click(); return true; })()"
+                    "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部工具\"]'); if(b) b.click(); return true; })()"
                 )
                 time.sleep(0.7)
                 cap(f"tools-{theme}")
                 d.js(
-                    "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('知识库技能')); if(tab) tab.click(); return true; })()"
+                    "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部技能\"]'); if(b) b.click(); return true; })()"
                 )
                 time.sleep(0.6)
                 d.js(
@@ -603,7 +603,7 @@ def main():
                 )
                 time.sleep(0.3)
                 d.js(
-                    "(() => { const tab=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=tab]')].find((t)=>t.textContent.includes('工具技能')); if(tab) tab.click(); return true; })()"
+                    "(() => { const b=document.querySelector('[data-testid=\"skills-nav\"] button[title=\"全部工具\"]'); if(b) b.click(); return true; })()"
                 )
                 time.sleep(0.6)
                 d.js("(() => { const b=document.querySelector('[data-testid=\"tool-uninstall-copiedone\"]'); if(b) b.click(); return true; })()")
@@ -623,7 +623,7 @@ def main():
                 )
                 time.sleep(0.3)
                 d.js(
-                    "(() => { const b=[...document.querySelectorAll('[data-testid=\"skills-panel\"] button')].find((x)=>x.textContent.trim()==='安装'); if(b) b.click(); return true; })()"
+                    "(() => { const b=document.querySelector('[data-testid=\"kb-install-top\"]'); if(b) b.click(); return true; })()"
                 )
                 d.wait("document.querySelector('[data-testid=\"install-local\"]') !== null", 10)
                 time.sleep(0.6)
@@ -657,8 +657,8 @@ def main():
                 d2.connect(40)
                 d2.wait("!!document.querySelector('.welcome-shell')", 60)
                 time.sleep(1.0)
-                d2.js("window.__mkbApp.getState().openSkillsPanel(); true")
-                d2.wait("document.querySelector('[data-testid=\"skills-panel\"]') !== null", 20)
+                d2.js("window.__mkbApp.getState().showPage('skills'); true")
+                d2.wait("document.querySelector('[data-testid=\"skills-page\"]') !== null", 20)
                 time.sleep(0.6)
                 png = d2.capture()
                 PILImage.open(pyio.BytesIO(png)).convert("RGB").resize((1440, 900), PILImage.LANCZOS).save(

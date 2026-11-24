@@ -13,8 +13,6 @@ const PILL_PAD = 3;
 export function PageSwitch() {
   const page = useAppStore((state) => state.page);
   const showPage = useAppStore((state) => state.showPage);
-  const settingsOpen = useAppStore((state) => state.settingsOpen);
-  const openPanel = useAppStore((state) => state.openSkillsPanel);
   const vaultId = useAppStore((state) => state.activeVaultId);
   const scan = useSkillsStore((state) => state.scan);
 
@@ -61,17 +59,6 @@ export function PageSwitch() {
   const count = badgeCount(scan);
   const skillsLabel = count > 0 ? `技能，${count} 项需要处理` : "技能";
 
-  // Transitional until T09 rewrites the e2e entry: with settings open the
-  // legacy floating panel still opens above it (AC-SKM-11). T09 replaces this
-  // with the showPage leave guard, T14 removes the panel.
-  const goSkills = () => {
-    if (settingsOpen) {
-      openPanel();
-      return;
-    }
-    showPage("skills");
-  };
-
   return (
     <nav ref={navRef} className="page-switch no-drag" aria-label="页面" data-testid="page-switch">
       <span
@@ -96,7 +83,7 @@ export function PageSwitch() {
         data-testid="open-skills"
         aria-label={skillsLabel}
         aria-current={page === "skills" ? "page" : undefined}
-        onClick={goSkills}
+        onClick={() => showPage("skills")}
       >
         <Stack size={14} aria-hidden />
         <span>技能</span>

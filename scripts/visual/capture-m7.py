@@ -204,10 +204,10 @@ def main():
             time.sleep(0.4)
 
         def open_tools():
-            driver.js("window.__mkbApp.getState().openSkillsPanel(); true")
-            driver.wait("!!document.querySelector('[data-testid=\"skills-panel\"]')", 20)
+            driver.js("window.__mkbApp.getState().showPage('skills'); true")
+            driver.wait("!!document.querySelector('[data-testid=\"skills-page\"]')", 20)
             time.sleep(0.4)
-            click_text('[data-testid="skills-panel"]', "工具技能")
+            click_text('[data-testid="skills-nav"]', "全部工具")
             time.sleep(0.6)
 
         def close_banner():
@@ -218,7 +218,7 @@ def main():
 
         def register_project_once():
             open_tools()
-            click('[data-testid="manage-targets"]')
+            click('[data-testid="skills-nav"] button[title="管理目录…"]')
             driver.wait("!!document.querySelector('[data-testid=\"targets-view\"]')", 20)
             click('[data-testid="targets-add-project"]')
             driver.wait("!!document.querySelector('[data-testid=\"target-name\"]')", 20)

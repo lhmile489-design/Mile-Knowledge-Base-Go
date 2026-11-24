@@ -14,6 +14,7 @@ vi.mock("../../lib/transport", () => {
       registry: (...args: unknown[]) => registry(...args),
       scan: (...args: unknown[]) => scan(...args),
       restorePreview: (...args: unknown[]) => restorePreview(...args),
+      checkUpdates: vi.fn(async () => ({ checkedAt: "2026-11-24T09:00:00Z", groups: 0, unchecked: 0 })),
       listTargets: vi.fn(async () => ({ items: [], dirs: [] })),
       confirmKbUpdate: vi.fn(),
       discardStage: vi.fn(async () => undefined),
