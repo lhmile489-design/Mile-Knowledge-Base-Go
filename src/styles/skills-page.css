@@ -22,6 +22,9 @@
   position: relative;
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
+  /* 1.6.1: an auto row grows with the content and the page clipped it, so
+     neither the nav nor the content area ever scrolled. */
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
   margin: 0 8px 8px;
@@ -215,9 +218,23 @@
 
 /* ---------- 主区（T04/T05 接入内容） ---------- */
 .skills-page .skills-main {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 0;
   position: relative;
+}
+
+/* Banners keep their height; the view below takes the rest and scrolls
+   inside itself (1.6.1). */
+.skills-page .skills-main > .kb-skills,
+.skills-page .skills-main > .tool-skills,
+.skills-page .skills-main > .install-view,
+.skills-page .skills-main > .targets-view,
+.skills-page .skills-main > .restore-view,
+.skills-page .skills-main > .skills-empty {
+  flex: 1 1 0%;
+  min-height: 0;
 }
 
 /* ---------- 窄窗口：导航收成 56px 图标栏（UI 稿 11.2） ---------- */
@@ -383,16 +400,47 @@
 .skills-page .kb-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
+/* 1.6.1: list mode is one row per skill. The panel-era `.kb-list .kb-card`
+   columns in skills-shared.css leaked in and split the card into a grid. */
+.skills-page .kb-list .kb-card {
+  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr) auto auto;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 0;
+  padding: 10px 44px 10px 14px;
+}
+
+.skills-page .kb-list .kb-card-top {
+  padding-right: 0;
+}
+
+.skills-page .kb-list .kb-card-desc {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.skills-page .kb-list .kb-menu-wrap {
+  top: calc(50% - 13px);
+}
+
+.skills-page .kb-list .kb-check {
+  top: calc(50% - 9px);
+}
+
+/* Rows: heading, description (takes the slack), tools, footer. The top
+   padding keeps the 1.6.0 look, when the in-flow menu anchor added an empty
+   first row plus one gap (1.6.1). */
 .skills-page .kb-card {
   position: relative;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: 8px;
   min-height: 148px;
-  padding: 14px 14px 12px;
+  padding: 22px 14px 12px;
   border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
   border-radius: var(--radius-card);
   background: var(--raw-card);
@@ -528,10 +576,16 @@
   background: var(--raw-raised);
 }
 
-.skills-page .kb-kebab {
+/* The menu anchor sits outside the card's grid flow (1.6.1); in flow it took
+   the first cell and shifted every other part of the card. */
+.skills-page .kb-menu-wrap {
   position: absolute;
   top: 8px;
   right: 8px;
+  z-index: 2;
+}
+
+.skills-page .kb-kebab {
   display: grid;
   place-items: center;
   width: 26px;
@@ -620,8 +674,8 @@
 
 .skills-page .kb-menu {
   position: absolute;
-  top: 36px;
-  right: 8px;
+  top: 30px;
+  right: 0;
   z-index: 3;
 }
 

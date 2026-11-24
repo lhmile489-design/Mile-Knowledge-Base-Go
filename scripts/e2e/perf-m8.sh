@@ -165,7 +165,7 @@ STOP = """
   const ordered = gaps.slice().sort((a, b) => a - b);
   const p95 = ordered[Math.max(0, Math.ceil(0.95 * ordered.length) - 1)] || 0;
   const slow = gaps.filter((gap) => gap > 2 * %s).length / Math.max(1, gaps.length);
-  return JSON.stringify({ frames: gaps.length, p50: ordered[Math.floor(ordered.length / 2)] || 0, p95, max: ordered[ordered.length - 1] || 0, slow });
+  return JSON.stringify({ frames: gaps.length, p50: ordered[Math.floor(ordered.length / 2)] || 0, p95, max: ordered[ordered.length - 1] || 0, slow, range: document.querySelector('.kb-content').scrollHeight - document.querySelector('.kb-content').clientHeight });
 })()""" % json.dumps(refresh)
 
 rounds = []
@@ -174,6 +174,9 @@ for round_index in range(3):
     time.sleep(6.4)
     rounds.append(json.loads(js(STOP)))
     print("scroll round %d:" % (round_index + 1), rounds[-1])
+# 1.6.1: a page that cannot scroll used to pass this gate with range 0.
+if min(round_["range"] for round_ in rounds) <= 0:
+    raise SystemExit("FAIL: .kb-content did not scroll (range 0)")
 
 SWITCH = """
 (async () => {

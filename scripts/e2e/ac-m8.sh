@@ -11,6 +11,15 @@ VAULT="$WORK/vault"; APPD="$WORK/app"; APPD2="$WORK/app-novault"; HOME_DIR="$WOR
 mkdir -p "$VAULT" "$APPD/Mile Knowledge Base" "$APPD2/Mile Knowledge Base" "$HOME_DIR/.claude/skills/demo"
 (cd "$ROOT" && go run ./cmd/genvault -kind typical -out "$(cygpath -w "$VAULT")" >/dev/null)
 printf '# demo\n\n独立技能。\n' > "$HOME_DIR/.claude/skills/demo/SKILL.md"
+# 1.6.1: enough cards that the knowledge-base view must scroll.
+python -I - "$VAULT" <<'PY'
+import os, sys
+for i in range(40):
+    d = os.path.join(sys.argv[1], "skills", "zz-scroll", "scroll-%02d" % i)
+    os.makedirs(d, exist_ok=True)
+    open(os.path.join(d, "SKILL.md"), "w", encoding="utf-8").write(
+        "---\nname: scroll-%02d\ndescription: 用于滚动与列表布局回归的技能 %02d，描述写得长一些，确认列表模式里只占一行并截断显示。\n---\n\n# scroll-%02d\n" % (i, i, i))
+PY
 REGISTRY="$WORK/registry.json"
 printf '{"uninstall": []}\n' > "$REGISTRY"
 
@@ -161,6 +170,19 @@ click '[data-testid="skills-check-updates"]'
 sleep 0.6
 check "manual update check stays usable" "(() => { const b=document.querySelector('[data-testid=\"skills-check-updates\"]'); return !!b && !b.disabled; })()" '"value":true'
 wait_match "kb cards" "document.querySelector('[data-testid^=\"kb-card-\"]') !== null" '"value":true' 40
+
+echo "== 1.6.1: the kb view scrolls and list mode keeps one row per skill"
+wait_match "scroll fixtures scanned" "document.querySelectorAll('[data-testid^=\"kb-card-scroll-\"]').length >= 40" '"value":true' 40
+check "kb content is bounded by the page" "(() => { const page=document.querySelector('[data-testid=\"skills-page\"]').getBoundingClientRect(); const r=document.querySelector('.skills-page .kb-content').getBoundingClientRect(); return r.bottom <= page.bottom + 1; })()" '"value":true'
+check "kb content scrolls (grid)" "(() => { const el=document.querySelector('.skills-page .kb-content'); el.scrollTop=0; el.scrollTop=300; const moved=el.scrollTop > 0; el.scrollTop=0; return el.scrollHeight > el.clientHeight && moved; })()" '"value":true'
+click '.skills-page .kb-view-toggle [aria-label="列表"]'
+wait_match "list mode" "document.querySelector('[data-testid=\"kb-list-zz-scroll\"]') !== null" '"value":true' 20
+check "list card is a single row" "(() => { const c=document.querySelector('[data-testid=\"kb-card-scroll-00\"]'); const [a,b,m,f]=['.kb-card-top','.kb-card-desc','.kb-card-meta','.kb-card-foot'].map((s)=>c.querySelector(s).getBoundingClientRect()); return c.getBoundingClientRect().height < 80 && a.right <= b.left + 1 && b.right <= m.left + 1 && m.right <= f.left + 1; })()" '"value":true'
+check "list name is not squeezed" "(() => { const c=document.querySelector('[data-testid=\"kb-card-scroll-00\"]'); const n=c.querySelector('.kb-card-name'); return n.scrollWidth <= n.clientWidth && c.querySelector('.kb-card-top').getBoundingClientRect().width >= 179; })()" '"value":true'
+check "kb content scrolls (list)" "(() => { const el=document.querySelector('.skills-page .kb-content'); el.scrollTop=0; el.scrollTop=300; const moved=el.scrollTop > 0; el.scrollTop=0; return el.scrollHeight > el.clientHeight && moved; })()" '"value":true'
+click '.skills-page .kb-view-toggle [aria-label="网格"]'
+wait_match "grid mode back" "document.querySelector('[data-testid=\"kb-grid-zz-scroll\"]') !== null" '"value":true' 20
+
 ev "(() => { const card=document.querySelector('[data-testid^=\"kb-card-\"]'); const b=[...card.querySelectorAll('button')].find((x)=>x.textContent.trim()==='分发'); if(!b) throw new Error('missing distribute'); b.click(); return true; })()" >/dev/null
 wait_match "distribute subview" "document.querySelector('[data-testid=\"distribute-dialog\"]') !== null" '"value":true' 20
 ev "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); true" >/dev/null
