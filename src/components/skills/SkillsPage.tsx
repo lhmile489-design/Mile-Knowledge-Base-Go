@@ -10,6 +10,7 @@ import { DistributeDialog } from "./DistributeDialog";
 import { InstallView } from "./InstallView";
 import { KbSkillsPage } from "./KbSkillsPage";
 import { RestoreView } from "./RestoreView";
+import { SkillDetailDrawer } from "./SkillDetailDrawer";
 import { SkillsNav, type SkillsSelection } from "./SkillsNav";
 import { useSkillsGlass } from "./useSkillsGlass";
 import { TargetsView } from "./TargetsView";
@@ -42,6 +43,10 @@ export function SkillsPage() {
   // Set by a batch distribute; run once the batch finished so selection ends.
   const batchFinished = useRef<(() => void) | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
+  // The open detail drawer (M9 T04): the path picks the skill; the last scan
+  // entry is kept so a rescan that drops it does not blank the drawer.
+  const [detailPath, setDetailPath] = useState<string | null>(null);
+  const detailSkillRef = useRef<KbSkill | null>(null);
   const [updatePath, setUpdatePath] = useState<string | null>(null);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restore, setRestore] = useState<SkillRestorePreview | null>(null);
@@ -72,6 +77,7 @@ export function SkillsPage() {
   useEffect(() => {
     refreshScan();
     void refreshUpdates(false);
+    setDetailPath(null);
     // A vault switch can drop the selected category or tool; fall back to all.
     setSelection((current) =>
       current.kind === "kb" && current.category ? { kind: "kb", category: null } : current,
@@ -177,6 +183,33 @@ export function SkillsPage() {
     return undefined;
   }, [scan, updatePath]);
 
+  const detailSkill = useMemo(() => {
+    if (!detailPath) return null;
+    for (const group of scan?.kb ?? []) {
+      for (const skill of group.skills) if (skill.path === detailPath) return skill;
+    }
+    return null;
+  }, [scan, detailPath]);
+  if (detailPath === null) detailSkillRef.current = null;
+  else if (detailSkill) detailSkillRef.current = detailSkill;
+  const shownDetail = detailPath ? (detailSkill ?? (detailSkillRef.current?.path === detailPath ? detailSkillRef.current : null)) : null;
+
+  // Closing from the keyboard or the button hands focus back to the card.
+  const closeDetail = () => {
+    const path = detailPath;
+    setDetailPath(null);
+    if (!path) return;
+    requestAnimationFrame(() => {
+      const cards = shellRef.current?.querySelectorAll<HTMLElement>("[data-testid^='kb-card-']") ?? [];
+      for (const card of cards) {
+        if (card.dataset.path === path) {
+          card.focus();
+          return;
+        }
+      }
+    });
+  };
+
   const groups = selection.kind === "kb" && selection.category
     ? (scan?.kb ?? []).filter((group) => group.category === selection.category)
     : (scan?.kb ?? []);
@@ -235,6 +268,7 @@ export function SkillsPage() {
       <SkillsNav
         selection={selection}
         onSelect={(next) => {
+          setDetailPath(null);
           setDistributePaths(null);
           setInstallOpen(false);
           setUpdatePath(null);
@@ -309,6 +343,8 @@ export function SkillsPage() {
                     setRestoreOpen(false);
                     setUpdatePath(skill.path);
                   }}
+                  onOpenDetail={setDetailPath}
+                  activePath={detailPath}
                 />
               ) : (
                 <div className="skills-empty" data-testid="skills-no-vault">
@@ -360,6 +396,24 @@ export function SkillsPage() {
             ) : null}
           </>
         )}
+
+        {shownDetail && vaultId && selection.kind === "kb" && !updatePath && !restoreOpen ? (
+          <SkillDetailDrawer
+            vaultId={vaultId}
+            skill={shownDetail}
+            tools={tools}
+            onClose={closeDetail}
+            onDistribute={() => setDistributePaths([shownDetail.path])}
+            onUpdate={() => {
+              setInstallOpen(false);
+              setRestoreOpen(false);
+              setUpdatePath(shownDetail.path);
+            }}
+            onEdit={() => openSkill(shownDetail.path)}
+            onLocate={() => locateSkill(shownDetail.path)}
+            onRescan={refreshScan}
+          />
+        ) : null}
       </main>
 
       {distributePaths && vaultId ? (

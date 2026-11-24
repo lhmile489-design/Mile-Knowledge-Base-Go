@@ -25,6 +25,8 @@ vi.mock("../../lib/transport", () => {
       distributePreview: (...args: unknown[]) => distributePreview(...args),
       distribute: (...args: unknown[]) => distribute(...args),
     },
+    renderApi: { document: vi.fn(async () => ({ html: "<p>预览正文</p>" })) },
+    windowApi: { openExternal: vi.fn(async () => undefined) },
     docApi: {
       read: (...args: unknown[]) => readDoc(...args),
       noteOpened: vi.fn(async () => undefined),
@@ -74,6 +76,7 @@ const scanPayload = {
   ],
 };
 
+let hashSeq = 0;
 const emptyPreview = { preview: { status: "ok", items: [], pending: 0, localOnly: [], unmatched: [], warnings: [], canRebuild: true } };
 
 beforeEach(() => {
@@ -86,7 +89,11 @@ beforeEach(() => {
   scan.mockReset().mockResolvedValue({ scan: scanPayload });
   restorePreview.mockReset().mockResolvedValue(emptyPreview);
   checkUpdates.mockReset().mockResolvedValue({ checkedAt: new Date().toISOString(), checking: false, groups: 0, unchecked: 0 });
-  readDoc.mockReset().mockResolvedValue({ doc: { text: "", revision: 1, hash: "h", size: 0 } });
+  hashSeq += 1;
+  const hash = `h${hashSeq}`;
+  readDoc.mockReset().mockImplementation(async (_vault: string, path: string) => ({
+    doc: { vaultId: "v1", path, text: "", revision: 1, hash: `${hash}-${path}`, size: 0 },
+  }));
   distributePreview.mockReset().mockResolvedValue({ items: [] });
   distribute.mockReset().mockResolvedValue({ items: [{ targetId: "claude-code", toolId: "claude-code", result: "linked" }] });
   useAppStore.setState({ activeVaultId: "v1", page: "skills" });
@@ -251,6 +258,91 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     expect(screen.getByTestId("skills-nav").closest("[inert]")).toBeNull();
     expect(screen.getByTestId("kb-card-vue")).toBe(card);
     expect(document.activeElement).toBe(opener);
+  });
+
+  it("opens the detail drawer from a card, keeps the list usable, and switches in place", async () => {
+    render(<SkillsPage />);
+    const goCard = screen.getByTestId("kb-card-go");
+    fireEvent.click(screen.getByTestId("kb-card-vue").querySelector(".kb-card-name") as HTMLElement);
+    await waitFor(() => expect(screen.getByTestId("skill-drawer").getAttribute("data-state")).toBe("ready"));
+    const drawer = screen.getByTestId("skill-drawer");
+    expect(screen.getByTestId("skills-main").contains(drawer)).toBe(true);
+    expect(screen.getByTestId("skill-drawer-path").textContent).toBe("skills/前端/vue/SKILL.md");
+    expect(readDoc).toHaveBeenCalledWith("v1", "skills/前端/vue/SKILL.md");
+    expect(screen.getByTestId("kb-card-vue").getAttribute("data-active")).toBe("true");
+    // The list is still there and not inert: it stays scrollable and clickable.
+    expect(screen.getByTestId("kb-card-go")).toBe(goCard);
+    expect(goCard.closest("[inert]")).toBeNull();
+
+    fireEvent.click(goCard.querySelector(".kb-card-name") as HTMLElement);
+    await waitFor(() => expect(screen.getByTestId("skill-drawer-path").textContent).toBe("skills/后端/go/SKILL.md"));
+    expect(screen.getByTestId("skill-drawer")).toBe(drawer);
+    expect(screen.getByTestId("kb-card-vue").getAttribute("data-active")).toBe("false");
+    expect(screen.getByTestId("kb-card-go").getAttribute("data-active")).toBe("true");
+  });
+
+  it("closes the drawer with Esc and returns focus to the card that opened it", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByTestId("kb-card-vue").querySelector(".kb-card-name") as HTMLElement);
+    await waitFor(() => expect(screen.getByTestId("skill-drawer")).toBeTruthy());
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("skill-drawer")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("kb-card-vue")));
+    expect(screen.getByTestId("kb-card-vue").getAttribute("data-active")).toBe("false");
+  });
+
+  it("closes the drawer when another navigation item is chosen", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByTestId("kb-card-vue").querySelector(".kb-card-name") as HTMLElement);
+    await waitFor(() => expect(screen.getByTestId("skill-drawer")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Cursor/ }));
+    expect(screen.queryByTestId("skill-drawer")).toBeNull();
+    expect(screen.getByTestId("tool-group-cursor")).toBeTruthy();
+    // Back on the knowledge base the drawer does not come back by itself.
+    fireEvent.click(screen.getByRole("button", { name: /全部技能/ }));
+    expect(screen.queryByTestId("skill-drawer")).toBeNull();
+  });
+
+  it("edits in the workbench from the drawer", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByTestId("kb-card-vue").querySelector(".kb-card-name") as HTMLElement);
+    await waitFor(() => expect(screen.getByTestId("skill-drawer-edit")).toBeTruthy());
+    fireEvent.click(screen.getByTestId("skill-drawer-edit"));
+    await waitFor(() => expect(useAppStore.getState().page).toBe("work"));
+  });
+
+  it("starts a distribute from the drawer and leaves the drawer open behind the dialog", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByTestId("kb-card-vue").querySelector(".kb-card-name") as HTMLElement);
+    await waitFor(() => expect(screen.getByTestId("skill-drawer")).toBeTruthy());
+    fireEvent.click(screen.getByTestId("skill-drawer-distribute"));
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "分发「vue」" })).toBeTruthy());
+    expect(screen.getByTestId("skill-drawer")).toBeTruthy();
+    expect(screen.getByTestId("skill-drawer").closest("[inert]")).not.toBeNull();
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("skills-modal")).toBeNull());
+    // Esc went to the dialog, not to the drawer.
+    expect(screen.getByTestId("skill-drawer")).toBeTruthy();
+  });
+
+  it("keeps showing the open skill when a rescan no longer lists it", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByTestId("kb-card-vue").querySelector(".kb-card-name") as HTMLElement);
+    await waitFor(() => expect(screen.getByTestId("skill-drawer")).toBeTruthy());
+    act(() =>
+      useSkillsStore.setState({
+        scan: { ...scanPayload, kb: scanPayload.kb.filter((group) => group.category !== "前端") } as never,
+      }),
+    );
+    expect(screen.getByTestId("skill-drawer").textContent).toContain("vue");
+  });
+
+  it("drops the drawer when the vault changes", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByTestId("kb-card-vue").querySelector(".kb-card-name") as HTMLElement);
+    await waitFor(() => expect(screen.getByTestId("skill-drawer")).toBeTruthy());
+    act(() => useAppStore.setState({ activeVaultId: "v2" }));
+    expect(screen.queryByTestId("skill-drawer")).toBeNull();
   });
 
   it("keeps page selection stable when the scan refreshes", () => {

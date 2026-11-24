@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { Check, DotsThree, FolderSimple, GithubLogo, ListBullets, Plus, SquaresFour } from "@phosphor-icons/react";
 import type { KbSkill, SkillCategory, SkillTool } from "../../lib/transport";
 import { remotePill, sourceOf } from "../../lib/skillRemote";
+import { skillStatus } from "../../lib/skillsView";
 import { ToolIcon } from "./ToolIcon";
 
 type View = "grid" | "list";
@@ -19,6 +20,8 @@ export function KbSkillsPage({
   onDistribute,
   onInstall,
   onUpdate,
+  onOpenDetail,
+  activePath = null,
 }: {
   readonly groups: SkillCategory[];
   readonly tools: SkillTool[];
@@ -30,6 +33,10 @@ export function KbSkillsPage({
   readonly onDistribute: (paths: string[], onFinished?: () => void) => void;
   readonly onInstall: () => void;
   readonly onUpdate: (skill: KbSkill) => void;
+  /** A click on the card body, Enter or Space opens the detail drawer. */
+  readonly onOpenDetail: (path: string) => void;
+  /** The skill whose drawer is open; its card carries the selected ring. */
+  readonly activePath?: string | null;
 }) {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<View>("grid");
@@ -203,6 +210,8 @@ export function KbSkillsPage({
                         tools={tools}
                         selecting={selecting}
                         selected={selected.has(skill.path)}
+                        active={activePath === skill.path}
+                        onOpenDetail={() => onOpenDetail(skill.path)}
                         onToggle={() => toggleSelect(skill.path)}
                         onStartSelecting={startSelecting}
                         onOpen={() => onOpenSkill(skill.path)}
@@ -250,20 +259,14 @@ export function KbSkillsPage({
   );
 }
 
-function statusOf(skill: KbSkill): { label: string; tone: "live" | "warn" | "idle" } {
-  if (!skill.distributed || skill.distributed.length === 0) return { label: "未分发", tone: "idle" };
-  if (skill.distributed.some((item) => item.sync === "vault-updated")) {
-    return { label: "知识库有更新", tone: "warn" };
-  }
-  return { label: `已分发 ${skill.distributed.length} 处`, tone: "live" };
-}
-
 function KbSkillCard({
   index,
   skill,
   tools,
   selecting,
   selected,
+  active,
+  onOpenDetail,
   onToggle,
   onStartSelecting,
   onOpen,
@@ -276,6 +279,8 @@ function KbSkillCard({
   readonly tools: SkillTool[];
   readonly selecting: boolean;
   readonly selected: boolean;
+  readonly active: boolean;
+  readonly onOpenDetail: () => void;
   readonly onToggle: () => void;
   readonly onStartSelecting: () => void;
   readonly onOpen: () => void;
@@ -284,16 +289,37 @@ function KbSkillCard({
   readonly onUpdate: () => void;
 }) {
   const [menu, setMenu] = useState(false);
-  const status = statusOf(skill);
+  const status = skillStatus(skill);
   const remote = remotePill(skill.remote);
   const updatable = skill.remote?.updateState === "update-available";
   const distributed = (skill.distributed ?? []).slice(0, 4);
   const extra = Math.max(0, (skill.distributed?.length ?? 0) - distributed.length);
 
+  // The card is the hit target; its own buttons, links, the ⋯ menu and the
+  // overwrite-style inputs keep their own behaviour. While selecting, the card
+  // toggles the selection instead of opening the drawer.
+  const activate = () => (selecting ? onToggle() : onOpenDetail());
+  const onCardClick = (event: ReactMouseEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("button, a, input, label, [role='menu']")) return;
+    activate();
+  };
+  const onCardKey = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    activate();
+  };
+
   return (
     <article
       className="kb-card"
+      tabIndex={0}
       data-selected={selected ? "true" : "false"}
+      data-active={active ? "true" : "false"}
+      data-path={skill.path}
+      onClick={onCardClick}
+      onKeyDown={onCardKey}
       data-testid={`kb-card-${skill.name}`}
       style={{ "--i": Math.min(index, 24) } as CSSProperties}
       onPointerMove={(event) => {

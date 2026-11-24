@@ -3,11 +3,19 @@ import { renderApi, TransportError } from "../lib/transport";
 import { useDocStore } from "../stores/docStore";
 import { useAppStore } from "../stores/appStore";
 
-type Props = { vaultId: string; path: string; revision: number; hash: string };
+type Props = {
+  vaultId: string;
+  path: string;
+  revision: number;
+  hash: string;
+  /** Called right before a resolved in-vault link opens a document, so a host
+   * that is not the workbench (the skill drawer) can switch to it first. */
+  onBeforeNavigate?: () => void;
+};
 
 /** Reading mode: Go renders the sanitised HTML, the page only injects it and
  * delegates clicks (PRD FR-DOC, D-004). Rendered output is cached by revision. */
-export function ReaderView({ vaultId, path, revision, hash }: Props) {
+export function ReaderView({ vaultId, path, revision, hash, onBeforeNavigate }: Props) {
   const cache = useReaderCache();
   const openDoc = useDocStore((state) => state.open);
   const setLayout = useAppStore((state) => state.setLayout);
@@ -70,6 +78,7 @@ export function ReaderView({ vaultId, path, revision, hash }: Props) {
         const status = link.dataset.status;
         const target2 = link.dataset.path ?? link.dataset.target;
         if (status === "ok" && target2) {
+          onBeforeNavigate?.();
           void openDoc(vaultId, target2).catch(() => undefined);
           void setLayout({ docCollapsed: false });
         }
@@ -78,7 +87,7 @@ export function ReaderView({ vaultId, path, revision, hash }: Props) {
     };
     host.addEventListener("click", onClick);
     return () => host.removeEventListener("click", onClick);
-  }, [html, openDoc, setLayout, vaultId]);
+  }, [html, onBeforeNavigate, openDoc, setLayout, vaultId]);
 
   if (error) {
     return (

@@ -1086,7 +1086,8 @@
 .skills-page[data-glass='off'] .kb-batchbar,
 .skills-page[data-glass='off'] .skills-subview-foot,
 .skills-page[data-glass='off'] .skills-subview-card,
-.skills-page[data-glass='off'] .skills-modal {
+.skills-page[data-glass='off'] .skills-modal,
+.skills-page[data-glass='off'] .skills-drawer {
   background: var(--raw-card);
   box-shadow: none;
   -webkit-backdrop-filter: none;
@@ -1111,7 +1112,8 @@
   .skills-page .kb-batchbar,
   .skills-page .skills-subview-foot,
   .skills-page .skills-subview-card,
-  .skills-page .skills-modal {
+  .skills-page .skills-modal,
+  .skills-page .skills-drawer {
     background: var(--raw-card);
     box-shadow: none;
     -webkit-backdrop-filter: none;
@@ -1577,4 +1579,255 @@
     opacity: 1;
     transform: none;
   }
+}
+
+/* ---------- 详情抽屉与卡片点击（M9 T04；DESIGN 14.2–14.4） ---------- */
+.skills-page .kb-card {
+  cursor: pointer;
+}
+
+.skills-page .kb-card:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* 打开详情的卡片：强调色描边加 3px 外环；这是选中态，不表达状态。 */
+.skills-page .kb-card[data-active='true'] {
+  border-color: var(--raw-accent);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    0 0 0 3px color-mix(in srgb, var(--raw-accent) 18%, transparent);
+}
+
+.skills-page .skills-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  width: 520px;
+  max-width: calc(100% - 24px);
+  border-left: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: inset 1px 0 0 var(--glass-edge), -18px 0 40px rgb(20 22 28 / 0.1);
+  animation: skills-drawer-in var(--dur-slide) var(--ease-out-expo) both;
+}
+
+[data-theme='dark'] .skills-page .skills-drawer {
+  box-shadow: inset 1px 0 0 var(--glass-edge), -18px 0 40px rgb(0 0 0 / 0.4);
+}
+
+@keyframes skills-drawer-in {
+  from {
+    opacity: 0;
+    transform: translate3d(36px, 0, 0);
+  }
+}
+
+@media (max-width: 1023px) {
+  .skills-page .skills-drawer {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+.skills-page .skills-drawer-head {
+  display: grid;
+  flex: none;
+  gap: 10px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+}
+
+.skills-page .skills-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.skills-page .skills-drawer-heading {
+  display: grid;
+  min-width: 0;
+}
+
+.skills-page .skills-drawer-name {
+  overflow: hidden;
+  font-size: var(--text-title);
+  font-weight: 650;
+  color: var(--raw-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-page .skills-drawer-cat {
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.skills-page .skills-drawer-title .icon-btn {
+  margin-left: auto;
+}
+
+.skills-page .skills-drawer-path {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-page .skills-drawer-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* 正文纵向 flex、子项不压缩，由正文自己滚动。 */
+.skills-page .skills-drawer-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 18px;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 18px 18px;
+}
+
+.skills-page .skills-drawer-body > * {
+  flex: none;
+}
+
+.skills-page .skills-drawer-sec {
+  margin: 0 0 8px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--raw-faint);
+}
+
+.skills-page .skills-drawer-dist {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+  border-radius: 10px;
+}
+
+.skills-page .skills-drawer-dist > * {
+  flex: none;
+}
+
+.skills-page .skills-drawer-dist-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.skills-page .skills-drawer-dist-row + .skills-drawer-dist-row {
+  border-top: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
+}
+
+.skills-page .skills-drawer-how {
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-drawer-none {
+  padding: 10px 12px;
+  font-size: var(--text-body-sm);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-drawer-source {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--info) 30%, var(--raw-line));
+  border-radius: 10px;
+  font-size: var(--text-body-sm);
+  color: var(--raw-text);
+}
+
+.skills-page .skills-drawer-source-sub {
+  grid-column: 2 / 4;
+  font-size: var(--text-meta);
+  color: var(--raw-muted);
+  overflow-wrap: anywhere;
+}
+
+.skills-page .skills-drawer-preview {
+  padding: 4px 4px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--raw-sunken) 80%, transparent);
+}
+
+.skills-page .skills-drawer-preview .reader {
+  height: auto;
+  overflow: visible;
+  padding: 10px 12px;
+}
+
+.skills-page .skills-drawer-preview .prose {
+  max-width: none;
+  margin: 0;
+  font-size: var(--text-body-sm);
+  line-height: 1.7;
+}
+
+.skills-page .skills-drawer-preview .prose h1 {
+  font-size: var(--text-title);
+}
+
+.skills-page .skills-drawer-preview .prose h2 {
+  font-size: var(--text-body);
+}
+
+.skills-page .skills-drawer-skeleton {
+  display: grid;
+  gap: 8px;
+}
+
+.skills-page .skills-drawer-skeleton span {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--raw-sunken), var(--raw-raised), var(--raw-sunken));
+  background-size: 200% 100%;
+  animation: skills-shimmer 1.4s linear infinite;
+}
+
+.skills-page .skills-drawer-skeleton span:nth-child(2) {
+  width: 82%;
+}
+
+.skills-page .skills-drawer-skeleton span:nth-child(3) {
+  width: 64%;
+}
+
+.skills-page .skills-drawer-foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+}
+
+.skills-page .skills-drawer-foot .spacer {
+  flex: 1;
+}
+
+.skills-page .skills-drawer .skills-empty {
+  padding: 56px 24px;
 }

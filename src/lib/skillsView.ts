@@ -1,4 +1,4 @@
-import type { SkillScan, SkillTool, SkillToolScan } from "./transport";
+import type { KbSkill, KbSkillDistribution, SkillScan, SkillTool, SkillToolScan } from "./transport";
 
 /** What needs attention in one tool group (M8 T03, same rule as the badge):
  * broken links and copies whose knowledge base moved on. */
@@ -71,4 +71,35 @@ export function tailOf(path: string | undefined): string {
   if (!path) return "";
   const parts = path.split(/[\/]/).filter(Boolean);
   return parts[parts.length - 1] ?? "";
+}
+
+/** The status pill of a knowledge-base skill (cards and the detail drawer). */
+export function skillStatus(skill: KbSkill): { label: string; tone: "live" | "warn" | "idle" } {
+  if (!skill.distributed || skill.distributed.length === 0) return { label: "未分发", tone: "idle" };
+  if (skill.distributed.some((item) => item.sync === "vault-updated")) {
+    return { label: "知识库有更新", tone: "warn" };
+  }
+  return { label: `已分发 ${skill.distributed.length} 处`, tone: "live" };
+}
+
+/** One distribution row of the drawer: method and sync state of that tool. */
+export function distributionLabel(item: KbSkillDistribution): {
+  how: string;
+  sync: string;
+  tone: "live" | "warn" | "fault";
+} {
+  const how = item.mode === "link" ? "链接" : "拷贝";
+  if (item.mode === "link") return { how, sync: "已同步", tone: "live" };
+  switch (item.sync) {
+    case "vault-updated":
+      return { how, sync: "知识库有更新", tone: "warn" };
+    case "tool-updated":
+      return { how, sync: "工具里改过", tone: "warn" };
+    case "both-updated":
+      return { how, sync: "两边都改了", tone: "warn" };
+    case "missing":
+      return { how, sync: "目录缺失", tone: "fault" };
+    default:
+      return { how, sync: "已同步", tone: "live" };
+  }
 }

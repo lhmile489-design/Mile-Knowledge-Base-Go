@@ -29,6 +29,7 @@ function renderPage(overrides: Partial<Parameters<typeof KbSkillsPage>[0]> = {})
       onDistribute={noop}
       onInstall={noop}
       onUpdate={noop}
+      onOpenDetail={noop}
       {...overrides}
     />,
   );
@@ -64,6 +65,7 @@ describe("KbSkillsPage (M8 T04 layout)", () => {
         onDistribute={noop}
         onInstall={noop}
         onUpdate={noop}
+      onOpenDetail={noop}
       />,
     );
     expect(screen.getByTestId("kb-count").textContent).toContain("正在扫描");
@@ -173,6 +175,7 @@ describe("KbSkillsPage (M8 T04 layout)", () => {
         onDistribute={noop}
         onInstall={onInstall}
         onUpdate={noop}
+      onOpenDetail={noop}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "安装技能…" }));
@@ -196,12 +199,80 @@ describe("KbSkillsPage (M8 T04 layout)", () => {
       { name: "pdf", description: "PDF", path: "skills/文档/pdf", category: "文档", distributed: [], remote: { ...remoteBase, updateState: "update-available", latestPathCommit: latest } },
       { name: "docx", description: "Word", path: "skills/文档/docx", category: "文档", distributed: [], remote: { ...remoteBase, path: "skills/docx", updateState: "both-changed" } },
     ];
-    render(<KbSkillsPage groups={[{ category: "文档", skills: withRemote }]} tools={tools} onOpenSkill={noop} onLocate={noop} onDistribute={noop} onInstall={noop} onUpdate={onUpdate} />);
+    render(<KbSkillsPage groups={[{ category: "文档", skills: withRemote }]} tools={tools} onOpenSkill={noop} onLocate={noop} onDistribute={noop} onInstall={noop} onUpdate={onUpdate} onOpenDetail={noop} />);
     expect(screen.getByTestId("kb-card-pdf").textContent).toContain("GitHub 有更新");
     expect(screen.getByTestId("kb-card-pdf").textContent).toContain("anthropics/skills");
     expect(screen.getByTestId("kb-card-docx").textContent).toContain("两边都改了");
     fireEvent.click(screen.getByTestId("kb-update-pdf"));
     expect(onUpdate).toHaveBeenCalledWith(withRemote[0]);
     expect(screen.queryByTestId("kb-update-docx")).toBeNull();
+  });
+});
+
+describe("KbSkillsPage detail entry (M9 T04)", () => {
+  it("opens the detail from a click on the card body, Enter and Space", () => {
+    const onOpenDetail = vi.fn();
+    renderPage({ onOpenDetail });
+    const card = screen.getByTestId("kb-card-vue");
+    expect(card.getAttribute("tabindex")).toBe("0");
+    fireEvent.click(card.querySelector(".kb-card-name") as HTMLElement);
+    expect(onOpenDetail).toHaveBeenLastCalledWith("skills/前端/vue");
+    fireEvent.keyDown(card, { key: "Enter" });
+    fireEvent.keyDown(card, { key: " " });
+    expect(onOpenDetail).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps the card's own buttons and menu from opening the detail", () => {
+    const onOpenDetail = vi.fn();
+    const onDistribute = vi.fn();
+    renderPage({ onOpenDetail, onDistribute });
+    const card = screen.getByTestId("kb-card-vue");
+    const distribute = Array.from(card.querySelectorAll("button")).find((item) => item.textContent?.trim() === "分发");
+    fireEvent.click(distribute as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: "更多操作：vue" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "在侧栏定位" }));
+    expect(onDistribute).toHaveBeenCalledTimes(1);
+    expect(onOpenDetail).not.toHaveBeenCalled();
+    // A key press on an inner button is the button's, not the card's.
+    const kebab = screen.getByRole("button", { name: "更多操作：vue" });
+    fireEvent.keyDown(kebab, { key: "Enter" });
+    expect(onOpenDetail).not.toHaveBeenCalled();
+  });
+
+  it("toggles the selection instead of opening while a batch is being selected", () => {
+    const onOpenDetail = vi.fn();
+    renderPage({ onOpenDetail });
+    fireEvent.click(screen.getByRole("button", { name: "更多操作：vue" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "批量选择" }));
+    const card = screen.getByTestId("kb-card-go");
+    fireEvent.click(card.querySelector(".kb-card-name") as HTMLElement);
+    expect(onOpenDetail).not.toHaveBeenCalled();
+    expect(screen.getByTestId("kb-batchbar").textContent).toContain("已选 1 个");
+    fireEvent.keyDown(card, { key: "Enter" });
+    expect(screen.getByTestId("kb-batchbar").textContent).toContain("已选 0 个");
+  });
+
+  it("marks the card whose detail is open", () => {
+    const { rerender } = renderPage({ activePath: "skills/前端/vue" });
+    expect(screen.getByTestId("kb-card-vue").getAttribute("data-active")).toBe("true");
+    expect(screen.getByTestId("kb-card-go").getAttribute("data-active")).toBe("false");
+    rerender(
+      <KbSkillsPage
+        groups={[
+          { category: "前端", skills: [skills[0]!] },
+          { category: "后端", skills: [skills[1]!] },
+        ]}
+        tools={tools}
+        activePath="skills/后端/go"
+        onOpenSkill={noop}
+        onLocate={noop}
+        onDistribute={noop}
+        onInstall={noop}
+        onUpdate={noop}
+        onOpenDetail={noop}
+      />,
+    );
+    expect(screen.getByTestId("kb-card-vue").getAttribute("data-active")).toBe("false");
+    expect(screen.getByTestId("kb-card-go").getAttribute("data-active")).toBe("true");
   });
 });
