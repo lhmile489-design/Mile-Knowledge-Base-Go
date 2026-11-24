@@ -94,6 +94,7 @@
 | M5 性能 | GitHub 50 MB 读取与 20 组更新检查 | `bash scripts/e2e/perf-m5.sh`（本地假 GitHub） | 已验证：50 MB 读取 p95 204ms、20 组检查 69ms；`perf:gate --kind m5` 通过 |
 | M6 性能 | 10 个项目扫描、登记保存与移除 | `bash scripts/e2e/perf-m6.sh`（假 HOME，10×5×20 个技能） | 已验证：M4 基准 114ms、项目扫描 p95 240ms、保存 22.7ms、移除 17.1ms；`perf:gate --kind m6` 通过 |
 | M7 性能 | 清单预览、清单写入、批量还原 | `bash scripts/e2e/perf-m7.sh`（100 个技能、10 个登记项目、200 项清单） | 已验证：预览 p95 60.8ms、写入净增量 p95 36.0ms、还原 100 项 76.3ms；`perf:gate --kind m7` 通过 |
+| M8 性能 | 技能页进入、200 张毛玻璃卡片滚动、切回工作台 | `bash scripts/e2e/perf-m8.sh`（200 个技能，真窗口） | 已验证：进入 p95 138.3ms、滚动 p95 0.34 个刷新间隔、慢帧 0、切回 37.3ms；`perf:gate --kind m8` 通过 |
 | 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical\|big\|skills\|m5\|m6\|m7 --input <json>` | 已接入（阻断，正反对照通过） |
 | 旧版性能基线 | 只读运行旧版 Electron 测冷启动与检索 | `bash scripts/perf-legacy/bench.sh typical\|big` | 已验证（见 docs/PLAN-M3.md §6） |
 | 安装包 | 1.5.0 NSIS 安装包 | `bun run build`（产物 `build/windows-amd64/mile-knowledge-base-setup-1.5.0-amd64.exe`） | 本机 1.2.0 → 1.3.0、1.3.0 → 1.3.1、1.3.1 → 1.3.2、1.3.2 → 1.4.0 与 1.4.0 → 1.5.0 升级冒烟通过（见 docs/发布清单.md 第 10–14 节） |

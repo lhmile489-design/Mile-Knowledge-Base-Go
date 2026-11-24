@@ -40,6 +40,12 @@ TARGETS = {
         "manifestWriteP95Ms": 50,
         "restore100Ms": 3000,
     },
+    "m8": {
+        "scrollP95Frames": 1.5,
+        "slowFrameRatio": 0.05,
+        "enterP95Ms": 300,
+        "switchBackMs": 100,
+    },
 }
 
 LABELS = {
@@ -59,6 +65,10 @@ LABELS = {
     "preview200P95Ms": "还原预览 200 项 p95 ms",
     "manifestWriteP95Ms": "清单写入 2000 项 p95 ms",
     "restore100Ms": "还原 100 个知识库项 ms",
+    "scrollP95Frames": "卡片滚动 p95 帧数（相对刷新间隔）",
+    "slowFrameRatio": "慢帧比例（> 2R）",
+    "enterP95Ms": "进入技能页到卡片可见 p95 ms",
+    "switchBackMs": "切回工作台首帧 p95 ms",
 }
 
 
