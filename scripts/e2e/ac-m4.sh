@@ -99,6 +99,27 @@ start_app() { # extra env NAME=VALUE ...
   sleep 7
   APP_PID=$(powershell -NoProfile -Command "(Get-Process -Name 'Mile Knowledge Base' | Sort-Object StartTime -Descending | Select-Object -First 1).Id" | tr -d '\r')
 }
+
+# The automation driver never activates the window; focus-dependent assertions
+# (AC-SKM-11) only work when WebView2 is in the foreground.
+foreground_app() {
+  [ -n "${APP_PID:-}" ] || return 0
+  cat > "$WORK/focus.ps1" <<'PS'
+param([int]$ProcId)
+Add-Type -Namespace Win -Name Fg -MemberDefinition @'
+[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+[DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+'@
+$p = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
+if ($p -and $p.MainWindowHandle -ne 0) {
+  [Win.Fg]::ShowWindow($p.MainWindowHandle, 9) | Out-Null
+  [Win.Fg]::SetForegroundWindow($p.MainWindowHandle) | Out-Null
+}
+try { (New-Object -ComObject WScript.Shell).AppActivate($ProcId) | Out-Null } catch {}
+PS
+  powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/focus.ps1")" -ProcId "$APP_PID" >/dev/null 2>&1
+  sleep 0.5
+}
 stop_app() {
   if [ -n "${APP_PID:-}" ]; then powershell -NoProfile -Command "Stop-Process -Id $APP_PID -Force" >/dev/null 2>&1; fi
   APP_PID=""
@@ -266,6 +287,7 @@ echo "$REJECT" | grep -q 'skill-protected' && { pass=$((pass+1)); echo "PASS AC-
 ev "window.__mkbApp.getState().closeSkillsPanel(); true" >/dev/null
 ev "window.__mkbApp.getState().openSettings(); true" >/dev/null
 wait_match "settings open" "document.querySelector('[data-panel=\"settings-nav\"]') !== null" '"value":true' 30
+foreground_app
 click '[data-testid="open-skills"]'
 wait_match "AC-SKM-11 panel over settings" "document.querySelector('[data-testid=\"skills-panel\"]') !== null" '"value":true' 20
 open_kb

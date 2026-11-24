@@ -7,6 +7,7 @@ import {
   type SkillUpdatePreviewResult,
 } from "../../lib/transport";
 import { shortSha, sourceOf } from "../../lib/skillRemote";
+import { SkillsSubview } from "./SkillsSubview";
 
 function errorText(error: unknown): string {
   if (error instanceof TransportError) return error.message;
@@ -107,18 +108,33 @@ export function ToolUpdateDialog({
   };
 
   return (
-    <div className="skills-subview" data-testid="tool-update-dialog">
-      <div className="skills-subview-card">
-        <header className="skills-subview-head">
-          <span className="skills-subview-title">
-            更新 {toolName} 里的 {skillName}
-          </span>
-          <button type="button" className="icon-button" aria-label="取消更新" onClick={onClose} disabled={busy}>
-            ×
-          </button>
-        </header>
-
-        <div className="skills-dialog-body">
+    <SkillsSubview
+      testId="tool-update-dialog"
+      crumbs={["工具技能", toolName, `更新 ${skillName}`]}
+      backLabel="取消更新"
+      backDisabled={busy}
+      onBack={onClose}
+      footer={
+        <>
+          <span />
+          <div className="skills-subview-actions">
+            <button type="button" className="btn-quiet" onClick={onClose} disabled={busy}>
+              取消
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={busy || loading || !preview?.stageId || Boolean(error)}
+              onClick={() => void update()}
+              data-testid="tool-update-submit"
+            >
+              更新
+            </button>
+          </div>
+        </>
+      }
+    >
+      <div className="skills-dialog-body">
           {loading ? <p className="skills-dialog-line">正在读取新版本…</p> : null}
 
           {error ? (
@@ -152,26 +168,7 @@ export function ToolUpdateDialog({
               {preview.backupPath ? <code className="update-backup">{preview.backupPath}</code> : null}
             </>
           ) : null}
-        </div>
-
-        <footer className="skills-subview-foot">
-          <span />
-          <div className="skills-subview-actions">
-            <button type="button" className="btn-quiet" onClick={onClose} disabled={busy}>
-              取消
-            </button>
-            <button
-              type="button"
-              className="btn-primary"
-              disabled={busy || loading || !preview?.stageId || Boolean(error)}
-              onClick={() => void update()}
-              data-testid="tool-update-submit"
-            >
-              更新
-            </button>
-          </div>
-        </footer>
       </div>
-    </div>
+    </SkillsSubview>
   );
 }

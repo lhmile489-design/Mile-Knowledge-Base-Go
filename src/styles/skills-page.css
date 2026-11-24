@@ -751,3 +751,34 @@
 .skills-page .tool-row:focus-within .tool-row-actions {
   opacity: 1;
 }
+
+/* ---------- 整页子视图（M8 T06）：面包屑 + 返回 + 固定操作条 ---------- */
+.skills-page .skills-subview {
+  background: var(--raw-panel-editor);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.skills-page .skills-subview-head {
+  padding: 14px 24px;
+}
+
+.skills-page .skills-subview-body {
+  padding: 12px 24px 28px;
+}
+
+.skills-page .skills-subview-foot {
+  padding: 12px 24px;
+  background: var(--raw-card);
+}
+
+.skills-page .skills-subview-actions {
+  margin-left: auto;
+}
+
+.skills-page .skills-targets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+  padding: 10px 0 4px;
+}

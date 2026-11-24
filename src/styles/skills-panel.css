@@ -468,10 +468,55 @@
   inset: 0;
   z-index: 2;
   display: grid;
-  place-items: center;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   background: color-mix(in srgb, var(--raw-canvas) 40%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+}
+
+.skills-subview-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 16px;
+}
+
+.skills-subview-back {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-control);
+  background: var(--raw-card);
+  color: var(--raw-text);
+  cursor: pointer;
+}
+
+.skills-crumbs {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--text-body-sm);
+  color: var(--raw-muted);
+}
+
+.skills-crumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-crumb.is-current {
+  color: var(--raw-strong);
+  font-weight: 650;
+}
+
+.skills-crumb-sep {
+  color: var(--raw-faint);
 }
 
 .skills-subview-card {
@@ -479,6 +524,7 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   width: min(560px, calc(100% - 32px));
   max-height: calc(100% - 40px);
+  margin: auto;
   overflow: hidden;
   border: 1px solid var(--raw-line);
   border-radius: var(--radius-card);

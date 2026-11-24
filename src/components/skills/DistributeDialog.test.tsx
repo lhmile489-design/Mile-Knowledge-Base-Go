@@ -46,6 +46,19 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("DistributeDialog", () => {
+  it("shows the breadcrumb and returns through the back button or Esc", async () => {
+    const onClose = vi.fn();
+    render(
+      <DistributeDialog vaultId="v1" skills={[skill]} tools={tools as never} onClose={onClose} onDone={() => {}} />,
+    );
+    await waitFor(() => expect(preview).toHaveBeenCalled());
+    expect(screen.getByRole("navigation", { name: "位置" }).textContent).toContain("分发到…");
+    fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
   it("previews targets, submits the selection and reports results", async () => {
     const onClose = vi.fn();
     const onDone = vi.fn();

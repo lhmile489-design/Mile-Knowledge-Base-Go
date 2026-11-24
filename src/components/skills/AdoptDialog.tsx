@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { skillsApi, type SkillToolRef, type ToolSkill } from "../../lib/transport";
+import { SkillsSubview } from "./SkillsSubview";
 
 /** 收进知识库 (M4 T11; UI 稿 adopt-*): category + optional link-back; other
  * tools with the same name are merged only when their content matches. */
@@ -56,16 +57,27 @@ export function AdoptDialog({
   };
 
   return (
-    <div className="skills-subview" data-testid="adopt-dialog">
-      <div className="skills-subview-card">
-        <header className="skills-subview-head">
-          <span className="skills-subview-title">收进知识库「{skill.name}」</span>
-          <button type="button" className="icon-button" aria-label="返回列表" onClick={onClose}>
-            ←
-          </button>
-        </header>
-        <div className="skills-dialog-body">
-          <>
+    <SkillsSubview
+      testId="adopt-dialog"
+      crumbs={["工具技能", skill.name, "收进知识库"]}
+      backLabel="返回列表"
+      onBack={onClose}
+      footer={
+        <>
+          <span />
+          <div className="skills-subview-actions">
+            <button type="button" className="btn-quiet" onClick={onClose} disabled={busy}>
+              取消
+            </button>
+            <button type="button" className="btn-primary" onClick={() => void submit()} disabled={busy} data-testid="adopt-submit">
+              {busy ? "收编中…" : "收进知识库"}
+            </button>
+          </div>
+        </>
+      }
+    >
+      <div className="skills-dialog-body">
+        <>
               <label className="skills-dialog-field">
                 <span>分类</span>
                 <input
@@ -93,20 +105,8 @@ export function AdoptDialog({
                 </p>
               ) : null}
               {error ? <p className="skills-dialog-line" data-tone="fault">{error}</p> : null}
-          </>
-        </div>
-        <footer className="skills-subview-foot">
-          <span />
-          <div className="skills-subview-actions">
-            <button type="button" className="btn-quiet" onClick={onClose} disabled={busy}>
-              取消
-            </button>
-            <button type="button" className="btn-primary" onClick={() => void submit()} disabled={busy} data-testid="adopt-submit">
-              {busy ? "收编中…" : "收进知识库"}
-            </button>
-          </div>
-        </footer>
+        </>
       </div>
-    </div>
+    </SkillsSubview>
   );
 }

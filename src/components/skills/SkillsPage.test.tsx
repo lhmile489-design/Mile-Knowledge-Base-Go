@@ -137,7 +137,16 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     await waitFor(() => expect(screen.getByTestId("distribute-dialog")).toBeTruthy());
   });
 
-  it("keeps page selection stable when the scan refreshes", async () => {
+  it("returns from the distribute subview to the list with Esc", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(withinCard("vue").getByRole("button", { name: "分发" }));
+    await waitFor(() => expect(screen.getByTestId("distribute-dialog")).toBeTruthy());
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("distribute-dialog")).toBeNull());
+    expect(screen.getByTestId("kb-card-vue")).toBeTruthy();
+  });
+
+  it("keeps page selection stable when the scan refreshes", () => {
     render(<SkillsPage />);
     fireEvent.click(screen.getByRole("button", { name: /前端/ }));
     act(() => useSkillsStore.setState({ scan: { ...scanPayload, cachedAt: "2026-11-24T10:00:00Z" } as never }));

@@ -224,7 +224,20 @@ export function SkillsPage() {
           </div>
         ) : null}
 
-        {installOpen && vaultId ? (
+        {distributePaths && vaultId ? (
+          <DistributeDialog
+            vaultId={vaultId}
+            skills={(scan?.kb ?? [])
+              .flatMap((group) => group.skills)
+              .filter((skill) => distributePaths.includes(skill.path))}
+            tools={tools}
+            onClose={() => setDistributePaths(null)}
+            onResult={(lines) => setResultLines(lines)}
+            onDone={() => {
+              void useSkillsStore.getState().loadScan(vaultId);
+            }}
+          />
+        ) : installOpen && vaultId ? (
           <InstallView
             vaultId={vaultId}
             tools={tools}
@@ -309,20 +322,6 @@ export function SkillsPage() {
         )}
       </main>
 
-      {distributePaths && vaultId ? (
-        <DistributeDialog
-          vaultId={vaultId}
-          skills={(scan?.kb ?? [])
-            .flatMap((group) => group.skills)
-            .filter((skill) => distributePaths.includes(skill.path))}
-          tools={tools}
-          onClose={() => setDistributePaths(null)}
-          onResult={(lines) => setResultLines(lines)}
-          onDone={() => {
-            void useSkillsStore.getState().loadScan(vaultId);
-          }}
-        />
-      ) : null}
     </section>
   );
 }
