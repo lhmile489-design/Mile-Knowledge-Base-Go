@@ -1387,6 +1387,31 @@
   color: var(--raw-muted);
 }
 
+.skills-page .skills-modal .spacer {
+  flex: 1;
+}
+
+/* 弹窗里的一步内容：竖排，子项不压缩，超出由正文滚动。 */
+.skills-page .skills-modal-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skills-page .skills-modal-flow > * {
+  flex: none;
+}
+
+/* 本地文件夹向导嵌在弹窗里：外壳、标题与关闭由弹窗提供。 */
+.skills-page .skills-modal .skill-wizard-embedded {
+  gap: 12px;
+  padding: 0;
+}
+
+.skills-page .skills-modal .skill-wizard-step-solo {
+  margin-left: 0;
+}
+
 .skills-page .skills-modal-foot button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;

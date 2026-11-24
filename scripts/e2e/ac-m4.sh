@@ -208,8 +208,8 @@ wait_match "install view" "document.querySelector('[data-testid=\"install-record
 click '[data-testid^="install-restore-"]'
 wait_match "AC-SKM-6 restore" "document.querySelector('[data-testid=\"install-notice\"]') !== null" '"value":true' 30
 grep -q "# old vue" "$HOME_DIR/.cursor/skills/vue/SKILL.md" && { pass=$((pass+1)); echo "PASS AC-SKM-6 restore content"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-6 restore content"; }
-ev "(() => { const b=document.querySelector('[aria-label=\"返回技能列表\"]'); if(b) b.click(); return true; })()" >/dev/null
-sleep 0.3
+click '[data-testid="skills-modal-close"]' >/dev/null
+wait_match "install dialog closed" "document.querySelector('[data-testid=\"skills-modal\"]') === null" '"value":true' 20
 
 # AC-SKM-7: uninstall a link; the knowledge base bytes are unchanged.
 KB_BEFORE=$(hash_dir "$VAULT/skills/前端/vue")
@@ -238,6 +238,8 @@ click '[data-testid^="install-restore-"]'
 wait_match "AC-SKM-8 restore" "document.querySelector('[data-testid=\"install-notice\"]') !== null" '"value":true' 30
 [ "$(hash_dir "$HOME_DIR/.claude/skills/indepone")" = "$INDEP_BEFORE" ] && { pass=$((pass+1)); echo "PASS AC-SKM-8 restored"; } || { fail=$((fail+1)); echo "FAIL AC-SKM-8 not restored"; }
 check "AC-SKM-8 records include restore" "document.body.innerText.includes('恢复')" '"value":true'
+click '[data-testid="skills-modal-close"]' >/dev/null
+wait_match "AC-SKM-8 install dialog closed" "document.querySelector('[data-testid=\"skills-modal\"]') === null" '"value":true' 20
 
 # AC-SKM-9: adopt the same foo from two tools; both become links.
 ev "window.__mkbApi.skills.adopt('$VID','claude-code','foo','分类',true,[{toolId:'cursor',path:'foo'}]).then((r)=>JSON.stringify({warnings:r.warnings}))" >/dev/null

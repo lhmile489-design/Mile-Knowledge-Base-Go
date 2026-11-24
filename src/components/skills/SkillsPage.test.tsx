@@ -19,6 +19,7 @@ vi.mock("../../lib/transport", () => {
       listTargets: vi.fn(async () => ({ items: [], dirs: [] })),
       confirmKbUpdate: vi.fn(),
       discardStage: vi.fn(async () => undefined),
+      log: vi.fn(async () => ({ records: [] })),
     },
     docApi: {
       read: (...args: unknown[]) => readDoc(...args),
@@ -178,6 +179,29 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByTestId("distribute-dialog")).toBeNull());
     expect(screen.getByTestId("kb-card-vue")).toBeTruthy();
+  });
+
+  it("opens install as a dialog over the list: the list stays mounted, the page goes inert, focus returns", async () => {
+    render(<SkillsPage />);
+    const opener = screen.getByTestId("kb-install-top");
+    const card = screen.getByTestId("kb-card-vue");
+    opener.focus();
+    fireEvent.click(opener);
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "安装技能" })).toBeTruthy());
+
+    // The modal is a child of the page panel, not of the main area.
+    expect(screen.getByTestId("skills-page").contains(screen.getByTestId("skills-modal"))).toBe(true);
+    expect(screen.getByTestId("skills-main").contains(screen.getByTestId("skills-modal"))).toBe(false);
+    expect(screen.getByTestId("skills-main").hasAttribute("inert")).toBe(true);
+    expect(screen.getByTestId("skills-nav").closest("[inert]")).not.toBeNull();
+    expect(screen.getByTestId("kb-card-vue")).toBe(card);
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("skills-modal")).toBeNull());
+    expect(screen.getByTestId("skills-main").hasAttribute("inert")).toBe(false);
+    expect(screen.getByTestId("skills-nav").closest("[inert]")).toBeNull();
+    expect(screen.getByTestId("kb-card-vue")).toBe(card);
+    expect(document.activeElement).toBe(opener);
   });
 
   it("keeps page selection stable when the scan refreshes", () => {

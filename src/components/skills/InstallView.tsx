@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Archive, ArrowLeft, FileZip, FolderOpen, GithubLogo, WarningCircle } from "@phosphor-icons/react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Archive, FileZip, FolderOpen, GithubLogo, WarningCircle } from "@phosphor-icons/react";
 import { events, type SkillStageProgressEvent } from "../../mygo";
-import { SkillsCrumbs } from "./SkillsSubview";
 import {
   TransportError,
   skillsApi,
@@ -13,6 +12,7 @@ import {
 import { categoryProblem } from "../../lib/skillImport";
 import { installTargets, tailOf } from "../../lib/skillsView";
 import { SkillImportWizard } from "../SkillImportWizard";
+import { SkillsModal } from "./SkillsModal";
 import { ToolIcon } from "./ToolIcon";
 
 const OP_LABEL: Record<string, string> = {
@@ -78,9 +78,22 @@ function subscribeProgress(listener: (event: SkillStageProgressEvent) => void): 
   }
 }
 
-/** 安装视图 (M5 T10; UI 稿 9.4 install-*): three sources, candidate checkboxes
- * with disabled reasons, knowledge base or direct-tool target, progress with
- * cancel, fault cards, and the existing local-folder wizard. */
+type Source = "github" | "zip" | "local";
+
+const SOURCE_TABS: { id: Source; label: string; testId: string; icon: ReactNode }[] = [
+  { id: "github", label: "GitHub", testId: "install-github", icon: <GithubLogo size={13} aria-hidden /> },
+  { id: "zip", label: "zip 文件", testId: "install-zip", icon: <FileZip size={13} aria-hidden /> },
+  { id: "local", label: "本地文件夹", testId: "install-local", icon: <FolderOpen size={13} aria-hidden /> },
+];
+
+type Finished = { lines: string[]; summary: string; hint: string };
+
+/** 安装弹窗 (M5 T10 content, M9 T02 shell; UI 稿 12.2): one dialog for the
+ * three sources, the candidate step with a vault or direct-tool target, and a
+ * result step. Esc steps back (read → source, candidates → source) and closes
+ * on the source step; while an install or import writes, nothing can close it
+ * (PRD Q-UX-6). The operation records stay at the bottom of the source step so
+ * a backup can still be restored from there. */
 export function InstallView({
   vaultId,
   tools,
@@ -92,12 +105,12 @@ export function InstallView({
   readonly onBack: () => void;
   readonly onChanged: () => void;
 }) {
-  const [wizard, setWizard] = useState(false);
   const [records, setRecords] = useState<SkillLogRecord[] | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [wizardBusy, setWizardBusy] = useState(false);
 
-  const [source, setSource] = useState<"github" | null>(null);
+  const [source, setSource] = useState<Source>("github");
   const [input, setInput] = useState("");
   const [inputProblem, setInputProblem] = useState<string | null>(null);
   const [reading, setReading] = useState<Reading | null>(null);
@@ -111,6 +124,7 @@ export function InstallView({
   const [overwrite, setOverwrite] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<SkillPreviewItem[] | null>(null);
   const [resultLines, setResultLines] = useState<string[] | null>(null);
+  const [finished, setFinished] = useState<Finished | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stageRef = useRef<SkillStage | null>(null);
   stageRef.current = stage;
@@ -128,9 +142,11 @@ export function InstallView({
     void load();
   }, []);
 
-  // Leaving the view drops a staged download the user never installed.
+  // Closing the dialog cancels a GitHub read and drops a staged download the
+  // user never installed.
   useEffect(
     () => () => {
+      abortRef.current?.abort();
       const held = stageRef.current;
       if (held) void skillsApi.discardStage(held.stageId).catch(() => undefined);
     },
@@ -197,24 +213,30 @@ export function InstallView({
     setOverwrite(new Set());
   };
 
+  // Back to the source step; the chosen source tab stays.
   const leaveStage = () => {
     if (stage) void skillsApi.discardStage(stage.stageId).catch(() => undefined);
     resetStage();
-    setSource(null);
   };
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.stopPropagation();
-      if (stage) leaveStage();
-      else onBack();
-    };
-    document.addEventListener("keydown", onKey, true);
-    return () => document.removeEventListener("keydown", onKey, true);
-    // leaveStage follows the current stage
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, onBack]);
+  const selectSource = (next: Source) => {
+    if (stage) leaveStage();
+    setResultLines(null);
+    setError(null);
+    setInputProblem(null);
+    setNotice(null);
+    setSource(next);
+  };
+
+  // 继续安装 (Q-M9-2): same source type, address and candidates cleared.
+  const installAnother = () => {
+    setFinished(null);
+    setResultLines(null);
+    setInput("");
+    setInputProblem(null);
+    setError(null);
+    setNotice(null);
+  };
 
   const enterStage = (value: SkillStage) => {
     setStage(value);
@@ -315,13 +337,23 @@ export function InstallView({
         const label = candidate?.name ?? item.name ?? item.targetId;
         return `${label} → ${where}：${verb}${item.detail ? `（${item.detail}）` : ""}`;
       });
-      setResultLines(lines);
       onChanged();
-      const installedAny = value.items.some((item) => item.result === "copied" || item.result === "linked");
-      if (installedAny) {
+      const installed = value.items.filter((item) => item.result === "copied" || item.result === "linked").length;
+      if (installed > 0) {
+        const skipped = value.items.filter((item) => item.result === "skipped").length;
+        const failed = value.items.length - installed - skipped;
+        const parts = [`已安装 ${installed} 个`];
+        if (skipped > 0) parts.push(`跳过 ${skipped} 个`);
+        if (failed > 0) parts.push(`失败 ${failed} 个`);
+        const hint =
+          targetKind === "kb" ? `已装进知识库「${category.trim()}」分类。` : "已拷贝到所选工具，不经过知识库。";
         resetStage();
-        setSource(null);
+        setResultLines(null);
+        setFinished({ lines, summary: parts.join("，"), hint });
         void load();
+      } else {
+        // Nothing written: stay on the candidates so the user can adjust.
+        setResultLines(lines);
       }
     } catch (caught) {
       const failure = failureOf(caught);
@@ -338,52 +370,98 @@ export function InstallView({
     return next;
   };
 
-  if (wizard) {
-    return (
-      <SkillImportWizard
-        embedded
-        onClose={() => {
-          setWizard(false);
-          void load();
-          onChanged();
-        }}
-      />
-    );
-  }
+  const modalBusy = busy || wizardBusy || reading?.source === "zip";
+
+  // Esc: cancel a GitHub read, then candidates → source; otherwise let the
+  // dialog close.
+  const handleBack = (): boolean => {
+    if (reading?.source === "github") {
+      abortRef.current?.abort();
+      return true;
+    }
+    if (stage) {
+      leaveStage();
+      setResultLines(null);
+      return true;
+    }
+    return false;
+  };
 
   const categoryIssue = targetKind === "kb" ? categoryProblem(category) : null;
   const canSubmit =
     Boolean(stage) && selected.size > 0 && !busy && (targetKind === "kb" ? categoryIssue === null : toolTargets.size > 0);
   const percent = progress && progress.total > 0 ? Math.max(0, Math.min(100, Math.round((progress.received * 100) / progress.total))) : null;
 
-  if (stage) {
+  const sourceLocked = modalBusy || reading !== null;
+  const tabs = (
+    <div className="segmented" role="tablist" aria-label="安装来源">
+      {SOURCE_TABS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          role="tab"
+          aria-selected={source === tab.id}
+          className="segmented-item"
+          disabled={sourceLocked}
+          onClick={() => selectSource(tab.id)}
+          data-testid={tab.testId}
+        >
+          {tab.icon}
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  let stepLabel = "选择来源";
+  let body: ReactNode;
+  let footer: ReactNode = null;
+  let focusKey = `source-${source}`;
+
+  if (finished) {
+    stepLabel = "结果";
+    focusKey = "result";
+    body = (
+      <div className="skills-modal-flow" data-testid="install-finished">
+        <div className="install-note" data-tone="ok" data-testid="install-result">
+          <ul>
+            {finished.lines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+        <p className="field-hint">{finished.hint}</p>
+      </div>
+    );
+    footer = (
+      <>
+        <span data-testid="install-summary">{finished.summary}</span>
+        <span className="spacer" />
+        <button type="button" className="btn-quiet" onClick={installAnother} data-testid="install-again">
+          继续安装
+        </button>
+        <button type="button" className="btn-primary" onClick={onBack} data-testid="install-done">
+          完成
+        </button>
+      </>
+    );
+  } else if (stage) {
+    stepLabel = busy ? "安装中" : "选择要安装的技能";
+    focusKey = "stage";
     const eligible = stage.candidates.filter((candidate) => candidate.state === "ok").length;
     const skippedLinks = (stage.skipped ?? []).filter((item) => item.reason === "symlink" || item.reason === "special").length;
     const capped = (stage.skipped ?? []).some((item) => item.reason === "capped");
     const targets = eligibleTools;
     const creates = preview ? preview.filter((item) => item.action === "create").length : selected.size * toolTargets.size;
 
-    return (
-      <div className="install-view" data-testid="install-stage">
-        <header className="install-head">
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="返回安装来源"
-            onClick={() => {
-              leaveStage();
-              setResultLines(null);
-            }}
-            data-testid="install-stage-back"
-          >
-            <ArrowLeft size={14} aria-hidden />
-          </button>
-          <SkillsCrumbs crumbs={["全部技能", "安装"]} />
-          <span className="spacer" />
-          <button type="button" className="btn-quiet" onClick={onBack}>
-            关闭
-          </button>
-        </header>
+    body = (
+      <div className="skills-modal-flow" data-testid="install-stage">
+        {busy ? (
+          <div className="install-note" data-tone="info" role="status" data-testid="install-busy">
+            <span className="kb-spin" aria-hidden />
+            <span>正在安装，完成前不能关闭。</span>
+          </div>
+        ) : null}
 
         <div className="install-origin" data-testid="install-origin">
           {stage.kind === "github" ? <GithubLogo size={16} aria-hidden /> : <FileZip size={16} aria-hidden />}
@@ -413,6 +491,18 @@ export function InstallView({
         <div className="install-label">
           选择要安装的技能
           <span className="install-faint">向下找 3 层，跳过点号目录与 node_modules</span>
+          <span className="spacer" />
+          <button
+            type="button"
+            className="btn-quiet"
+            disabled={busy || eligible === 0}
+            onClick={() =>
+              setSelected(new Set(stage.candidates.filter((candidate) => candidate.state === "ok").map((candidate) => candidate.id)))
+            }
+            data-testid="install-select-all"
+          >
+            全选可装的
+          </button>
         </div>
         {stage.candidates.length === 0 ? (
           <p className="skills-empty">没有找到含 SKILL.md 的目录（向下找了 3 层）。</p>
@@ -427,7 +517,7 @@ export function InstallView({
                     <input
                       type="checkbox"
                       checked={selected.has(candidate.id)}
-                      disabled={!usable}
+                      disabled={!usable || busy}
                       onChange={() => setSelected((current) => toggle(current, candidate.id))}
                       data-testid={`install-candidate-${candidate.id}`}
                     />
@@ -454,6 +544,7 @@ export function InstallView({
             role="radio"
             aria-checked={targetKind === "kb"}
             className="segmented-item"
+            disabled={busy}
             data-testid="install-target-kb"
             onClick={() => setTargetKind("kb")}
           >
@@ -464,6 +555,7 @@ export function InstallView({
             role="radio"
             aria-checked={targetKind === "tools"}
             className="segmented-item"
+            disabled={busy}
             data-testid="install-target-tools"
             onClick={() => setTargetKind("tools")}
           >
@@ -477,6 +569,7 @@ export function InstallView({
               className="field install-category-input"
               value={category}
               placeholder="分类，例如 文档"
+              disabled={busy}
               onChange={(event) => setCategory(event.target.value)}
               data-testid="install-category"
             />
@@ -485,7 +578,7 @@ export function InstallView({
             </span>
           </div>
         ) : targets.length === 0 ? (
-          <p className="skills-empty">没有检测到已启用的工具。装好工具后重开浮层即可看到。</p>
+          <p className="skills-empty">没有检测到已启用的工具。装好工具后重新打开技能页即可看到。</p>
         ) : (
           <>
             <div className="skills-targets" role="group" aria-label="安装目标" data-testid="install-tool-targets">
@@ -494,23 +587,24 @@ export function InstallView({
                 const blocked = item?.action === "exists" || item?.action === "conflict";
                 const missing = Boolean(tool.missing);
                 const checked = toolTargets.has(tool.id);
+                const locked = busy || missing || (blocked && !overwrite.has(tool.id));
                 return (
                   <div
                     key={tool.id}
                     className="skills-target"
                     role="checkbox"
                     aria-checked={checked}
-                    aria-disabled={missing || (blocked && !overwrite.has(tool.id))}
+                    aria-disabled={locked}
                     tabIndex={0}
                     data-testid={`install-tool-${tool.id}`}
                     onClick={() => {
-                      if (missing || (blocked && !overwrite.has(tool.id))) return;
+                      if (locked) return;
                       setToolTargets((current) => toggle(current, tool.id));
                     }}
                     onKeyDown={(event) => {
                       if (event.key !== "Enter" && event.key !== " ") return;
                       event.preventDefault();
-                      if (missing || (blocked && !overwrite.has(tool.id))) return;
+                      if (locked) return;
                       setToolTargets((current) => toggle(current, tool.id));
                     }}
                   >
@@ -534,6 +628,7 @@ export function InstallView({
                         <input
                           type="checkbox"
                           checked={overwrite.has(tool.id)}
+                          disabled={busy}
                           onChange={() => {
                             setOverwrite((current) => toggle(current, tool.id));
                             setToolTargets((current) => {
@@ -569,208 +664,217 @@ export function InstallView({
         {error ? (
           <ErrorNote card={error} testid="install-error" onRetry={targetKind === "kb" ? () => void install() : undefined} />
         ) : null}
+      </div>
+    );
+    footer = (
+      <>
+        <span data-testid="install-summary">
+          {targetKind === "kb"
+            ? categoryIssue
+              ? `已选 ${selected.size} 个 · 先填分类再安装`
+              : `已选 ${selected.size} 个 · 写入知识库 ${Math.min(eligible, selected.size)} 个目录`
+            : `${selected.size} 个技能 × ${toolTargets.size} 个工具，新增 ${Math.min(creates, selected.size * toolTargets.size)} 处`}
+        </span>
+        <span className="spacer" />
+        <button
+          type="button"
+          className="btn-quiet"
+          disabled={busy}
+          onClick={() => {
+            leaveStage();
+            setResultLines(null);
+          }}
+          data-testid="install-stage-back"
+        >
+          换来源
+        </button>
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={!canSubmit}
+          onClick={() => void install()}
+          title={targetKind === "kb" ? (categoryIssue ?? undefined) : undefined}
+          data-testid="install-submit"
+        >
+          {busy ? <span className="kb-spin" aria-hidden /> : <Archive size={13} aria-hidden />}
+          {busy ? "安装中…" : targetKind === "kb" ? `安装 ${selected.size} 个` : "安装"}
+        </button>
+      </>
+    );
+  } else {
+    if (source === "local") stepLabel = "导入本地文件夹";
+    body = (
+      <div className="skills-modal-flow" data-testid="install-view">
+        {source === "github" ? (
+          <section className="install-github" data-testid="install-github-form">
+            <div className="install-urlrow">
+              <input
+                className="field"
+                value={input}
+                placeholder="https://github.com/owner/repo 或 owner/repo"
+                spellCheck={false}
+                aria-label="GitHub 地址"
+                onChange={(event) => {
+                  setInput(event.target.value);
+                  setInputProblem(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !reading) void readGithub();
+                }}
+                data-testid="install-github-input"
+              />
+              <button type="button" className="btn-quiet" disabled={reading !== null} onClick={() => void readGithub()} data-testid="install-github-read">
+                <GithubLogo size={13} aria-hidden />
+                读取
+              </button>
+            </div>
+            <p className="field-hint">支持 https://github.com/owner/repo、带 /tree/分支/子目录 的地址，或 owner/repo。只匿名访问 GitHub，每小时约 60 次请求。</p>
+            {inputProblem ? (
+              <p className="install-fault" data-testid="install-input-problem">
+                {inputProblem}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
 
-        <footer className="install-foot">
-          <span data-testid="install-summary">
-            {targetKind === "kb"
-              ? categoryIssue
-                ? `已选 ${selected.size} 个 · 先填分类再安装`
-                : `已选 ${selected.size} 个 · 写入知识库 ${Math.min(eligible, selected.size)} 个目录`
-              : `${selected.size} 个技能 × ${toolTargets.size} 个工具，新增 ${Math.min(creates, selected.size * toolTargets.size)} 处`}
-          </span>
-          <span className="spacer" />
-          <button type="button" className="btn-quiet" onClick={() => { leaveStage(); setResultLines(null); }} data-testid="install-cancel">
-            取消
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={!canSubmit}
-            onClick={() => void install()}
-            title={targetKind === "kb" ? (categoryIssue ?? undefined) : undefined}
-            data-testid="install-submit"
-          >
-            <Archive size={13} aria-hidden />
-            {targetKind === "kb" ? `安装 ${selected.size} 个` : "安装"}
-          </button>
-        </footer>
+        {source === "zip" ? (
+          <section className="install-github" data-testid="install-zip-panel">
+            <p className="field-hint">选择一个含技能的 zip 文件，大小不超过 200 MiB。解压前会检查路径，不安全的压缩包整包拒绝。</p>
+            <div>
+              <button type="button" className="btn-primary" disabled={reading !== null} onClick={() => void pickZip()} data-testid="install-zip-pick">
+                <FileZip size={13} aria-hidden />
+                选择 zip 文件…
+              </button>
+            </div>
+          </section>
+        ) : null}
+
+        {source === "local" ? (
+          <SkillImportWizard
+            embedded
+            onClose={() => setSource("github")}
+            onBusyChange={setWizardBusy}
+            onImported={onChanged}
+            onFinish={() => {
+              void load();
+              onChanged();
+              onBack();
+            }}
+          />
+        ) : null}
+
+        {reading ? (
+          <section className="install-progress-box" data-testid="install-progress">
+            <div className="install-label">
+              {reading.source === "zip" ? "解压中" : (PHASE_LABEL[progress?.phase ?? "resolving"] ?? "读取中")}
+              <span className="install-faint">{reading.label}</span>
+            </div>
+            <div
+              className="install-progress"
+              data-indeterminate={percent === null ? "true" : undefined}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percent ?? undefined}
+              aria-label="读取进度"
+            >
+              <i style={percent === null ? undefined : { width: `${percent}%` }} />
+            </div>
+            <div className="install-progress-line">
+              {percent !== null && progress ? (
+                <span>
+                  {PHASE_LABEL[progress.phase] ?? progress.phase} · {formatBytes(progress.received)} / {formatBytes(progress.total)}
+                </span>
+              ) : (
+                <span>{reading.source === "zip" ? "读取压缩包…" : "连接 GitHub…"}</span>
+              )}
+              <span className="spacer" />
+              {reading.source === "github" ? (
+                <button
+                  type="button"
+                  className="btn-quiet"
+                  onClick={() => abortRef.current?.abort()}
+                  data-testid="install-cancel-read"
+                >
+                  取消
+                </button>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {error ? (
+          <ErrorNote
+            card={error}
+            testid="install-error"
+            retryLabel={error.source === "zip" ? "换一个文件…" : "重试"}
+            onRetry={
+              ["network-failure", "rate-limited", "unsafe-archive", "too-large"].includes(error.code)
+                ? () => (error.source === "zip" ? void pickZip() : void readGithub())
+                : undefined
+            }
+          />
+        ) : null}
+
+        {source !== "local" ? (
+          <section className="install-recent">
+            <h3 className="kb-group-title">最近记录</h3>
+            {records === null ? (
+              <p className="skills-dialog-line">读取中…</p>
+            ) : records.length === 0 ? (
+              <p className="skills-empty">还没有技能操作记录。</p>
+            ) : (
+              <ul className="install-records" data-testid="install-records">
+                {records.map((record) => (
+                  <li key={record.id} className="install-record">
+                    <span className="install-record-op">{OP_LABEL[record.op] ?? record.op}</span>
+                    <span className="install-record-skill">{record.skill || "—"}</span>
+                    <span className="install-record-loc" title={record.location}>
+                      {record.location}
+                    </span>
+                    <span className="install-record-time">{record.at}</span>
+                    {record.restorable && record.backupId ? (
+                      <button
+                        type="button"
+                        className="btn-quiet"
+                        disabled={busy}
+                        onClick={() => void restore(record)}
+                        data-testid={`install-restore-${record.id}`}
+                      >
+                        <Archive size={12} aria-hidden />
+                        恢复
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {notice ? (
+              <p className="skills-dialog-line" data-testid="install-notice">
+                {notice}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="install-view" data-testid="install-view">
-      <header className="install-head">
-        <button type="button" className="icon-button" aria-label="返回技能列表" onClick={onBack}>
-          <ArrowLeft size={14} aria-hidden />
-        </button>
-        <SkillsCrumbs crumbs={["全部技能", "安装"]} />
-      </header>
-      <p className="field-hint">选择一个来源。装进知识库，或直接装进工具。</p>
-
-      {resultLines ? (
-        <div className="install-note" data-tone="ok" data-testid="install-result">
-          <ul>
-            {resultLines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-          <button type="button" className="btn-quiet" onClick={() => setResultLines(null)}>
-            关闭
-          </button>
-        </div>
-      ) : null}
-
-      <div className="install-sources">
-        <button type="button" className="install-source" onClick={() => setWizard(true)} data-testid="install-local">
-          <FolderOpen size={20} aria-hidden />
-          <span>本地文件夹</span>
-        </button>
-        <button
-          type="button"
-          className="install-source"
-          data-active={source === "github"}
-          onClick={() => {
-            setSource(source === "github" ? null : "github");
-            setError(null);
-            setInputProblem(null);
-          }}
-          data-testid="install-github"
-        >
-          <GithubLogo size={20} aria-hidden />
-          <span>GitHub</span>
-        </button>
-        <button type="button" className="install-source" onClick={() => void pickZip()} disabled={reading !== null} data-testid="install-zip">
-          <FileZip size={20} aria-hidden />
-          <span>zip 文件</span>
-        </button>
-      </div>
-
-      {source === "github" ? (
-        <section className="install-github" data-testid="install-github-form">
-          <div className="install-urlrow">
-            <input
-              className="field"
-              value={input}
-              placeholder="https://github.com/owner/repo 或 owner/repo"
-              spellCheck={false}
-              onChange={(event) => {
-                setInput(event.target.value);
-                setInputProblem(null);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !reading) void readGithub();
-              }}
-              data-testid="install-github-input"
-            />
-            <button type="button" className="btn-quiet" disabled={reading !== null} onClick={() => void readGithub()} data-testid="install-github-read">
-              <GithubLogo size={13} aria-hidden />
-              读取
-            </button>
-          </div>
-          <p className="field-hint">支持 https://github.com/owner/repo、带 /tree/分支/子目录 的地址，或 owner/repo。只匿名访问 GitHub，每小时约 60 次请求。</p>
-          {inputProblem ? (
-            <p className="install-fault" data-testid="install-input-problem">
-              {inputProblem}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
-      {reading ? (
-        <section className="install-progress-box" data-testid="install-progress">
-          <div className="install-label">
-            {reading.source === "zip" ? "解压中" : (PHASE_LABEL[progress?.phase ?? "resolving"] ?? "读取中")}
-            <span className="install-faint">{reading.label}</span>
-          </div>
-          <div
-            className="install-progress"
-            data-indeterminate={percent === null ? "true" : undefined}
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={percent ?? undefined}
-            aria-label="读取进度"
-          >
-            <i style={percent === null ? undefined : { width: `${percent}%` }} />
-          </div>
-          <div className="install-progress-line">
-            {percent !== null && progress ? (
-              <span>
-                {PHASE_LABEL[progress.phase] ?? progress.phase} · {formatBytes(progress.received)} / {formatBytes(progress.total)}
-              </span>
-            ) : (
-              <span>{reading.source === "zip" ? "读取压缩包…" : "连接 GitHub…"}</span>
-            )}
-            <span className="spacer" />
-            {reading.source === "github" ? (
-              <button
-                type="button"
-                className="btn-quiet"
-                onClick={() => abortRef.current?.abort()}
-                data-testid="install-cancel-read"
-              >
-                取消
-              </button>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-      {error ? (
-        <ErrorNote
-          card={error}
-          testid="install-error"
-          retryLabel={error.source === "zip" ? "换一个文件…" : "重试"}
-          onRetry={
-            ["network-failure", "rate-limited", "unsafe-archive", "too-large"].includes(error.code)
-              ? () => (error.source === "zip" ? void pickZip() : void readGithub())
-              : undefined
-          }
-        />
-      ) : null}
-
-      <section className="install-recent">
-        <h3 className="kb-group-title">最近记录</h3>
-        {records === null ? (
-          <p className="skills-dialog-line">读取中…</p>
-        ) : records.length === 0 ? (
-          <p className="skills-empty">还没有技能操作记录。</p>
-        ) : (
-          <ul className="install-records" data-testid="install-records">
-            {records.map((record) => (
-              <li key={record.id} className="install-record">
-                <span className="install-record-op">{OP_LABEL[record.op] ?? record.op}</span>
-                <span className="install-record-skill">{record.skill || "—"}</span>
-                <span className="install-record-loc" title={record.location}>
-                  {record.location}
-                </span>
-                <span className="install-record-time">{record.at}</span>
-                {record.restorable && record.backupId ? (
-                  <button
-                    type="button"
-                    className="btn-quiet"
-                    disabled={busy}
-                    onClick={() => void restore(record)}
-                    data-testid={`install-restore-${record.id}`}
-                  >
-                    <Archive size={12} aria-hidden />
-                    恢复
-                  </button>
-                ) : (
-                  <span />
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        {notice ? (
-          <p className="skills-dialog-line" data-testid="install-notice">
-            {notice}
-          </p>
-        ) : null}
-      </section>
-    </div>
+    <SkillsModal
+      title="安装技能"
+      step={stepLabel}
+      busy={modalBusy}
+      onClose={onBack}
+      onBack={handleBack}
+      head={finished ? undefined : tabs}
+      footer={footer}
+      focusKey={focusKey}
+    >
+      {body}
+    </SkillsModal>
   );
 }
 

@@ -16,13 +16,25 @@ type Step = "source" | "select" | "done";
 
 /** Skill import wizard (M3 T08; PRD FR-SKILL). Three steps: pick a source
  * folder, choose skills and a category, then the result. The overlay starts
- * below the title bar, Esc closes it and focus returns to the sidebar entry. */
+ * below the title bar, Esc closes it and focus returns to the sidebar entry.
+ *
+ * Embedded (inside the install modal, M9): the modal supplies the title, the
+ * close button and Esc. `onClose` leaves the wizard unfinished, `onFinish` is
+ * the result step's 完成, `onImported` fires once skills were written, and
+ * `onBusyChange` reports reading / importing so the modal cannot be closed
+ * halfway through a write. */
 export function SkillImportWizard({
   embedded = false,
   onClose,
+  onFinish,
+  onBusyChange,
+  onImported,
 }: {
   readonly embedded?: boolean;
   readonly onClose?: () => void;
+  readonly onFinish?: () => void;
+  readonly onBusyChange?: (busy: boolean) => void;
+  readonly onImported?: () => void;
 } = {}) {
   const storeOpen = useAppStore((state) => state.skillWizardOpen);
   const closeWizard = useAppStore((state) => state.closeSkillWizard);
@@ -54,7 +66,13 @@ export function SkillImportWizard({
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    onBusyChange?.(busy);
+    // the callback identity does not matter, only busy transitions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy]);
+
+  useEffect(() => {
+    if (!open || embedded) return;
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== "Escape") return;
       event.preventDefault();
@@ -107,6 +125,7 @@ export function SkillImportWizard({
       setStep("done");
       if ((outcome.imported ?? []).length > 0) {
         void invalidateTree(["skills", `skills/${category.trim()}`]);
+        onImported?.();
       }
     } catch (err) {
       setError(err instanceof TransportError ? err.message : String(err));
@@ -124,31 +143,39 @@ export function SkillImportWizard({
     });
   };
 
+  const stepLabel =
+    step === "source" ? "第 1 步 / 共 3 步" : step === "select" ? "第 2 步 / 共 3 步" : "第 3 步 / 共 3 步";
+
   const panel = (
       <div
         ref={panelRef}
         className={embedded ? "skill-wizard skill-wizard-embedded" : "skill-wizard"}
-        role="dialog"
+        role={embedded ? "group" : "dialog"}
         aria-modal={embedded ? undefined : "true"}
-        aria-labelledby="skill-wizard-title"
+        aria-labelledby={embedded ? undefined : "skill-wizard-title"}
+        aria-label={embedded ? "导入本地文件夹" : undefined}
         tabIndex={-1}
         data-testid="skill-wizard"
       >
         <div className="skill-wizard-head">
-          <strong id="skill-wizard-title">
-            导入技能
-            <span className="skill-wizard-step">
-              {step === "source" ? "第 1 步 / 共 3 步" : step === "select" ? "第 2 步 / 共 3 步" : "第 3 步 / 共 3 步"}
-            </span>
-          </strong>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="关闭导入向导"
-            onClick={() => close()}
-          >
-            <X size={15} aria-hidden />
-          </button>
+          {embedded ? (
+            <span className="skill-wizard-step skill-wizard-step-solo">{stepLabel}</span>
+          ) : (
+            <>
+              <strong id="skill-wizard-title">
+                导入技能
+                <span className="skill-wizard-step">{stepLabel}</span>
+              </strong>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="关闭导入向导"
+                onClick={() => close()}
+              >
+                <X size={15} aria-hidden />
+              </button>
+            </>
+          )}
         </div>
 
         {error ? (
@@ -266,7 +293,12 @@ export function SkillImportWizard({
               >
                 换个分类再导入
               </button>
-              <button type="button" className="btn-primary" onClick={() => close()} data-testid="skill-wizard-done">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => (embedded && onFinish ? onFinish() : close())}
+                data-testid="skill-wizard-done"
+              >
                 完成
               </button>
             </div>

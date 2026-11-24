@@ -215,6 +215,9 @@ open_install() {
 }
 github_read() { # address wait-label
   local address=$1 label=$2
+  # After an install the dialog shows the result step; 继续安装 returns to the source step (M9).
+  ev "(() => { const again=document.querySelector('[data-testid=\"install-again\"]'); if (again) again.click(); return true; })()" >/dev/null
+  sleep 0.3
   ev "(() => { if (!document.querySelector('[data-testid=\"install-github-form\"]')) { const b=document.querySelector('[data-testid=\"install-github\"]'); if (b) b.click(); } return true; })()" >/dev/null
   sleep 0.3
   fill install-github-input "$address"

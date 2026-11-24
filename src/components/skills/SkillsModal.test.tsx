@@ -211,6 +211,33 @@ describe("SkillsModal (M9 T01)", () => {
     document.removeEventListener("keydown", pageHandler);
   });
 
+  it("moves focus to the new first control when focusKey changes, and not otherwise", () => {
+    const { rerender } = render(
+      <Harness focusKey="a">
+        <input aria-label="第一步输入" />
+      </Harness>,
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText("第一步输入"));
+
+    // Same key: a re-render never steals focus the user moved.
+    const footerButton = screen.getByRole("button", { name: "底栏按钮" });
+    footerButton.focus();
+    rerender(
+      <Harness focusKey="a">
+        <input aria-label="第一步输入" />
+      </Harness>,
+    );
+    expect(document.activeElement).toBe(footerButton);
+
+    // New key: the old input is gone and focus lands on the new step's input.
+    rerender(
+      <Harness focusKey="b">
+        <input aria-label="第二步输入" />
+      </Harness>,
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText("第二步输入"));
+  });
+
   it("becomes closable again once busy ends", () => {
     const onClose = vi.fn();
     const { rerender } = render(<Harness busy onClose={onClose} />);

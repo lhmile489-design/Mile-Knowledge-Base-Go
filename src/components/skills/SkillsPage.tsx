@@ -273,13 +273,6 @@ export function SkillsPage() {
               void useSkillsStore.getState().loadScan(vaultId);
             }}
           />
-        ) : installOpen && vaultId ? (
-          <InstallView
-            vaultId={vaultId}
-            tools={tools}
-            onBack={() => setInstallOpen(false)}
-            onChanged={() => void useSkillsStore.getState().loadScan(vaultId)}
-          />
         ) : updatePath && vaultId ? (
           <UpdateView
             vaultId={vaultId}
@@ -377,6 +370,14 @@ export function SkillsPage() {
         )}
       </main>
 
+      {installOpen && vaultId ? (
+        <InstallView
+          vaultId={vaultId}
+          tools={tools}
+          onBack={() => setInstallOpen(false)}
+          onChanged={() => void useSkillsStore.getState().loadScan(vaultId)}
+        />
+      ) : null}
     </section>
   );
 }
