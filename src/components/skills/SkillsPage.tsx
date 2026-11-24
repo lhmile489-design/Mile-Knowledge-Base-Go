@@ -301,6 +301,7 @@ export function SkillsPage() {
                 <KbSkillsPage
                   groups={groups}
                   tools={tools}
+                  scanning={scan?.scanning ?? false}
                   onOpenSkill={openSkill}
                   onLocate={locateSkill}
                   onDistribute={(paths) => setDistributePaths(paths)}
@@ -348,6 +349,11 @@ export function SkillsPage() {
                     : (scan?.tools ?? [])
                 }
                 tools={tools}
+                title={
+                  selection.kind === "tools" && selection.toolId
+                    ? (tools.find((tool) => tool.id === selection.toolId)?.name ?? selection.toolId)
+                    : "全部工具"
+                }
                 onChanged={refreshScan}
                 onResult={(lines) => setResultLines(lines)}
                 onInstall={vaultId ? () => {

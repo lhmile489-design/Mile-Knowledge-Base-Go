@@ -37,11 +37,11 @@ export function TitleBar() {
     >
       <div className="flex min-w-0 items-center gap-2">
         <img src={appIcon} alt="" aria-hidden width={18} height={18} style={{ flex: "none", display: "block" }} />
-        <span className="text-body font-semibold" style={{ color: "var(--raw-text)" }}>
+        <span className="app-title text-body font-semibold" style={{ color: "var(--raw-text)" }}>
           Mile Knowledge Base
         </span>
         <span
-          className="hidden text-caption uppercase sm:inline"
+          className="app-vault-tag hidden text-caption uppercase sm:inline"
           style={{ fontFamily: "var(--font-mono)", letterSpacing: "0.32em", color: "var(--raw-faint)", marginTop: 1 }}
         >
           VAULT

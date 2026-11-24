@@ -823,6 +823,7 @@
 
 /* 确认卡：盖住整个技能页（导航 + 主区），Esc 等于取消。 */
 .skills-page .skills-confirm-layer {
+  grid-template-rows: 1fr;
   position: fixed;
   top: var(--titlebar-h);
   right: 8px;
@@ -1075,7 +1076,9 @@
     transition-duration: 1ms !important;
   }
 
-  .skills-page .skills-field span {
+  .skills-page .skills-field span,
+  .skills-page .kb-spin,
+  .skills-page .kb-skeleton {
     animation: none !important;
   }
 
@@ -1113,4 +1116,102 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+/* 扫描中：标题旁小转圈与骨架卡（UI 稿 11.2 scanning-*）。 */
+.skills-page .kb-spin {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 2px;
+  border: 1.5px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  vertical-align: -1px;
+  animation: skills-turn 0.9s linear infinite;
+}
+
+@keyframes skills-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.skills-page .kb-skeletons {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.skills-page .kb-skeleton {
+  min-height: 148px;
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-card);
+  background: linear-gradient(
+    90deg,
+    var(--raw-raised) 0%,
+    color-mix(in srgb, var(--raw-raised) 40%, var(--raw-card)) 50%,
+    var(--raw-raised) 100%
+  );
+  background-size: 200% 100%;
+  animation: skills-shimmer 1.4s linear infinite;
+}
+
+@keyframes skills-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.skills-page .tool-skills {
+  align-content: start;
+}
+
+.skills-page .tool-toolbar {
+  justify-content: flex-start;
+}
+
+.skills-page .tool-toolbar .spacer {
+  flex: 1;
+}
+
+.skills-page .tool-title {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-title);
+  font-weight: 650;
+  color: var(--raw-strong);
+  white-space: nowrap;
+}
+
+.skills-page .tool-count {
+  font-size: var(--text-meta);
+  color: var(--raw-faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.skills-page .skills-subview-head {
+  justify-content: flex-start;
+}
+
+@media (max-width: 1023px) {
+  .skills-page .kb-toolbar {
+    gap: 8px;
+  }
+
+  .skills-page .kb-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .skills-page .kb-search {
+    width: 220px;
+  }
+
+  .skills-page .kb-install {
+    flex: none;
+    white-space: nowrap;
+  }
 }

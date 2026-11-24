@@ -236,7 +236,12 @@ check "Esc cancels the confirm" "document.querySelector('[data-testid=\"uninstal
 stop_app
 
 echo "== AC-PAGE-6: reduced motion"
-start_app "$APPD" WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--force-prefers-reduced-motion
+if [ "${M8_SYSTEM_MOTION:-0}" = "1" ]; then
+  # Q-M8-4: the user turned the system animation effect off for this run.
+  start_app "$APPD"
+else
+  start_app "$APPD" WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--force-prefers-reduced-motion
+fi
 show_skills
 wait_match "motion query" "matchMedia('(prefers-reduced-motion: reduce)').matches === true" '"value":true' 20
 wait_match "cards visible" "document.querySelector('[data-testid^=\"kb-card-\"]') !== null" '"value":true' 30

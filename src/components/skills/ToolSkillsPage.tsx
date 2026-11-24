@@ -41,6 +41,7 @@ export function ToolSkillsPage({
   onManageTargets,
   onOpenRestore,
   onInstall,
+  title = "全部工具",
 }: {
   readonly vaultId: string;
   readonly groups: SkillToolScan[];
@@ -50,6 +51,7 @@ export function ToolSkillsPage({
   readonly onManageTargets?: () => void;
   readonly onOpenRestore?: () => void;
   readonly onInstall?: () => void;
+  readonly title?: string;
 }) {
   const [chip, setChip] = useState("all");
   const [showHidden, setShowHidden] = useState(false);
@@ -188,14 +190,18 @@ export function ToolSkillsPage({
           管理目录
         </button>
       </div>
-      {onInstall ? (
-        <div className="tool-toolbar">
-          <span className="spacer" />
+      <div className="tool-toolbar">
+        <h2 className="tool-title">{title}</h2>
+        <span className="tool-count">
+          {rows.length} 个 · {visibleGroups.length} 个工具
+        </span>
+        <span className="spacer" />
+        {onInstall ? (
           <button type="button" className="btn-primary" data-testid="kb-install-top" onClick={onInstall}>
             安装
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
       <div className="tool-chips" role="tablist" aria-label="工具筛选">
         <button
           type="button"

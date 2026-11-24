@@ -186,3 +186,16 @@ body {
   padding: 10px 12px;
   font-size: var(--text-body-sm);
 }
+
+/* Narrow windows hide the app name in the title bar (UI 稿 11.2). */
+.app-title,
+.app-vault-tag {
+  white-space: nowrap;
+}
+
+@media (max-width: 1023px) {
+  .app-title,
+  .app-vault-tag {
+    display: none;
+  }
+}

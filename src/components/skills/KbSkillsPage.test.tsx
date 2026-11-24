@@ -53,6 +53,24 @@ describe("KbSkillsPage (M8 T04 layout)", () => {
     expect(screen.getByTestId("kb-count").textContent).toBe("1 个 · 1 个分类");
   });
 
+  it("shows the scanning count and skeleton cards before the first payload", () => {
+    render(
+      <KbSkillsPage
+        groups={[]}
+        tools={tools}
+        scanning
+        onOpenSkill={noop}
+        onLocate={noop}
+        onDistribute={noop}
+        onInstall={noop}
+        onUpdate={noop}
+      />,
+    );
+    expect(screen.getByTestId("kb-count").textContent).toContain("正在扫描");
+    expect(screen.getByTestId("kb-skeletons")).toBeTruthy();
+    expect(screen.queryByTestId("kb-empty")).toBeNull();
+  });
+
   it("filters by name, description or category and reports the filtered count", () => {
     renderPage();
     fireEvent.change(screen.getByTestId("kb-skills-search"), { target: { value: "组合式" } });

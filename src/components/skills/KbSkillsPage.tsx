@@ -13,6 +13,7 @@ type View = "grid" | "list";
 export function KbSkillsPage({
   groups,
   tools,
+  scanning = false,
   onOpenSkill,
   onLocate,
   onDistribute,
@@ -21,6 +22,7 @@ export function KbSkillsPage({
 }: {
   readonly groups: SkillCategory[];
   readonly tools: SkillTool[];
+  readonly scanning?: boolean;
   readonly onOpenSkill: (path: string) => void;
   readonly onLocate: (path: string) => void;
   readonly onDistribute: (paths: string[]) => void;
@@ -100,7 +102,16 @@ export function KbSkillsPage({
       <div className="kb-toolbar">
         <h2 className="kb-title">{title}</h2>
         <span className="kb-count" data-testid="kb-count">
-          {query ? `${filteredTotal} / ${total} 个` : `${total} 个 · ${groups.length} 个分类`}
+          {scanning ? (
+            <>
+              <span className="kb-spin" aria-hidden />
+              正在扫描…
+            </>
+          ) : query ? (
+            `${filteredTotal} / ${total} 个`
+          ) : (
+            `${total} 个 · ${groups.length} 个分类`
+          )}
         </span>
         <span className="kb-spacer" />
         <input
@@ -142,7 +153,13 @@ export function KbSkillsPage({
       </div>
 
       <div className="kb-content">
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && scanning ? (
+          <div className="kb-cards kb-skeletons" aria-label="正在扫描" data-testid="kb-skeletons">
+            {[0, 1, 2, 3, 4].map((row) => (
+              <span key={row} className="kb-skeleton" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="skills-empty" data-testid="kb-empty">
             <p>{query ? "没有匹配的技能。" : "知识库里还没有技能。"}</p>
             {query ? (
