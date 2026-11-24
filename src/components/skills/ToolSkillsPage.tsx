@@ -124,12 +124,21 @@ export function ToolSkillsPage({
   ).length;
   const detectedCount = tools.filter((tool) => tool.id !== "agents" && tool.status === "detected").length;
 
-  const rows = useMemo(() => {
-    const all = groups.flatMap((group) => group.skills.map((skill) => ({ skill, toolId: group.toolId })));
-    return all
-      .filter((row) => chip === "all" || row.toolId === chip)
-      .sort((a, b) => a.skill.name.toLowerCase().localeCompare(b.skill.name.toLowerCase()));
+  // Rows stay grouped by tool (UI 稿 11.2); the chip row only narrows the
+  // groups for the legacy panel until T09 moves the entry to the navigation.
+  const visibleGroups = useMemo(() => {
+    return groups
+      .filter((group) => chip === "all" || group.toolId === chip)
+      .map((group) => ({
+        ...group,
+        skills: [...group.skills].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+      }))
+      .filter((group) => group.skills.length > 0);
   }, [groups, chip]);
+  const rows = useMemo(
+    () => visibleGroups.flatMap((group) => group.skills.map((skill) => ({ skill, toolId: group.toolId }))),
+    [visibleGroups],
+  );
 
   const specOf = (skill: ToolSkill) => (skill.base && skill.rel ? `${skill.base}:${skill.rel}` : skill.name);
   const toolFor = (id: string) => tools.find((tool) => tool.id === id);
@@ -234,83 +243,99 @@ export function ToolSkillsPage({
           ) : null}
         </div>
       ) : (
-        <div className="tool-rows">
-          {rows.map(({ skill, toolId }) => {
-            const remote = skill.remote ? remotePill(skill.remote) : null;
-            const status = remote ?? statusOf(skill);
-            const updatable = skill.remote?.updateState === "update-available";
-            const tool = toolFor(toolId);
+        <div className="tool-groups">
+          {visibleGroups.map((group) => {
+            const tool = toolFor(group.toolId);
+            const label = tool?.name ?? group.toolId;
             return (
-              <div key={identityOf(skill, toolId)} className="tool-row" data-testid={`tool-skill-${skill.name}-${toolId}`}>
-                <span
-                  className="tool-row-icon"
-                  title={skill.sourceToolId && tool ? `${toolFor(skill.sourceToolId)?.name ?? skill.sourceToolId}${skill.subdir ? ` · ${skill.subdir}` : ""}` : undefined}
-                >
-                  <ToolIcon tool={skill.sourceToolId ? toolFor(skill.sourceToolId) : tool} size={18} />
-                </span>
-                <span className="tool-row-name">{skill.name}</span>
-                <span className="tool-row-path" title={skill.path}>
-                  {skill.path}
-                  {skill.remote ? ` · ${sourceOf(skill.remote)}` : ""}
-                </span>
-                <span className="pill" data-tone={status.tone} title={remote?.title}>
-                  {status.text}
-                </span>
-                <span className="tool-row-actions">
-                  {updatable ? (
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`更新 ${skill.name}`}
-                      title="更新"
-                      onClick={() => setUpdating(skill)}
-                      data-testid={`tool-update-${skill.name}-${toolId}`}
-                    >
-                      <ArrowClockwise size={14} aria-hidden />
-                    </button>
-                  ) : null}
-                  {skill.origin === "copied" && skill.sync === "vault-updated" && skill.sourcePath && tool?.kind !== "project" ? (
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`重新分发 ${skill.name}`}
-                      onClick={() => void reDistribute(skill)}
-                    >
-                      <ArrowClockwise size={14} aria-hidden />
-                    </button>
-                  ) : null}
-                  {skill.origin !== "builtin" ? (
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`卸载 ${skill.name}`}
-                      onClick={() => setUninstall(skill)}
-                      data-testid={`tool-uninstall-${skill.name}-${toolId}`}
-                    >
-                      <Tray size={14} aria-hidden />
-                    </button>
-                  ) : null}
-                  {skill.origin === "independent" || skill.origin === "builtin" || skill.origin === "external-link" ? (
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`收进知识库 ${skill.name}`}
-                      onClick={() => setAdopt(skill)}
-                      data-testid={`tool-adopt-${skill.name}-${toolId}`}
-                    >
-                      <Archive size={14} aria-hidden />
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`打开所在目录 ${skill.name}`}
-                    onClick={() => void skillsApi.reveal(toolId, specOf(skill)).catch(() => undefined)}
-                  >
-                    <FolderOpen size={14} aria-hidden />
-                  </button>
-                </span>
-              </div>
+              <section key={group.toolId} className="tool-group" data-testid={`tool-group-${group.toolId}`}>
+                <div className="tool-group-head">
+                  <span className="tool-group-ico" aria-hidden>
+                    <ToolIcon tool={tool ?? { id: group.toolId, name: label, iconKey: "" }} size={16} />
+                  </span>
+                  <span className="tool-group-name">{label}</span>
+                  <span className="tool-group-count">{group.skills.length}</span>
+                </div>
+                <div className="tool-list">
+                  {group.skills.map((skill) => {
+                    const remote = skill.remote ? remotePill(skill.remote) : null;
+                    const status = remote ?? statusOf(skill);
+                    const updatable = skill.remote?.updateState === "update-available";
+                    return (
+                      <div key={identityOf(skill, group.toolId)} className="tool-row" data-testid={`tool-skill-${skill.name}-${group.toolId}`}>
+                        <span
+                          className="tool-row-icon"
+                          title={skill.sourceToolId && tool ? `${toolFor(skill.sourceToolId)?.name ?? skill.sourceToolId}${skill.subdir ? ` · ${skill.subdir}` : ""}` : undefined}
+                        >
+                          <ToolIcon tool={skill.sourceToolId ? toolFor(skill.sourceToolId) : tool} size={18} />
+                        </span>
+                        <span className="tool-row-name">{skill.name}</span>
+                        <span className="tool-row-path" title={skill.path}>
+                          {skill.path}
+                          {skill.remote ? ` · ${sourceOf(skill.remote)}` : ""}
+                        </span>
+                        <span className="pill" data-tone={status.tone} title={remote?.title}>
+                          {status.text}
+                        </span>
+                        <span className="tool-row-actions">
+                          {updatable ? (
+                            <button
+                              type="button"
+                              className="icon-button"
+                              aria-label={`更新 ${skill.name}`}
+                              title="更新"
+                              onClick={() => setUpdating(skill)}
+                              data-testid={`tool-update-${skill.name}-${group.toolId}`}
+                            >
+                              <ArrowClockwise size={14} aria-hidden />
+                            </button>
+                          ) : null}
+                          {skill.origin === "copied" && skill.sync === "vault-updated" && skill.sourcePath && tool?.kind !== "project" ? (
+                            <button
+                              type="button"
+                              className="icon-button"
+                              aria-label={`重新分发 ${skill.name}`}
+                              onClick={() => void reDistribute(skill)}
+                            >
+                              <ArrowClockwise size={14} aria-hidden />
+                            </button>
+                          ) : null}
+                          {skill.origin !== "builtin" ? (
+                            <button
+                              type="button"
+                              className="icon-button"
+                              aria-label={`卸载 ${skill.name}`}
+                              onClick={() => setUninstall(skill)}
+                              data-testid={`tool-uninstall-${skill.name}-${group.toolId}`}
+                            >
+                              <Tray size={14} aria-hidden />
+                            </button>
+                          ) : null}
+                          {skill.origin === "independent" || skill.origin === "builtin" || skill.origin === "external-link" ? (
+                            <button
+                              type="button"
+                              className="icon-button"
+                              aria-label={`收进知识库 ${skill.name}`}
+                              onClick={() => setAdopt(skill)}
+                              data-testid={`tool-adopt-${skill.name}-${group.toolId}`}
+                            >
+                              <Archive size={14} aria-hidden />
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="icon-button"
+                            aria-label={`打开所在目录 ${skill.name}`}
+                            onClick={() => void skillsApi.reveal(group.toolId, specOf(skill)).catch(() => undefined)}
+                          >
+                            <FolderOpen size={14} aria-hidden />
+                          </button>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
             );
           })}
         </div>

@@ -50,13 +50,31 @@ const scanPayload = {
       skills: [{ name: "go", description: "Go 规范", path: "skills/后端/go", category: "后端", distributed: [] }],
     },
   ],
-  tools: [],
+  tools: [
+    {
+      toolId: "claude-code",
+      skills: [
+        { name: "vue", description: "", path: "~/.claude/skills/vue", toolId: "claude-code", origin: "linked", base: "install", rel: "vue" },
+      ],
+    },
+    {
+      toolId: "cursor",
+      skills: [
+        { name: "go", description: "", path: "~/.cursor/skills/go", toolId: "cursor", origin: "independent", base: "install", rel: "go" },
+      ],
+    },
+  ],
 };
 
 const emptyPreview = { preview: { status: "ok", items: [], pending: 0, localOnly: [], unmatched: [], warnings: [], canRebuild: true } };
 
 beforeEach(() => {
-  registry.mockReset().mockResolvedValue({ tools: [] });
+  registry.mockReset().mockResolvedValue({
+    tools: [
+      { id: "claude-code", name: "Claude Code", iconKey: "claude-code", scanDirs: [], status: "detected", kind: "builtin", official: true, enabled: true },
+      { id: "cursor", name: "Cursor", iconKey: "cursor", scanDirs: [], status: "detected", kind: "builtin", official: true, enabled: true },
+    ],
+  });
   scan.mockReset().mockResolvedValue({ scan: scanPayload });
   restorePreview.mockReset().mockResolvedValue(emptyPreview);
   readDoc.mockReset().mockResolvedValue({ doc: { text: "", revision: 1, hash: "h", size: 0 } });
@@ -84,6 +102,15 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     expect(screen.getByTestId("kb-card-go")).toBeTruthy();
     expect(screen.queryByTestId("kb-card-vue")).toBeNull();
     expect(screen.getByRole("heading", { name: "后端" })).toBeTruthy();
+  });
+
+  it("shows the tool groups for the selected navigation item", async () => {
+    render(<SkillsPage />);
+    await waitFor(() => expect(screen.getByRole("button", { name: /Cursor/ })).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: /Cursor/ }));
+    expect(screen.getByTestId("tool-group-cursor")).toBeTruthy();
+    expect(screen.getByTestId("tool-skill-go-cursor")).toBeTruthy();
+    expect(screen.queryByTestId("tool-skill-vue-claude-code")).toBeNull();
   });
 
   it("returns to the workbench before opening SKILL.md", async () => {

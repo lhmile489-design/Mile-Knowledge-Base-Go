@@ -73,6 +73,19 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+describe("ToolSkillsPage groups (M8 T05)", () => {
+  it("renders one section per tool with its rows", () => {
+    render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={() => {}} />);
+    const claude = screen.getByTestId("tool-group-claude-code");
+    const agents = screen.getByTestId("tool-group-agents");
+    expect(claude.textContent).toContain("Claude Code");
+    expect(agents.textContent).toContain("通用目录");
+    expect(claude.textContent).toContain("1");
+    expect(screen.getByTestId("tool-skill-vue-claude-code")).toBeTruthy();
+    expect(screen.getByTestId("tool-skill-go-agents")).toBeTruthy();
+  });
+});
+
 describe("ToolSkillsPage", () => {
   it("filters with chips and shows source statuses", () => {
     render(<ToolSkillsPage vaultId="v1" groups={groups as never} tools={tools as never} onChanged={() => {}} />);

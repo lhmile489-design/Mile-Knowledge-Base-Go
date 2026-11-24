@@ -11,6 +11,7 @@ import { InstallView } from "./InstallView";
 import { KbSkillsPage } from "./KbSkillsPage";
 import { RestoreView } from "./RestoreView";
 import { SkillsNav, type SkillsSelection } from "./SkillsNav";
+import { ToolSkillsPage } from "./ToolSkillsPage";
 import { UpdateView } from "./UpdateView";
 
 type PendingUpdate = { vaultId: string; stageId: string; planId: string; name: string };
@@ -273,6 +274,27 @@ export function SkillsPage() {
                     setRestoreOpen(false);
                     setUpdatePath(skill.path);
                   }}
+                />
+              ) : (
+                <div className="skills-empty" data-testid="skills-no-vault">
+                  <p>还没有打开知识库。</p>
+                  <button type="button" className="btn-accent" onClick={() => void chooseVault()}>
+                    打开知识库…
+                  </button>
+                </div>
+              )
+            ) : selection.kind === "tools" ? (
+              vaultId ? (
+                <ToolSkillsPage
+                  vaultId={vaultId}
+                  groups={
+                    selection.toolId
+                      ? (scan?.tools ?? []).filter((group) => group.toolId === selection.toolId)
+                      : (scan?.tools ?? [])
+                  }
+                  tools={tools}
+                  onChanged={refreshScan}
+                  onResult={(lines) => setResultLines(lines)}
                 />
               ) : (
                 <div className="skills-empty" data-testid="skills-no-vault">

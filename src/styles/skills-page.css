@@ -637,3 +637,117 @@
   font-size: var(--text-body-sm);
   text-align: center;
 }
+
+/* ---------- 工具视图（M8 T05；chip 行、隐藏工具折叠与管理目录行只在旧浮层保留） ---------- */
+.skills-page .tool-skills {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 8px 24px 28px;
+}
+
+.skills-page .tool-skills > .restore-banner,
+.skills-page .tool-skills .tool-chips,
+.skills-page .tool-skills [data-testid='tool-manage-row'],
+.skills-page .tool-skills [data-testid='tool-toggle-hidden'],
+.skills-page .tool-skills .tool-group-caption {
+  display: none;
+}
+
+.skills-page .tool-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.skills-page .tool-group {
+  display: grid;
+  gap: 8px;
+}
+
+.skills-page .tool-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--raw-muted);
+  font-size: var(--text-meta);
+  font-weight: 600;
+}
+
+.skills-page .tool-group-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.skills-page .tool-group-name {
+  color: var(--raw-text);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+}
+
+.skills-page .tool-group-count {
+  color: var(--raw-faint);
+  font-weight: 500;
+}
+
+.skills-page .tool-list {
+  border: 1px solid var(--raw-line);
+  border-radius: var(--radius-card);
+  background: var(--raw-card);
+  overflow: hidden;
+}
+
+.skills-page .tool-row {
+  display: grid;
+  grid-template-columns: 18px minmax(110px, 200px) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--raw-line);
+}
+
+.skills-page .tool-list .tool-row:first-child {
+  border-top: 0;
+}
+
+.skills-page .tool-row-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+
+.skills-page .tool-row-name {
+  overflow: hidden;
+  color: var(--raw-text);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-page .tool-row-path {
+  overflow: hidden;
+  color: var(--raw-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-page .tool-row .pill {
+  white-space: nowrap;
+}
+
+.skills-page .tool-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+}
+
+.skills-page .tool-row:hover .tool-row-actions,
+.skills-page .tool-row:focus-within .tool-row-actions {
+  opacity: 1;
+}
