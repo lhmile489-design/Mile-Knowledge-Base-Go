@@ -36,7 +36,6 @@ beforeEach(() => {
     page: "work",
     pendingPage: null,
     settingsOpen: false,
-    skillsPanelOpen: false,
     activeVaultId: "",
     vaults: [],
     unavailable: [],

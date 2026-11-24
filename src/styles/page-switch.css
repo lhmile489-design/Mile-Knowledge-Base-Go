@@ -66,7 +66,7 @@
   outline-offset: 2px;
 }
 
-/* Shared attention badge; rendered by PageSwitch and (until T14) SkillButton. */
+/* Shared attention badge; rendered by PageSwitch. */
 .skill-badge {
   display: grid;
   place-items: center;

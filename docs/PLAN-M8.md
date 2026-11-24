@@ -1,6 +1,6 @@
 # M8 实施计划：R2 技能页（独立页面与材质试点）
 
-> 状态：v0.1 已批准（用户 2026-11-24 按建议批准，含 Q-M8-1–3、B-M8-01–03）；按「一次一个任务」执行，T00–T13 已完成，T14 待放行。
+> 状态：v0.1 已批准（用户 2026-11-24 按建议批准，含 Q-M8-1–3、B-M8-01–03）；按「一次一个任务」执行，T00–T14 已完成，推送待用户确认。
 > 本次目标：交付 PRD 第 17 节 FR-SKM-PAGE（v2.7）。闭环为「在标题栏点『技能』进入独立技能页 → 在左侧导航切换知识库与工具目录 → 完成一次分发与一次卸载 → 点『工作台』返回，对话、文档、草稿与滚动位置都和离开前一样」；技能页里的毛玻璃卡片、背景色场与非线性动效按 DESIGN 第 13 节实现，性能不达标时自动降级。
 > 上一里程碑：docs/PLAN-M7.md（已完成并推送，`813e9ec`；推送记录 `8bacb3e`，版本 1.5.0）。下一里程碑：未规划。
 
@@ -61,7 +61,7 @@
 | T11 | 视觉对照 | `scripts/visual/capture-m8.py`（新）、`design/r2/shots-m8/`、UI 稿 11.5（真实截图差异）、DESIGN 13.7 实测 | T10 | 8 状态 × 浅 / 深 + 窄窗口 2 张真实截图；与原型逐张对照，差异写进 UI 稿；毛玻璃底上的对比度取样复测达标 | 已验证（`capture-m8.py` 在真窗口拍 18 张：8 状态 × 浅 / 深 + 两张窄窗；UI 稿 11.5 记录 7 条差异（工具目录完整列出、扫描状态行、状态胶囊、无 Ctrl K 提示、精简空状态、分发目标受真实探测限制、窄窗隐藏应用名）；对比度取样：默认橙描述 6.78 / 5.64、分类 5.21 / 4.89、路径 8.09 / 7.52、名称 12.53 / 10.61，6 套主题色 × 2 主题最低 4.53 / 5.64，全部 ≥ 4.5；Q-M8-4 按用户选择跳过系统开关，AC-PAGE-6 用 Chromium 参数验证） |
 | T12 | 性能 | `scripts/e2e/perf-m8.sh`（新）、`perf-gate.py`（`kind=m8`） | T11 | 按 T00 校准后的门槛实测通过（AC-PAGE-7）；`kind=skills/m5/m6/m7` 不退化 | 已验证（`perf-m8.sh` 200 个技能真窗口：进入 p95 138.3ms、滚动 p95 0.34 个刷新间隔、慢帧 0、切回 p95 37.3ms，`kind=m8` 通过；M5–M7 与 `skills` 基准复跑全部通过且未退化） |
 | T13 | 整体审查（按 B-M8-03） | 审查报告、本计划、受影响代码与测试 | T12 | 阻断 0，需改项已修或经用户接受 | 已验证（task-reviewer 独立审查 8bacb3e..HEAD：阻断 0、需改 1（技能页缺「检查更新」按钮与未检查 / 额度底栏状态，违反 PRD FR-SKM-UPD）已修并补测试；其余为建议与验证缺口：新增工作台被覆盖 / inert 的 e2e 断言，自动降级真实触发与旧浮层死代码留作已知风险，T14 清理；Vitest 327、Go 全过、全量 e2e 409） |
-| T14 | 收尾（按 B-M8-01） | 删除浮层外壳与旧名字（Q-M8-2）、`skills-panel.css` 浮层规则；README、CLAUDE.md、路线、发布清单、本计划、`mygo.config.ts` | T13 | 旧名字零引用；1.6.0 安装包与 1.5.0 → 1.6.0 升级冒烟；文档同步；列提交；推送前询问 | 待做 |
+| T14 | 收尾（按 B-M8-01） | 删除浮层外壳与旧名字（Q-M8-2）、`skills-panel.css` 浮层规则；README、CLAUDE.md、路线、发布清单、本计划、`mygo.config.ts` | T13 | 旧名字零引用；1.6.0 安装包与 1.5.0 → 1.6.0 升级冒烟；文档同步；列提交；推送前询问 | 已验证（删除 `SkillsPanel` / `SkillButton` 与测试、`appStore` 三处旧状态与别名、浮层专属样式；`skills-panel.css` 更名为 `skills-shared.css`；旧名字在 `src/` 与 `scripts/` 零引用；版本 1.6.0；Vitest 319、Go 719、全量 e2e 409；安装包 1.6.0 与本机 1.5.0 → 1.6.0 覆盖安装冒烟完成，真实设置文件前后一致；提交本地完成，推送待用户确认） |
 
 依赖顺序 T00 → T14，串行。
 
@@ -138,6 +138,7 @@
 | 2026-11-24 | T12 | `scripts/e2e/perf-m8.sh`（新）：200 个技能、毛玻璃开、真窗口。进入技能页测 5 轮（切回工作台再进，rAF 到首张卡片可见）；空闲 40 帧取刷新间隔 R；卡片网格滚动 3 轮 × 6 秒（rAF 驱动 `scrollTop`）记录 p50 / p95 / max 与 > 2R 的慢帧比例；切回工作台测 5 轮首帧。指标：`enterP95Ms` 138.3、`scrollP95Frames` 0.34、`slowFrameRatio` 0、`switchBackMs` 37.3，未触发自动降级。`perf-gate.py` 增加 `kind=m8`（1.5 / 0.05 / 300 / 100）。回归：`perf-m4`（skills）106.6 / 31.8，`perf-m5` 161.2 / 60.6，`perf-m6` 114.1 / 238.4 / 27.7 / 14.9，`perf-m7` 53.2 / 15.5 / 72.7，全部通过且不高于既有记录。README、技术设计 19.5、DESIGN 13.7 记录实测值 | 本地（随本任务提交） | `bash scripts/e2e/perf-m8.sh` EXIT=0（窗口在后台，R 约 24.7ms；比值口径按 T00）；四个既有性能脚本逐个 `perf-gate` 通过 | 待放行 T13 |
 | 2026-11-24 | T13 | task-reviewer 独立审查 M8 全部改动（重点：工作台保持挂载、焦点与 Esc、降级判定、入口迁移、契约与测试、安全边界）。结论：阻断 0；需改 1——技能页丢了 PRD FR-SKM-UPD 的手动「检查更新」与「未检查来源 / 额度用完」底栏状态。修复：`SkillsPage` 保存 M93 结果并在打开与事件后刷新，`SkillsNav` 底栏恢复「检查更新」按钮、上次检查时间、未检查来源与额度提示（`skills-checked` / `skills-check-updates` / `skills-unchecked` / `skills-rate-limit` 沿用旧 testid），样式加 `.skills-nav-updates`（窄窗隐藏），组件测试加手动检查与三类状态断言。审查其余项处理：ac-m8 增加「工作台被覆盖时 inert」「技能页宿主不透明覆盖、中心点不在工作台」「手动检查按钮可用」三条 e2e；无 GitHub 来源的夹具里 M93 不会产生检查时间，e2e 只验按钮可用，强制检查由组件测试覆盖。保留为已知风险/记录：自动降级链在真窗口未实际触发（T12 余量很大）、设置页打开时胶囊仍高亮「工作台」的过渡中间态、旧浮层与 `SkillButton` 死代码按计划 T14 删除、真实系统动画开关按用户选择跳过。T11 截图按新底栏重拍 18 张，UI 稿 11.5 第 2 条同步 | 本地（随本任务提交） | task-reviewer 报告（阻断 0、需改 1、建议 8）；修复后 `tsc` 通过、`check:skill-tokens` 通过；全量 Vitest 50 文件 / 327 项；Go 全过；全量 e2e 409 项（15/16/22/47/37/54/54/46/68/50）EXIT=0；ac-m8 50/50 | 待放行 T14 |
 | 2026-11-24 | 图标替换（用户请求，非编号任务） | 用户提供 `docs/icon/Glossy Blue Toolbox Cube Icon.png`（1254×1254、黑色圆角底）。处理：黑底转透明并做圆角边缘渐变、裁到内容边界加 2% 留白，生成 `resources/icon.png`（512）与 `resources/icon-tray.png`（32）。`bun run build` 重新生成 exe 与 1.5.0 安装包；从 exe 提取的 32px 图标与 Vite 构建后的 `dist/assets/icon-*.png` 哈希均与新图一致 | 本地（随本任务提交） | 构建成功；exe 提取图标与产物资源核对通过。Web/Go 测试与图标无关，未重跑全量 | 待放行 T14 |
+| 2026-11-24 | T14 | 收尾：删除 `SkillsPanel.tsx`、`SkillButton.tsx` 与 `SkillsPanel.test.tsx`；`App.tsx` 不再挂载浮层；`appStore` 删除 `skillsPanelOpen` / `openSkillsPanel` / `closeSkillsPanel`；浮层专属样式（`.skills-layer`、`.skills-backdrop`、`.skills-panel`、`.skills-head`、`.skills-tabs`、`.skills-count`、`.skills-install`、`.skills-body`、`.skills-groups`、`.skills-foot`、`.skill-button` 等）删除，共享样式文件更名为 `skills-shared.css`；`capture-m5/6/7/new` 的旧入口改为 `showPage`；`mygo.config.ts` 版本 1.6.0。文档：README、CLAUDE.md、PLAN-M0（M8 行与 3.9.1）、技术设计 19.2（别名已删）、发布清单第 15 节、本计划。安装冒烟经用户授权由本会话执行：静默 `/S` 退出码 0，安装目录 1.6.0，真实 `settings.json` 前后 SHA256 一致，应用启动 10 秒存活、标题正确；关闭询问导致 `CloseMainWindow` 未退出，由本会话停止 | 本地（随本任务提交） | `tsc` 通过；`check:skill-tokens` 通过；Vitest 49 文件 / 319 项；Go 719；全量 e2e 409 项 EXIT=0；`rg` 旧名字零引用；1.6.0 安装包与升级冒烟见发布清单第 15 节。提交清单见本轮汇报，推送待用户确认 | 待用户确认推送 |
 
 ## 9. 自查
 

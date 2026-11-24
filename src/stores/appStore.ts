@@ -30,7 +30,6 @@ type AppState = {
   page: Page;
   /** A page request that waits for the settings leave guard (M8 T01). */
   pendingPage: Page | null;
-  skillsPanelOpen: boolean;
   skillWizardOpen: boolean;
   /** Bumped when another page asks the panel to open the target manager. */
   targetsRequest: number;
@@ -50,10 +49,8 @@ type AppState = {
   showPage: (page: Page) => void;
   commitPendingPage: () => void;
   cancelPendingPage: () => void;
-  openSkillsPanel: () => void;
   openTargetsManager: () => void;
   consumeTargetsRequest: () => void;
-  closeSkillsPanel: () => void;
   openSkillWizard: () => void;
   closeSkillWizard: () => void;
   openHealth: (tab?: HealthTab) => void;
@@ -82,7 +79,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsOpen: false,
   page: "work",
   pendingPage: null,
-  skillsPanelOpen: false,
   skillWizardOpen: false,
   targetsRequest: 0,
   bootError: null,
@@ -208,7 +204,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ page: pending, pendingPage: null });
   },
   cancelPendingPage: () => set({ pendingPage: null, targetsRequest: 0 }),
-  openSkillsPanel: () => set({ skillsPanelOpen: true }),
   // M8 T07: the settings entry goes to the skills-page targets view; when the
   // settings page is open the switch still goes through its leave guard.
   openTargetsManager: () => {
@@ -217,7 +212,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     else set({ page: "skills" });
   },
   consumeTargetsRequest: () => set({ targetsRequest: 0 }),
-  closeSkillsPanel: () => set({ skillsPanelOpen: false }),
   openSkillWizard: () => set({ skillWizardOpen: true }),
   closeSkillWizard: () => set({ skillWizardOpen: false }),
   openHealth: (tab) => set({ healthOpen: true, healthTab: tab ?? "unresolvedLinks" }),

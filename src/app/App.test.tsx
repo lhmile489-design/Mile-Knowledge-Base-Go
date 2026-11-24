@@ -51,7 +51,6 @@ vi.mock("../components/settings/SettingsPage", () => ({
 vi.mock("../components/WelcomeView", () => ({ WelcomeView: () => <div data-testid="welcome-stub" /> }));
 vi.mock("../components/NoticeStack", () => ({ NoticeStack: () => null }));
 vi.mock("../components/SkillImportWizard", () => ({ SkillImportWizard: () => null }));
-vi.mock("../components/skills/SkillsPanel", () => ({ SkillsPanel: () => null }));
 vi.mock("../components/skills/SkillsPage", () => ({ SkillsPage: () => <div data-testid="skills-stub" /> }));
 
 const { App } = await import("./App");
@@ -81,7 +80,6 @@ beforeEach(() => {
     page: "work",
     pendingPage: null,
     settingsOpen: false,
-    skillsPanelOpen: false,
     notices: [],
   });
 });

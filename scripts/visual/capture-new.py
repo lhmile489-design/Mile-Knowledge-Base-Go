@@ -560,7 +560,7 @@ def main():
             })()"""
 
             def states(theme):
-                d.js("window.__mkbApp.getState().closeSkillsPanel(); true")
+                d.js("window.__mkbApp.getState().showPage('work'); true")
                 time.sleep(0.4)
                 cap(f"closed-{theme}")
                 d.js("window.__mkbApp.getState().showPage('skills'); true")
@@ -575,7 +575,7 @@ def main():
                 d.js("(() => { const k=document.querySelector('[aria-label^=\"更多操作：\"]'); if(k) k.click(); const b=document.querySelector('[data-testid=\"kb-batch-toggle\"]'); if(b) b.click(); return true; })()")
                 time.sleep(0.4)
                 d.js(
-                    "(() => { const boxes=[...document.querySelectorAll('[data-testid=\"skills-panel\"] [role=checkbox][aria-label^=\"选择 \"]')];"
+                    "(() => { const boxes=[...document.querySelectorAll('[data-testid=\"skills-page\"] [role=checkbox][aria-label^=\"选择 \"]')];"
                     " boxes.slice(0,2).forEach((b)=>b.click()); return true; })()"
                 )
                 time.sleep(0.4)
@@ -630,7 +630,7 @@ def main():
                 cap(f"install-{theme}")
                 d.js("(() => { const b=document.querySelector('[aria-label=\"返回技能列表\"]'); if(b) b.click(); return true; })()")
                 time.sleep(0.3)
-                d.js("window.__mkbApp.getState().closeSkillsPanel(); true")
+                d.js("window.__mkbApp.getState().showPage('work'); true")
                 time.sleep(0.3)
 
             states("light")

@@ -5,7 +5,6 @@ import { WelcomeView } from "../components/WelcomeView";
 import { NoticeStack } from "../components/NoticeStack";
 import { SkillImportWizard } from "../components/SkillImportWizard";
 import { SkillsPage } from "../components/skills/SkillsPage";
-import { SkillsPanel } from "../components/skills/SkillsPanel";
 import { TitleBar } from "../components/TitleBar";
 import { useAppStore } from "../stores/appStore";
 
@@ -68,7 +67,6 @@ export function App() {
           </>
         )}
       </div>
-      <SkillsPanel />
       <SkillImportWizard />
       <NoticeStack />
     </>

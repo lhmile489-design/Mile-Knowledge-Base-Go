@@ -200,7 +200,7 @@ def main():
             driver.js(cap.js_set_value(f'[data-testid="{testid}"]', value, "input"))
 
         def close_panel():
-            driver.js("window.__mkbApp.getState().closeSkillsPanel(); true")
+            driver.js("window.__mkbApp.getState().showPage('work'); true")
             time.sleep(0.4)
 
         def open_tools():

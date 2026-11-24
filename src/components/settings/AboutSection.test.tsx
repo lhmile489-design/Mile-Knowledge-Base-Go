@@ -50,6 +50,5 @@ describe("AboutSection M6 row", () => {
     fireEvent.click(screen.getByTestId("about-manage-targets"));
     expect(useAppStore.getState().targetsRequest).toBe(1);
     expect(useAppStore.getState().page).toBe("skills");
-    expect(useAppStore.getState().skillsPanelOpen).toBe(false);
   });
 });

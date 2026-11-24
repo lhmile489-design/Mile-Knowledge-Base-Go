@@ -340,7 +340,7 @@ def main():
             shot(f"tools-update-{theme}")
             click_text('[data-testid="tool-update-dialog"]', "取消")
             time.sleep(0.4)
-            driver.js("window.__mkbApp.getState().closeSkillsPanel(); true")
+            driver.js("window.__mkbApp.getState().showPage('work'); true")
             time.sleep(0.4)
 
         states("light")
