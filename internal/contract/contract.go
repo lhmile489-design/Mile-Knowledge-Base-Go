@@ -247,6 +247,9 @@ type LayoutSettings struct {
 	AgnesControlsCollapsed bool `json:"agnesControlsCollapsed"`
 	AgnesHistoryOpen       bool `json:"agnesHistoryOpen"`
 	AgnesComposerHeight    int  `json:"agnesComposerHeight"`
+	// Skills page nav groups collapsed by the user (PRD Q-UX-3, M9).
+	SkillsKbCollapsed    bool `json:"skillsKbCollapsed"`
+	SkillsToolsCollapsed bool `json:"skillsToolsCollapsed"`
 }
 
 // AccentTokens is the ten theme-color tokens one theme applies (DESIGN.md

@@ -47,7 +47,7 @@
 
 | 编号 | 目标 | 修改范围 | 依赖 | 完成条件 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T00 | 契约落盘：`layout` 两个字段 | `internal/contract`、`internal/settings` 测试、`src/mygo.ts`（生成）、API.md 16 / 数据库设计 4.1 状态 | B-M9-00 | Go 测试先红后绿（缺省 `false`、`patch` 后重读一致、顶层未知字段保留不退化）；`check:bindings` 通过 | 待做 |
+| T00 | 契约落盘：`layout` 两个字段 | `internal/contract`、`internal/settings` 测试、`src/mygo.ts`（生成）、API.md 16 / 数据库设计 4.1 状态 | B-M9-00 | Go 测试先红后绿（缺省 `false`、`patch` 后重读一致、顶层未知字段保留不退化）；`check:bindings` 通过 | 已验证（2026-11-24；`LayoutSettings` 加 `SkillsKbCollapsed` / `SkillsToolsCollapsed`，默认显式 `false`，`clampLayout` 未改；`src/mygo.ts` 由 `mygo generate` 重新生成；4 个测试夹具补两个字段；未亲测：该任务无界面入口） |
 | T01 | 弹窗外壳 `SkillsModal` | `src/components/skills/SkillsModal.tsx`（新）、`skills-page.css` | T00 | 组件测试：焦点陷阱、焦点归还、背后 `inert`、`busy` 时 Esc / 关闭 / 遮罩无效、Esc 先交给内容 | 待做 |
 | T02 | 安装改弹窗 | `InstallView.tsx`、`SkillsPage.tsx`、样式 | T01 | 去整页外壳；来源分段进头部；结果步骤（继续安装 / 完成）；进行中 Esc 无效；组件测试更新；ac-m5 安装步骤改弹窗后通过 | 待做 |
 | T03 | 分发改弹窗 | `DistributeDialog.tsx`、`SkillsPage.tsx`、`KbSkillsPage.tsx`、样式 | T01 | 结果在弹窗内；完成后刷新并退出批量选择；覆盖确认叠在弹窗上；进行中不可关闭；组件测试；ac-m4 / ac-m7 分发步骤改弹窗后通过 | 待做 |
@@ -109,6 +109,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2026-11-24 | 计划 | v0.1 草案；PRD 第 18 节 v2.8 与 UI 稿第 12 节已审核通过；DESIGN 第 14 节、技术设计第 20 节、API 第 16 节、数据库设计 4.1 两行为草稿，随本计划审核；路线 3.9.2 | 未提交 | 现状盘点（技术设计 20.1，逐项附文件与行号）；文档 UTF-8 无 BOM、无乱码 | 待用户审批（含 B-M9-00–03、Q-M9-1–3） |
 | 2026-11-24 | 审批 | 用户按建议批准 PLAN-M9 v0.1 与配套资料（DESIGN 14、技术设计 20、API 16、数据库设计 4.1 两行），含 B-M9-00–03、Q-M9-1–3；放行 B-M9-00 与 T00；各文档状态行已回写 | 随 B-M9-00 第 2 次提交 | 状态行 grep 核对 | B-M9-00 → T00 |
+| 2026-11-24 | T00 | `contract.LayoutSettings` 与 `settings.Defaults()` 增加 `skillsKbCollapsed` / `skillsToolsCollapsed`；新增 `internal/settings/layout_skills_test.go`（3 个测试：缺字段读为 false 且原有布局不变、patch 后落盘与重开一致且可再展开、顶层未知字段保留）；`src/mygo.ts` 重新生成；`App.test.tsx`、`AccentPicker.test.tsx`、`GeneralSection.test.tsx`、`appStore.accent.test.ts` 的设置夹具补两个字段（类型必填，只为让夹具符合新契约，断言未改） | 本地（随 T00 提交） | 先红：新测试因字段不存在编译失败（`SkillsKbCollapsed undefined`）；后绿：`internal/settings` 与 `internal/contract` 通过；`tsc` 通过；`test:web`（Node 22.23.4，含 `check:bindings`、`check:skill-tokens`）49 文件 / 319 项；`test:go` 全包通过，含子测试 722 项通过 0 失败（基线 719 + 3）；`go vet` 通过；`gofmt -l .` 无输出。未跑 e2e（本任务不改界面与脚本；T06 起每任务跑全量）。编辑器提示的 `mapsloop` 与 `isAccentPreset` unusedfunc 来自改前已存在的代码，未处理 | 待用户确认：是否亲测、是否放行 T01 |
 
 ## 9. 自查
 

@@ -57,6 +57,8 @@ func Defaults() contract.AppSettings {
 			AgnesControlsCollapsed: false,
 			AgnesHistoryOpen:       true,
 			AgnesComposerHeight:    ComposerDef,
+			SkillsKbCollapsed:      false,
+			SkillsToolsCollapsed:   false,
 		},
 		RecentVaults: []contract.Vault{},
 	}

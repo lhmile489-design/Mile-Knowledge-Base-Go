@@ -28,6 +28,8 @@ vi.mock("../lib/transport", () => {
             agnesControlsCollapsed: false,
             agnesHistoryOpen: true,
             agnesComposerHeight: 96,
+            skillsKbCollapsed: false,
+            skillsToolsCollapsed: false,
           },
           recentVaults: [],
         } as AppSettings,

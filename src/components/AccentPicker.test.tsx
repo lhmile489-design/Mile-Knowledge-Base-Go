@@ -35,6 +35,8 @@ function settingsWith(accent: AppSettings["accent"]): AppSettings {
       agnesControlsCollapsed: false,
       agnesHistoryOpen: true,
       agnesComposerHeight: 96,
+      skillsKbCollapsed: false,
+      skillsToolsCollapsed: false,
     },
     recentVaults: [],
   } as AppSettings;

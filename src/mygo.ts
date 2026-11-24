@@ -470,6 +470,9 @@ export interface LayoutSettings {
   agnesControlsCollapsed: boolean;
   agnesHistoryOpen: boolean;
   agnesComposerHeight: number;
+  /** Skills page nav groups collapsed by the user (PRD Q-UX-3, M9). */
+  skillsKbCollapsed: boolean;
+  skillsToolsCollapsed: boolean;
 }
 
 /** LinkGraphResult is the M27 response: outgoing edges plus backlinks. */
