@@ -1,0 +1,88 @@
+/* 「工作台 / 技能」切换胶囊（M8，UI 稿 11.1 / 11.3）。
+   The 460ms spring and its overshoot mirror the approved prototype
+   (design/r2/skills-page.html) and UI 稿 11.3; the skills-page pilot tokens
+   stay scoped to .skills-page, so the values are literal here. */
+.page-switch {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--raw-raised);
+}
+
+.page-switch-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--raw-card);
+  box-shadow: 0 1px 2px rgb(20 22 28 / 0.08);
+}
+
+.page-switch-thumb.is-ready {
+  transition:
+    transform 460ms cubic-bezier(0.34, 1.36, 0.64, 1),
+    width 460ms cubic-bezier(0.34, 1.36, 0.64, 1);
+}
+
+[data-theme='dark'] .page-switch-thumb {
+  background: var(--raw-line-strong);
+  box-shadow: none;
+}
+
+.page-switch-item {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--raw-muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+
+.page-switch-item:hover {
+  color: var(--raw-text);
+}
+
+.page-switch-item[aria-current='page'] {
+  color: var(--raw-strong);
+}
+
+.page-switch-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Shared attention badge; rendered by PageSwitch and (until T14) SkillButton. */
+.skill-badge {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--warn) 18%, var(--raw-card));
+  color: color-mix(in srgb, var(--warn) 70%, var(--raw-text));
+  font-size: var(--text-caption);
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-switch-thumb.is-ready {
+    transition: none;
+  }
+}

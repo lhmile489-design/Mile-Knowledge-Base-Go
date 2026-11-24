@@ -206,19 +206,6 @@
   outline-offset: 2px;
 }
 
-.skill-badge {
-  display: grid;
-  place-items: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--warn) 18%, var(--raw-card));
-  color: color-mix(in srgb, var(--warn) 70%, var(--raw-text));
-  font-size: var(--text-caption);
-  font-weight: 700;
-  line-height: 1;
-}
 
 /* ---------- 知识库技能页（M4 T10；UI 稿 kb-*） ---------- */
 .kb-skills {

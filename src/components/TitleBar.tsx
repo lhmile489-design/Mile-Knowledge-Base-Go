@@ -5,7 +5,7 @@ import { useWindowStore } from "../stores/windowStore";
 import { windowApi } from "../lib/transport";
 import appIcon from "../../resources/icon.png";
 import { AccentPicker } from "./AccentPicker";
-import { SkillButton } from "./skills/SkillButton";
+import { PageSwitch } from "./PageSwitch";
 
 const THEME_LABEL: Record<ThemeMode, string> = {
   light: "浅色",
@@ -52,7 +52,7 @@ export function TitleBar() {
         {active ? active.displayName : "未选择知识库"}
       </div>
 
-      <SkillButton />
+      <PageSwitch />
 
       <AccentPicker />
 
