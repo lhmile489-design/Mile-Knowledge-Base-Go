@@ -7,8 +7,9 @@
 > **M6（技能扩展：自定义工具与项目）完成（2026-11-22，T00–T13）**：技能浮层新增「管理目录」（设置页也有入口），可登记任意本机工具目录与项目目录（`skills/targets.json`），项目按 19 个约定子目录自动推导来源工具；分发 / 安装 / 卸载 / 收编 / 更新都能写到登记目标，移除登记清理记录但不动文件。AC-SKM-17/18 的 46 项 e2e、真实项目人工项 15/15、性能门禁（基准 114ms / 项目扫描 p95 243ms）与 8 张真实截图完成。版本 **1.4.0**，本机完成 1.3.2 → 1.4.0 升级冒烟（见 docs/发布清单.md 第 13 节）。门禁：Go 664、Vitest 272、全量 e2e 297 项。M6 的 39 个提交已推送到 `origin/main`（`92c1ae2`）。
 > **M7（跨机还原分发）完成（2026-11-24，T00–T11）**：分发、卸载、GitHub 直装、更新、收编换链接成功后，知识库 `.mile-kb/skill-distributions.json` 自动更新（只存相对位置、工具 id 或登记名称 + 类型，不含本机路径）；另一台机器同步知识库后，「工具技能」页提示待还原，预览逐项勾选（冲突默认跳过、覆盖先备份），GitHub 项按记录的提交重装；清单损坏时可用本机记录重建并保留 `.corrupt-<时间>` 副本。AC-SKM-20–25 的 68 项 e2e（两套临时环境模拟两台机器）、10 张真实截图、性能门禁（预览 200 项 p95 60.8ms、清单写入 36.0ms、还原 100 项 76.3ms）与 task-reviewer 独立审查（0 阻断、4 需改已修）完成。收尾时修复两个严重缺陷：模型服务「更多」菜单按压即关导致无法删除服务，对话里选的模型被会话缓存盖住不生效。版本 **1.5.0**，本机 1.4.0 → 1.5.0 升级冒烟由用户 2026-11-24 完成。门禁：Go 719、Vitest 281、全量 e2e 365 项。M7 的 27 个提交（含收尾）与 M8 规划文档已推送到 `origin/main`（`813e9ec`）。
 > **M8（技能页）完成（2026-11-24，T00–T14）**：技能从标题栏浮层改为独立页面——「工作台 / 技能」切换胶囊、左侧导航（分类 / 工具 / 管理目录 / 分发进度）、知识库卡片与工具列表、整页子视图与确认卡；毛玻璃卡片、三团色场与非线性动效只在技能页试点，性能不达标自动退成不透明；切到技能页时工作台保持挂载，流式回答、草稿与滚动位置不变；旧浮层与旧名字已删除，应用图标换成新的蓝色工具箱图标。AC-PAGE-1–8 的 409 项 e2e、18 张真实截图（6 套主题色 × 浅 / 深，对比度最低 4.53）、性能门禁（200 张卡片滚动 p95 0.34 个刷新间隔、进入 138.3ms、切回 37.3ms）与 task-reviewer 独立审查（0 阻断、1 需改已修）完成。版本 **1.6.0**，本机 1.5.0 → 1.6.0 升级冒烟完成。门禁：Go 719、Vitest 319、全量 e2e 409 项。M8 的 18 个提交已推送到 `origin/main`（`8cee06f`）。
-> **1.6.1 补丁（2026-11-24，未提交）**：修复技能页列表模式卡片错乱与页面无法滚动（只改 `src/styles/skills-page.css`）；ac-m8 新增 6 条回归断言，全量 e2e 417 项、Vitest 319、Go 719 通过；1.6.1 安装包已构建，本机完成 1.6.0 → 1.6.1 升级冒烟（见 docs/发布清单.md 第 16 节），待用户亲测。
-> 更新日期：2026-11-24
+> **1.6.1 补丁（2026-11-24）**：修复技能页列表模式卡片错乱与页面无法滚动（只改 `src/styles/skills-page.css`）；ac-m8 新增 6 条回归断言，全量 e2e 417 项、Vitest 319、Go 719 通过；1.6.1 安装包已构建，本机完成 1.6.0 → 1.6.1 升级冒烟（见 docs/发布清单.md 第 16 节），用户亲测通过。
+> **M9（技能页体验升级）完成（2026-11-26，T00–T10）**：知识库技能点卡片在右侧抽屉看渲染后的 SKILL.md（只读、链接可点、可从抽屉分发/更新/编辑/定位）；安装与分发从整页子视图改为居中弹窗，下载与写入进行中不能关闭（Esc、关闭按钮、遮罩、页面切换四路全锁）；左侧导航「知识库 / 工具」两组可折叠 + 筛选框（命中计数、组头吸顶），折叠状态存应用设置重启保留；「管理目录」移到工具组头。perf-m8 测量方法按技术设计 20.7 修正（预热轮吸收一次性光栅化、R 取滚动中位数），门禁阈值未动。AC-UX-1–13 的 e2e、25 张真实截图（6 套主题色 × 浅 / 深 + 窄窗口，对比度最差 4.53）、性能门禁（抽屉打开 p95 47.3ms、弹窗首帧 75.9ms、滚动 1.04 帧）与 task-reviewer 独立审查（0 阻断、1 需改已修：扫描缓存失效与写入的原子性）完成。版本 **1.7.0**，本机完成 1.6.1 → 1.7.0 升级冒烟（见 docs/发布清单.md 第 17 节）。门禁：Go 728、Vitest 430、全量 e2e 529 项（15/16/22/47/37/56/54/47/70/58/107）。
+> 更新日期：2026-11-26
 
 ## 1. 这是什么
 
@@ -81,7 +82,7 @@
 | Go 测试 | 单元测试与静态检查 | `bun run test:go` / `bun run lint:go`；格式另跑 `gofmt -l .` | 已验证（2026-11-24：719 项；vet 与 gofmt 无输出） |
 | 竞态检测 | `go test -race` | `bun run test:go-race` | 未验证（需要 cgo，本机未跑；不在常规门禁内） |
 | 模糊测试 | 路径与渲染（`FuzzValidateRel`、`FuzzRender`） | `bun run test:fuzz`（`scripts/test-fuzz.sh`，每个目标默认 60s，`FUZZ_TIME=3s` 可缩短） | 已验证（2026-11-18：正向通过；故意失败的对照返回非零） |
-| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m2、ac-m3、ac-m35、ac-m4、ac-m5、ac-m6、ac-m7、ac-m8；`E2E_SKIP_BUILD=1` 跳过构建，打过正式包后不要用） | 全量 417 项全过（2026-11-24，1.6.1 补丁：15/16/22/47/37/54/54/46/68/58，见 docs/PLAN-M8.md） |
+| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m2、ac-m3、ac-m35、ac-m4、ac-m5、ac-m6、ac-m7、ac-m8、ac-m9；`E2E_SKIP_BUILD=1` 跳过构建，打过正式包后不要用） | 全量 529 项全过（2026-11-26，M9 T10：15/16/22/47/37/56/54/47/70/58/107，见 docs/PLAN-M9.md） |
 | M3.5 验收 | 主题色：全新安装默认橙、选蓝立即生效与重启、自定义色、乱码回落 | `bash scripts/e2e/ac-m35.sh`（内含 `scripts/e2e/accent-contrast.js` 的真实组件对比度） | 已验证 37/37（2026-11-20） |
 | M4 验收 | 技能管理：注册表/扫描/分发/卸载/收编/备份/浮层（AC-SKM-1–11） | `bash scripts/e2e/ac-m4.sh`（假 HOME + 假注册表，不写真实工具目录） | 已验证 60/60（2026-11-20） |
 | M5 验收 | GitHub / zip 安装、更新、整包拒绝、断网零写入（AC-SKM-12–16） | `bash scripts/e2e/ac-m5.sh`（本地假 GitHub；需要 e2e 构建） | 已验证 54/54（2026-11-22） |
@@ -95,14 +96,16 @@
 | M3 验收 | 总览、设置五节、主题与分类持久化、进检索、重启 | `bash scripts/e2e/ac-m3.sh`（需要 e2e 构建） | 已验证 47/47 |
 | M3 视觉对照 | 50 张新版截图 + 本地并排对照页 | `python -I scripts/visual/capture-new.py`（生成物在 `design/compare/`，已 gitignore） | 已验证（见 docs/PLAN-M3.md §6）；M3.5 T08 用 `--accent indigo` 在靛下重拍对照 |
 | M3.5 视觉 | 6 预设 × 浅 / 深真实界面 13 张；技能浮层按橙 18 张 | `python -I scripts/visual/capture-new.py --accents`；`design/r2/shots/` | 已验证（见 docs/PLAN-M3.5.md §9） |
+| M9 视觉 | 11 个状态 × 浅 / 深 + 窄窗口共 25 张真实截图（抽屉、缺失态、筛选、折叠、安装三态、分发三态） | `python -I scripts/visual/capture-m9.py`（临时环境 + 本地假 GitHub）；`design/r2/shots-m9-real/` | 已验证（2026-11-26：25/25 exit=0，对比度最差 4.53 ≥ 4.5，见 docs/PLAN-M9.md 与 UI 稿 12.5.1） |
 | M4 性能 | 技能扫描 p95 与分发/卸载时延 | `bash scripts/e2e/perf-m4.sh`（假 HOME，700 条目） | 已验证：scan p95 123ms、op p95 30ms；`perf:gate --kind skills` 通过 |
 | M5 性能 | GitHub 50 MB 读取与 20 组更新检查 | `bash scripts/e2e/perf-m5.sh`（本地假 GitHub） | 已验证：50 MB 读取 p95 204ms、20 组检查 69ms；`perf:gate --kind m5` 通过 |
 | M6 性能 | 10 个项目扫描、登记保存与移除 | `bash scripts/e2e/perf-m6.sh`（假 HOME，10×5×20 个技能） | 已验证：M4 基准 114ms、项目扫描 p95 240ms、保存 22.7ms、移除 17.1ms；`perf:gate --kind m6` 通过 |
 | M7 性能 | 清单预览、清单写入、批量还原 | `bash scripts/e2e/perf-m7.sh`（100 个技能、10 个登记项目、200 项清单） | 已验证：预览 p95 60.8ms、写入净增量 p95 36.0ms、还原 100 项 76.3ms；`perf:gate --kind m7` 通过 |
-| M8 性能 | 技能页进入、200 张毛玻璃卡片滚动、切回工作台 | `bash scripts/e2e/perf-m8.sh`（200 个技能，真窗口） | 1.6.1 复测（首次在可滚动页面上）：三次中两次通过，一次第一轮 p95 1.99 个刷新间隔、慢帧 4% 未过门禁；进入 p95 81–92ms、切回 35–42ms。M8 T12 记录的「滚动 0.34」是在无法滚动的页面上测的，不作数（见 docs/PLAN-M8.md） |
-| 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical\|big\|skills\|m5\|m6\|m7\|m8 --input <json>` | 已接入（阻断，正反对照通过） |
+| M8 性能 | 技能页进入、200 张毛玻璃卡片滚动、切回工作台 | `bash scripts/e2e/perf-m8.sh`（200 个技能，真窗口） | M9 T07 修正测量方法后（预热轮 + 滚动中位数 R）：三次连续通过，滚动 1.04/1.02/1.02 帧、慢帧 ≤1.42%、进入 92–173ms、切回 43–62ms；M9 T10 复测滚动 1.02 帧/进入 84.2ms/切回 43.8ms（见 docs/PLAN-M9.md） |
+| M9 性能 | 抽屉打开、弹窗首帧、抽屉打开时滚动 | `bash scripts/e2e/perf-m9.sh`（200 个技能，真窗口） | 已验证（2026-11-26）：抽屉打开 p95 62.9ms、弹窗首帧 53.3ms、滚动 1.04 帧/慢帧 1.31%；首次运行抽屉滚动 2.0 帧未过但同进程无抽屉对照组同为 2.0（200Hz 偶发隔帧噪声），重跑全过，门槛未动（见 docs/PLAN-M9.md） |
+| 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical\|big\|skills\|m5\|m6\|m7\|m8\|m9 --input <json>` | 已接入（阻断，正反对照通过） |
 | 旧版性能基线 | 只读运行旧版 Electron 测冷启动与检索 | `bash scripts/perf-legacy/bench.sh typical\|big` | 已验证（见 docs/PLAN-M3.md §6） |
-| 安装包 | 1.6.1 NSIS 安装包 | `bun run build`（产物 `build/windows-amd64/mile-knowledge-base-setup-1.6.1-amd64.exe`；不要带 `-tags=e2e`） | 本机 1.2.0 → 1.3.0 至 1.6.0 → 1.6.1 各次升级冒烟通过（见 docs/发布清单.md 第 10–16 节） |
+| 安装包 | 1.7.0 NSIS 安装包 | `bun run build`（产物 `build/windows-amd64/mile-knowledge-base-setup-1.7.0-amd64.exe`；不要带 `-tags=e2e`） | 本机 1.2.0 → 1.3.0 至 1.6.1 → 1.7.0 各次升级冒烟通过（见 docs/发布清单.md 第 10–17 节） |
 | M2 冒烟 | Secrets 与系统代理能力 | `go run ./spikes/t00-smoke` | 已验证（Secrets 存取/超长拒绝/删除；netproxy 回环直连） |
 | 构建 | 生产构建 | `bun run build`（产物 `build/windows-amd64/`） | 已验证 |
 
