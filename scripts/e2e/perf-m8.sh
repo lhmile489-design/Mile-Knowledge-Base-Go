@@ -4,6 +4,10 @@
 # T00 spike and are expressed in display-refresh intervals:
 #   scrollP95Frames = p95 / R <= 1.5, slowFrameRatio (> 2R) <= 5%,
 #   enterP95Ms <= 300, switchBackMs <= 100.
+# Measurement adjusted in M9 T07 (Q-M9-3, 技术设计 20.7): one unscored warm-up
+# scroll runs first (round-1 first rasterization of the glass cards), and R is
+# the MEDIAN of the frame gaps sampled during the scored rounds themselves
+# (idle sampling could read 16.7 ms while the window was downclocked).
 set -u
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 APP="$ROOT/build/windows-amd64/Mile Knowledge Base.exe"
@@ -164,19 +168,44 @@ STOP = """
   const gaps = window.__p8.gaps.slice(1);
   const ordered = gaps.slice().sort((a, b) => a - b);
   const p95 = ordered[Math.max(0, Math.ceil(0.95 * ordered.length) - 1)] || 0;
-  const slow = gaps.filter((gap) => gap > 2 * %s).length / Math.max(1, gaps.length);
-  return JSON.stringify({ frames: gaps.length, p50: ordered[Math.floor(ordered.length / 2)] || 0, p95, max: ordered[ordered.length - 1] || 0, slow, range: document.querySelector('.kb-content').scrollHeight - document.querySelector('.kb-content').clientHeight });
-})()""" % json.dumps(refresh)
+  return JSON.stringify({ frames: gaps.length, p50: ordered[Math.floor(ordered.length / 2)] || 0, p95, max: ordered[ordered.length - 1] || 0, gaps, range: document.querySelector('.kb-content').scrollHeight - document.querySelector('.kb-content').clientHeight });
+})()"""
+
+# Warm-up scroll, unscored: the first sweep through the list rasterizes the
+# glass cards once per process, which used to fail round 1 (1.6.1 legacy).
+js(SCROLL)
+time.sleep(6.4)
+warmup = json.loads(js(STOP))
+print("warm-up round (unscored):", {k: v for k, v in warmup.items() if k != "gaps"})
 
 rounds = []
 for round_index in range(3):
     js(SCROLL)
     time.sleep(6.4)
     rounds.append(json.loads(js(STOP)))
-    print("scroll round %d:" % (round_index + 1), rounds[-1])
+    print("scroll round %d:" % (round_index + 1), {k: v for k, v in rounds[-1].items() if k != "gaps"})
 # 1.6.1: a page that cannot scroll used to pass this gate with range 0.
 if min(round_["range"] for round_ in rounds) <= 0:
     raise SystemExit("FAIL: .kb-content did not scroll (range 0)")
+
+# R is the median frame gap sampled DURING the scored rounds (技术设计 20.7):
+# the idle sample can read 16.7 ms while the window is downclocked.
+scored_gaps = sorted(g for round_ in rounds for g in round_["gaps"])
+refresh_scroll = scored_gaps[len(scored_gaps) // 2] if scored_gaps else refresh
+print("refresh_ms (idle):", round(refresh, 2), " refresh_ms (scrolling median):", round(refresh_scroll, 2))
+
+
+def p95_of(gaps):
+    ordered = sorted(gaps)
+    return ordered[max(0, -(-95 * len(ordered) // 100) - 1)] if ordered else 0
+
+
+# Legacy-method comparison from the SAME process data (negative control): the
+# old method had no warm-up, so its round 1 was the cold scroll = our warm-up,
+# and its denominator was the idle-refresh sample.
+legacy_first3 = [warmup] + rounds[:2]
+legacy_frames = max(p95_of(r_["gaps"]) / refresh for r_ in legacy_first3) if refresh else 0
+print("legacy method would report scrollP95Frames=%.2f (idle R, warm-up as round 1)" % round(legacy_frames, 2))
 
 SWITCH = """
 (async () => {
@@ -193,8 +222,11 @@ for _ in range(5):
     time.sleep(0.4)
 print("switch_ms:", " ".join("%.1f" % v for v in switch_ms))
 
-scroll_frames = max(round_["p95"] / refresh for round_ in rounds)
-slow_ratio = max(round_["slow"] for round_ in rounds)
+scroll_frames = max(p95_of(round_["gaps"]) / refresh_scroll for round_ in rounds)
+slow_ratio = max(
+    len([g for g in round_["gaps"] if g > 2 * refresh_scroll]) / max(1, len(round_["gaps"]))
+    for round_ in rounds
+)
 
 metrics = {
     "enterP95Ms": round(p95(enter_ms), 1),

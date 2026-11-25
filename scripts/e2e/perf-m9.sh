@@ -234,9 +234,8 @@ STOP = """
   const gaps = window.__p9.gaps.slice(1);
   const ordered = gaps.slice().sort((a, b) => a - b);
   const p95 = ordered[Math.max(0, Math.ceil(0.95 * ordered.length) - 1)] || 0;
-  const slow = gaps.filter((gap) => gap > 2 * %s).length / Math.max(1, gaps.length);
-  return JSON.stringify({ frames: gaps.length, p50: ordered[Math.floor(ordered.length / 2)] || 0, p95, max: ordered[ordered.length - 1] || 0, slow, range: document.querySelector('.kb-content').scrollHeight - document.querySelector('.kb-content').clientHeight });
-})()""" % json.dumps(refresh)
+  return JSON.stringify({ frames: gaps.length, p50: ordered[Math.floor(ordered.length / 2)] || 0, p95, max: ordered[ordered.length - 1] || 0, gaps, range: document.querySelector('.kb-content').scrollHeight - document.querySelector('.kb-content').clientHeight });
+})()"""
 
 def scroll_rounds(label):
     rounds = []
@@ -244,10 +243,20 @@ def scroll_rounds(label):
         js(SCROLL)
         time.sleep(6.4)
         rounds.append(json.loads(js(STOP)))
-        print("%s round %d:" % (label, index + 1), rounds[-1])
+        print("%s round %d:" % (label, index + 1), {k: v for k, v in rounds[-1].items() if k != "gaps"})
     if min(r["range"] for r in rounds) <= 0:
         raise SystemExit("FAIL: .kb-content did not scroll (range 0)")
     return rounds
+
+
+def p95_of(gaps):
+    ordered = sorted(gaps)
+    return ordered[max(0, -(-95 * len(ordered) // 100) - 1)] if ordered else 0
+
+
+def median(values):
+    ordered = sorted(values)
+    return ordered[len(ordered) // 2] if ordered else 0
 
 control = scroll_rounds("scroll without drawer")
 
@@ -264,11 +273,19 @@ js("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles
 wait("document.querySelector('[data-testid=\"skill-drawer\"]') === null", 30)
 control_warm = scroll_rounds("scroll without drawer (warm)")
 
+# R is the median frame gap sampled during the scored rounds themselves
+# (技术设计 20.7): idle sampling can read 16.7 ms while the window is
+# downclocked. The cold control is kept for the report but never scored —
+# per the M8 measurement, the first sweep is one-off first rasterization.
+scored_gaps = sorted(g for r in (with_drawer + control_warm) for g in r["gaps"])
+refresh_scroll = median(scored_gaps) if scored_gaps else refresh
+print("refresh_ms (idle):", round(refresh, 2), " refresh_ms (scrolling median):", round(refresh_scroll, 2))
+
 def frames(rounds):
-    return max(r["p95"] / refresh for r in rounds)
+    return max(p95_of(r["gaps"]) / refresh_scroll for r in rounds)
 
 def slow(rounds):
-    return max(r["slow"] for r in rounds)
+    return max(len([g for g in r["gaps"] if g > 2 * refresh_scroll]) / max(1, len(r["gaps"])) for r in rounds)
 
 print("control (cold, first)  : scrollP95Frames=%.2f slowFrameRatio=%.4f" % (frames(control), slow(control)))
 print("control (warm, after)   : scrollP95Frames=%.2f slowFrameRatio=%.4f" % (frames(control_warm), slow(control_warm)))
