@@ -373,24 +373,24 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     fireEvent.click(screen.getByTestId("skills-nav-toggle-kb"));
     await waitFor(() => expect(settingsPatch).toHaveBeenCalledTimes(1));
     expect((settingsPatch.mock.calls[0]?.[0] as { layout: { skillsKbCollapsed: boolean } }).layout.skillsKbCollapsed).toBe(true);
-    await waitFor(() => expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true));
+    await waitFor(() => expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true));
     expect(screen.getByTestId("skills-nav-curmark-kb")).toBeTruthy();
     expect(useAppStore.getState().settings?.layout.skillsKbCollapsed).toBe(true);
 
     // A later visit (or a restart) reads the saved state.
     view.unmount();
     render(<SkillsPage />);
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true);
     expect(screen.getByTestId("skills-nav-toggle-kb").getAttribute("aria-expanded")).toBe("false");
   });
 
   it("keeps the collapsed group folded when a tool is chosen from the other group (AC-UX-10)", async () => {
     render(<SkillsPage />);
     fireEvent.click(screen.getByTestId("skills-nav-toggle-kb"));
-    await waitFor(() => expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true));
+    await waitFor(() => expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true));
     fireEvent.click(screen.getByRole("button", { name: /Cursor/ }));
     expect(screen.getByTestId("tool-group-cursor")).toBeTruthy();
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true);
     expect(screen.queryByTestId("skills-nav-curmark-kb")).toBeNull();
     expect(settingsPatch).toHaveBeenCalledTimes(1);
   });
@@ -403,7 +403,7 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
       },
     });
     render(<SkillsPage />);
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true);
     // A vault switch drops the category and falls back to 全部技能 — still folded, no write.
     expect(settingsPatch).not.toHaveBeenCalled();
   });

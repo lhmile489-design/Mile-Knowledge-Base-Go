@@ -142,8 +142,8 @@ describe("skills navigation group heads (M9 T05)", () => {
   it("hides a collapsed group's items, keeps its head, and says the group is collapsed", () => {
     renderNav(kbAll, true, { collapsed: { kb: true, tools: false } });
     expect(screen.getByTestId("skills-nav-toggle-kb").getAttribute("aria-expanded")).toBe("false");
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
-    expect(screen.getByTestId("skills-nav-items-tools").hasAttribute("hidden")).toBe(false);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true);
+    expect(screen.getByTestId("skills-nav-items-tools").hasAttribute("data-collapsed")).toBe(false);
     // The current item lives in the folded group: the head carries a marker.
     expect(screen.getByTestId("skills-nav-curmark-kb")).toBeTruthy();
     expect(screen.queryByTestId("skills-nav-curmark-tools")).toBeNull();
@@ -271,17 +271,17 @@ describe("skills navigation filter (M9 T05)", () => {
 
   it("opens both groups while filtering without touching the saved state", () => {
     const { onSetCollapsed } = renderNav(kbAll, true, { collapsed: { kb: true, tools: true } });
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true);
     type("后");
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(false);
-    expect(screen.getByTestId("skills-nav-items-tools").hasAttribute("hidden")).toBe(false);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(false);
+    expect(screen.getByTestId("skills-nav-items-tools").hasAttribute("data-collapsed")).toBe(false);
     expect(screen.getByRole("button", { name: /后端/ })).toBeTruthy();
     expect(onSetCollapsed).not.toHaveBeenCalled();
     // The heads do not write the setting while the filter forces them open.
     fireEvent.click(screen.getByTestId("skills-nav-toggle-kb"));
     expect(onSetCollapsed).not.toHaveBeenCalled();
     type("");
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true);
   });
 
   it("says when nothing matches", () => {
@@ -415,10 +415,10 @@ describe("skills navigation flow (AC-UX-10 shape)", () => {
     const onSetCollapsed = vi.fn();
     render(<Controlled onSetCollapsed={onSetCollapsed} />);
     fireEvent.click(screen.getByTestId("skills-nav-toggle-kb"));
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true);
     expect(screen.getByTestId("skills-nav-curmark-kb")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Cursor/ }));
-    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("data-collapsed")).toBe(true);
     expect(screen.queryByTestId("skills-nav-curmark-kb")).toBeNull();
     expect(onSetCollapsed).toHaveBeenCalledTimes(1);
   });

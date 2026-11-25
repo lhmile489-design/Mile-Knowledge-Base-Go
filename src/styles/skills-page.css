@@ -272,7 +272,10 @@
   gap: 2px;
 }
 
-.skills-page .skills-nav-items[hidden] {
+/* Not the `hidden` attribute: Tailwind's preflight sets `[hidden]` to
+   `display: none !important` inside a layer, and a layered !important beats an
+   unlayered one, so the narrow icon rail could not show a folded group. */
+.skills-page .skills-nav-items[data-collapsed] {
   display: none;
 }
 
@@ -500,9 +503,9 @@
   }
 
   /* The icon rail has no group heads to click: folded groups open, and the
-     heads shrink to a hairline. [hidden] needs the same weight to be beaten. */
-  .skills-page .skills-nav-items[hidden] {
-    display: grid !important;
+     heads shrink to a hairline. */
+  .skills-page .skills-nav-items[data-collapsed] {
+    display: grid;
   }
 
   .skills-page .skills-nav-grouphead {

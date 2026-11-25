@@ -220,7 +220,7 @@ export function SkillsNav({
 
         <div className="skills-nav-section">
           {groupHead("kb", "知识库", categoryHits.length, categories.length, kbExpanded, selection.kind === "kb")}
-          <div className="skills-nav-items" hidden={!kbExpanded} data-testid="skills-nav-items-kb">
+          <div className="skills-nav-items" data-collapsed={kbExpanded ? undefined : "true"} data-testid="skills-nav-items-kb">
             {filtering ? null : item("kb:all", { kind: "kb", category: null }, <Stack size={16} />, "全部技能", counts.kb)}
             {categoryHits.map((group) =>
               item(
@@ -257,7 +257,7 @@ export function SkillsNav({
               <SlidersHorizontal size={14} aria-hidden />
             </button>,
           )}
-          <div className="skills-nav-items" hidden={!toolsExpanded} data-testid="skills-nav-items-tools">
+          <div className="skills-nav-items" data-collapsed={toolsExpanded ? undefined : "true"} data-testid="skills-nav-items-tools">
             {filtering ? null : item("tools:all", { kind: "tools", toolId: null }, <SquaresFour size={16} />, "全部工具", counts.tools)}
             {shownTools.map(toolItem)}
             {filtering && toolHits.length === 0 && categoryHits.length > 0 ? (
