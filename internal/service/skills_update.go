@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -109,6 +108,6 @@ func (s *SkillService) runUpdateCheck(groups []skills.UpdateGroup) {
 	s.rateLimitResetAt = rateLimitReset
 	s.mu.Unlock()
 	// The scan payload carries the states, so the next scan must rebuild it.
-	_ = os.Remove(s.cachePath())
+	s.dropScanCache()
 	s.emitChanged()
 }

@@ -198,7 +198,7 @@ func (s *SkillService) Install(ctx context.Context, vaultID, stageID string, ids
 	}
 
 	if success {
-		_ = os.Remove(s.cachePath())
+		s.dropScanCache()
 		s.emitChanged()
 		_ = store.Discard(stageID)
 	}

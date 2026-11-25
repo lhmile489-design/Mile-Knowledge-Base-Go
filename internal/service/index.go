@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/egoist/mygo"
@@ -342,6 +343,13 @@ func (a *App) indexWorker(ctx context.Context, handle *indexHandle, root string)
 				handle.status.ErrorMessage = err.Error()
 				handle.mu.Unlock()
 				a.emitIndexStatus(handle)
+			} else if err == nil && a.OnSkillsIndexed != nil && touchesSkills(dirs) {
+				// The skills page reads the index, so a scan that ran before this
+				// batch landed shows the old list (M9 T06, AC-UX-5).
+				handle.mu.Lock()
+				vaultID := handle.status.VaultID
+				handle.mu.Unlock()
+				a.OnSkillsIndexed(vaultID)
 			}
 		}
 	}
@@ -366,6 +374,17 @@ func (a *App) updateIndexStatus(handle *indexHandle, st index.Status) {
 	// Keep the shared context's index revision current; the hub skips
 	// sequence bumps when the value repeats.
 	a.syncContextVault(vaultID)
+}
+
+// touchesSkills reports whether a batch of changed directories includes the
+// skills area; the empty directory stands for the whole vault.
+func touchesSkills(dirs []string) bool {
+	for _, dir := range dirs {
+		if dir == "" || dir == "skills" || strings.HasPrefix(dir, "skills/") {
+			return true
+		}
+	}
+	return false
 }
 
 // enqueueIndex hands a watcher batch to the index worker without blocking.

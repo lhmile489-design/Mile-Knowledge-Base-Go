@@ -329,7 +329,7 @@ func (s *SkillService) ConfirmKbUpdate(ctx context.Context, vaultID, stageID str
 	if f := skills.SaveKbSource(root, record); f != nil {
 		return contract.SkillConfirmUpdateResult{Updated: false, Failure: f}
 	}
-	_ = os.Remove(s.cachePath())
+	s.dropScanCache()
 	s.emitChanged()
 	_ = s.stageStore().Discard(stageID)
 	return contract.SkillConfirmUpdateResult{Updated: true}
@@ -400,7 +400,7 @@ func (s *SkillService) UpdateTool(ctx context.Context, stageID string) contract.
 		})
 	}
 	s.logOperation("update", name, record.ToolID, location, "copy", "ok", backup.ID, "")
-	_ = os.Remove(s.cachePath())
+	s.dropScanCache()
 	s.emitChanged()
 	_ = s.stageStore().Discard(stageID)
 	return contract.SkillOpResult{Items: []contract.SkillOpItem{item}}

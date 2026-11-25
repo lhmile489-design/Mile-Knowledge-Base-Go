@@ -50,7 +50,7 @@ func (s *SkillService) Distribute(ctx context.Context, vaultID, skillPath string
 			return contract.SkillOpResult{Items: items, Failure: contract.Fail(contract.CodeIOFailure, "分发记录写入失败")}
 		}
 		// The next scan must see the new state instead of a stale cache.
-		_ = os.Remove(s.cachePath())
+		s.dropScanCache()
 		s.emitChanged()
 		if len(records) > 0 {
 			now := s.now()

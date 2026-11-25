@@ -137,7 +137,7 @@ func (s *SkillService) Adopt(ctx context.Context, vaultID, toolID, rel, category
 			}
 		})
 	}
-	_ = os.Remove(s.cachePath())
+	s.dropScanCache()
 	s.emitChanged()
 	mode := "copy"
 	if linkBack {

@@ -262,7 +262,7 @@ func (s *SkillService) SaveTarget(ctx context.Context, input contract.SkillSaveT
 	if input.Token != "" {
 		s.clearTargetPick(input.Token)
 	}
-	_ = os.Remove(s.cachePath())
+	s.dropScanCache()
 	s.emitChanged()
 	view := s.targetView(record, s.detector())
 	return contract.SkillSaveTargetResult{Target: &view}
@@ -303,7 +303,7 @@ func (s *SkillService) RemoveTarget(ctx context.Context, id string) contract.Ski
 	}
 	s.logOperation("unregister", record.Name, record.ID, record.Path, "", "ok", "",
 		fmt.Sprintf("删除 %d 条分发记录、%d 条来源记录", removedDistributions, removedSources))
-	_ = os.Remove(s.cachePath())
+	s.dropScanCache()
 	s.emitChanged()
 	return contract.SkillRemoveTargetResult{
 		Removed:              true,

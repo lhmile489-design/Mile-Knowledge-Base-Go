@@ -86,6 +86,11 @@ type App struct {
 	auditSeq       int64
 	auditErr       string
 	resolvers      map[string]*vaultResolver
+
+	// OnSkillsIndexed is called by the index worker after a batch that touched
+	// skills/ has been written to the index. The skill service sets it once at
+	// start-up, before any vault is opened; it is never changed afterwards.
+	OnSkillsIndexed func(vaultID string)
 }
 
 type pickToken struct {

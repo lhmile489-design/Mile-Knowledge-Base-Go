@@ -44,10 +44,38 @@ type SkillService struct {
 	// manifestStale remembers a skipped vault-manifest write so M102 can
 	// report it (API §15.3); guarded by mu.
 	manifestStale bool
+	// scanGen counts scan-cache invalidations; a scan that began before one
+	// does not write its result into the cache (guarded by mu).
+	scanGen int64
+	// beforeSaveScan is a test seam between building a scan and caching it.
+	beforeSaveScan func()
 }
 
 // NewSkillService wires the service; tests replace detector and now.
 func NewSkillService(app *App) *SkillService {
+	svc := newSkillService(app)
+	app.OnSkillsIndexed = svc.indexUpdated
+	return svc
+}
+
+// indexUpdated runs after the index took in a change under skills/: the cached
+// scan was built from the older index, so it is dropped and the page is told
+// to scan again.
+func (s *SkillService) indexUpdated(string) {
+	s.dropScanCache()
+	s.emitChanged()
+}
+
+// dropScanCache invalidates the cached scan: whatever is on disk goes, and a
+// scan already running will not put its older result back.
+func (s *SkillService) dropScanCache() {
+	s.mu.Lock()
+	s.scanGen++
+	s.mu.Unlock()
+	_ = os.Remove(s.cachePath())
+}
+
+func newSkillService(app *App) *SkillService {
 	return &SkillService{
 		app:          app,
 		now:          time.Now,
@@ -135,6 +163,9 @@ func (s *SkillService) startBackgroundScan(vaultID, cachePath string) {
 
 // runScan builds the payload, writes the cache and returns the fresh scan.
 func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.SkillScan {
+	s.mu.Lock()
+	gen := s.scanGen
+	s.mu.Unlock()
 	detector := s.detector()
 	loaded := s.loadTargets()
 	tools := skills.MergeTargets(detector.Detect(), loaded.Targets)
@@ -163,6 +194,17 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 	}
 	cachedAt := s.now().UTC().Format(time.RFC3339)
 	scan := contract.SkillScan{CachedAt: cachedAt, Kb: kb, Tools: groups, Warnings: warnings}
+	if s.beforeSaveScan != nil {
+		s.beforeSaveScan()
+	}
+	s.mu.Lock()
+	current := s.scanGen == gen
+	s.mu.Unlock()
+	if !current {
+		// Something changed while this scan ran; the E12 that follows the change
+		// makes the page scan again, so this result is not cached.
+		return scan
+	}
 	if err := skills.SaveScanCache(s.cachePath(), scan, cachedAt); err != nil {
 		scan.Warnings = append(scan.Warnings, contract.SkillScanWarning{Text: "扫描缓存写入失败：" + err.Error()})
 	}

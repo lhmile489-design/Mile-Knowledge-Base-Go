@@ -245,7 +245,7 @@ func (s *SkillService) Uninstall(ctx context.Context, toolID, rel string) contra
 		name := filepath.Base(abs)
 		s.updateManifest(s.app.Vaults.Active(), func(m *skills.Manifest) { m.Remove(target, name) })
 	}
-	_ = os.Remove(s.cachePath())
+	s.dropScanCache()
 	s.emitChanged()
 	return contract.SkillOpResult{Items: []contract.SkillOpItem{item}}
 }
@@ -263,7 +263,7 @@ func (s *SkillService) Restore(ctx context.Context, backupID string) contract.Sk
 	case err != nil:
 		return contract.SkillRestoreResult{Failure: contract.Fail(contract.CodeIOFailure, "恢复失败")}
 	}
-	_ = os.Remove(s.cachePath())
+	s.dropScanCache()
 	s.emitChanged()
 	s.logOperation("restore", filepath.Base(restored), "", restored, "", "ok", backupID, "")
 	return contract.SkillRestoreResult{RestoredTo: redactToolPath(restored, s.detector())}

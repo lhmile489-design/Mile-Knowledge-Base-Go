@@ -297,7 +297,7 @@ func (s *SkillService) RestoreManifest(ctx context.Context, vaultID string, sele
 
 	if stateChanged {
 		if err := skills.SaveState(s.statePath(), *state); err != nil {
-			_ = os.Remove(s.cachePath())
+			s.dropScanCache()
 			s.emitChanged()
 			return contract.SkillManifestRestoreResult{Items: items, Failure: contract.Fail(contract.CodeIOFailure, "分发记录写入失败")}
 		}
@@ -310,7 +310,7 @@ func (s *SkillService) RestoreManifest(ctx context.Context, vaultID string, sele
 		}
 	}
 	if changed {
-		_ = os.Remove(s.cachePath())
+		s.dropScanCache()
 		s.emitChanged()
 	}
 	return contract.SkillManifestRestoreResult{Items: items}
