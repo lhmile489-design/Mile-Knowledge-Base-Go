@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attentionCounts,
   badgeCount,
+  distributionLabel,
   distributionProgress,
   filterParts,
   isToolDetected,
@@ -96,5 +97,18 @@ describe("filterParts (M9 T05)", () => {
 
   it("returns the label untouched when nothing matches", () => {
     expect(filterParts("前端", "zzz")).toEqual([{ text: "前端", hit: false }]);
+  });
+});
+
+describe("distributionLabel (M9 T09 review)", () => {
+  it("marks a copy whose vault side is gone as an orphan, not in-sync", () => {
+    const label = distributionLabel({ toolId: "a", mode: "copy", sync: "vault-missing" });
+    expect(label.sync).not.toBe("已同步");
+    expect(label.tone).toBe("fault");
+  });
+
+  it("keeps the in-sync copy and the link rows unchanged", () => {
+    expect(distributionLabel({ toolId: "a", mode: "copy", sync: "in-sync" }).sync).toBe("已同步");
+    expect(distributionLabel({ toolId: "a", mode: "link" }).sync).toBe("已同步");
   });
 });

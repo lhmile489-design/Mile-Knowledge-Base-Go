@@ -49,6 +49,9 @@ type SkillService struct {
 	scanGen int64
 	// beforeSaveScan is a test seam between building a scan and caching it.
 	beforeSaveScan func()
+	// insideCacheWrite is a test seam inside the cache-write critical section,
+	// after the generation check passed (M9 T09 review).
+	insideCacheWrite func()
 }
 
 // NewSkillService wires the service; tests replace detector and now.
@@ -67,11 +70,15 @@ func (s *SkillService) indexUpdated(string) {
 }
 
 // dropScanCache invalidates the cached scan: whatever is on disk goes, and a
-// scan already running will not put its older result back.
+// scan already running will not put its older result back. The generation
+// increment and the file removal share the mutex with the cache write in
+// runScan, so an invalidation can never slip between the generation check and
+// the write (M9 T09 review); when the write wins the race, the removal here
+// still deletes what it just wrote.
 func (s *SkillService) dropScanCache() {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.scanGen++
-	s.mu.Unlock()
 	_ = os.Remove(s.cachePath())
 }
 
@@ -197,13 +204,22 @@ func (s *SkillService) runScan(ctx context.Context, vaultID string) contract.Ski
 	if s.beforeSaveScan != nil {
 		s.beforeSaveScan()
 	}
+	// The generation check and the cache write are one critical section
+	// (M9 T09 review): dropScanCache increments the generation and removes the
+	// file under the same mutex, so an invalidation either runs first (the
+	// check fails and nothing is written) or queues until the write is done
+	// and then deletes the file — the disk never keeps a pre-invalidation
+	// cache with a fresh modtime. The write is a small atomic JSON rename, so
+	// holding the lock across it costs microseconds.
 	s.mu.Lock()
-	current := s.scanGen == gen
-	s.mu.Unlock()
-	if !current {
+	defer s.mu.Unlock()
+	if s.scanGen != gen {
 		// Something changed while this scan ran; the E12 that follows the change
 		// makes the page scan again, so this result is not cached.
 		return scan
+	}
+	if s.insideCacheWrite != nil {
+		s.insideCacheWrite()
 	}
 	if err := skills.SaveScanCache(s.cachePath(), scan, cachedAt); err != nil {
 		scan.Warnings = append(scan.Warnings, contract.SkillScanWarning{Text: "扫描缓存写入失败：" + err.Error()})

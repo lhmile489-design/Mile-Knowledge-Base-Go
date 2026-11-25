@@ -99,6 +99,10 @@ export function distributionLabel(item: KbSkillDistribution): {
       return { how, sync: "两边都改了", tone: "warn" };
     case "missing":
       return { how, sync: "目录缺失", tone: "fault" };
+    case "vault-missing":
+      // The vault side of this copy was deleted or renamed; what remains in
+      // the tool is an orphan (PRD 15.5), never "in sync" (M9 T09 review).
+      return { how, sync: "知识库里已删除", tone: "fault" };
     default:
       return { how, sync: "已同步", tone: "live" };
   }

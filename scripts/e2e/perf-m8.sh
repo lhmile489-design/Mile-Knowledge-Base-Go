@@ -8,6 +8,10 @@
 # scroll runs first (round-1 first rasterization of the glass cards), and R is
 # the MEDIAN of the frame gaps sampled during the scored rounds themselves
 # (idle sampling could read 16.7 ms while the window was downclocked).
+# Boundary of this gate (M9 T09 review): because the warm-up absorbs one-off
+# first rasterization, a regression that re-rasterizes cards on EVERY first
+# pass of each round would no longer trip the gate — warm-up rounds are still
+# printed for the report, so compare them when a material change lands.
 set -u
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 APP="$ROOT/build/windows-amd64/Mile Knowledge Base.exe"

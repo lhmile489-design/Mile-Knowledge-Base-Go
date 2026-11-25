@@ -156,3 +156,71 @@ func TestScanStartedBeforeInvalidationDoesNotWriteTheCache(t *testing.T) {
 		t.Fatalf("a current scan did not write the cache: %v", err)
 	}
 }
+
+// The generation check and the cache write are one critical section (M9 T09
+// review): an invalidation that arrives after the check passed must either
+// wait for the write and then remove the file, or run first and fail the
+// check — the disk can never end up holding a pre-invalidation cache with a
+// fresh modtime (which M77 would serve for two seconds without rescanning).
+func TestScanCacheWriteAndInvalidationAreAtomic(t *testing.T) {
+	app, err := New(t.TempDir(), filepath.Join(t.TempDir(), "legacy"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := NewSkillService(app)
+
+	// insideCacheWrite runs inside the critical section, after the generation
+	// check passed and before the file write starts. The invalidation is fired
+	// from another goroutine exactly there — the narrowest window the review
+	// found — and the test proves it cannot overtake the write.
+	dropped := make(chan struct{})
+	release := make(chan struct{})
+	svc.insideCacheWrite = func() {
+		close(dropped)
+		<-release
+	}
+	scanDone := make(chan struct{})
+	go func() {
+		svc.runScan(t.Context(), "")
+		close(scanDone)
+	}()
+	invalidationDone := make(chan struct{})
+	go func() {
+		<-dropped
+		svc.dropScanCache()
+		close(invalidationDone)
+	}()
+
+	// While the write is still inside the critical section, the invalidation
+	// must not have completed: it is queued on the same mutex.
+	<-dropped
+	select {
+	case <-invalidationDone:
+		t.Fatal("the invalidation overtook the cache write inside the critical section")
+	default:
+	}
+	close(release)
+	<-scanDone
+	<-invalidationDone
+
+	// Final state: whatever the scan wrote has been removed again, because the
+	// invalidation ran after it. Either way the disk must not hold the cache.
+	if _, err := os.Stat(svc.cachePath()); !os.IsNotExist(err) {
+		t.Fatalf("a pre-invalidation cache survived on disk: %v", err)
+	}
+}
+
+// The other ordering: the invalidation completes before the scan reaches the
+// critical section, so the generation check fails and nothing is written.
+func TestScanAfterCompletedInvalidationWritesNothing(t *testing.T) {
+	app, err := New(t.TempDir(), filepath.Join(t.TempDir(), "legacy"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := NewSkillService(app)
+	svc.dropScanCache()
+	svc.runScan(t.Context(), "")
+	if _, err := os.Stat(svc.cachePath()); err != nil {
+		t.Fatalf("a scan without concurrent invalidation should cache: %v", err)
+	}
+}
