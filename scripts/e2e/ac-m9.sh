@@ -38,7 +38,6 @@ def skill(category, name, body="", description=""):
 skill("前端", "vue", "组合式 API 的写法。")
 skill("前端", "react", "函数组件与 Hook。")
 skill("前端", "mixa", "混合示例。")
-skill("前端", "gone", "这个技能会在打开抽屉前被外部删除。")
 skill("后端", "go-tips", "新版 go-tips。")
 for i in range(40):
     skill("zz-scroll", "scroll-%02d" % i, "", "用于滚动与列表布局回归的技能 %02d。" % i)
@@ -71,7 +70,7 @@ fix, state_path = sys.argv[1], sys.argv[2]
 path = os.path.join(fix, "v1.tar.gz")
 files = {
     "skills/pdf/SKILL.md": b"# pdf\n\nversion one\n",
-    "skills/docx/SKILL.md": b"# docx v1\n",
+    "skills/docx/SKILL.md": b"# docx\n\nversion one\n",
 }
 # Enough small files that copying docx takes a moment: AC-UX-6 needs an install
 # that is still running when the dialog is poked.
@@ -137,6 +136,7 @@ if tasklist //FI "IMAGENAME eq Mile Knowledge Base.exe" 2>/dev/null | grep -q "M
   echo "ABORT: Mile Knowledge Base is already running"; exit 2
 fi
 
+w() { mkdir -p "$(dirname "$1")"; printf '%b' "$2" > "$1"; }
 hash_dir() { python -I - "$1" <<'PY'
 import hashlib, os, sys
 root = sys.argv[1]
@@ -200,17 +200,27 @@ PS
   powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/focus.ps1")" -ProcId "$APP_PID" >/dev/null 2>&1
   sleep 0.4
 }
-resize_window() { # width height
+resize_window() { # width height: restore, resize, and retry until the page reports it
   cat > "$WORK/resize.ps1" <<'PS'
 param([int]$ProcId, [int]$Width, [int]$Height)
 Add-Type -Namespace Win -Name Win -MemberDefinition @'
 [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+[DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int cmd);
 '@
 $p = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
-if ($p -and $p.MainWindowHandle -ne 0) { [Win.Win]::SetWindowPos($p.MainWindowHandle, [IntPtr]::Zero, 0, 0, $Width, $Height, 0x0002 -bor 0x0004) | Out-Null }
+if ($p -and $p.MainWindowHandle -ne 0) {
+  [Win.Win]::ShowWindow($p.MainWindowHandle, 9) | Out-Null
+  [Win.Win]::SetWindowPos($p.MainWindowHandle, [IntPtr]::Zero, 0, 0, $Width, $Height, 0x0004) | Out-Null
+}
 PS
-  powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/resize.ps1")" -ProcId "$APP_PID" -Width "$1" -Height "$2" >/dev/null 2>&1
-  sleep 0.6
+  local try width
+  for try in 1 2 3 4 5; do
+    powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/resize.ps1")" -ProcId "$APP_PID" -Width "$1" -Height "$2" >/dev/null 2>&1
+    sleep 0.8
+    width=$(eval_value "window.innerWidth")
+    if [ "${width:-9999}" -le "$(( $1 + 60 ))" ] 2>/dev/null; then return 0; fi
+  done
+  echo "resize did not take: innerWidth=$width"
 }
 
 check() { # label script pattern
@@ -254,7 +264,7 @@ wait_match "overview" "document.querySelector('[data-testid=\"overview-grid\"]')
 wait_match "index ready" "!document.body.innerText.includes('未索引')" "$T" 90
 show_skills
 wait_match "scroll fixtures scanned" "document.querySelectorAll('[data-testid^=\"kb-card-scroll-\"]').length >= 40" "$T" 60
-wait_match "other fixtures scanned" "$(card vue) !== null && $(card react) !== null && $(card mixa) !== null && $(card go-tips) !== null && $(card gone) !== null" "$T" 20
+wait_match "other fixtures scanned" "$(card vue) !== null && $(card react) !== null && $(card mixa) !== null && $(card go-tips) !== null" "$T" 20
 
 echo "== AC-UX-5: install in a dialog; scroll position and filter survive"
 fill kb-skills-search "scroll"
@@ -301,7 +311,7 @@ wait_match "result after the install" "document.querySelector('[data-testid=\"in
 esc
 wait_match "closes once there is a result" "document.querySelector('[data-testid=\"skills-modal\"]') === null" "$T" 20
 [ -f "$VAULT/skills/文档/docx/SKILL.md" ]; check_file "docx landed in the vault" "$?"
-wait_match "docx card" "$(card docx) !== null" "$T" 40
+wait_match "docx card" "$(card docx) !== null" "$T" 40 || probe_rescan "docx card" "$(card docx) !== null"
 
 echo "== AC-UX-7: batch distribute in a dialog"
 ev "(() => { const c=$(card vue); c.querySelector('button[aria-label^=\"更多操作\"]').click(); return true; })()" >/dev/null
@@ -367,11 +377,23 @@ click '[data-testid="skill-drawer-edit"]' >/dev/null
 wait_match "workbench shows" "document.querySelector('[data-testid=\"workbench-host\"]')?.hasAttribute('hidden') === false" "$T" 30
 wait_match "SKILL.md opened" "window.__mkbDocs.getState().activePath === 'skills/前端/vue/SKILL.md'" "$T" 30
 show_skills
-# AC-UX-4: the file is gone before the drawer opens
-rm -rf "$VAULT/skills/前端/gone"
-click '[data-testid="kb-card-gone"]' >/dev/null
+# AC-UX-4: the file is gone before the drawer opens. The index notices a
+# deletion within a moment and the card leaves the list, so the "card still
+# listed, file already gone" window cannot be hit by timing. Freeze the page's
+# rescans (store.refresh / loadScan become no-ops) for this step instead: the
+# card stays, the file is really gone, and the drawer has to cope.
+w "$VAULT/skills/前端/racer/SKILL.md" "---\nname: racer\ndescription: 抽屉缺失态用\n---\n\n# racer\n"
+wait_match "racer card" "$(card racer) !== null" "$T" 60
+ev "(() => { const s=window.__mkbSkills; window.__origScan={refresh:s.getState().refresh, loadScan:s.getState().loadScan}; s.setState({refresh: async () => {}, loadScan: async () => {}}); return true; })()" >/dev/null
+rm -rf "$VAULT/skills/前端/racer"
+sleep 2
+check "card is still listed while rescans are frozen" "$(card racer) !== null" "$T"
+click '[data-testid="kb-card-racer"]' >/dev/null
 wait_match "drawer says the file is missing" "document.querySelector('[data-testid=\"skill-drawer\"]')?.getAttribute('data-state') === 'missing'" "$T" 30
 check "missing text and rescan button, no raw error" "(() => { const d=document.querySelector('[data-testid=\"skill-drawer\"]'); return d.textContent.includes('找不到这个技能文件') && !!document.querySelector('[data-testid=\"skill-drawer-rescan\"]') && !d.querySelector('[data-testid=\"skill-drawer-error\"]'); })()" "$T"
+ev "(() => { const s=window.__mkbSkills; s.setState(window.__origScan); return true; })()" >/dev/null
+click '[data-testid="skill-drawer-rescan"]' >/dev/null
+wait_match "rescan drops the deleted skill from the list" "$(card racer) === null" "$T" 40
 esc
 wait_match "drawer closed" "document.querySelector('[data-testid=\"skill-drawer\"]') === null" "$T" 20
 
