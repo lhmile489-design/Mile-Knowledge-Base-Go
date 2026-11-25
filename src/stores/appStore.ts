@@ -66,6 +66,8 @@ function asTheme(value: string | undefined): ThemeMode {
   return value === "light" || value === "dark" ? value : "system";
 }
 
+let layoutQueue: Promise<unknown> = Promise.resolve();
+
 export const useAppStore = create<AppState>((set, get) => ({
   booted: false,
   settings: null,
@@ -158,11 +160,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ settings: result.settings ?? null });
   },
 
-  setLayout: async (patch) => {
-    const current = get().settings;
-    if (!current) return;
-    const result = await settingsApi.patch({ layout: { ...current.layout, ...patch } });
-    set({ settings: result.settings ?? null });
+  // Layout patches go out one at a time: each one merges into the layout the
+  // previous one produced, so two quick changes (a collapsed nav group and the
+  // next click) cannot overwrite each other.
+  setLayout: (patch) => {
+    const run = async () => {
+      const current = get().settings;
+      if (!current) return;
+      const result = await settingsApi.patch({ layout: { ...current.layout, ...patch } });
+      set({ settings: result.settings ?? null });
+    };
+    const next = layoutQueue.then(run, run);
+    layoutQueue = next.catch(() => undefined);
+    return next;
   },
 
   openVault: async (id) => {

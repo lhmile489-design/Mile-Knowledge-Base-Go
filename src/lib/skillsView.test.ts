@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { attentionCounts, badgeCount, distributionProgress, toolNeedsAttention } from "./skillsView";
+import {
+  attentionCounts,
+  badgeCount,
+  distributionProgress,
+  filterParts,
+  isToolDetected,
+  toolNeedsAttention,
+} from "./skillsView";
 import type { SkillScan, SkillToolScan, ToolSkill } from "./transport";
 
 function tool(toolId: string, skills: Partial<ToolSkill>[]): SkillToolScan {
@@ -49,5 +56,45 @@ describe("skillsView helpers (M8 T03)", () => {
     });
     expect(distributionProgress(payload)).toEqual({ distributed: 1, total: 3 });
     expect(distributionProgress(null)).toEqual({ distributed: 0, total: 0 });
+  });
+});
+
+describe("isToolDetected (M9 T05, shared by the nav and the tools view)", () => {
+  const tool = (extra: Record<string, unknown>) =>
+    ({ id: "x", name: "X", iconKey: "", scanDirs: [], readers: [], status: "detected", kind: "builtin", official: true, enabled: true, ...extra }) as never;
+
+  it("is true for a detected, enabled tool", () => {
+    expect(isToolDetected(tool({}))).toBe(true);
+  });
+
+  it("is false for a missing or disabled tool", () => {
+    expect(isToolDetected(tool({ status: "missing" }))).toBe(false);
+    expect(isToolDetected(tool({ enabled: false }))).toBe(false);
+  });
+
+  it("always counts the shared directory", () => {
+    expect(isToolDetected(tool({ id: "agents", status: "shared", enabled: false }))).toBe(true);
+  });
+});
+
+describe("filterParts (M9 T05)", () => {
+  it("returns one plain part without a needle", () => {
+    expect(filterParts("Claude Code", "")).toEqual([{ text: "Claude Code", hit: false }]);
+  });
+
+  it("splits around the first case-insensitive match", () => {
+    expect(filterParts("Claude Code", "cod")).toEqual([
+      { text: "Claude ", hit: false },
+      { text: "Cod", hit: true },
+      { text: "e", hit: false },
+    ]);
+  });
+
+  it("marks the whole label and drops empty parts", () => {
+    expect(filterParts("go", "go")).toEqual([{ text: "go", hit: true }]);
+  });
+
+  it("returns the label untouched when nothing matches", () => {
+    expect(filterParts("前端", "zzz")).toEqual([{ text: "前端", hit: false }]);
   });
 });

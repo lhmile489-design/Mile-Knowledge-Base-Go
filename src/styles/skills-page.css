@@ -98,11 +98,214 @@
   overflow: auto;
 }
 
-.skills-page .skills-nav-group {
-  margin: 14px 8px 6px;
+.skills-page .skills-nav-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 30px;
+  margin: 0 0 4px;
+  padding: 0 9px;
+  border: 1px solid var(--raw-line-strong);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--raw-card) 80%, transparent);
+  color: var(--raw-faint);
+  font-size: var(--text-body-sm);
+  transition: border-color 220ms var(--ease);
+}
+
+.skills-page .skills-nav-filter[data-filled='true'],
+.skills-page .skills-nav-filter:focus-within {
+  border-color: var(--raw-accent);
+}
+
+.skills-page .skills-nav-filter[data-filled='true'] {
+  color: var(--raw-text);
+}
+
+.skills-page .skills-nav-filter input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--raw-text);
+  font-family: var(--font-ui);
+  font-size: inherit;
+}
+
+.skills-page .skills-nav-filter input::placeholder {
+  color: var(--raw-faint);
+}
+
+.skills-page .skills-nav-filter-x {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--raw-faint);
+  cursor: pointer;
+}
+
+.skills-page .skills-nav-filter-x:hover {
+  background: var(--raw-raised);
+  color: var(--raw-strong);
+}
+
+.skills-page .skills-nav-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Group heads stick to the top while the list scrolls under them. */
+.skills-page .skills-nav-grouphead {
+  position: sticky;
+  top: -6px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 10px 0 2px;
+  padding: 2px 0;
+  background: color-mix(in srgb, var(--raw-panel-sidebar) 92%, transparent);
+}
+
+.skills-page .skills-nav-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px 0 6px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--raw-faint);
+  font-family: var(--font-ui);
   font-size: var(--text-caption);
   font-weight: 600;
   letter-spacing: 0.1em;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 220ms var(--ease),
+    color 220ms var(--ease);
+}
+
+.skills-page .skills-nav-toggle:hover {
+  background: color-mix(in srgb, var(--raw-raised) 70%, transparent);
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-nav-toggle[aria-disabled='true'] {
+  cursor: default;
+}
+
+.skills-page .skills-nav-toggle:focus-visible,
+.skills-page .skills-nav-grpbtn:focus-visible,
+.skills-page .skills-nav-more:focus-visible,
+.skills-page .skills-nav-check:focus-visible,
+.skills-page .skills-nav-filter-x:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.skills-page .skills-nav-chev {
+  flex: none;
+  transition: transform 220ms var(--ease);
+}
+
+.skills-page .skills-nav-toggle[aria-expanded='false'] .skills-nav-chev,
+.skills-page .skills-nav-more[aria-expanded='false'] .skills-nav-chev {
+  transform: rotate(-90deg);
+}
+
+.skills-page .skills-nav-groupcount {
+  margin-left: auto;
+  font-weight: 500;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.skills-page .skills-nav-curmark {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--raw-accent);
+}
+
+.skills-page .skills-nav-grpbtn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--raw-muted);
+  cursor: pointer;
+  transition: background-color 220ms var(--ease);
+}
+
+.skills-page .skills-nav-grpbtn:hover {
+  background: color-mix(in srgb, var(--raw-raised) 70%, transparent);
+  color: var(--raw-strong);
+}
+
+.skills-page .skills-nav-grpbtn[aria-current='page'] {
+  background: var(--raw-accent-soft);
+  color: var(--raw-accent-text);
+}
+
+.skills-page .skills-nav-items {
+  display: grid;
+  gap: 2px;
+}
+
+.skills-page .skills-nav-items[hidden] {
+  display: none;
+}
+
+.skills-page .skills-nav-item mark {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--raw-accent) 22%, transparent);
+  color: inherit;
+}
+
+.skills-page .skills-nav-more {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--raw-faint);
+  font-family: var(--font-ui);
+  font-size: var(--text-meta);
+  text-align: left;
+  cursor: pointer;
+}
+
+.skills-page .skills-nav-more:hover {
+  color: var(--raw-muted);
+}
+
+.skills-page .skills-nav-none {
+  padding: 4px 10px 6px;
+  font-size: var(--text-meta);
   color: var(--raw-faint);
 }
 
@@ -173,31 +376,66 @@
   box-shadow: 0 0 0 2px var(--raw-panel-sidebar);
 }
 
-.skills-page .skills-nav-sep {
-  display: none;
-}
-
 .skills-page .skills-nav-foot {
   display: grid;
-  gap: 8px;
-  padding: 12px 14px 14px;
+  gap: 6px;
+  padding: 10px 14px 12px;
   border-top: 1px solid var(--raw-line);
 }
 
-.skills-page .skills-nav-progress {
+.skills-page .skills-nav-row1 {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   font-size: var(--text-meta);
   color: var(--raw-muted);
 }
 
-.skills-page .skills-nav-progress b {
+.skills-page .skills-nav-row1 b {
   color: var(--raw-strong);
   font-variant-numeric: tabular-nums;
 }
 
+.skills-page .skills-nav-row2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: var(--text-caption);
+  color: var(--raw-faint);
+}
+
+.skills-page .skills-nav-warn {
+  color: color-mix(in srgb, var(--warn) 72%, var(--raw-strong));
+  font-weight: 600;
+}
+
+.skills-page .skills-nav-check {
+  height: 22px;
+  margin-left: auto;
+  padding: 0 8px;
+  border: 1px solid var(--raw-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--raw-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.skills-page .skills-nav-check:hover:not(:disabled) {
+  background: var(--raw-raised);
+}
+
+.skills-page .skills-nav-check:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .skills-page .skills-nav-meter {
+  flex: 1;
   height: 6px;
   border-radius: 999px;
   background: var(--raw-raised);
@@ -244,14 +482,41 @@
   }
 
   .skills-page .skills-nav-head,
-  .skills-page .skills-nav-group,
+  .skills-page .skills-nav-filter,
   .skills-page .skills-nav-label,
   .skills-page .skills-nav-count,
-  .skills-page .skills-nav-progress,
+  .skills-page .skills-nav-groupcount,
+  .skills-page .skills-nav-grouptitle,
+  .skills-page .skills-nav-chev,
+  .skills-page .skills-nav-curmark,
+  .skills-page .skills-nav-grpbtn,
+  .skills-page .skills-nav-more,
+  .skills-page .skills-nav-none,
+  .skills-page .skills-nav-row1,
+  .skills-page .skills-nav-row2,
   .skills-page .skills-nav-attention,
-  .skills-page .skills-nav-status,
-  .skills-page .skills-nav-updates {
+  .skills-page .skills-nav-status {
     display: none;
+  }
+
+  /* The icon rail has no group heads to click: folded groups open, and the
+     heads shrink to a hairline. [hidden] needs the same weight to be beaten. */
+  .skills-page .skills-nav-items[hidden] {
+    display: grid !important;
+  }
+
+  .skills-page .skills-nav-grouphead {
+    position: static;
+    margin: 6px 6px;
+    padding: 0;
+    background: transparent;
+  }
+
+  .skills-page .skills-nav-toggle {
+    height: 1px;
+    padding: 0;
+    background: var(--raw-line);
+    pointer-events: none;
   }
 
   .skills-page .skills-nav-list {
@@ -263,13 +528,6 @@
     justify-content: center;
     height: 36px;
     padding: 0;
-  }
-
-  .skills-page .skills-nav-sep {
-    display: block;
-    height: 1px;
-    margin: 8px 6px;
-    background: var(--raw-line);
   }
 
   .skills-page .skills-nav-dot {
@@ -1273,21 +1531,6 @@
     flex: none;
     white-space: nowrap;
   }
-}
-
-.skills-page .skills-nav-updates {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--text-caption);
-  color: var(--raw-muted);
-}
-
-.skills-page .skills-nav-updates .btn-quiet {
-  height: 24px;
-  padding: 0 8px;
-  font-size: var(--text-caption);
 }
 
 /* ---------- 居中弹窗外壳（M9 T01；DESIGN 14.2–14.4） ---------- */

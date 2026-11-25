@@ -103,3 +103,24 @@ export function distributionLabel(item: KbSkillDistribution): {
       return { how, sync: "已同步", tone: "live" };
   }
 }
+
+/** A tool counts as detected when it is enabled and its directory exists; the
+ * shared directory is always shown. The navigation and the tools view fold the
+ * rest under 「未检测到的工具」 (M9 T05). */
+export function isToolDetected(tool: SkillTool): boolean {
+  return tool.id === "agents" || (tool.enabled && tool.status === "detected");
+}
+
+/** Splits a label around the first case-insensitive match of `needle`, so the
+ * navigation can highlight it without building HTML. */
+export function filterParts(label: string, needle: string): { text: string; hit: boolean }[] {
+  const wanted = needle.trim().toLowerCase();
+  const at = wanted ? label.toLowerCase().indexOf(wanted) : -1;
+  if (at < 0) return [{ text: label, hit: false }];
+  const end = at + wanted.length;
+  return [
+    { text: label.slice(0, at), hit: false },
+    { text: label.slice(at, end), hit: true },
+    { text: label.slice(end), hit: false },
+  ].filter((part) => part.text.length > 0);
+}

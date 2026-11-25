@@ -6,6 +6,7 @@ const scan = vi.fn();
 const restorePreview = vi.fn();
 const checkUpdates = vi.fn();
 const readDoc = vi.fn();
+const settingsPatch = vi.fn();
 const distributePreview = vi.fn();
 const distribute = vi.fn();
 
@@ -32,7 +33,7 @@ vi.mock("../../lib/transport", () => {
       noteOpened: vi.fn(async () => undefined),
       write: vi.fn(),
     },
-    settingsApi: { patch: vi.fn(), get: vi.fn() },
+    settingsApi: { patch: (...args: unknown[]) => settingsPatch(...args), get: vi.fn() },
     vaultApi: { list: vi.fn() },
     events: {
       settingsChanged: { on: vi.fn() },
@@ -96,7 +97,29 @@ beforeEach(() => {
   }));
   distributePreview.mockReset().mockResolvedValue({ items: [] });
   distribute.mockReset().mockResolvedValue({ items: [{ targetId: "claude-code", toolId: "claude-code", result: "linked" }] });
-  useAppStore.setState({ activeVaultId: "v1", page: "skills" });
+  const baseSettings = {
+    version: 1,
+    theme: "light",
+    closeBehavior: "ask",
+    accent: { preset: "orange" },
+    layout: {
+      sidebarWidth: 232,
+      docWidth: 560,
+      docCollapsed: false,
+      sidebarCollapsed: false,
+      agnesControlsCollapsed: false,
+      agnesHistoryOpen: true,
+      agnesComposerHeight: 96,
+      skillsKbCollapsed: false,
+      skillsToolsCollapsed: false,
+    },
+    recentVaults: [],
+  };
+  // The fake backend answers M61 with the layout it was given.
+  settingsPatch.mockReset().mockImplementation(async (body: { layout: typeof baseSettings.layout }) => ({
+    settings: { ...baseSettings, layout: body.layout },
+  }));
+  useAppStore.setState({ activeVaultId: "v1", page: "skills", settings: baseSettings as never });
   useSkillsStore.setState({ tools: [], scan: scanPayload as never, loading: false, error: null });
 });
 
@@ -343,6 +366,59 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     await waitFor(() => expect(screen.getByTestId("skill-drawer")).toBeTruthy());
     act(() => useAppStore.setState({ activeVaultId: "v2" }));
     expect(screen.queryByTestId("skill-drawer")).toBeNull();
+  });
+
+  it("collapses a nav group through the settings and keeps it collapsed on the next visit", async () => {
+    const view = render(<SkillsPage />);
+    fireEvent.click(screen.getByTestId("skills-nav-toggle-kb"));
+    await waitFor(() => expect(settingsPatch).toHaveBeenCalledTimes(1));
+    expect((settingsPatch.mock.calls[0]?.[0] as { layout: { skillsKbCollapsed: boolean } }).layout.skillsKbCollapsed).toBe(true);
+    await waitFor(() => expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true));
+    expect(screen.getByTestId("skills-nav-curmark-kb")).toBeTruthy();
+    expect(useAppStore.getState().settings?.layout.skillsKbCollapsed).toBe(true);
+
+    // A later visit (or a restart) reads the saved state.
+    view.unmount();
+    render(<SkillsPage />);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.getByTestId("skills-nav-toggle-kb").getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("keeps the collapsed group folded when a tool is chosen from the other group (AC-UX-10)", async () => {
+    render(<SkillsPage />);
+    fireEvent.click(screen.getByTestId("skills-nav-toggle-kb"));
+    await waitFor(() => expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true));
+    fireEvent.click(screen.getByRole("button", { name: /Cursor/ }));
+    expect(screen.getByTestId("tool-group-cursor")).toBeTruthy();
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    expect(screen.queryByTestId("skills-nav-curmark-kb")).toBeNull();
+    expect(settingsPatch).toHaveBeenCalledTimes(1);
+  });
+
+  it("enters with the saved collapsed state and writes nothing on the way in", async () => {
+    useAppStore.setState({
+      settings: {
+        ...useAppStore.getState().settings!,
+        layout: { ...useAppStore.getState().settings!.layout, skillsKbCollapsed: true },
+      },
+    });
+    render(<SkillsPage />);
+    expect(screen.getByTestId("skills-nav-items-kb").hasAttribute("hidden")).toBe(true);
+    // A vault switch drops the category and falls back to 全部技能 — still folded, no write.
+    expect(settingsPatch).not.toHaveBeenCalled();
+  });
+
+  it("filters the navigation without touching the list or the settings", async () => {
+    render(<SkillsPage />);
+    // The registry (tool display names) arrives after the first paint.
+    await screen.findByRole("button", { name: /Cursor/ });
+    fireEvent.change(screen.getByRole("textbox", { name: "筛选分类与工具" }), { target: { value: "cursor" } });
+    expect(screen.getByRole("button", { name: /Cursor/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /前端/ })).toBeNull();
+    // The main list is unchanged.
+    expect(screen.getByTestId("kb-card-vue")).toBeTruthy();
+    expect(screen.getByTestId("kb-card-go")).toBeTruthy();
+    expect(settingsPatch).not.toHaveBeenCalled();
   });
 
   it("keeps page selection stable when the scan refreshes", () => {

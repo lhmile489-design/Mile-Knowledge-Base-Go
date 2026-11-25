@@ -35,6 +35,9 @@ export function SkillsPage() {
   const vaultId = useAppStore((state) => state.activeVaultId);
   const showPage = useAppStore((state) => state.showPage);
   const chooseVault = useAppStore((state) => state.chooseVault);
+  const setLayout = useAppStore((state) => state.setLayout);
+  const kbCollapsed = useAppStore((state) => state.settings?.layout?.skillsKbCollapsed ?? false);
+  const toolsCollapsed = useAppStore((state) => state.settings?.layout?.skillsToolsCollapsed ?? false);
   const pushNotice = useAppStore((state) => state.pushNotice);
   const scan = useSkillsStore((state) => state.scan);
   const tools = useSkillsStore((state) => state.tools);
@@ -278,6 +281,10 @@ export function SkillsPage() {
         scan={scan}
         tools={tools}
         hasVault={Boolean(vaultId)}
+        collapsed={{ kb: kbCollapsed, tools: toolsCollapsed }}
+        onSetCollapsed={(group, value) => {
+          void setLayout(group === "kb" ? { skillsKbCollapsed: value } : { skillsToolsCollapsed: value }).catch(() => undefined);
+        }}
         update={updateInfo}
         onCheckUpdates={() => void refreshUpdates(true)}
       />

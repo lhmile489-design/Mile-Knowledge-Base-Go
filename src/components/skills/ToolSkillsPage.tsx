@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Archive, ArrowClockwise, FolderOpen, Tray } from "@phosphor-icons/react";
 import { skillsApi, type SkillRestorePreview, type SkillTool, type SkillToolScan, type ToolSkill } from "../../lib/transport";
 import { remotePill, sourceOf } from "../../lib/skillRemote";
+import { isToolDetected } from "../../lib/skillsView";
 import { ToolIcon } from "./ToolIcon";
 import { UninstallDialog } from "./UninstallDialog";
 import { AdoptDialog } from "./AdoptDialog";
@@ -115,17 +116,11 @@ export function ToolSkillsPage({
   })();
 
   const countOf = (id: string) => groups.find((group) => group.toolId === id)?.skills.length ?? 0;
-  const visible = (tool: SkillTool) => {
-    if (tool.id === "agents") return true;
-    if (showHidden) return true;
-    // Undetected tools stay folded even when their leftover directory still
-    // holds skills (UI 稿 9.2: 默认折叠).
-    return tool.enabled && tool.status === "detected";
-  };
+  // Undetected tools stay folded even when their leftover directory still
+  // holds skills (UI 稿 9.2: 默认折叠); the navigation uses the same rule.
+  const visible = (tool: SkillTool) => showHidden || isToolDetected(tool);
   const chips = useMemo(() => tools.filter(visible), [tools, groups, showHidden]);
-  const hiddenCount = tools.filter(
-    (tool) => tool.id !== "agents" && !(tool.enabled && tool.status === "detected"),
-  ).length;
+  const hiddenCount = tools.filter((tool) => !isToolDetected(tool)).length;
   const detectedCount = tools.filter((tool) => tool.id !== "agents" && tool.status === "detected").length;
 
   // Rows stay grouped by tool (UI 稿 11.2); the chip row only narrows the
