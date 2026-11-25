@@ -687,41 +687,6 @@
   color: var(--raw-strong);
 }
 
-.install-sources {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.install-source {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  padding: 14px 8px;
-  border: 1px solid var(--raw-line);
-  border-radius: var(--radius-card);
-  background: var(--raw-sunken);
-  color: var(--raw-text);
-  font-family: var(--font-ui);
-  font-size: var(--text-body-sm);
-  cursor: pointer;
-}
-
-.install-source:hover:not(:disabled) {
-  border-color: var(--raw-line-strong);
-}
-
-.install-source:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.install-source em {
-  font-style: normal;
-  font-size: var(--text-caption);
-  color: var(--raw-faint);
-}
-
 .install-recent {
   display: grid;
   gap: 6px;
@@ -775,11 +740,6 @@
 /* M5 T10: GitHub / zip sources, candidates, targets and progress. */
 .install-view .spacer {
   flex: 1;
-}
-
-.install-source[data-active='true'] {
-  border-color: var(--raw-accent);
-  background: color-mix(in srgb, var(--raw-accent-soft) 60%, var(--raw-card));
 }
 
 .install-github {
@@ -1029,11 +989,6 @@
   align-items: center;
   color: var(--raw-faint);
   font-size: var(--text-caption);
-}
-
-.update-crumb {
-  font-size: var(--text-body-sm);
-  color: var(--raw-strong);
 }
 
 .update-diff {
