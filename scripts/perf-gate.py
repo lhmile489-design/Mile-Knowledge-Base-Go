@@ -46,6 +46,12 @@ TARGETS = {
         "enterP95Ms": 300,
         "switchBackMs": 100,
     },
+    # M9 (技术设计 20.7). The scroll keys reuse the M8 names and limits: perf-m9
+    # measures the same scroll with the detail drawer open.
+    "m9": {
+        "drawerOpenP95Ms": 150,
+        "modalOpenMs": 100,
+    },
 }
 
 LABELS = {
@@ -69,6 +75,8 @@ LABELS = {
     "slowFrameRatio": "慢帧比例（> 2R）",
     "enterP95Ms": "进入技能页到卡片可见 p95 ms",
     "switchBackMs": "切回工作台首帧 p95 ms",
+    "drawerOpenP95Ms": "打开抽屉到预览可见 p95 ms（渲染缓存未命中）",
+    "modalOpenMs": "弹窗打开到第一帧 p95 ms",
 }
 
 
