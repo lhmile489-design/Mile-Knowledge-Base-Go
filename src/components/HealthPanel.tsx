@@ -103,7 +103,7 @@ export function HealthPanel() {
           ))}
         </div>
 
-        <div className="health-body" role="tabpanel">
+        <div className="health-body sheet" role="tabpanel">
           {error ? (
             <p className="health-status" role="alert">
               {error}

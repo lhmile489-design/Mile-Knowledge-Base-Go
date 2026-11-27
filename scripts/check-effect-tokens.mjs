@@ -23,6 +23,8 @@ const TOKENS = [
   "--glass-blur",
   "--glass-blur-strong",
   "--glass-blur-foot",
+  "--glass-filter",
+  "--glass-filter-strong",
   "--blur-scrim",
   "--blur-scrim-soft",
   "--glass-sat",
@@ -80,6 +82,14 @@ export function inspect(rel, rawText) {
       } else {
         references += 1;
       }
+    }
+  }
+
+  // The pre-M10 popover tokens were folded into the strong tier (T06): any
+  // mention, definition or use, would be a second material system again.
+  for (const legacy of [/--glass(?![\w-])/g, /--glass-line(?![\w-])/g]) {
+    for (const match of text.matchAll(legacy)) {
+      problems.push(`${rel}:${lineOf(text, match.index ?? 0)} legacy ${match[0]} was removed; use --glass-strong / --glass-edge`);
     }
   }
 
@@ -148,6 +158,11 @@ function selfTest() {
     ["duration token", "src/styles/x.css", ".a { transition: opacity var(--dur-enter); }", true],
     ["240ms literal allowed", "src/styles/x.css", ".a { transition: opacity 240ms; }", true],
     ["comment ignored", "src/styles/x.css", "/* blur(9px) 520ms --glass-blur: 1px */", true],
+    ["legacy --glass definition", "src/styles/x.css", ":root { --glass: rgb(255 255 255 / 0.72); }", false],
+    ["legacy --glass-line definition", "src/styles/x.css", ":root { --glass-line: rgb(255 255 255 / 0.6); }", false],
+    ["legacy --glass reference", "src/styles/x.css", ".a { background: var(--glass); }", false],
+    ["legacy --glass-line reference", "src/styles/x.css", ".a { border-color: var(--glass-line); }", false],
+    ["tier tokens are not legacy", "src/styles/x.css", ".a { background: var(--glass-strong); border-color: var(--glass-edge); }", true],
   ];
   let failed = 0;
   for (const [name, rel, text, ok] of cases) {

@@ -22,9 +22,12 @@
   gap: 6px;
   padding: 10px 12px;
   overflow: hidden;
-  border: 1px solid var(--raw-line);
+  border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
   border-radius: var(--radius-card);
-  background: var(--raw-card);
+  background: var(--glass-card);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
   color: var(--raw-text);
   text-align: left;
 }
@@ -40,11 +43,19 @@
 
 .overview-button {
   cursor: pointer;
-  transition: border-color var(--dur) var(--ease);
+  transition:
+    transform var(--dur-hover) var(--ease-spring-soft),
+    background-color var(--dur-hover) var(--ease),
+    border-color var(--dur-hover) var(--ease),
+    box-shadow var(--dur-hover) var(--ease);
 }
 
-.overview-button:hover {
+.overview-button:hover,
+.overview-button:focus-visible {
+  transform: translate3d(0, calc(var(--lift) * -1), 0);
+  background: var(--glass-card-hover);
   border-color: var(--raw-line-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 14px 30px rgb(20 22 28 / 0.1);
 }
 
 .overview-tile[data-warn="true"] {

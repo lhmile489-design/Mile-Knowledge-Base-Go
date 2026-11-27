@@ -90,7 +90,7 @@ export function AuditPanel() {
           <X size={13} aria-hidden />
         </button>
       </div>
-      <div className="audit-body" ref={bodyRef}>
+      <div className="audit-body sheet" ref={bodyRef}>
         {error ? (
           <p className="audit-empty" role="alert">
             {error}

@@ -1181,8 +1181,8 @@
 @keyframes skills-rise {
   from {
     opacity: 0;
-    transform: translate3d(0, 14px, 0) scale(0.98);
-    filter: blur(6px);
+    transform: translate3d(0, var(--enter-y), 0) scale(0.98);
+    filter: blur(var(--enter-blur));
   }
   to {
     opacity: 1;
@@ -1201,7 +1201,7 @@
 
 .skills-page .kb-card:hover,
 .skills-page .kb-card:focus-within {
-  transform: translate3d(0, -3px, 0);
+  transform: translate3d(0, calc(var(--lift) * -1), 0);
   background: var(--glass-card-hover);
   box-shadow: inset 0 1px 0 var(--glass-edge), 0 14px 30px rgb(20 22 28 / 0.1);
 }

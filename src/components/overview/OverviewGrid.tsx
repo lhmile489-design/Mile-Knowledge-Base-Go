@@ -101,7 +101,8 @@ export function OverviewGrid() {
   return (
     <div className="overview-shell" data-testid="overview-grid">
       <div className="overview-grid">
-        <section className="overview-tile" data-span="2x2" data-testid="overview-recent">
+        <section className="overview-tile reveal" data-span="2x2" data-testid="overview-recent"
+          style={{ "--i": 0 } as CSSProperties}>
           <span className="overview-title">最近文档</span>
           {recentLoading && recent.length === 0 ? (
             <p className="overview-line">正在读取</p>
@@ -128,7 +129,8 @@ export function OverviewGrid() {
           )}
         </section>
 
-        <section className="overview-tile" data-testid="overview-index">
+        <section className="overview-tile reveal" data-testid="overview-index"
+          style={{ "--i": 1 } as CSSProperties}>
           <span className="overview-title">文档与索引</span>
           <span className="overview-main">{indexLabel(status?.phase)}</span>
           <span className="overview-line">
@@ -138,8 +140,9 @@ export function OverviewGrid() {
 
         <button
           type="button"
-          className="overview-tile overview-button"
+          className="overview-tile overview-button reveal"
           data-testid="overview-skills"
+          style={{ "--i": 2 } as CSSProperties}
           onClick={() => useAppStore.getState().showPage("skills")}
         >
           <span className="overview-title">技能分类</span>
@@ -153,9 +156,10 @@ export function OverviewGrid() {
 
         <button
           type="button"
-          className="overview-tile overview-button"
+          className="overview-tile overview-button reveal"
           onClick={() => openHealth("unresolvedLinks")}
           data-testid="overview-health"
+          style={{ "--i": 3 } as CSSProperties}
         >
           <span className="overview-title">健康</span>
           <span className="overview-main">{counts.total}</span>
@@ -164,9 +168,10 @@ export function OverviewGrid() {
 
         <button
           type="button"
-          className="overview-tile overview-button"
+          className="overview-tile overview-button reveal"
           onClick={() => void reveal(".mile-kb/drafts")}
           data-testid="overview-drafts"
+          style={{ "--i": 4 } as CSSProperties}
         >
           <span className="overview-title">草稿</span>
           <span className="overview-main">{drafts}</span>
@@ -177,10 +182,11 @@ export function OverviewGrid() {
 
         <button
           type="button"
-          className="overview-tile overview-button"
+          className="overview-tile overview-button reveal"
           data-warn={pending > 0 ? "true" : undefined}
           onClick={focusComposer}
           data-testid="overview-pending"
+          style={{ "--i": 5 } as CSSProperties}
           data-count={pending}
         >
           <span className="overview-title">待审批</span>
@@ -190,7 +196,8 @@ export function OverviewGrid() {
           </span>
         </button>
 
-        <section className="overview-tile" data-span="2x1" data-testid="overview-areas">
+        <section className="overview-tile reveal" data-span="2x1" data-testid="overview-areas"
+          style={{ "--i": 6 } as CSSProperties}>
           <span className="overview-title">分区</span>
           {directories.length === 0 ? (
             <span className="overview-line">知识库根目录下还没有目录</span>
@@ -210,7 +217,8 @@ export function OverviewGrid() {
           )}
         </section>
 
-        <section className="overview-tile" data-span="2x1" data-testid="overview-agents">
+        <section className="overview-tile reveal" data-span="2x1" data-testid="overview-agents"
+          style={{ "--i": 7 } as CSSProperties}>
           <span className="overview-title">
             Agent 状态
             <span className="status-dot" data-halo aria-hidden style={glow(enginePhase)} />
@@ -225,7 +233,8 @@ export function OverviewGrid() {
           </ul>
         </section>
 
-        <section className="overview-tile" data-span="2x1" data-testid="overview-changes">
+        <section className="overview-tile reveal" data-span="2x1" data-testid="overview-changes"
+          style={{ "--i": 8 } as CSSProperties}>
           <span className="overview-title">最近改动</span>
           {changes.length === 0 ? (
             <span className="overview-line">还没有记录</span>

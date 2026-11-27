@@ -9,6 +9,10 @@
   --glass-sat: 1.5;
   --glass-blur-strong: 24px;
   --glass-blur-foot: 22px;
+  /* backdrop-filter 整体取值：关 / 自动降级时整条变成 none，组件只写
+     `backdrop-filter: var(--glass-filter)`，不写档位分支 */
+  --glass-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  --glass-filter-strong: blur(var(--glass-blur-strong)) saturate(var(--glass-sat));
   --blur-scrim: 8px;
   --blur-scrim-soft: 6px;
   --glass-panel: color-mix(in srgb, var(--raw-card) 58%, transparent);
@@ -104,6 +108,9 @@
   --glass-sat: 1;
   --glass-blur-strong: 0px;
   --glass-blur-foot: 0px;
+  --glass-filter: none;
+  --glass-filter-strong: none;
+  --glass-edge: transparent;
   --blur-scrim: 0px;
   --blur-scrim-soft: 0px;
   --glass-panel: var(--raw-panel-editor);
@@ -199,8 +206,8 @@
 .glass-card,
 .glass-strong {
   border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   box-shadow: inset 0 1px 0 var(--glass-edge);
 }
 
@@ -214,6 +221,8 @@
 
 .glass-strong {
   background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
   box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
 }
 
@@ -236,15 +245,20 @@
 
 /* ---------- 入场（DESIGN 15.4：同屏最多 24 项错开） ---------- */
 
+/* 静止态就是元素自己的样式；动画只用 `backwards` 填充，结束后不残留
+   transform / filter（否则悬停上浮会被动画终值压住，卡片也会因 filter 成为
+   backdrop root）。--i 最多取 24（DESIGN 15.4）。 */
 .reveal {
-  opacity: 0;
-  transform: translate3d(0, var(--enter-y), 0) scale(0.985);
-  filter: blur(var(--enter-blur));
-  animation: effects-rise var(--dur-enter) var(--ease-out-expo) forwards;
-  animation-delay: calc(var(--i, 0) * var(--stagger) + 80ms);
+  animation: effects-rise var(--dur-enter) var(--ease-out-expo) backwards;
+  animation-delay: calc(min(var(--i, 0), 24) * var(--stagger));
 }
 
 @keyframes effects-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--enter-y), 0) scale(0.985);
+    filter: blur(var(--enter-blur));
+  }
   to {
     opacity: 1;
     transform: none;
@@ -253,9 +267,6 @@
 }
 
 [data-motion='off'] .reveal {
-  opacity: 1;
-  transform: none;
-  filter: none;
   animation: none;
 }
 

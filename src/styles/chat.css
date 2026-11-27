@@ -53,10 +53,13 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  margin: 0 8px 0 0;
   padding: 16px 16px 8px;
   scrollbar-width: thin;
   scrollbar-color: var(--raw-line) transparent;
+}
+
+.chat-body.sheet {
+  margin: 0 8px 0 0;
 }
 
 .chat-column {
@@ -120,6 +123,10 @@
   max-height: 200px;
   resize: none;
   overflow-y: auto;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+  border-radius: 10px;
+  background: var(--sheet);
 }
 
 .chat-composer-actions {
@@ -214,8 +221,11 @@
   padding: 6px;
   border: 1px solid var(--raw-line);
   border-radius: var(--radius-card);
-  background: var(--raw-card);
-  box-shadow: var(--shadow-float);
+  background: var(--glass-strong);
+  border-color: color-mix(in srgb, var(--raw-line) 70%, transparent);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
 }
 
 .agent-picker-head {
@@ -808,8 +818,11 @@
   padding: 10px 12px;
   border: 1px solid var(--raw-line);
   border-radius: var(--radius-card);
-  background: var(--raw-card);
-  box-shadow: var(--shadow-float);
+  background: var(--glass-strong);
+  border-color: color-mix(in srgb, var(--raw-line) 70%, transparent);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
 }
 
 .info-section + .info-section {

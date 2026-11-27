@@ -1,0 +1,23 @@
+PASS index ready
+== search and open
+PASS search returns hits
+PASS search hit opens with Enter
+PASS document opened
+== backlinks
+PASS backlinks list 富文本样例
+== create, rename, archive through plan cards
+PASS create plan card
+PASS created file exists
+PASS renamed file exists
+PASS archive plan card
+PASS archived file moved
+== audit and restore
+PASS audit lists the archive
+PASS restore preview opens
+PASS restored file back
+audit lines: 4, documents: {"id":1,"result":{"value":24}}
+== restart: index and audit survive
+PASS index ready after restart
+PASS document count kept
+PASS audit survived restart (4 -> 4)
+RESULT pass=16 fail=0

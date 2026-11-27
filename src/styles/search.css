@@ -7,7 +7,9 @@
   max-height: 420px;
   min-height: 0;
   border-bottom: 1px solid var(--raw-line);
-  background: var(--raw-card);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
 }
 
 .search-title {
@@ -109,6 +111,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  margin: 8px 10px 10px;
 }
 
 .search-status {

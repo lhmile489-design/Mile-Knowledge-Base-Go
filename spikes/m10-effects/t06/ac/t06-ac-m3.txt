@@ -1,0 +1,70 @@
+PASS overview visible
+PASS index ready
+PASS overview recent tile
+PASS overview skills tile has count
+PASS recent list updated
+{"id":1,"result":{"value":true}}
+PASS settings opened
+{"id":1,"result":{"value":true}}
+PASS settings general
+{"id":1,"result":{"value":true}}
+PASS settings model
+{"id":1,"result":{"value":true}}
+PASS settings agents
+{"id":1,"result":{"value":true}}
+PASS settings categories
+{"id":1,"result":{"value":true}}
+PASS settings about
+PASS about shows a version
+{"id":1,"result":{"value":true}}
+PASS general opened
+{"id":1,"result":{"value":true}}
+PASS theme dark applied
+{"id":1,"result":{"value":true}}
+PASS theme light applied
+{"id":1,"result":{"value":true}}
+PASS categories opened
+{"id":1,"result":{"value":true}}
+PASS save bar appears
+{"id":1,"result":{"value":true}}
+PASS save bar cleared
+{"id":1,"result":{"value":true}}
+PASS switch off
+PASS sidebar shows alias
+PASS search settled
+PASS no raws hits while off
+{"id":1,"result":{"value":true}}
+PASS settings reopened
+{"id":1,"result":{"value":true}}
+PASS categories again
+{"id":1,"result":{"value":true}}
+PASS switch on
+PASS search settled again
+PASS raws hits return
+{"id":1,"result":{"value":true}}
+PASS general again
+PASS doc opened for ctrl-s
+{"id":1,"result":{"value":true}}
+PASS agents for ctrl-s
+PASS draft bar
+PASS ctrl-s cleared the bar
+PASS document still dirty
+PASS workbench after ctrl-s
+PASS overview back
+PASS pending tile counts 1
+PASS pending tile warns
+{"id":1,"result":{"value":true}}
+PASS settings for theme
+{"id":1,"result":{"value":true}}
+PASS general for theme
+{"id":1,"result":{"value":true}}
+PASS dark before restart
+PASS restarted overview
+PASS theme persisted
+PASS alias persisted
+PASS welcome without vault
+PASS settings without vault
+{"id":1,"result":{"value":true}}
+PASS no-vault notice
+PASS no-vault notice copy
+RESULT pass=47 fail=0

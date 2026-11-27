@@ -1,0 +1,24 @@
+== overview std light
+{"tile":{"bg":"color(srgb 1 1 1 / 0.5)","filter":"blur(18px) saturate(1.5)","shadow":"rgba(255, 255, 255, 0.7) 0px 1px 0px 0px inset","anim":"effects-rise"},"runtime":{"bg":"color(srgb 1 1 1 / 0.5)","filter":"blur(18px) saturate(1.5)","shadow":"color(srgb 0.882353 0.890196 0.905882 / 0.7) 0px 0px 0px 1px inset, rg","anim":"none"},"composer":{"bg":"color(srgb 1 1 1 / 0.5)","filter":"none","shadow":"rgba(255, 255, 255, 0.7) 0px 1px 0px 0px inset","anim":"none"},"textarea":{"bg":"rgb(255, 255, 255)","filter":"none","shadow":"none","anim":"none"},"chatBody":{"bg":"rgba(0, 0, 0, 0)","filter":"none","shadow":"none","anim":"none"},"chatBodySheet":false}
+== overview off light
+{"tile":{"bg":"rgb(255, 255, 255)","filter":"none","shadow":"rgba(0, 0, 0, 0) 0px 1px 0px 0px inset","anim":"effects-rise"},"runtime":{"bg":"rgb(255, 255, 255)","filter":"none","shadow":"color(srgb 0.882353 0.890196 0.905882 / 0.7) 0px 0px 0px 1px inset, rg","anim":"none"},"composer":{"bg":"rgb(255, 255, 255)","filter":"none","shadow":"rgba(0, 0, 0, 0) 0px 1px 0px 0px inset","anim":"none"},"textarea":{"bg":"rgb(255, 255, 255)","filter":"none","shadow":"none","anim":"none"},"chatBody":{"bg":"rgba(0, 0, 0, 0)","filter":"none","shadow":"none","anim":"none"},"chatBodySheet":false}
+tile transform at rest: none
+== health panel
+health std light: {"bg":"color(srgb 1 1 1 / 0.78)","filter":"blur(24px) saturate(1.5)","scrimFilter":"blur(8px)","bodySheet":true,"backdropRect":[0,0,1427,894],"panelRect":[12,12,720,560],"pos":"fixed","parent":"health-backdrop"}
+health std dark: {"bg":"color(srgb 0.14902 0.156863 0.176471 / 0.8)","filter":"blur(24px) saturate(1.5)","scrimFilter":"blur(8px)","bodySheet":true,"backdropRect":[0,0,1427,894],"panelRect":[12,12,720,560],"pos":"fixed","parent":"health-backdrop"}
+health off light: {"bg":"rgb(255, 255, 255)","filter":"none","scrimFilter":"blur(0px)","bodySheet":true,"backdropRect":[0,0,1427,894],"panelRect":[12,12,720,560],"pos":"fixed","parent":"health-backdrop"}
+health high light: {"bg":"color(srgb 1 1 1 / 0.7)","filter":"blur(53px) saturate(2)","scrimFilter":"blur(18px)","bodySheet":true,"backdropRect":[0,0,1427,894],"panelRect":[12,12,720,560],"pos":"fixed","parent":"health-backdrop"}
+== plan card
+plan std light: {"bg":"color(srgb 1 1 1 / 0.78)","filter":"blur(24px) saturate(1.5)"}
+plan std dark: {"bg":"color(srgb 0.14902 0.156863 0.176471 / 0.8)","filter":"blur(24px) saturate(1.5)"}
+plan off light: {"bg":"rgb(255, 255, 255)","filter":"none"}
+== notice
+notice: {"bg":"color(srgb 1 1 1 / 0.78)","filter":"blur(24px) saturate(1.5)"}
+== route menu
+route menu: {"cls":"agent-picker","bg":"color(srgb 1 1 1 / 0.78)","filter":"blur(24px) saturate(1.5)"}
+== search + audit panels (document open, doc panel expanded)
+docked std light: {"search":{"bg":"color(srgb 1 1 1 / 0.78)","filter":"blur(24px) saturate(1.5)"},"searchBody":{"bg":"rgb(255, 255, 255)","filter":"none"},"audit":{"bg":"color(srgb 1 1 1 / 0.78)","filter":"blur(24px) saturate(1.5)"},"auditBody":{"bg":"rgb(255, 255, 255)","filter":"none"}}
+docked std dark: {"search":{"bg":"color(srgb 0.14902 0.156863 0.176471 / 0.8)","filter":"blur(24px) saturate(1.5)"},"searchBody":{"bg":"rgb(24, 25, 29)","filter":"none"},"audit":{"bg":"color(srgb 0.14902 0.156863 0.176471 / 0.8)","filter":"blur(24px) saturate(1.5)"},"auditBody":{"bg":"rgb(24, 25, 29)","filter":"none"}}
+docked off light: {"search":{"bg":"rgb(255, 255, 255)","filter":"none"},"searchBody":{"bg":"rgb(255, 255, 255)","filter":"none"},"audit":{"bg":"rgb(255, 255, 255)","filter":"none"},"auditBody":{"bg":"rgb(255, 255, 255)","filter":"none"}}
+audit rects: {"audit":[860,1034,559,87],"auditBody":[868,1071,543,43],"pane":[860,276,559,845],"editorBody":[868,348,543,619],"panel":[859,40,560,846],"open":true}
+audit alone rect: [860,799,559,87]

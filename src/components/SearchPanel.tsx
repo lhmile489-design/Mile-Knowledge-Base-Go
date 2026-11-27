@@ -226,7 +226,7 @@ export function SearchPanel() {
         ) : null}
       </div>
 
-      <div className="search-body" role="listbox" aria-label="搜索结果" ref={listRef}>
+      <div className="search-body sheet" role="listbox" aria-label="搜索结果" ref={listRef}>
         {error ? (
           <p className="search-status" role="alert">
             {error}

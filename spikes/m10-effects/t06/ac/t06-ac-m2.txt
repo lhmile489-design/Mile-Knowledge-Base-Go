@@ -1,0 +1,27 @@
+PASS engine ready
+== route and stream
+PASS route preview targets curator
+PASS route line shows 发给 整理归档
+PASS first turn streamed to end
+PASS answer text rendered
+PASS usage receipt shows this turn
+PASS cost is unknown, not zero
+== tool approval
+PASS approval card appears
+PASS card names the target file
+PASS card names the verb
+PASS file written after allow
+PASS card removed after the Go frame
+PASS tool turn finished
+PASS tool answer rendered
+== history search
+PASS history rail visible
+PASS search hits the conversation
+PASS search hit rendered
+== restart: restore and search survive
+PASS engine ready after restart
+PASS chat restored after restart
+PASS history rail restored open
+PASS history list survived
+PASS search still hits after restart
+RESULT pass=22 fail=0

@@ -54,7 +54,8 @@ export function MessageList() {
 
   return (
     <div
-      className="chat-body sheet"
+      className={empty ? "chat-body" : "chat-body sheet"}
+      data-empty={empty ? "true" : undefined}
       ref={parentRef}
       data-testid="chat-body"
       onScroll={(event) => {

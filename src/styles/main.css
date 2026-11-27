@@ -223,6 +223,10 @@ body {
   gap: 10px;
   padding: 10px 12px;
   font-size: var(--text-body-sm);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
 }
 
 /* Narrow windows hide the app name in the title bar (UI 稿 11.2). */

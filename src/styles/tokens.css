@@ -74,8 +74,6 @@
   --shadow-lift-lg: var(--shadow-panel);
 
   /* 毛玻璃只给浮层（用户授权 2026-11-16）；主面板与滚动区不用，避免滚动掉帧。 */
-  --glass: rgb(255 255 255 / 0.72);
-  --glass-line: rgb(255 255 255 / 0.6);
 
   /*
    * macOS 移植评估报告 §2.2：Segoe UI Variable 是 Windows 专属字体，
@@ -218,8 +216,6 @@
   --shadow-panel: none;
   --shadow-float: 0 16px 40px rgb(0 0 0 / 0.5);
 
-  --glass: rgb(28 30 34 / 0.72);
-  --glass-line: rgb(255 255 255 / 0.08);
 }
 /* 主题色只在 :root / 深色上给默认值；[data-preview] 缩略图不覆盖，好让它跟着当前选择走。 */
 [data-theme='dark'] {
@@ -1082,11 +1078,17 @@ body {
  * 状态色只染 1px 边框，且永远配图标或文字 —— 颜色不是唯一信息载体。
  */
 .composer-card {
-  background: var(--raw-card);
-  border: 1px solid var(--raw-line);
+  background: var(--glass-card);
+  border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
   border-radius: var(--radius-card, 12px);
   padding: 10px 12px 9px;
-  transition: border-color 150ms;
+  /* M10: card-tier base and edge, but NO backdrop-filter. The route menu
+     (.agent-picker) opens from inside this card and overlaps the run
+     parameters above it; a filter here would make the card its backdrop root,
+     so the menu would stop blurring anything outside the card. Only the soft
+     colour field is behind the card anyway. */
+  box-shadow: inset 0 1px 0 var(--glass-edge);
+  transition: border-color var(--dur-hover) var(--ease);
 }
 
 .composer-card:focus-within {
@@ -1293,7 +1295,14 @@ body {
  * 内部后果小卡用 --panel-sunken 凹一档。顶部外边距拉开与对话记录的缝。
  */
 .runtime-controls {
-  background: var(--panel-card, var(--raw-raised));
+  /* M10: card tier. The hairline is an inset shadow so the block keeps its
+     1.7.0 size (a border would add 2px). */
+  background: var(--glass-card);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--raw-line) 70%, transparent),
+    inset 0 1px 0 var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
   border-radius: var(--radius-card, 12px);
   margin-top: var(--gap-tile, 12px);
   padding: 2px 4px 4px;
@@ -4396,12 +4405,12 @@ button.overview-tile {
   z-index: 5;
   min-width: 240px;
   padding: 6px;
-  border: 1px solid var(--raw-line);
+  border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
   border-radius: var(--radius-card);
-  background: var(--glass-strong, var(--raw-card));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-  box-shadow: var(--shadow-float, 0 16px 40px rgb(0 0 0 / 0.18));
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
 }
 
 /* 输入区里的路由触发器与改派菜单（M20-S9）。 */
