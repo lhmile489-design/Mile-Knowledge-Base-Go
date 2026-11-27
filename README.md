@@ -47,7 +47,7 @@
 | [docs/PLAN-M7.md](docs/PLAN-M7.md) | M7 跨机还原分发实施计划 | 已完成并推送（`813e9ec`） |
 | [docs/PLAN-M8.md](docs/PLAN-M8.md) | M8 技能页实施计划 | 已完成并推送（`8cee06f`）；1.6.1 补丁记录在账本末行 |
 | [docs/PLAN-M9.md](docs/PLAN-M9.md) | M9 技能页体验升级实施计划 | 已完成并推送（`7307aad`，1.7.0） |
-| [docs/PLAN-M10.md](docs/PLAN-M10.md) | M10 全局材质与动效实施计划 | v0.1 草案，待审批 |
+| [docs/PLAN-M10.md](docs/PLAN-M10.md) | M10 全局材质与动效实施计划 | v0.1，用户 2026-11-27 批准，执行中（T00–T08 已验证，亲测延后到全部完成后） |
 | [docs/UI设计稿.md](docs/UI设计稿.md) 与 `design/baseline/`、`design/r2/` | 页面与状态清单、旧版截图基线；第 9 节 R2 技能浮层、第 10 节 R2 主题色、第 11 节 R2 技能页 | 已确认 v1.0；第 9、10 节 2026-11-20 审核通过，第 11 节 2026-11-24 审核通过 |
 | [docs/decisions.md](docs/decisions.md) | 重要取舍 | 按需记录 |
 | [docs/发布清单.md](docs/发布清单.md) | 发布与恢复验证 | 已记录 1.0.0 至 1.6.0 各版本本机结果 |
@@ -83,7 +83,8 @@
 | Go 测试 | 单元测试与静态检查 | `bun run test:go` / `bun run lint:go`；格式另跑 `gofmt -l .` | 已验证（2026-11-24：719 项；vet 与 gofmt 无输出） |
 | 竞态检测 | `go test -race` | `bun run test:go-race` | 未验证（需要 cgo，本机未跑；不在常规门禁内） |
 | 模糊测试 | 路径与渲染（`FuzzValidateRel`、`FuzzRender`） | `bun run test:fuzz`（`scripts/test-fuzz.sh`，每个目标默认 60s，`FUZZ_TIME=3s` 可缩短） | 已验证（2026-11-18：正向通过；故意失败的对照返回非零） |
-| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m2、ac-m3、ac-m35、ac-m4、ac-m5、ac-m6、ac-m7、ac-m8、ac-m9；`E2E_SKIP_BUILD=1` 跳过构建，打过正式包后不要用） | 全量 529 项全过（2026-11-26，M9 T10：15/16/22/47/37/56/54/47/70/58/107，见 docs/PLAN-M9.md） |
+| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m10、ac-m2、ac-m3、ac-m35、ac-m4、ac-m5、ac-m6、ac-m7、ac-m8、ac-m9（按文件名排序）；`E2E_SKIP_BUILD=1` 跳过构建，打过正式包后不要用） | 全量 612 项全过（2026-11-27，M10 T08：15/16/82/22/47/37/56/54/47/70/59/107，见 docs/PLAN-M10.md） |
+| M10 验收 | 全局材质与动效：四档模糊 / 四档动画即时生效与落盘、重启后保持、系统减少动画、真实慢帧自动降级、欢迎页与各类浮层的材质分布（AC-MAT-1/2/3/4/8） | `bash scripts/e2e/ac-m10.sh`（临时 APPDATA / 知识库 / 假 HOME；需要 e2e 构建；对比度、性能分别属 T10、T09） | 已验证 82/82（2026-11-27） |
 | M3.5 验收 | 主题色：全新安装默认橙、选蓝立即生效与重启、自定义色、乱码回落 | `bash scripts/e2e/ac-m35.sh`（内含 `scripts/e2e/accent-contrast.js` 的真实组件对比度） | 已验证 37/37（2026-11-20） |
 | M4 验收 | 技能管理：注册表/扫描/分发/卸载/收编/备份/浮层（AC-SKM-1–11） | `bash scripts/e2e/ac-m4.sh`（假 HOME + 假注册表，不写真实工具目录） | 已验证 60/60（2026-11-20） |
 | M5 验收 | GitHub / zip 安装、更新、整包拒绝、断网零写入（AC-SKM-12–16） | `bash scripts/e2e/ac-m5.sh`（本地假 GitHub；需要 e2e 构建） | 已验证 54/54（2026-11-22） |
