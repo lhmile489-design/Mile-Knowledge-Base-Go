@@ -27,7 +27,7 @@ PASS first Esc back to the list
 PASS second Esc keeps the page
 {"id":1,"result":{"value":true}}
 PASS workbench back
-PASS focus on the work segment
+FAIL focus on the work segment :: {"id":1,"result":{"value":false}}
 PASS no sidebar import entry
 == AC-PAGE-1: stream, draft, doc edits and scroll survive the switch
 PASS stream started
@@ -78,4 +78,4 @@ PASS tool directory works without a vault
 PASS uninstall confirm
 {"id":1,"result":{"value":true}}
 PASS uninstalled without a vault
-RESULT pass=59 fail=0
+RESULT pass=58 fail=1

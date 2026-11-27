@@ -123,3 +123,11 @@ ev "document.documentElement.dataset.theme='light'; true" >/dev/null
 ev "document.documentElement.dataset.blur='off'; true" >/dev/null; sleep 0.5
 freeze; capture "${PREFIX}-blur-off.png"
 raw "$(cat "$HERE/probe-bg.js")" > "${PREFIX}-bg-off.txt"
+
+# low / high tiers, light and dark (advisor: look at them before T10)
+for TIER in low high; do
+  ev "document.documentElement.dataset.blur='$TIER'; document.documentElement.dataset.theme='light'; true" >/dev/null; sleep 0.5
+  freeze; capture "${PREFIX}-blur-$TIER-light.png"
+  ev "document.documentElement.dataset.theme='dark'; true" >/dev/null; sleep 0.5
+  freeze; capture "${PREFIX}-blur-$TIER-dark.png"
+done
