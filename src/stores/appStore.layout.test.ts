@@ -24,6 +24,7 @@ const base = {
   theme: "light",
   closeBehavior: "ask",
   accent: { preset: "orange" },
+  effects: { motion: "std", blur: "std" },
   layout: {
     sidebarWidth: 232,
     docWidth: 560,

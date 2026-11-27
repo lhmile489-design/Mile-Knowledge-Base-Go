@@ -287,10 +287,19 @@ type AppSettings struct {
 	Theme         string         `json:"theme"`         // light | dark | system
 	CloseBehavior string         `json:"closeBehavior"` // ask | tray | quit
 	Accent        AccentSetting  `json:"accent"`
+	Effects       EffectsSetting `json:"effects"`
 	Layout        LayoutSettings `json:"layout"`
 	RecentVaults  []Vault        `json:"recentVaults"`
 	LastVaultID   string         `json:"lastVaultId,omitempty"`
 	Unknown       map[string]any `json:"-"` // fields written by other versions, preserved verbatim
+}
+
+// EffectsSetting is the global motion/blur strength pair (PRD section 19,
+// API.md §17; M10). Values are off | low | std | high; a missing or unknown
+// value falls back to std on read and is rejected in a patch.
+type EffectsSetting struct {
+	Motion string `json:"motion"`
+	Blur   string `json:"blur"`
 }
 
 // SettingsPatch is a partial update; nil fields are untouched.
@@ -298,15 +307,22 @@ type SettingsPatch struct {
 	Theme         *string         `json:"theme,omitempty"`
 	CloseBehavior *string         `json:"closeBehavior,omitempty"`
 	Accent        *AccentSetting  `json:"accent,omitempty"`
+	Effects       *EffectsSetting `json:"effects,omitempty"`
 	Layout        *LayoutSettings `json:"layout,omitempty"`
 
-	accentUnknown bool
+	accentUnknown  bool
+	effectsUnknown bool
 }
 
 // HasUnknownAccentFields reports whether the wire payload carried keys inside
 // "accent" or its "cache" that this version does not know. API.md §11.2 makes
 // those an invalid-input instead of silently dropping them.
 func (p *SettingsPatch) HasUnknownAccentFields() bool { return p.accentUnknown }
+
+// HasUnknownEffectsFields reports whether the wire payload carried keys inside
+// "effects" that this version does not know. API.md §17 makes those an
+// invalid-input.
+func (p *SettingsPatch) HasUnknownEffectsFields() bool { return p.effectsUnknown }
 
 // UnmarshalJSON records unknown accent keys; every other field decodes as
 // before.
@@ -315,6 +331,7 @@ func (p *SettingsPatch) UnmarshalJSON(data []byte) error {
 		Theme         *string         `json:"theme"`
 		CloseBehavior *string         `json:"closeBehavior"`
 		Accent        json.RawMessage `json:"accent"`
+		Effects       json.RawMessage `json:"effects"`
 		Layout        *LayoutSettings `json:"layout"`
 	}
 	if err := json.Unmarshal(data, &wire); err != nil {
@@ -323,6 +340,23 @@ func (p *SettingsPatch) UnmarshalJSON(data []byte) error {
 	p.Theme, p.CloseBehavior, p.Layout = wire.Theme, wire.CloseBehavior, wire.Layout
 	p.Accent = nil
 	p.accentUnknown = false
+	p.Effects = nil
+	p.effectsUnknown = false
+	if len(wire.Effects) > 0 && string(wire.Effects) != "null" {
+		var e EffectsSetting
+		if err := json.Unmarshal(wire.Effects, &e); err != nil {
+			return err
+		}
+		p.Effects = &e
+		var efeys map[string]json.RawMessage
+		if err := json.Unmarshal(wire.Effects, &efeys); err == nil {
+			for k := range efeys {
+				if k != "motion" && k != "blur" {
+					p.effectsUnknown = true
+				}
+			}
+		}
+	}
 	if len(wire.Accent) == 0 || string(wire.Accent) == "null" {
 		return nil
 	}

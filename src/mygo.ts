@@ -158,6 +158,7 @@ export interface AppSettings {
   /** ask | tray | quit */
   closeBehavior: string;
   accent: AccentSetting;
+  effects: EffectsSetting;
   layout: LayoutSettings;
   recentVaults: Vault[];
   lastVaultId?: string;
@@ -348,6 +349,16 @@ export interface DocumentSnapshot {
 export interface DuplicateNameItem {
   name: string;
   paths: string[];
+}
+
+/**
+ * EffectsSetting is the global motion/blur strength pair (PRD section 19,
+ * API.md §17; M10). Values are off | low | std | high; a missing or unknown
+ * value falls back to std on read and is rejected in a patch.
+ */
+export interface EffectsSetting {
+  motion: string;
+  blur: string;
 }
 
 /** EngineCapabilities is the fixed capability set of the in-process engine. */
@@ -804,6 +815,7 @@ export interface SettingsPatch {
   theme?: string;
   closeBehavior?: string;
   accent?: AccentSetting;
+  effects?: EffectsSetting;
   layout?: LayoutSettings;
 }
 

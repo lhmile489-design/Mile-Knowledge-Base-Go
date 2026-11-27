@@ -39,4 +39,21 @@
   } catch {
     // A malformed value is never worth failing the boot over.
   }
+
+  // The effects levels (PRD section 19, 技术设计 21.2): only the four known
+  // values are written; anything else leaves the CSS default (std) in place.
+  const LEVELS = ["off", "low", "std", "high"];
+  const effects = window.__MKB_EFFECTS__;
+  try {
+    if (effects) {
+      if (LEVELS.includes(effects.motion)) {
+        document.documentElement.dataset.motion = effects.motion;
+      }
+      if (LEVELS.includes(effects.blur)) {
+        document.documentElement.dataset.blur = effects.blur;
+      }
+    }
+  } catch {
+    // Same rule as the accent: a malformed value never fails the boot.
+  }
 })();

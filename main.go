@@ -83,17 +83,23 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	accentPreload := "window.__MKB_ACCENT__ = " + string(accentJSON) + ";"
+	// 外观档位走同一条链路：首帧就按所选动画 / 模糊档位绘制（技术设计 21.2）。
+	effectsJSON, err := json.Marshal(app.Settings.Get().Effects)
+	if err != nil {
+		log.Fatal(err)
+	}
+	appearancePreload := "window.__MKB_ACCENT__ = " + string(accentJSON) + ";\n" +
+		"window.__MKB_EFFECTS__ = " + string(effectsJSON) + ";"
 
 	mygo.App.WhenReady(func() {
-		startUI(app, docs, imported, accentPreload)
+		startUI(app, docs, imported, appearancePreload)
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func startUI(app *service.App, docs *service.DocService, imported settings.ImportResult, accentPreload string) {
+func startUI(app *service.App, docs *service.DocService, imported settings.ImportResult, appearancePreload string) {
 	win := mygo.NewWindow(mygo.WindowOptions{
 		Title:           windowTitle,
 		Width:           1440,
@@ -104,7 +110,7 @@ func startUI(app *service.App, docs *service.DocService, imported settings.Impor
 		BackgroundColor: background,
 		StateKey:        "main",
 		URL:             "/",
-		Page:            mygo.PageOptions{PreloadScript: accentPreload},
+		Page:            mygo.PageOptions{PreloadScript: appearancePreload},
 	})
 	app.SetWindow(win)
 	installCloseGuard(app, win)

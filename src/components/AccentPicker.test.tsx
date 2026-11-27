@@ -27,6 +27,7 @@ function settingsWith(accent: AppSettings["accent"]): AppSettings {
     theme: "light",
     closeBehavior: "ask",
     accent,
+    effects: { motion: "std", blur: "std" },
     layout: {
       sidebarWidth: 232,
       docWidth: 560,

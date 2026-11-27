@@ -49,6 +49,7 @@ func Defaults() contract.AppSettings {
 		Theme:         "system",
 		CloseBehavior: "ask",
 		Accent:        contract.AccentSetting{Preset: AccentDefault},
+		Effects:       contract.EffectsSetting{Motion: "std", Blur: "std"},
 		Layout: contract.LayoutSettings{
 			SidebarWidth:           SidebarDef,
 			DocWidth:               DocDef,
@@ -259,6 +260,12 @@ func (s *Store) Patch(p contract.SettingsPatch) (contract.AppSettings, *contract
 		}
 		next.Accent = accent
 	}
+	if p.Effects != nil {
+		if p.HasUnknownEffectsFields() || !isEffectLevel(p.Effects.Motion) || !isEffectLevel(p.Effects.Blur) {
+			return s.settings, contract.Fail(contract.CodeInvalidInput, "外观档位值不合法")
+		}
+		next.Effects = *p.Effects
+	}
 	s.settings = next
 	if f := s.saveLocked(); f != nil {
 		return s.settings, f
@@ -340,7 +347,8 @@ func (s *Store) load() *contract.Failure {
 	// （数据库设计 4.1.1）。
 	var shadow struct {
 		contract.AppSettings
-		Accent json.RawMessage `json:"accent"`
+		Accent  json.RawMessage `json:"accent"`
+		Effects json.RawMessage `json:"effects"`
 	}
 	if err := json.Unmarshal(raw, &shadow); err != nil {
 		s.backupCorrupt(path)
@@ -369,10 +377,19 @@ func (s *Store) load() *contract.Failure {
 			}
 		}
 	}
-	known := map[string]bool{"version": true, "theme": true, "closeBehavior": true, "accent": true, "layout": true, "recentVaults": true, "lastVaultId": true}
+	known := map[string]bool{"version": true, "theme": true, "closeBehavior": true, "accent": true, "effects": true, "layout": true, "recentVaults": true, "lastVaultId": true}
 	for k, v := range doc {
 		if !known[k] {
 			s.unknown[k] = v
+		}
+	}
+	// effects 与 accent 同样宽松解析：类型不对或值不认识都只回落 std，不让整个
+	// 文件被判为损坏（数据库设计 4.1）。
+	parsed.Effects = contract.EffectsSetting{}
+	if len(shadow.Effects) > 0 && string(shadow.Effects) != "null" {
+		var e contract.EffectsSetting
+		if err := json.Unmarshal(shadow.Effects, &e); err == nil {
+			parsed.Effects = e
 		}
 	}
 	s.settings = clampSettings(parsed)
@@ -441,6 +458,7 @@ func (s *Store) saveLocked() *contract.Failure {
 	payload["theme"] = s.settings.Theme
 	payload["closeBehavior"] = s.settings.CloseBehavior
 	payload["accent"] = s.accentPayload()
+	payload["effects"] = s.settings.Effects
 	payload["layout"] = s.settings.Layout
 	payload["recentVaults"] = s.settings.RecentVaults
 	if s.settings.LastVaultID != "" {
@@ -513,6 +531,20 @@ func writeAtomic(path string, data []byte) *contract.Failure {
 
 func isTheme(v string) bool { return v == "light" || v == "dark" || v == "system" }
 func isClose(v string) bool { return v == "ask" || v == "tray" || v == "quit" }
+func isEffectLevel(v string) bool {
+	return v == "off" || v == "low" || v == "std" || v == "high"
+}
+
+// NormalizeEffects falls back to std for a missing or unknown level (API §17).
+func NormalizeEffects(e contract.EffectsSetting) contract.EffectsSetting {
+	if !isEffectLevel(e.Motion) {
+		e.Motion = "std"
+	}
+	if !isEffectLevel(e.Blur) {
+		e.Blur = "std"
+	}
+	return e
+}
 
 func clampInt(v, min, max, def int) int {
 	if v == 0 {
@@ -545,6 +577,7 @@ func clampSettings(s contract.AppSettings) contract.AppSettings {
 		s.CloseBehavior = "ask"
 	}
 	s.Accent = NormalizeAccent(s.Accent)
+	s.Effects = NormalizeEffects(s.Effects)
 	s.Layout = clampLayout(s.Layout)
 	if len(s.RecentVaults) > MaxRecentVaults {
 		s.RecentVaults = s.RecentVaults[:MaxRecentVaults]

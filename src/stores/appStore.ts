@@ -6,8 +6,9 @@ import {
   events,
   type AppSettings,
 } from "../lib/transport";
-import type { AccentSetting, UnavailableVault, Vault } from "../mygo";
+import type { AccentSetting, EffectsSetting, UnavailableVault, Vault } from "../mygo";
 import { applyAccentTo, deriveAccent } from "../lib/accent";
+import { applyEffectsTo } from "../lib/effects";
 
 export type ThemeMode = "light" | "dark" | "system";
 export type Page = "work" | "skills";
@@ -38,6 +39,7 @@ type AppState = {
   refreshVaults: () => Promise<void>;
   setTheme: (mode: ThemeMode) => Promise<void>;
   setAccent: (next: AccentSetting) => Promise<void>;
+  setEffects: (patch: Partial<EffectsSetting>) => Promise<void>;
   setCloseBehavior: (mode: "ask" | "tray" | "quit") => Promise<void>;
   setLayout: (patch: Partial<AppSettings["layout"]>) => Promise<void>;
   openVault: (id: string) => Promise<void>;
@@ -67,6 +69,7 @@ function asTheme(value: string | undefined): ThemeMode {
 }
 
 let layoutQueue: Promise<unknown> = Promise.resolve();
+let effectsQueue: Promise<unknown> = Promise.resolve();
 
 export const useAppStore = create<AppState>((set, get) => ({
   booted: false,
@@ -98,11 +101,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       });
       applyTheme(asTheme(settings.settings?.theme));
       applyAccentTo(document.documentElement, settings.settings?.accent);
+      applyEffectsTo(document.documentElement, settings.settings?.effects);
 
       events.settingsChanged.on((next) => {
         set({ settings: next });
         applyTheme(asTheme(next.theme));
         applyAccentTo(document.documentElement, next.accent);
+        applyEffectsTo(document.documentElement, next.effects);
       });
       events.vaultChanged.on(() => {
         void get().refreshVaults();
@@ -153,6 +158,29 @@ export const useAppStore = create<AppState>((set, get) => ({
       applyAccentTo(document.documentElement, previous);
       get().pushNotice(error instanceof TransportError ? error.message : String(error), "fault");
     }
+  },
+
+  // Effects change all pages at once: paint the new levels first, then persist
+  // the full pair (API §17 requires both fields). Patches go out one at a time
+  // so two quick clicks merge instead of overwriting each other.
+  setEffects: (patch) => {
+    const run = async () => {
+      const current = get().settings;
+      if (!current) return;
+      const previous = current.effects;
+      const next = { ...previous, ...patch };
+      applyEffectsTo(document.documentElement, next);
+      const result = await settingsApi.patch({ effects: next });
+      if (result.failure || !result.settings) {
+        applyEffectsTo(document.documentElement, previous);
+        get().pushNotice(result.failure?.message ?? "外观档位保存失败", "fault");
+        return;
+      }
+      set({ settings: result.settings });
+    };
+    const next = effectsQueue.then(run, run);
+    effectsQueue = next.catch(() => undefined);
+    return next;
   },
 
   setCloseBehavior: async (mode) => {
