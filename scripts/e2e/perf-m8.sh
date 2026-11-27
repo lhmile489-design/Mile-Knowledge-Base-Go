@@ -25,10 +25,12 @@ mkdir -p "$VAULT" "$APPD/Mile Knowledge Base" "$HOME_DIR/.claude/skills" "$HOME_
 printf '@echo off' > "$HOME_DIR/.local/bin/claude.cmd"
 printf '{"uninstall":[]}' > "$WORK/registry.json"
 
-python -I - "$VAULT" <<'PY'
+CARD_COUNT="${CARD_COUNT:-200}"
+echo "cards requested: $CARD_COUNT"
+python -I - "$VAULT" "$CARD_COUNT" <<'PY'
 import os, sys
-vault = sys.argv[1]
-for i in range(200):
+vault, count = sys.argv[1], int(sys.argv[2])
+for i in range(count):
     d = os.path.join(vault, "skills", "cat-%02d" % (i % 10), "skill-%03d" % i)
     os.makedirs(d, exist_ok=True)
     open(os.path.join(d, "SKILL.md"), "w", encoding="utf-8").write(
@@ -89,7 +91,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/focus.p
 sleep 0.5
 
 python -I - "$PORT" "$(cygpath -w "$WORK/metrics.json")" <<'PY'
-import json, socket, sys, time
+import json, os, socket, sys, time
 
 port, out_path = int(sys.argv[1]), sys.argv[2]
 
@@ -123,7 +125,8 @@ wait("!!window.__mkbApp && !!window.__mkbApp.getState().settings")
 wait("document.querySelector('[data-testid=\"overview-grid\"]') !== null")
 js("window.__mkbApp.getState().showPage('skills'); true")
 wait("document.querySelector('[data-testid=\"skills-page\"]') !== null", 60)
-wait("document.querySelectorAll('[data-testid^=\"kb-card-\"]').length >= 200", 120)
+card_need = int(os.environ.get("CARD_COUNT", "200"))
+wait("document.querySelectorAll('[data-testid^=\"kb-card-\"]').length >= " + str(card_need), 120)
 print("cards:", js("document.querySelectorAll('[data-testid^=\"kb-card-\"]').length"))
 print("blur/motion:", js("(() => { const d = document.documentElement.dataset; return (d.blur || '?') + '/' + (d.motion || '?'); })()"))
 
@@ -207,19 +210,6 @@ for round_index in range(3):
     time.sleep(6.4)
     rounds.append(json.loads(js(STOP)))
     print("scroll round %d:" % (round_index + 1), {k: v for k, v in rounds[-1].items() if k != "gaps"})
-# 1.6.1: a page that cannot scroll used to pass this gate with range 0.
-if min(round_["range"] for round_ in rounds) <= 0:
-    raise SystemExit("FAIL: .kb-content did not scroll (range 0)")
-
-# R is the SMALLER of the idle median and the scrolling median (B-M10-03).
-# Before M10 it was the scrolling median alone, which a uniformly downclocked
-# window could satisfy: at 30 fps the ratio is 1.0. Both are printed.
-scored_gaps = sorted(g for round_ in rounds for g in round_["gaps"])
-refresh_scroll_prev = scored_gaps[len(scored_gaps) // 2] if scored_gaps else refresh
-refresh_scroll = min(refresh, refresh_scroll_prev)
-print("refresh_ms (idle):", round(refresh, 2), " refresh_ms (scrolling median):", round(refresh_scroll_prev, 2),
-      " R used (smaller of the two):", round(refresh_scroll, 2))
-
 
 def p95_of(gaps):
     ordered = sorted(gaps)
@@ -232,6 +222,73 @@ def p95_of(gaps):
 legacy_first3 = [warmup] + rounds[:2]
 legacy_frames = max(p95_of(r_["gaps"]) / refresh for r_ in legacy_first3) if refresh else 0
 print("legacy method would report scrollP95Frames=%.2f (idle R, warm-up as round 1)" % round(legacy_frames, 2))
+
+scored_gaps = sorted(g for round_ in rounds for g in round_["gaps"])
+refresh_scroll_prev = scored_gaps[len(scored_gaps) // 2] if scored_gaps else refresh
+refresh_scroll = min(refresh, refresh_scroll_prev)
+print("refresh_ms (idle):", round(refresh, 2), " refresh_ms (scrolling median):", round(refresh_scroll_prev, 2),
+      " R used (smaller of the two):", round(refresh_scroll, 2))
+
+# M10.1 P00 / B-1: entry frame gaps. enterP95Ms only times the first card, so a
+# janky entrance animation used to pass. Measure the rAF gaps for 1.5 s after
+# every switch, from the work page, three rounds. Metric is reported, NOT gated
+# until the user confirms the threshold.
+ENTER_ARM = """
+(async () => {
+  window.__mkbApp.getState().showPage('work');
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  window.__p9 = { gaps: [], done: false };
+  let last = 0;
+  const tick = (now) => {
+    if (window.__p9.done) return;
+    if (last > 0) window.__p9.gaps.push(now - last);
+    last = now;
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  window.__mkbApp.getState().showPage('skills');
+  return true;
+})()"""
+ENTER_STOP = """
+(() => {
+  window.__p9.done = true;
+  const gaps = window.__p9.gaps.slice(1);
+  const ordered = gaps.slice().sort((a, b) => a - b);
+  return JSON.stringify({ frames: gaps.length, p50: ordered[Math.floor(ordered.length / 2)] || 0,
+    p95: ordered[Math.max(0, Math.ceil(0.95 * ordered.length) - 1)] || 0,
+    max: ordered[ordered.length - 1] || 0, gaps });
+})()"""
+
+enter_rounds = []
+for round_index in range(3):
+    js(ENTER_ARM)
+    time.sleep(1.55)
+    enter_rounds.append(json.loads(js(ENTER_STOP)))
+    print("enter frame round %d:" % (round_index + 1), {k: v for k, v in enter_rounds[-1].items() if k != "gaps"})
+    js("window.__mkbApp.getState().showPage('work'); true")
+    time.sleep(0.4)
+
+def flat_p95(items):
+    gaps = sorted(g for r in items for g in r["gaps"])
+    return gaps[max(0, -(-95 * len(gaps) // 100) - 1)] if gaps else 0
+
+enter_p95 = max(p95_of(r["gaps"]) for r in enter_rounds) if enter_rounds else 0
+enter_p95_all = flat_p95(enter_rounds)
+# R follows 21.6, the same rule the degrade guard uses: the smaller of the idle
+# median and the scrolling median, so an idle-downclocked sample cannot soften
+# the ratio.
+enter_r = min(refresh, refresh_scroll)
+enter_ratio = round(enter_p95 / enter_r, 2) if enter_r else 0
+print("enter gaps p95 ms: per-round worst %.1f, overall %.1f; R (min idle %.1f, scroll %.1f) %.1f; ratio %.2f; over 33.4: %s"
+      % (enter_p95, enter_p95_all, refresh, refresh_scroll, enter_r, enter_ratio, enter_p95 > 33.4))
+# 1.6.1: a page that cannot scroll used to pass this gate with range 0.
+if min(round_["range"] for round_ in rounds) <= 0:
+    raise SystemExit("FAIL: .kb-content did not scroll (range 0)")
+
+# R is the SMALLER of the idle median and the scrolling median (B-M10-03).
+# Before M10 it was the scrolling median alone, which a uniformly downclocked
+# window could satisfy: at 30 fps the ratio is 1.0. Both are printed.
 
 SWITCH = """
 (async () => {
@@ -292,6 +349,12 @@ metrics = {
     "slowFrameRatio": round(slow_ratio, 4),
     "switchBackMs": round(p95(switch_ms), 1),
     "scrollP95Ms": round(scroll_p95_ms, 1),
+    # Reported, not gated: kind=m8 does not know this key until the user
+    # confirms the threshold (M10.1 B-1), and the gate ignores unknown keys.
+    "enterFrameP95Ms": round(enter_p95, 1),
+    "enterFrameP95AllMs": round(enter_p95_all, 1),
+    "enterFrameRatio": enter_ratio,
+    "enterFrameR": round(enter_r, 2),
 }
 json.dump(metrics, open(out_path, "w", encoding="utf-8"))
 print("metrics:", json.dumps(metrics))

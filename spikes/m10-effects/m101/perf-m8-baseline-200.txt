@@ -1,0 +1,24 @@
+cards requested: 200
+fixtures ok
+cards: 200
+blur/motion: std/std
+enter_ms: 91.4 71.9 83.9 92.5 76.9
+refresh_ms: 8.4
+warm-up round (unscored): {'frames': 649, 'p50': 8.300000000001091, 'p95': 16.69999999999891, 'max': 66.60000000000036, 'range': 9449}
+scroll round 1: {'frames': 720, 'p50': 8.299999999999272, 'p95': 8.400000000001455, 'max': 17.599999999998545, 'range': 9449}
+scroll round 2: {'frames': 721, 'p50': 8.299999999999272, 'p95': 8.400000000001455, 'max': 8.599999999998545, 'range': 9449}
+scroll round 3: {'frames': 721, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 8.5, 'range': 9449}
+legacy method would report scrollP95Frames=1.99 (idle R, warm-up as round 1)
+refresh_ms (idle): 8.4  refresh_ms (scrolling median): 8.3  R used (smaller of the two): 8.3
+enter frame round 1: {'frames': 168, 'p50': 8.30000000000291, 'p95': 16.60000000000582, 'max': 16.900000000001455}
+enter frame round 2: {'frames': 156, 'p50': 8.39999999999418, 'p95': 16.69999999999709, 'max': 16.80000000000291}
+enter frame round 3: {'frames': 130, 'p50': 8.39999999999418, 'p95': 33.30000000000291, 'max': 41.700000000004366}
+enter gaps p95 ms: per-round worst 33.3, overall 16.7; R (min idle 8.4, scroll 8.3) 8.3; ratio 4.01; over 33.4: False
+switch_ms: 16.1 24.5 33.1 10.3 26.3
+B-M10-03 same data: previous R -> scrollP95Frames=1.01 slowFrameRatio=0.0014; new R -> 1.01 / 0.0014
+  control healthy 120 fps                  previous 1.00 (pass)  new 1.00 (pass, p95 8.3 ms)
+  control uniform 30 fps                   previous 1.00 (pass)  new 4.01 (FAIL, p95 33.3 ms)
+  control uniform 45 fps                   previous 1.00 (pass)  new 2.67 (FAIL, p95 22.2 ms)
+  control downclocked idle, 33.5 ms frames previous 1.00 (pass)  new 1.01 (FAIL, p95 33.5 ms)
+metrics: {"enterP95Ms": 92.5, "scrollP95Frames": 1.01, "slowFrameRatio": 0.0014, "switchBackMs": 33.1, "scrollP95Ms": 8.4, "enterFrameP95Ms": 33.3, "enterFrameP95AllMs": 16.7, "enterFrameRatio": 4.01, "enterFrameR": 8.3}
+perf-gate ok (m8): 5 metrics within target

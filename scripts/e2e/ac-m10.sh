@@ -246,6 +246,10 @@ echo "-- AC-MAT-2: the four blur levels through the settings rows"
 ev "window.__mkbApp.getState().openSettings(); true" >/dev/null
 wait_match "settings open" "document.querySelector('[data-testid=\"effects-blur\"]') !== null" '"value":true' 30
 sleep 1
+# P00 (M10.1): the two panels must reach the bottom edge of the window content
+# area minus one panel gap. On 1.8.0 this FAILS because .settings-grid has no
+# height, so the panels stop at the content's end (P01 makes it pass).
+chk "settings panels reach the window bottom minus one gap" 'const gap = parseFloat(root("--gap-panel")) || 8; const nav = q("[data-panel=settings-nav]").getBoundingClientRect(); const host = q("[data-panel=settings-content]").getBoundingClientRect(); const miss = [Math.round(innerHeight - gap - nav.bottom), Math.round(innerHeight - gap - host.bottom)]; return (Math.abs(miss[0]) <= 1 && Math.abs(miss[1]) <= 1) || JSON.stringify({ miss, innerHeight, gap, navBottom: nav.bottom, hostBottom: host.bottom });'
 BLUR_TPL='const p = +al("[data-panel=settings-content]").toFixed(2), c = +al(".setting-card").toFixed(2); const f = q(".background-field"); const fo = f ? +getComputedStyle(f).opacity : -1; const ok = p === @P@ && c === @C@ && root("--glass-blur") === "@B@" && px("header.titlebar") === 0 && ((@F@ === 0 && f === null) || (@F@ === 1 && !!f && Math.abs(fo - @O@) < 0.01)); return ok || JSON.stringify({p, c, fo, hasField: !!f, blur: root("--glass-blur")});'
 # blur_case <level> <panel alpha> <card alpha> <field 0|1> <field opacity> <--glass-blur>
 blur_case() {

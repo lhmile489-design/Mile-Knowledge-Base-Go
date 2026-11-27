@@ -1,0 +1,24 @@
+cards requested: 40
+fixtures ok
+cards: 40
+blur/motion: std/std
+enter_ms: 21.4 21.2 21.2 24.1 24.7
+refresh_ms: 8.4
+warm-up round (unscored): {'frames': 720, 'p50': 8.300000000001091, 'p95': 8.400000000001455, 'max': 8.600000000000364, 'range': 1775}
+scroll round 1: {'frames': 720, 'p50': 8.299999999999272, 'p95': 8.400000000001455, 'max': 8.599999999998545, 'range': 1775}
+scroll round 2: {'frames': 719, 'p50': 8.299999999999272, 'p95': 8.400000000001455, 'max': 16.700000000000728, 'range': 1775}
+scroll round 3: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 8.700000000004366, 'range': 1775}
+legacy method would report scrollP95Frames=1.00 (idle R, warm-up as round 1)
+refresh_ms (idle): 8.4  refresh_ms (scrolling median): 8.3  R used (smaller of the two): 8.3
+enter frame round 1: {'frames': 183, 'p50': 8.30000000000291, 'p95': 8.5, 'max': 16.80000000000291}
+enter frame round 2: {'frames': 180, 'p50': 8.30000000000291, 'p95': 8.599999999998545, 'max': 16.69999999999709}
+enter frame round 3: {'frames': 177, 'p50': 8.30000000000291, 'p95': 16.5, 'max': 16.700000000004366}
+enter gaps p95 ms: per-round worst 16.5, overall 8.5; R (min idle 8.4, scroll 8.3) 8.3; ratio 1.99; over 33.4: False
+switch_ms: 9.0 7.6 33.8 31.8 11.0
+B-M10-03 same data: previous R -> scrollP95Frames=1.01 slowFrameRatio=0.0014; new R -> 1.01 / 0.0014
+  control healthy 120 fps                  previous 1.00 (pass)  new 1.00 (pass, p95 8.3 ms)
+  control uniform 30 fps                   previous 1.00 (pass)  new 4.01 (FAIL, p95 33.3 ms)
+  control uniform 45 fps                   previous 1.00 (pass)  new 2.67 (FAIL, p95 22.2 ms)
+  control downclocked idle, 33.5 ms frames previous 1.00 (pass)  new 1.01 (FAIL, p95 33.5 ms)
+metrics: {"enterP95Ms": 24.7, "scrollP95Frames": 1.01, "slowFrameRatio": 0.0014, "switchBackMs": 33.8, "scrollP95Ms": 8.4, "enterFrameP95Ms": 16.5, "enterFrameP95AllMs": 8.5, "enterFrameRatio": 1.99, "enterFrameR": 8.3}
+perf-gate ok (m8): 5 metrics within target
