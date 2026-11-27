@@ -1,0 +1,57 @@
+== light
+  captured kb-light
+E:\WebApp\Mile-Project\Mile-Knowledge-Base-Go\scripts\visual\capture-m8.py:186: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+  pixels = list(crop.getdata())
+  contrast desc light: 7.79
+  contrast cat light: 5.98
+  captured kb-select-light
+  captured tools-light
+  contrast path light: 7.86
+  contrast name light: 14.1
+  captured distribute-light
+  captured uninstall-light
+  captured search-empty-light
+  captured scanning-light
+== dark
+  captured kb-dark
+  contrast desc dark: 6.44
+  contrast cat dark: 5.59
+  captured kb-select-dark
+  captured tools-dark
+  contrast path dark: 6.44
+  contrast name dark: 12.13
+  captured distribute-dark
+  captured uninstall-dark
+  captured search-empty-dark
+  captured scanning-dark
+== accents
+  contrast desc orange/light: 7.79
+  contrast active orange/light: 4.66
+  contrast desc indigo/light: 7.79
+  contrast active indigo/light: 5.33
+  contrast desc blue/light: 7.79
+  contrast active blue/light: 4.53
+  contrast desc green/light: 7.79
+  contrast active green/light: 4.64
+  contrast desc teal/light: 7.79
+  contrast active teal/light: 4.57
+  contrast desc violet/light: 7.63
+  contrast active violet/light: 4.78
+  contrast desc orange/dark: 6.44
+  contrast active orange/dark: 4.62
+  contrast desc indigo/dark: 6.44
+  contrast active indigo/dark: 4.61
+  contrast desc blue/dark: 6.44
+  contrast active blue/dark: 4.78
+  contrast desc green/dark: 6.44
+  contrast active green/dark: 4.68
+  contrast desc teal/dark: 6.44
+  contrast active teal/dark: 4.73
+  contrast desc violet/dark: 6.44
+  contrast active violet/dark: 4.73
+  worst across accents: {'desc': 6.44, 'active': 4.53}
+  captured kb-narrow-light
+  captured uninstall-narrow-light
+  captured novault-light
+  captured novault-dark
+done: 18 screenshots in E:\WebApp\Mile-Project\Mile-Knowledge-Base-Go\design\r2\shots-m8

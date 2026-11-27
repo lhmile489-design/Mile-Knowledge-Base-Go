@@ -1,0 +1,44 @@
+== light
+  captured kb-light
+  captured detail-light
+  captured detail-missing-light
+  captured nav-filter-light
+  captured nav-collapsed-light
+  captured install-light
+  captured install-running-light
+  captured install-result-light
+  captured distribute-light
+  captured distribute-overwrite-light
+  captured distribute-result-light
+== dark
+  captured kb-dark
+  captured detail-dark
+  captured detail-missing-dark
+  captured nav-filter-dark
+  captured nav-collapsed-dark
+  captured install-dark
+  captured install-running-dark
+  captured install-result-dark
+  captured distribute-dark
+  captured distribute-overwrite-dark
+  captured distribute-result-dark
+== accents
+E:\WebApp\Mile-Project\Mile-Knowledge-Base-Go\scripts\visual\capture-m9.py:216: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+  pixels = list(crop.getdata())
+  contrast active orange/light: 4.66
+  contrast active indigo/light: 5.33
+  contrast active blue/light: 4.53
+  contrast active green/light: 4.64
+  contrast active teal/light: 4.57
+  contrast active violet/light: 4.78
+  contrast active orange/dark: 4.62
+  contrast active indigo/dark: 4.61
+  contrast active blue/dark: 4.78
+  contrast active green/dark: 4.68
+  contrast active teal/dark: 4.73
+  contrast active violet/dark: 4.73
+  worst across accents: {'active': 4.53}
+  captured detail-narrow-light
+  captured install-narrow-light
+  captured distribute-narrow-light
+done: 25 screenshots in E:\WebApp\Mile-Project\Mile-Knowledge-Base-Go\design\r2\shots-m9-real
