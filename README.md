@@ -46,7 +46,8 @@
 | [docs/PLAN-M6.md](docs/PLAN-M6.md) | M6 自定义工具目录与项目源实施计划 | 已完成并推送（`92c1ae2`） |
 | [docs/PLAN-M7.md](docs/PLAN-M7.md) | M7 跨机还原分发实施计划 | 已完成并推送（`813e9ec`） |
 | [docs/PLAN-M8.md](docs/PLAN-M8.md) | M8 技能页实施计划 | 已完成并推送（`8cee06f`）；1.6.1 补丁记录在账本末行 |
-| [docs/PLAN-M9.md](docs/PLAN-M9.md) | M9 技能页体验升级实施计划 | v0.1 已批准（2026-11-24），按一次一个任务执行 |
+| [docs/PLAN-M9.md](docs/PLAN-M9.md) | M9 技能页体验升级实施计划 | 已完成并推送（`7307aad`，1.7.0） |
+| [docs/PLAN-M10.md](docs/PLAN-M10.md) | M10 全局材质与动效实施计划 | v0.1 草案，待审批 |
 | [docs/UI设计稿.md](docs/UI设计稿.md) 与 `design/baseline/`、`design/r2/` | 页面与状态清单、旧版截图基线；第 9 节 R2 技能浮层、第 10 节 R2 主题色、第 11 节 R2 技能页 | 已确认 v1.0；第 9、10 节 2026-11-20 审核通过，第 11 节 2026-11-24 审核通过 |
 | [docs/decisions.md](docs/decisions.md) | 重要取舍 | 按需记录 |
 | [docs/发布清单.md](docs/发布清单.md) | 发布与恢复验证 | 已记录 1.0.0 至 1.6.0 各版本本机结果 |

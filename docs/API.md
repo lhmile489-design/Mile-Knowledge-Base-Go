@@ -1239,3 +1239,26 @@ type SkillRestoreOpItem = {
   - `patch` 时与其他 `layout` 字段一样整体提交（前端 `setLayout` 合并当前值）；布尔值不需要夹取；缺字段视为 `false`。
   - 生成物：`internal/contract.LayoutSettings` 加字段后 `mygo generate`，`src/mygo.ts` 的 `LayoutSettings` 随之更新，`check:bindings` 对拍。
 - 验证：Go 测试覆盖新字段的读写与默认值；e2e AC-UX-10 覆盖重启后保留。
+
+## 17. R2 增补：全局材质与动效（M10）
+
+> 状态：已确认（2026-11-27 随 docs/PLAN-M10.md 审核通过）。需求见 PRD 第 19 节（v2.9）；设计见技术设计第 21 节。
+
+不新增方法、事件与错误码。M60 `get` 与 M61 `patch` 的 `settings` 增加顶层对象 `effects`：
+
+```go
+type EffectsSetting struct {
+    Motion string `json:"motion"` // off | low | std | high
+    Blur   string `json:"blur"`   // off | low | std | high
+}
+```
+
+| 字段 | 类型 | 默认 | `get` 的输出 | `patch` 的校验 |
+| --- | --- | --- | --- | --- |
+| `effects.motion` | string | `"std"` | 文件里缺失或非法时输出 `"std"` | 必须是四个值之一，否则 `invalid-input` |
+| `effects.blur` | string | `"std"` | 同上 | 同上 |
+
+- `patch` 传 `effects` 时两个字段都要给（前端按当前值合并后整体提交，与 `layout` 一致）；多余字段 → `invalid-input`；沿用 §4.8「校验完才组装，抛错时不留半个 patch」。
+- 首帧：Go 在 `PreloadScript` 里注入 `window.__MKB_EFFECTS__`（与 `__MKB_ACCENT__` 同一处，技术设计 21.2），不是绑定方法，不进 `src/mygo.ts`。
+- 生成物：`internal/contract` 加类型后 `mygo generate`，`check:bindings` 对拍。
+- 自动降级、系统减少动画的状态只在前端，不经 API、不持久化（技术设计 21.6、21.7）。
