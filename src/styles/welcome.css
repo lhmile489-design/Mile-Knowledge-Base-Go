@@ -4,7 +4,8 @@
   overflow: auto;
   padding: 24px var(--gap-panel) var(--gap-panel);
   container-type: inline-size;
-  background: var(--raw-canvas);
+  /* M10: transparent so the window colour field shows; .app-shell supplies the
+     canvas colour (and the 1.7.0 look when blur is off). */
 }
 
 .welcome-grid {
@@ -22,6 +23,16 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* The welcome card is the strong tier (DESIGN 15.1); .overview-tile loads
+   later, so the extra class is what lets this win. */
+.overview-tile.welcome-hero {
+  background: var(--glass-strong);
+  border-color: color-mix(in srgb, var(--raw-line) 70%, transparent);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
 }
 
 .welcome-title {
@@ -116,6 +127,11 @@
   flex-direction: column;
   gap: 10px;
   padding: 20px;
+  background: var(--glass-strong);
+  border-color: color-mix(in srgb, var(--raw-line) 70%, transparent);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
 }
 
 @container (max-width: 720px) {
@@ -146,8 +162,19 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgb(10 12 16 / 0.28);
   overflow-y: auto;
+}
+
+/* Dim and blur on a fixed layer behind the guide (see .plan-backdrop). */
+.welcome-guide-backdrop::before {
+  content: "";
+  position: fixed;
+  inset: var(--titlebar-h) 0 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgb(10 12 16 / 0.28);
+  -webkit-backdrop-filter: blur(var(--blur-scrim));
+  backdrop-filter: blur(var(--blur-scrim));
 }
 
 .welcome-guide-backdrop .onboarding {

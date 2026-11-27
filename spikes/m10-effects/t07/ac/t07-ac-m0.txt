@@ -1,0 +1,16 @@
+PASS workbench with vault
+PASS tree has area sections
+PASS expand skills
+PASS skills children visible
+PASS open a document by clicking it
+PASS open 首页.md via tree
+PASS reading mode rendered
+PASS switch to source mode
+PASS source editor visible
+PASS edit in store
+PASS dirty dot appears
+PASS save clears dirty
+PASS file on disk updated
+PASS external change adopted
+PASS csp present in built page
+RESULT pass=15 fail=0

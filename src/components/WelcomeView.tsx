@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import { ArrowClockwise, ClockCounterClockwise, FolderOpen, Trash, Warning } from "@phosphor-icons/react";
 import { OnboardingGuide } from "./OnboardingGuide";
 import { useAppStore } from "../stores/appStore";
@@ -50,7 +51,11 @@ export function WelcomeView() {
     <>
       <main className="welcome-shell" aria-label="欢迎">
         <div className="welcome-grid">
-          <section className="surface-card overview-tile welcome-hero" aria-labelledby="welcome-heading">
+          <section
+            className="surface-card overview-tile welcome-hero reveal"
+            style={{ "--i": 0 } as CSSProperties}
+            aria-labelledby="welcome-heading"
+          >
             <h1 id="welcome-heading" className="welcome-title">
               选择一个知识库
             </h1>
@@ -78,8 +83,13 @@ export function WelcomeView() {
             ) : null}
           </section>
 
-          {shown.map((vault) => (
-            <article key={vault.id} className="surface-card overview-tile" aria-label={vault.displayName}>
+          {shown.map((vault, index) => (
+            <article
+              key={vault.id}
+              className="surface-card overview-tile reveal"
+              style={{ "--i": index + 1 } as CSSProperties}
+              aria-label={vault.displayName}
+            >
               <div className="welcome-tile-head">
                 <span className="overview-icon" aria-hidden>
                   <ClockCounterClockwise size={14} weight="bold" />
@@ -101,10 +111,11 @@ export function WelcomeView() {
             </article>
           ))}
 
-          {unavailable.map((vault) => (
+          {unavailable.map((vault, index) => (
             <article
               key={vault.id}
-              className="surface-card overview-tile welcome-unavailable"
+              className="surface-card overview-tile welcome-unavailable reveal"
+              style={{ "--i": shown.length + index + 1 } as CSSProperties}
               data-tone="fault"
               aria-label={vault.displayName}
             >

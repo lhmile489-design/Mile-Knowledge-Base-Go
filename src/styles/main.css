@@ -103,7 +103,14 @@ body {
   box-shadow: inset 0 1px 0 var(--glass-edge);
 }
 
-.workbench-panel:is([data-panel='sidebar'], [data-panel='agnes'], [data-panel='editor'], [data-panel='doc-rail']) {
+.workbench-panel:is(
+  [data-panel='sidebar'],
+  [data-panel='agnes'],
+  [data-panel='editor'],
+  [data-panel='doc-rail'],
+  [data-panel='settings-nav'],
+  [data-panel='settings-content']
+) {
   background: var(--glass-panel);
   border-color: color-mix(in srgb, var(--raw-line) 70%, transparent);
   box-shadow: inset 0 1px 0 var(--glass-edge);
@@ -116,7 +123,14 @@ body {
 }
 
 :is([data-blur='off'], [data-blur-auto='off'])
-  .workbench-panel:is([data-panel='sidebar'], [data-panel='agnes'], [data-panel='editor'], [data-panel='doc-rail']) {
+  .workbench-panel:is(
+    [data-panel='sidebar'],
+    [data-panel='agnes'],
+    [data-panel='editor'],
+    [data-panel='doc-rail'],
+    [data-panel='settings-nav'],
+    [data-panel='settings-content']
+  ) {
   background: var(--panel-bg);
   border-color: var(--raw-line);
   box-shadow: var(--shadow-lift-lg);
