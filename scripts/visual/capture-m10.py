@@ -379,6 +379,107 @@ def sample_contrast():
     return failures
 
 
+FOCUS_JS = """
+(() => {
+  const target = document.querySelector(%s);
+  if (!target) return JSON.stringify({ missing: true });
+  const old = document.getElementById('m10-focus-probe');
+  if (old) old.remove();
+  const r = target.getBoundingClientRect();
+  const w = 120, h = 36;
+  const left = Math.max(8, Math.round(r.left + r.width / 2 - w / 2));
+  const top = Math.max(48, Math.round(r.top + r.height / 2 - h / 2));
+  const p = document.createElement('div');
+  p.id = 'm10-focus-probe';
+  // The shipped focus declaration (tokens.css :focus-visible) on a transparent
+  // probe, so the ring is measured against whatever material is behind it.
+  p.style.cssText = 'position:fixed;left:' + left + 'px;top:' + top + 'px;width:' + w + 'px;height:' + h + 'px;'
+    + 'border-radius:8px;background:transparent;outline:2px solid var(--raw-accent);outline-offset:2px;'
+    + 'pointer-events:none;z-index:9999';
+  document.body.appendChild(p);
+  return JSON.stringify({ rect: [left, top, w, h], color: getComputedStyle(p).outlineColor });
+})()
+"""
+
+FOCUS_TARGETS = [
+    ("panel", ".vault-sidebar"),
+    ("card", "[data-testid=overview-skills]"),
+    ("strong", ".agent-picker"),
+]
+
+
+def focus_checks():
+    """N1 (T11 review): the 2px focus ring must stay visible over all four blur
+    tiers. A probe carrying the shipped outline declaration is placed on the
+    panel, a card and the strong-tier menu; the ring colour is compared with the
+    material just outside it, from a real screenshot (WCAG 1.4.11 wants 3.0 for
+    non-text UI)."""
+    work = Path(tempfile.mkdtemp(prefix=".m10-focus-", dir=ROOT))
+    vault = work / "vault"
+    subprocess.run(["go", "run", "./cmd/genvault", "-kind", "typical", "-out", str(vault)],
+                   cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+    driver = Driver(work, work / "app", work / "local", work / "home", vault)
+    results = []
+    try:
+        vid = seed(work / "app", vault)
+        driver.start()
+        for tier in TIERS:
+            for theme in THEMES:
+                set_attrs(driver, "orange", theme, tier)
+                # work state: the card target exists; menu: the strong target exists
+                driver.eval(state_script("work", vid))
+                time.sleep(1.0)
+                open_menu(driver)
+                driver.eval(FREEZE)
+                time.sleep(0.3)
+                shot = driver.capture()
+                for name, selector in FOCUS_TARGETS:
+                    raw = driver.eval(FOCUS_JS % json.dumps(selector))
+                    data = json.loads(raw)
+                    if data.get("missing"):
+                        continue
+                    driver.eval(FREEZE)
+                    time.sleep(0.2)
+                    shot = driver.capture()
+                    left, top, width, height = data["rect"]
+                    ring = parse_rgb(data["color"])
+                    # background samples: a band 8px outside the ring's outer edge
+                    band = shot.crop((max(0, left - 10), max(0, top - 10),
+                                      min(shot.width, left + width + 10), min(shot.height, top + height + 10)))
+                    pixels = list(band.getdata())
+                    # pixels outside the probe rect are background; inside is material
+                    outer = []
+                    for y in range(band.height):
+                        for x in range(band.width):
+                            gx, gy = band.width, band.height
+                            if x < 10 or y < 10 or x >= gx - 10 or y >= gy - 10:
+                                outer.append(pixels[y * band.width + x])
+                    if not outer:
+                        continue
+                    channels = list(zip(*outer))
+                    bg = [sorted(c)[len(c) // 2] for c in channels]
+                    value = ratio(ring, bg)
+                    results.append({"tier": name, "blur": tier, "theme": theme,
+                                    "ratio": round(value, 2), "ring": data["color"],
+                                    "bg": "rgb(%d, %d, %d)" % tuple(bg)})
+                    if name == "strong":
+                        # keep this one: the saved shot shows the ring on the menu
+                        driver.capture().save(OUT / ("focus-%s-%s.png" % (tier, theme)))
+                        break
+                driver.eval("(() => { const p = document.getElementById('m10-focus-probe'); if (p) p.remove(); return true; })()")
+                close_menu(driver)
+    finally:
+        try:
+            driver.stop()
+        except Exception:
+            pass
+        shutil.rmtree(work, ignore_errors=True)
+    json.dump(results, open(OUT / "focus.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    worst = min(results, key=lambda r: r["ratio"]) if results else None
+    log("focus samples: %d, worst: %s" % (len(results), worst))
+    return results
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     only = None
@@ -386,6 +487,8 @@ def main():
         only = sys.argv[sys.argv.index("--only") + 1]
     if only in (None, "shots"):
         take_shots()
+    if only == "focus":
+        focus_checks()
     failures = []
     if only in (None, "contrast"):
         failures = sample_contrast()
