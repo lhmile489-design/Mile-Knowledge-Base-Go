@@ -54,7 +54,7 @@ export function MessageList() {
 
   return (
     <div
-      className="chat-body"
+      className="chat-body sheet"
       ref={parentRef}
       data-testid="chat-body"
       onScroll={(event) => {

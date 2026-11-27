@@ -262,13 +262,11 @@
 /* ---------- 窗口级背景色场（DESIGN 15.3；T03 挂到 App 根） ---------- */
 
 /* Child of .app-shell (position: relative; isolation: isolate): z-index -1 puts
-   it above the shell's canvas colour and below every page and the title bar. */
+   it above the shell's canvas colour and below every page and the title bar,
+   which is glass and tints with the field (DESIGN 15.3: inset 0). */
 .background-field {
   position: absolute;
-  top: var(--titlebar-h);
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;

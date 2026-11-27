@@ -1,0 +1,37 @@
+- | div.app-shell | 1427x894@0,0 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 0px | 
+titlebar | header.drag-region.flex.items-center.gap-3 | 1427x40@0,0 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 0px | 
+- | nav.page-switch.no-drag | 161x32@910,4 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+- | span.page-switch-thumb.is-ready | 83x26@913,7 | rgb(255, 255, 255) |  | 0px rgb(36, 39, 46) | 999px | rgba(20, 22, 28, 0.08) 0px 1px 2px 0px
+- | div.segmented.no-drag | 146x32@1123,4 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+- | button.segmented-item | 46x28@1125,6 | rgb(255, 255, 255) |  | 0px rgb(170, 84, 28) | 999px | 
+sidebar | aside.workbench-panel | 232x846@8,40 | rgb(244, 245, 247) |  | 0.571429px rgb(225, 227, 231) | 16px | rgba(20, 22, 28, 0.06) 0px 4px 14px 0px
+sidebar | button.vault-sidebar-search | 207x24@21,86 | rgb(242, 243, 245) |  | 0.571429px rgb(225, 227, 231) | 10px | 
+agnes | section.workbench-panel | 603x846@248,40 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 16px | rgba(20, 22, 28, 0.06) 0px 4px 14px 0px
+agnes | button.pill | 60x20@662,52 | color(srgb 0.956078 0.857569 0.857569) |  | 0px color(srgb 0.545412 0.104314 0.109804) | 999px | 
+agnes | div.history-search | 183x28@257,93 | rgb(236, 238, 241) |  | 0.571429px rgb(225, 227, 231) | 10px | 
+agnes | input.history-search-input | 147x28@284,93 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 10px | 
+agnes | section.overview-tile | 328x120@481,115 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | section.overview-tile | 328x120@481,245 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-tile.overview-button | 328x120@481,375 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-tile.overview-button | 328x120@481,505 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-tile.overview-button | 328x120@481,635 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-tile.overview-button | 328x120@481,765 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | section.overview-tile | 328x120@481,895 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-chip | 44x24@493,928 | rgb(236, 238, 241) |  | 0.571429px rgb(225, 227, 231) | 999px | 
+agnes | section.overview-tile | 328x120@481,1025 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | section.overview-tile | 328x120@481,1155 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | div.runtime-controls | 370x180@465,465 | rgb(255, 255, 255) |  | 0px rgb(36, 39, 46) | 12px | 
+agnes | select.field.params-select | 304x31@519,499 | rgb(236, 238, 241) |  | 0.571429px rgb(225, 227, 231) | 10px | 
+agnes | div.segmented.min-w-0 | 216x32@519,538 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+agnes | button.segmented-item | 33x28@652,540 | rgb(255, 255, 255) |  | 0px rgb(92, 97, 107) | 999px | 
+agnes | div.segmented.min-w-0 | 211x32@519,577 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+agnes | button.segmented-item | 72x28@521,579 | rgb(255, 255, 255) |  | 0px rgb(170, 84, 28) | 999px | 
+agnes | div.composer-card.chat-composer | 370x222@465,651 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.route-target | 107x23@477,662 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 999px | 
+agnes | button.composer-send | 30x30@792,834 | rgb(236, 238, 241) |  | 0px rgb(92, 97, 107) | 999px | 
+editor | section.workbench-panel | 560x846@859,40 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 16px | rgba(20, 22, 28, 0.06) 0px 4px 14px 0px
+editor | div.tab-item | 113x29@866,41 | rgb(255, 255, 255) |  | 0px rgb(36, 39, 46) | 10px 10px 0px 0px | 
+editor | div.segmented | 146x32@976,72 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+editor | button.segmented-item | 46x28@978,74 | rgb(255, 255, 255) |  | 0px rgb(170, 84, 28) | 999px | 
+editor | div.surface-card | 539x21@870,115 | rgb(255, 255, 255) |  | 0.571429px color(srgb 0.811765 0.53902 0.547647) | 12px | 
+editor | div.surface-card | 535x21@872,157 | rgb(255, 255, 255) |  | 0.571429px color(srgb 0.811765 0.53902 0.547647) | 12px | 

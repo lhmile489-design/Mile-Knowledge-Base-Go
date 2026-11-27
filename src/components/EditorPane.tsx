@@ -276,7 +276,7 @@ export function EditorPane() {
       ) : null}
 
       {doc ? (
-        <div className="editor-body">
+        <div className="editor-body sheet">
           {doc.loading ? (
             <p className="muted editor-loading">正在读取文件…</p>
           ) : effectiveMode === "read" ? (

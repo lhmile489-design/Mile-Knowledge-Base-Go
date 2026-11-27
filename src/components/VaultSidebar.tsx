@@ -298,7 +298,7 @@ export function VaultSidebar() {
         </div>
       </div>
 
-      <div ref={scrollRef} className="tree-scroll" role="tree" aria-label="知识库目录">
+      <div ref={scrollRef} className="tree-scroll sheet" role="tree" aria-label="知识库目录">
         {rows.length === 0 && !loading[""] ? (
           <p className="tree-empty muted">{error ?? (Object.keys(nodes).length ? "目录为空" : "正在读取目录…")}</p>
         ) : null}

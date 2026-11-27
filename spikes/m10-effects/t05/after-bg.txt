@@ -1,0 +1,42 @@
+- | div.app-shell | 1427x894@0,0 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 0px | 
+titlebar | header.drag-region.titlebar.flex.items-center.gap-3 | 1427x40@0,0 | color(srgb 1 1 1 / 0.58) |  | 0px rgb(36, 39, 46) | 0px | rgba(255, 255, 255, 0.7) 0px 1px 0px 0px inset
+- | nav.page-switch.no-drag | 161x32@910,4 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+- | span.page-switch-thumb.is-ready | 83x26@913,7 | rgb(255, 255, 255) |  | 0px rgb(36, 39, 46) | 999px | rgba(20, 22, 28, 0.08) 0px 1px 2px 0px
+- | div.segmented.no-drag | 146x32@1123,4 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+- | button.segmented-item | 46x28@1125,6 | rgb(255, 255, 255) |  | 0px rgb(170, 84, 28) | 999px | 
+sidebar | aside.workbench-panel | 232x846@8,40 | color(srgb 1 1 1 / 0.58) |  | 0.571429px color(srgb 0.882353 0.890196 0.905882 / 0.7) | 16px | rgba(255, 255, 255, 0.7) 0px 1px 0px 0px inset
+sidebar | button.vault-sidebar-search | 207x24@21,86 | rgb(242, 243, 245) |  | 0.571429px rgb(225, 227, 231) | 10px | 
+sidebar | div.tree-scroll.sheet | 215x694@17,148 | rgb(244, 245, 247) |  | 0.571429px color(srgb 0.882353 0.890196 0.905882 / 0.8) | 12px | 
+agnes | section.workbench-panel | 603x846@248,40 | color(srgb 1 1 1 / 0.58) |  | 0.571429px color(srgb 0.882353 0.890196 0.905882 / 0.7) | 16px | rgba(255, 255, 255, 0.7) 0px 1px 0px 0px inset
+agnes | button.pill | 60x20@662,52 | color(srgb 0.956078 0.857569 0.857569) |  | 0px color(srgb 0.545412 0.104314 0.109804) | 999px | 
+agnes | div.history-search | 183x28@257,93 | rgb(236, 238, 241) |  | 0.571429px rgb(225, 227, 231) | 10px | 
+agnes | input.history-search-input | 147x28@284,93 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 10px | 
+agnes | div.history-list.sheet.scroll-y | 183x718@257,129 | rgb(255, 255, 255) |  | 0.571429px color(srgb 0.882353 0.890196 0.905882 / 0.8) | 12px | 
+agnes | div.chat-body.sheet | 394x360@449,85 | rgb(255, 255, 255) |  | 0.571429px color(srgb 0.882353 0.890196 0.905882 / 0.8) | 12px | 
+agnes | section.overview-tile | 319x120@481,115 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | section.overview-tile | 319x120@481,245 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-tile.overview-button | 319x120@481,375 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-tile.overview-button | 319x120@481,505 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-tile.overview-button | 319x120@481,635 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-tile.overview-button | 319x120@481,765 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | section.overview-tile | 319x120@481,895 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.overview-chip | 43x24@494,928 | rgb(236, 238, 241) |  | 0.571429px rgb(225, 227, 231) | 999px | 
+agnes | button.overview-chip | 44x24@543,928 | rgb(236, 238, 241) |  | 0.571429px rgb(225, 227, 231) | 999px | 
+agnes | section.overview-tile | 319x120@481,1025 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | section.overview-tile | 319x120@481,1155 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | div.runtime-controls | 370x180@465,465 | rgb(255, 255, 255) |  | 0px rgb(36, 39, 46) | 12px | 
+agnes | select.field.params-select | 304x31@519,499 | rgb(236, 238, 241) |  | 0.571429px rgb(225, 227, 231) | 10px | 
+agnes | div.segmented.min-w-0 | 216x32@519,538 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+agnes | button.segmented-item | 33x28@652,540 | rgb(255, 255, 255) |  | 0px rgb(92, 97, 107) | 999px | 
+agnes | div.segmented.min-w-0 | 211x32@519,577 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+agnes | button.segmented-item | 72x28@521,579 | rgb(255, 255, 255) |  | 0px rgb(170, 84, 28) | 999px | 
+agnes | div.composer-card.chat-composer | 370x222@465,651 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 12px | 
+agnes | button.route-target | 107x23@477,662 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 999px | 
+agnes | button.composer-send | 30x30@792,834 | rgb(236, 238, 241) |  | 0px rgb(92, 97, 107) | 999px | 
+editor | section.workbench-panel | 560x846@859,40 | color(srgb 1 1 1 / 0.58) |  | 0.571429px color(srgb 0.882353 0.890196 0.905882 / 0.7) | 16px | rgba(255, 255, 255, 0.7) 0px 1px 0px 0px inset
+editor | div.tab-item | 113x29@866,41 | rgb(255, 255, 255) |  | 0px rgb(36, 39, 46) | 10px 10px 0px 0px | 
+editor | div.segmented | 146x32@976,72 | rgb(236, 238, 241) |  | 0px rgb(36, 39, 46) | 999px | 
+editor | button.segmented-item | 46x28@978,74 | rgb(255, 255, 255) |  | 0px rgb(170, 84, 28) | 999px | 
+editor | div.editor-body.sheet | 543x706@868,113 | rgb(255, 255, 255) |  | 0.571429px color(srgb 0.882353 0.890196 0.905882 / 0.8) | 12px | 
+editor | code | 34x18@922,179 | rgb(242, 243, 245) |  | 0.571429px rgb(225, 227, 231) | 999px | 
+editor | section.backlinks | 559x59@860,827 | rgb(255, 255, 255) |  | 0.571429px rgb(225, 227, 231) | 0px | 

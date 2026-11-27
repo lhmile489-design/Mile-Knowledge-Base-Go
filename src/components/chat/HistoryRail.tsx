@@ -84,7 +84,7 @@ export function HistoryRail({ vaultId }: { readonly vaultId: string | null }) {
         />
       </div>
 
-      <div className="history-list scroll-y">
+      <div className="history-list sheet scroll-y">
         {searching ? (
           hits.length === 0 ? (
             <p className="history-empty">没有匹配的对话。</p>

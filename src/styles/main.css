@@ -91,6 +91,37 @@ body {
   z-index: 1;
 }
 
+/* M10 T05: the title bar and the three panel shells are glass over the window
+   colour field. No backdrop-filter of their own: only the already blurred field
+   sits behind them, and a filter here would make each shell a backdrop root, so
+   the menus and cards inside would stop blurring what is behind them. Text-dense
+   regions inside are opaque .sheet blocks (DESIGN 15.1). With blur off or an
+   automatic degrade the 1.7.0 surfaces and lift shadow come back unchanged. */
+.titlebar {
+  background: var(--glass-panel);
+  border-bottom: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
+}
+
+.workbench-panel:is([data-panel='sidebar'], [data-panel='agnes'], [data-panel='editor'], [data-panel='doc-rail']) {
+  background: var(--glass-panel);
+  border-color: color-mix(in srgb, var(--raw-line) 70%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
+}
+
+:is([data-blur='off'], [data-blur-auto='off']) .titlebar {
+  background: var(--raw-canvas);
+  border-bottom: 0;
+  box-shadow: none;
+}
+
+:is([data-blur='off'], [data-blur-auto='off'])
+  .workbench-panel:is([data-panel='sidebar'], [data-panel='agnes'], [data-panel='editor'], [data-panel='doc-rail']) {
+  background: var(--panel-bg);
+  border-color: var(--raw-line);
+  box-shadow: var(--shadow-lift-lg);
+}
+
 .workbench-grid {
   display: grid;
   min-width: 0;

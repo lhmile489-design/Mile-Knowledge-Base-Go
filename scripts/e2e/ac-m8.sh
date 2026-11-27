@@ -168,7 +168,7 @@ check "workbench stays inert under the page" "document.querySelector('[data-test
 # through; the hidden workbench no longer needs an opaque cover because it
 # paints nothing (opacity 0) and takes no pointer input.
 check "hidden workbench paints nothing and takes no input" "(() => { const wb=document.querySelector('[data-testid=\"workbench-host\"]'); const hit=document.elementFromPoint(Math.round(window.innerWidth/2), Math.round(window.innerHeight/2)); const s=getComputedStyle(wb); return s.opacity === '0' && s.pointerEvents === 'none' && !hit?.closest('[data-testid=\"workbench-host\"]'); })()" '"value":true'
-check "skills host lets the window colour field through" "(() => { const host=document.querySelector('[data-testid=\"skills-host\"]'); const field=document.querySelector('[data-testid=\"background-field\"]'); return getComputedStyle(host).backgroundColor === 'rgba(0, 0, 0, 0)' && !!field && getComputedStyle(field).zIndex === '-1' && field.getBoundingClientRect().top >= 40; })()" '"value":true'
+check "skills host lets the window colour field through" "(() => { const host=document.querySelector('[data-testid=\"skills-host\"]'); const field=document.querySelector('[data-testid=\"background-field\"]'); return getComputedStyle(host).backgroundColor === 'rgba(0, 0, 0, 0)' && !!field && getComputedStyle(field).zIndex === '-1' && field.getBoundingClientRect().top === 0; })()" '"value":true'
 wait_match "update check entry" "!!document.querySelector('[data-testid=\"skills-check-updates\"]')" '"value":true' 20
 click '[data-testid="skills-check-updates"]'
 sleep 0.6

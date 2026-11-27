@@ -30,7 +30,13 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 0 6px 10px;
+  margin: 0 8px 4px;
+  padding: 6px 6px 10px;
+}
+
+/* M10: the sidebar sheet keeps the sidebar surface colour (DESIGN 15.1). */
+.tree-scroll.sheet {
+  background: var(--raw-panel-sidebar);
 }
 
 .tree-empty {

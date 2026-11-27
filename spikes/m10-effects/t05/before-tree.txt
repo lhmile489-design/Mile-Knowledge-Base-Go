@@ -1,0 +1,56 @@
+## sidebar
+  div.vault-sidebar 231x845 bg=- ov=visible
+    div.vault-sidebar-head 231x107 bg=- ov=visible
+      span.vault-sidebar-name 207x21 bg=- ov=hidden
+      button.vault-sidebar-search 207x24 bg=rgb(242, 243, 245) ov=visible
+        kbd 39x17 bg=- ov=visible
+      div.vault-sidebar-new 76x24 bg=- ov=visible
+    div.tree-scroll 231x698 bg=- ov=auto
+      div 219x56 bg=- ov=visible
+        div 219x28 bg=- ov=visible
+          div.tree-area.eyebrow 219x28 bg=- ov=visible
+        div 219x28 bg=- ov=visible
+          div.tree-row 219x29 bg=- ov=visible
+    div.vault-sidebar-foot 231x41 bg=- ov=visible
+      button.vault-sidebar-foot-btn 207x24 bg=- ov=visible
+        span 44x17 bg=- ov=visible
+## agnes
+  div.chat-pane 602x845 bg=- ov=visible
+    header.chat-header 602x44 bg=- ov=visible
+      button.btn 61x26 bg=- ov=visible
+      span.chat-title 268x20 bg=- ov=hidden
+      span.chat-agent 48x18 bg=- ov=visible
+      button.pill 60x20 bg=color(srgb 0.956078 0.857569 0.857569) ov=visible
+      button.btn.line 73x26 bg=- ov=visible
+    div.chat-body-row 602x801 bg=- ov=visible
+      aside.history-rail 200x801 bg=- ov=visible
+        div.history-search 183x28 bg=rgb(236, 238, 241) ov=visible
+          input.history-search-input 147x28 bg=rgb(255, 255, 255) ov=clip
+        div.history-list.scroll-y 183x718 bg=- ov=auto
+          p.history-empty 163x38 bg=- ov=visible
+        div.history-footer 183x23 bg=- ov=visible
+          span 33x17 bg=- ov=visible
+          button.history-clear 44x17 bg=- ov=visible
+      div.chat-main 402x801 bg=- ov=visible
+        div.chat-body 402x360 bg=- ov=auto
+          div.chat-column 360x1192 bg=- ov=visible
+        footer.chat-footer 402x441 bg=- ov=visible
+          div.chat-footer-inner 370x409 bg=- ov=visible
+## editor
+  div.editor-pane 559x845 bg=- ov=visible
+    div.tab-strip 559x30 bg=- ov=hidden
+      div.tab-item 113x29 bg=rgb(255, 255, 255) ov=visible
+        span.tab-label 73x20 bg=- ov=hidden
+    div.editor-toolbar 559x34 bg=- ov=visible
+      span.editor-path 96x17 bg=- ov=hidden
+      div.segmented 146x32 bg=rgb(236, 238, 241) ov=visible
+        button.segmented-item 46x28 bg=rgb(255, 255, 255) ov=visible
+        button.segmented-item 46x28 bg=- ov=visible
+        button.segmented-item 46x28 bg=- ov=visible
+      span.editor-meta 104x17 bg=- ov=visible
+    div.surface-card 539x21 bg=rgb(255, 255, 255) ov=visible
+      div.status-card-body 538x20 bg=- ov=visible
+    div.editor-body 559x741 bg=- ov=hidden
+      div.editor-scroll 559x741 bg=- ov=auto
+        div.surface-card 535x21 bg=rgb(255, 255, 255) ov=visible
+          div.status-card-body 534x20 bg=- ov=visible

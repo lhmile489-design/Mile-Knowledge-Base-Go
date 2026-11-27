@@ -32,8 +32,8 @@ export function TitleBar() {
 
   return (
     <header
-      className="drag-region flex items-center gap-3"
-      style={{ height: "var(--titlebar-h)", paddingLeft: 12, paddingRight: 0, background: "var(--raw-canvas)" }}
+      className="drag-region titlebar flex items-center gap-3"
+      style={{ height: "var(--titlebar-h)", paddingLeft: 12, paddingRight: 0 }}
     >
       <div className="flex min-w-0 items-center gap-2">
         <img src={appIcon} alt="" aria-hidden width={18} height={18} style={{ flex: "none", display: "block" }} />
