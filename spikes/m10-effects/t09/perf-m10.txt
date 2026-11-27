@@ -1,0 +1,60 @@
+== effectsSwitchMs (std -> high -> off -> std, light)
+switch samples: {"times":[10.5,26.2,22.7,52.1,19.2,19.6,16.8,16.7]}
+stored after switches: {"motion": "std", "blur": "high"}
+  File "<stdin>", line 5
+    open(path, "w", encoding="utf-8").write(json.dumps(doc, ensure_ascii=False, indent=2) + "
+                                                                                            ^
+SyntaxError: unterminated string literal (detected at line 5)
+== idleCpuRatio (std, 300 s minimized, settle 60 s)
+{
+    "app":  "E:\\WebApp\\Mile-Project\\Mile-Knowledge-Base-Go\\build\\windows-amd64\\Mile Knowledge Base.exe",
+    "minimized":  true,
+    "settleSeconds":  60,
+    "seconds":  300.01,
+    "cpuSeconds":  1.297,
+    "cpuPercentOne":  0.432,
+    "processCount":  7,
+    "processes":  [
+                      {
+                          "pid":  4144,
+                          "name":  "Mile Knowledge Base",
+                          "cpuSeconds":  0.281
+                      },
+                      {
+                          "pid":  20436,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  1.234
+                      },
+                      {
+                          "pid":  36768,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.094
+                      },
+                      {
+                          "pid":  34560,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.734
+                      },
+                      {
+                          "pid":  24860,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.203
+                      },
+                      {
+                          "pid":  6984,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.078
+                      },
+                      {
+                          "pid":  37352,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.516
+                      }
+                  ],
+    "startedAt":  "2026-11-27T15:17:08.8078296+07:00"
+}
+switch_ms: 10.5 16.7 16.8 19.2 19.6 22.7 26.2 52.1  p95: 52.1
+cpu: 1.297 s over 300.0 s minimized (ratio 2.075 against 0.625), processes 7
+metrics: {"effectsSwitchMs": 52.1, "idleCpuRatio": 2.075, "effectsSwitchMaxMs": 52.1, "idleCpuSeconds": 1.297, "idleCpuBaselineSeconds": 0.625, "idleCpuProcessCount": 7, "idleCpuMinimized": true}
+perf-gate FAILED (m10): 最小化 300 s 进程 CPU 相对 1.7.0 基线（0.625 s）的倍数: 2.075 > 1.2
+PERF-M10 EXIT 1

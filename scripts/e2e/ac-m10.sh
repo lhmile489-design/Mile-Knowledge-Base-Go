@@ -51,8 +51,10 @@ PORT=18561
 APP_PID=""
 cleanup() {
   if [ -n "${APP_PID:-}" ]; then powershell -NoProfile -Command "Stop-Process -Id $APP_PID -Force" >/dev/null 2>&1; fi
-  sleep 2
-  rm -rf "$WORK"
+  powershell -NoProfile -Command 'Get-Process "Mile Knowledge Base" -ErrorAction SilentlyContinue | Stop-Process -Force' >/dev/null 2>&1
+  sleep 3
+  # KEEP_WORK=1 keeps the temp tree (app log, settings, vault) for diagnosis.
+  if [ "${KEEP_WORK:-0}" = "1" ]; then echo "WORK kept: $WORK"; else rm -rf "$WORK"; fi
 }
 trap cleanup EXIT
 
@@ -61,16 +63,76 @@ if tasklist //FI "IMAGENAME eq Mile Knowledge Base.exe" 2>/dev/null | grep -q "M
   exit 2
 fi
 
+# Bring the window to the front: a hidden or fully occluded WebView2 page
+# stops rAF and (since M10 T09) hides the colour field, so the material
+# assertions below would read an invisible page.
+foreground_app() {
+  [ -n "${APP_PID:-}" ] || return 0
+  cat > "$WORK/focus.ps1" <<'PS'
+param([int]$ProcId)
+Add-Type -Namespace Win -Name Fg -MemberDefinition @'
+[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+'@
+$p = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
+if ($p -and $p.MainWindowHandle -ne 0) { [Win.Fg]::SetForegroundWindow($p.MainWindowHandle) | Out-Null }
+try { (New-Object -ComObject WScript.Shell).AppActivate($ProcId) | Out-Null } catch {}
+PS
+  powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/focus.ps1")" -ProcId "$APP_PID" >/dev/null 2>&1
+  sleep 0.8
+}
 start_app() { # [extra env ...]
-  env APPDATA="$(cygpath -w "$APPD")" MYGO_AUTOMATION="tcp:127.0.0.1:$PORT" \
-    SKILLS_FAKE_HOME="$(cygpath -w "$HOME_DIR")" "$@" "$APP" >"$WORK/app.log" 2>&1 &
-  sleep 6
-  APP_PID=$(powershell -NoProfile -Command "(Get-Process -Name 'Mile Knowledge Base' | Sort-Object StartTime -Descending | Select-Object -First 1).Id" | tr -d '\r')
+  local attempt local_dir
+  for attempt in 1 2 3; do
+    # Wait for the automation port: the previous instance may still be closing.
+    for _ in $(seq 1 40); do
+      [ "$(powershell.exe -NoProfile -Command "@(Get-NetTCPConnection -State Listen -LocalPort $PORT -ErrorAction SilentlyContinue).Count" | tr -cd '0-9')" = "0" ] && break
+      sleep 0.5
+    done
+    # A fresh WebView2 profile per launch: the real LOCALAPPDATA is shared with
+    # everything else, and a launch right after a stop races the previous
+    # profile's shutdown (T09: the S4 app never became ready).
+    local_dir="$WORK/local-$(date +%s%N)"
+    mkdir -p "$local_dir"
+    env APPDATA="$(cygpath -w "$APPD")" LOCALAPPDATA="$(cygpath -w "$local_dir")" MYGO_AUTOMATION="tcp:127.0.0.1:$PORT" SKILLS_FAKE_HOME="$(cygpath -w "$HOME_DIR")" "$@" "$APP" >"$WORK/app-$attempt.log" 2>&1 &
+    sleep 6
+    APP_PID=""
+    for _ in $(seq 1 40); do
+      APP_PID=$(powershell -NoProfile -Command "(Get-Process -Name 'Mile Knowledge Base' -ErrorAction SilentlyContinue | Sort-Object StartTime -Descending | Select-Object -First 1).Id" | tr -cd '0-9')
+      [ -n "$APP_PID" ] && break
+      sleep 0.5
+    done
+    if [ -n "$APP_PID" ]; then
+      # Running is not enough: WebView2 can fail to initialise and the process
+      # stays alive with no page. Only a responsive store counts as started.
+      for _ in $(seq 1 40); do
+        if ev "!!window.__mkbApp && !!window.__mkbApp.getState().settings" | grep -q '"value":true'; then
+          # The page must also be visible: rAF (the scroll and slow-frame
+          # measurements) and, since T09, the colour field depend on it.
+          for _ in $(seq 1 40); do
+            ev "document.visibilityState === 'visible'" | grep -q '"value":true' && return 0
+            foreground_app
+            sleep 0.5
+          done
+          echo "app started but the page stays hidden" >&2
+        fi
+        sleep 0.5
+      done
+    fi
+    echo "start_app attempt $attempt failed (pid=${APP_PID:-none}); retrying" >&2
+    [ -n "${APP_PID:-}" ] && powershell.exe -NoProfile -Command "Stop-Process -Id $APP_PID -Force" >/dev/null 2>&1
+    powershell.exe -NoProfile -Command 'Get-Process "Mile Knowledge Base" -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*Mile-Knowledge-Base-Go*" } | Stop-Process -Force' >/dev/null 2>&1
+    APP_PID=""
+    sleep 3
+  done
+  echo "app did not start after 3 attempts" >&2
+  return 1
 }
 stop_app() {
   if [ -n "${APP_PID:-}" ]; then powershell -NoProfile -Command "Stop-Process -Id $APP_PID -Force" >/dev/null 2>&1; fi
+  # Fallback: the ABORT guard above means any instance now is ours.
+  powershell -NoProfile -Command 'Get-Process "Mile Knowledge Base" -ErrorAction SilentlyContinue | Stop-Process -Force' >/dev/null 2>&1
   APP_PID=""
-  sleep 2
+  sleep 3
 }
 export MYGO_AUTOMATION="tcp:127.0.0.1:$PORT"
 
@@ -125,6 +187,7 @@ write_settings std std
 VID=$(python -I -c "import json,sys;print(json.load(open(sys.argv[1],encoding='utf-8'))['lastVaultId'])" "$SETTINGS")
 start_app
 wait_match "boot" "document.querySelector('[data-testid=\"overview-grid\"]') !== null" '"value":true' 90
+chk "the window is visible, so the material can be measured" 'return document.visibilityState === "visible" || document.visibilityState;'
 chk "attributes on <html> from the stored pair" 'return attr("blur")==="std" && attr("motion")==="std" && attr("theme")==="light" || JSON.stringify({b:attr("blur"),m:attr("motion"),t:attr("theme")});'
 
 # ordinary use must not trip the degrade guard: scroll for real, keep measuring frames
@@ -139,6 +202,11 @@ sleep 1.5
 
 chk "AC-MAT-1 title bar and shells are glass without a filter of their own" 'const names = ["header.titlebar", "[data-panel=sidebar]", "[data-panel=agnes]", "[data-panel=editor]"]; const bad = names.filter((n) => !(al(n) > 0.3 && al(n) < 1 && bf(n) === "none")); return bad.length === 0 || JSON.stringify(bad.map((n) => [n, al(n), bf(n)]));'
 chk "AC-MAT-1 colour field sits behind everything and drifts" 'const f = q(".background-field"); if (!f) return "no field"; const r = f.getBoundingClientRect(); const s = getComputedStyle(f); const a = getComputedStyle(f.querySelector("span")).animationName; return (s.zIndex === "-1" && Math.abs(r.top) < 1 && r.width >= innerWidth - 1 && s.pointerEvents === "none" && a !== "none") || JSON.stringify({z:s.zIndex,top:r.top,w:r.width,a});'
+# M10 T09: while the page is hidden the field is not only paused but removed
+# from the render tree (the 48px blur layers cost CPU when minimized). The
+# attribute itself is set from visibilitychange; the real minimize was checked
+# with a probe (spikes/m10-effects/t09), this asserts the rule.
+chk "a hidden page removes the colour field entirely" 'const htmlEl = document.documentElement; htmlEl.setAttribute("data-field-paused", ""); const hidden = getComputedStyle(q(".background-field")).display; htmlEl.removeAttribute("data-field-paused"); const shown = getComputedStyle(q(".background-field")).display; return (hidden === "none" && shown !== "none") || JSON.stringify({ hidden, shown });'
 chk "AC-MAT-1 text-dense regions are opaque sheets" 'const names = [".tree-scroll", ".history-list", "[data-panel=editor] .editor-body", ".composer-input"]; const bad = names.filter((n) => al(n) !== 1 || bf(n) !== "none"); return bad.length === 0 || JSON.stringify(bad.map((n) => [n, al(n), bf(n)]));'
 chk "AC-MAT-1 overview tiles and run parameters are card-tier glass" 'const names = ["[data-testid=overview-skills]", ".runtime-controls"]; const bad = names.filter((n) => !(al(n) > 0.3 && al(n) < 1 && px(n) === 18)); return bad.length === 0 || JSON.stringify(bad.map((n) => [n, al(n), bf(n)]));'
 chk "AC-MAT-1 an empty chat is not a sheet, so the tiles sit on the glass" 'const b = q("[data-testid=chat-body]"); return (b.classList.contains("sheet") === false && b.getAttribute("data-empty") === "true") || b.className;'
@@ -230,7 +298,8 @@ echo "== S2: restart keeps the pair and the first frame is already painted with 
 [ "$(read_effects)" = '{"blur": "off", "motion": "low"}' ] && { pass=$((pass+1)); echo "PASS file before restart: $(read_effects)"; } || { fail=$((fail+1)); echo "FAIL file before restart :: $(read_effects)"; }
 # Earliest reachable eval after launch: the attributes come from PreloadScript +
 # theme-init.js, not from React, so they are there even if settings are not loaded yet.
-env APPDATA="$(cygpath -w "$APPD")" MYGO_AUTOMATION="tcp:127.0.0.1:$PORT" SKILLS_FAKE_HOME="$(cygpath -w "$HOME_DIR")" "$APP" >"$WORK/app.log" 2>&1 &
+LOCAL2="$WORK/local-$(date +%s%N)"; mkdir -p "$LOCAL2"
+env APPDATA="$(cygpath -w "$APPD")" LOCALAPPDATA="$(cygpath -w "$LOCAL2")" MYGO_AUTOMATION="tcp:127.0.0.1:$PORT" SKILLS_FAKE_HOME="$(cygpath -w "$HOME_DIR")" "$APP" >"$WORK/app.log" 2>&1 &
 first=""
 for i in $(seq 1 120); do
   first=$(ev "JSON.stringify({blur: document.documentElement.dataset.blur || null, motion: document.documentElement.dataset.motion || null, preload: window.__MKB_EFFECTS__ || null, root: !!document.getElementById('root'), storeUp: !!window.__mkbApp, settingsLoaded: !!(window.__mkbApp && window.__mkbApp.getState().settings), href: location.pathname})")
@@ -241,7 +310,13 @@ echo "first reachable state: $first"
 echo "$first" | grep -q 'blur\\":\\"off' && echo "$first" | grep -q 'motion\\":\\"low' && { pass=$((pass+1)); echo "PASS AC-MAT-2 first reachable state already has the saved pair"; } || { fail=$((fail+1)); echo "FAIL AC-MAT-2 first reachable state :: $first"; }
 echo "$first" | grep -q 'settingsLoaded\\":false' && echo "NOTE the settings store was still empty at that moment, so the attributes can only have come from the preload" || echo "NOTE the settings store had already loaded at that moment; this reading alone is not conclusive about the first frame, the iframe checks below are"
 sleep 6
-APP_PID=$(powershell -NoProfile -Command "(Get-Process -Name 'Mile Knowledge Base' | Sort-Object StartTime -Descending | Select-Object -First 1).Id" | tr -d '\r')
+APP_PID=""
+for _ in $(seq 1 40); do
+  APP_PID=$(powershell -NoProfile -Command "(Get-Process -Name 'Mile Knowledge Base' -ErrorAction SilentlyContinue | Sort-Object StartTime -Descending | Select-Object -First 1).Id" | tr -cd '0-9')
+  [ -n "$APP_PID" ] && break
+  sleep 0.5
+done
+foreground_app
 chk "AC-MAT-2 the preload is the saved pair and theme-init.js runs before the app module" 'const p = window.__MKB_EFFECTS__; const order = [...document.scripts].map((s) => s.src.split("/").pop()); const i = order.findIndex((n) => n.includes("theme-init")); const j = [...document.scripts].findIndex((s) => s.type === "module"); return (p && p.blur === "off" && p.motion === "low" && i >= 0 && (j < 0 || i < j)) || JSON.stringify({p, order});'
 # The check above cannot prove the very first frame (the store was already loaded when
 # the first eval got through). This one can: run the shipped /theme-init.js in a clean

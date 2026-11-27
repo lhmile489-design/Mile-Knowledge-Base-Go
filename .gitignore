@@ -12,6 +12,9 @@ mygo_windows_*.syso
 !/.env.example
 
 # 数据库与临时文件
+
+# E2E 临时目录（test-e2e.sh 与围栏脚本自建自删；中断时残留）
+.e2e-local/
 *.db
 *.db-wal
 *.db-shm

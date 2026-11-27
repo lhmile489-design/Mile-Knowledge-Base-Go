@@ -1,0 +1,103 @@
+== S1: std/std, light: AC-MAT-1 distribution, AC-MAT-2/3 levels
+PASS boot
+PASS the window is visible, so the material can be measured
+PASS attributes on <html> from the stored pair
+evidence (normal frames while scrolling): {"id":1,"result":{"value":"{\"n\":200,\"median\":8.3,\"p95\":8.5}"}}
+PASS normal scrolling does not degrade the blur
+PASS doc open
+PASS AC-MAT-1 title bar and shells are glass without a filter of their own
+PASS AC-MAT-1 colour field sits behind everything and drifts
+PASS a hidden page removes the colour field entirely
+PASS AC-MAT-1 text-dense regions are opaque sheets
+PASS AC-MAT-1 overview tiles and run parameters are card-tier glass
+PASS AC-MAT-1 an empty chat is not a sheet, so the tiles sit on the glass
+-- search panel
+PASS search open
+PASS AC-MAT-1 search panel is strong glass over an opaque result area
+-- route menu
+PASS route menu open
+PASS AC-MAT-1 menu is strong glass with a 24px blur
+-- plan card and health panel
+PASS plan card open
+PASS AC-MAT-1 plan card is strong glass and its scrim blurs behind it
+PASS health open
+PASS AC-MAT-1 health panel is strong glass over an opaque list
+-- switching levels on the workbench does not replay the entrance
+PASS no entrance animation restarts after a blur switch
+-- AC-MAT-2: the four blur levels through the settings rows
+PASS settings open
+PASS blur off reaches <html>
+PASS AC-MAT-2 blur off: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur off: the choice is checked
+PASS AC-MAT-2 blur off stored: {"blur": "off", "motion": "std"}
+PASS blur low reaches <html>
+PASS AC-MAT-2 blur low: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur low: the choice is checked
+PASS AC-MAT-2 blur low stored: {"blur": "low", "motion": "std"}
+PASS blur std reaches <html>
+PASS AC-MAT-2 blur std: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur std: the choice is checked
+PASS AC-MAT-2 blur std stored: {"blur": "std", "motion": "std"}
+PASS blur high reaches <html>
+PASS AC-MAT-2 blur high: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur high: the choice is checked
+PASS AC-MAT-2 blur high stored: {"blur": "high", "motion": "std"}
+-- AC-MAT-3: the four animation levels
+PASS motion off reaches <html>
+PASS AC-MAT-3 motion off: duration, lift and field drift
+PASS AC-MAT-3 motion off stored: {"blur": "high", "motion": "off"}
+PASS motion low reaches <html>
+PASS AC-MAT-3 motion low: duration, lift and field drift
+PASS AC-MAT-3 motion low stored: {"blur": "high", "motion": "low"}
+PASS motion std reaches <html>
+PASS AC-MAT-3 motion std: duration, lift and field drift
+PASS AC-MAT-3 motion std stored: {"blur": "high", "motion": "std"}
+PASS motion high reaches <html>
+PASS AC-MAT-3 motion high: duration, lift and field drift
+PASS AC-MAT-3 motion high stored: {"blur": "high", "motion": "high"}
+PASS pair saved for the restart: {"blur": "low", "motion": "low"}
+-- AC-MAT-2: blur off on the workbench is the 1.7.0 look
+PASS workbench back
+PASS AC-MAT-2 blur off: shells, tiles and menus are opaque, no filter, no field
+== S2: restart keeps the pair and the first frame is already painted with it
+PASS file before restart: {"blur": "off", "motion": "low"}
+first reachable state: {"id":1,"result":{"value":"{\"blur\":\"off\",\"motion\":\"low\",\"preload\":{\"motion\":\"low\",\"blur\":\"off\"},\"root\":true,\"storeUp\":true,\"settingsLoaded\":true,\"href\":\"/\"}"}}
+PASS AC-MAT-2 first reachable state already has the saved pair
+NOTE the settings store had already loaded at that moment; this reading alone is not conclusive about the first frame, the iframe checks below are
+PASS AC-MAT-2 the preload is the saved pair and theme-init.js runs before the app module
+PASS AC-MAT-2 theme-init.js alone paints the pair onto a clean <html>
+PASS AC-MAT-2 a garbage preload leaves <html> alone
+PASS AC-MAT-2 the store agrees with the file after the restart
+== S3: AC-MAT-4: the system animation switch is off
+PASS boot
+PASS the media query is on and mirrored into the store
+PASS AC-MAT-4 durations, lift and the field drift behave as animation off
+PASS AC-MAT-4 entrance animations do not run
+PASS AC-MAT-4 the user level is untouched
+PASS settings open
+PASS AC-MAT-4 the note explains it and the choice is still shown and editable
+== S4: AC-MAT-8: really slow frames while scrolling
+PASS boot
+PASS AC-MAT-8 the blur switched itself off
+evidence (slow frames while scrolling): {"id":1,"result":{"value":"{\"n\":120,\"median\":58.3,\"p95\":58.4}"}}
+PASS the frames really were slow
+PASS AC-MAT-8 the colour field is gone and the shells are opaque
+PASS AC-MAT-8 the user value is unchanged
+PASS AC-MAT-8 settings.json unchanged: {"blur": "std", "motion": "std"}
+PASS settings open
+PASS AC-MAT-8 the settings page says so and the control stays usable
+PASS AC-MAT-8 choosing another level does not undo the degrade for this run
+-- the degrade is for one run only
+PASS boot again
+PASS AC-MAT-8 a new launch is back to the stored level
+== S5: nothing is judged while the user blur is off
+PASS boot
+PASS no degrade and no note when the user already chose off
+== S6: AC-MAT-1: the welcome page
+PASS welcome
+PASS AC-MAT-1 the colour field shows through the welcome shell
+PASS AC-MAT-1 the welcome card is strong glass
+PASS AC-MAT-1 the title bar is glass here too
+PASS guide open
+PASS AC-MAT-1 the new-vault guide is strong glass over a blurred scrim
+RESULT pass=84 fail=0

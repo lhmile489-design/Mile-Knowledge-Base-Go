@@ -1,0 +1,57 @@
+== effectsSwitchMs (std -> high -> off -> std, light)
+switch samples: {"times":[10,27.1,13.5,53.1,25.6,13.9,16,16.4,16.6,17,16.6,16.4,16.9,16.7,16.5,16.7,16.7,16.6,16.7,16.8]}
+stored after switches: {"motion": "std", "blur": "std"}
+reset to std/std for the CPU run
+== idleCpuRatio (std, 300 s minimized, settle 60 s, app /c/Users/LHmile/AppData/Local/Temp/m10-prod/Mile Knowledge Base.exe)
+{
+    "app":  "C:\\Users\\LHmile\\AppData\\Local\\Temp\\m10-prod\\Mile Knowledge Base.exe",
+    "minimized":  true,
+    "settleSeconds":  60,
+    "seconds":  300.01,
+    "cpuSeconds":  0.719,
+    "cpuPercentOne":  0.24,
+    "processCount":  7,
+    "processes":  [
+                      {
+                          "pid":  31344,
+                          "name":  "Mile Knowledge Base",
+                          "cpuSeconds":  0.375
+                      },
+                      {
+                          "pid":  24236,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  1.375
+                      },
+                      {
+                          "pid":  36096,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.047
+                      },
+                      {
+                          "pid":  31868,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.25
+                      },
+                      {
+                          "pid":  16772,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.203
+                      },
+                      {
+                          "pid":  10568,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.078
+                      },
+                      {
+                          "pid":  32212,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.484
+                      }
+                  ],
+    "startedAt":  "2026-11-27T16:46:08.7749759+07:00"
+}
+switch_ms: 10.0 13.5 13.9 16.0 16.4 16.4 16.5 16.6 16.6 16.6 16.7 16.7 16.7 16.7 16.8 16.9 17.0 25.6 27.1 53.1  p95: 27.1
+cpu: 0.719 s over 300.0 s minimized (ratio 0.885 against 0.812), processes 7
+metrics: {"effectsSwitchMs": 27.1, "idleCpuRatio": 0.885, "effectsSwitchMaxMs": 53.1, "idleCpuSeconds": 0.719, "idleCpuBaselineSeconds": 0.812, "idleCpuProcessCount": 7, "idleCpuMinimized": true}
+perf-gate ok (m10): 2 metrics within target
+EXIT 0

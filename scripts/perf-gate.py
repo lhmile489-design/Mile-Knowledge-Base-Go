@@ -45,12 +45,23 @@ TARGETS = {
         "slowFrameRatio": 0.05,
         "enterP95Ms": 300,
         "switchBackMs": 100,
+        # B-M10-03: the absolute cap from 技术设计 21.6/21.8, so a uniformly
+        # slow window cannot pass on the ratio alone.
+        "scrollP95Ms": 33.4,
     },
     # M9 (技术设计 20.7). The scroll keys reuse the M8 names and limits: perf-m9
     # measures the same scroll with the detail drawer open.
     "m9": {
         "drawerOpenP95Ms": 150,
         "modalOpenMs": 100,
+    },
+    # M10 (技术设计 21.8, Q-M10-3). idleCpuRatio is against the 1.7.0 baseline
+    # over 300 s minimized: T00 measured 0.625 s, which did not reproduce on
+    # 2026-11-27 (1.7.0 itself read 0.750 / 0.812 s); the user approved the
+    # re-baseline to 0.812 s (today's larger sample), kept in perf-m10.sh.
+    "m10": {
+        "effectsSwitchMs": 100,
+        "idleCpuRatio": 1.2,
     },
 }
 
@@ -77,6 +88,9 @@ LABELS = {
     "switchBackMs": "切回工作台首帧 p95 ms",
     "drawerOpenP95Ms": "打开抽屉到预览可见 p95 ms（渲染缓存未命中）",
     "modalOpenMs": "弹窗打开到第一帧 p95 ms",
+    "scrollP95Ms": "卡片滚动 p95 帧间隔 ms（绝对上限）",
+    "effectsSwitchMs": "切换外观档位到生效第一帧 p95 ms",
+    "idleCpuRatio": "最小化 300 s 进程 CPU 相对 1.7.0 基线（0.625 s）的倍数",
 }
 
 

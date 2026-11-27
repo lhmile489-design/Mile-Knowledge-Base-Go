@@ -4,17 +4,27 @@
 # through the same automation channel the acceptance scripts use. A fake
 # provider streams a 10k-character answer; the 50-conversation sample reuses
 # that answer's text in the real event format.
+# M10 T09: --effects std|high seeds the material tier (AC-MAT-6/7).
 set -u
+EFFECTS=std
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --effects) EFFECTS="${2:-}"; shift 2 ;;
+    *) echo "unknown argument: $1 (usage: perf-ai.sh [--effects std|high])"; exit 2 ;;
+  esac
+done
+case "$EFFECTS" in std|high) ;; *) echo "effects must be std or high"; exit 2 ;; esac
+echo "effects=$EFFECTS"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 APP="$ROOT/build/windows-amd64/Mile Knowledge Base.exe"
 WORK=$(mktemp -d "$ROOT/.perf-ai-XXXXXX")
 VAULT="$WORK/vault"; APPD="$WORK/app"
 mkdir -p "$VAULT" "$APPD/Mile Knowledge base"
 (cd "$ROOT" && go run ./cmd/genvault -kind typical -out "$(cygpath -w "$VAULT")" >/dev/null)
-VID=$(python -I - "$VAULT" "$APPD/Mile Knowledge base" <<'PY'
+VID=$(python -I - "$VAULT" "$APPD/Mile Knowledge base" "$EFFECTS" <<'PY'
 import hashlib,json,os,sys
-v,out=sys.argv[1],sys.argv[2]; c=os.path.abspath(v).replace('/',chr(92)).lower(); vid=hashlib.sha256(c.encode()).hexdigest()[:16]
-doc={"version":1,"theme":"light","closeBehavior":"quit","layout":{"sidebarWidth":232,"docWidth":620,"docCollapsed":False,"sidebarCollapsed":False,"agnesControlsCollapsed":False,"agnesHistoryOpen":True,"agnesComposerHeight":96},"recentVaults":[{"id":vid,"root":v,"displayName":"perf-ai","lastOpenedAt":"2026-11-19T09:00:00Z"}],"lastVaultId":vid}
+v,out,effects=sys.argv[1],sys.argv[2],sys.argv[3]; c=os.path.abspath(v).replace('/',chr(92)).lower(); vid=hashlib.sha256(c.encode()).hexdigest()[:16]
+doc={"version":1,"theme":"light","closeBehavior":"quit","effects":{"motion":"std","blur":effects},"layout":{"sidebarWidth":232,"docWidth":620,"docCollapsed":False,"sidebarCollapsed":False,"agnesControlsCollapsed":False,"agnesHistoryOpen":True,"agnesComposerHeight":96},"recentVaults":[{"id":vid,"root":v,"displayName":"perf-ai","lastOpenedAt":"2026-11-19T09:00:00Z"}],"lastVaultId":vid}
 open(os.path.join(out,"settings.json"),"w",encoding="utf-8").write(json.dumps(doc,ensure_ascii=False,indent=2)+"\n"); print(vid)
 PY
 )
@@ -29,6 +39,10 @@ open(path,"w",encoding="utf-8").write(json.dumps(doc,ensure_ascii=False,indent=2
 PY
 DRIVE="$WORK/drive.exe"
 (cd "$ROOT/spikes/r4-window/drive" && go build -o "$DRIVE" .) || exit 1
+if tasklist //FI "IMAGENAME eq Mile Knowledge Base.exe" 2>/dev/null | grep -q "Mile Knowledge"; then
+  echo "ABORT: Mile Knowledge Base is already running; close it first (this script stops it by image name)"
+  exit 2
+fi
 python -I "$ROOT/scripts/e2e/fake-openai.py" --port "$PORT_AI" >"$WORK/fake-ai.log" 2>&1 &
 AI_PID=$!
 APP_PID=""

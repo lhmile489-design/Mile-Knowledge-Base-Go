@@ -1,0 +1,27 @@
+fixtures ok
+cards: 200
+blur/motion: std/std
+enter_ms: 80.1 83.3 99.3 73.7 72.6
+refresh_ms: 16.7
+warm-up round (unscored): {'frames': 675, 'p50': 8.300000000001091, 'p95': 16.5, 'max': 58.29999999999927, 'range': 9449}
+scroll round 1: {'frames': 354, 'p50': 8.299999999999272, 'p95': 8.400000000001455, 'max': 8.700000000000728, 'range': 9449}
+scroll round 2: {'frames': 0, 'p50': 0, 'p95': 0, 'max': 0, 'range': 9449}
+scroll round 3: {'frames': 0, 'p50': 0, 'p95': 0, 'max': 0, 'range': 9449}
+refresh_ms (idle): 16.7  refresh_ms (scrolling median): 8.3  R used (smaller of the two): 8.3
+legacy method would report scrollP95Frames=0.99 (idle R, warm-up as round 1)
+Traceback (most recent call last):
+  File "<stdin>", line 154, in <module>
+  File "<stdin>", line 15, in js
+  File "<stdin>", line 8, in call
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\socket.py", line 707, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+TimeoutError: timed out
+Traceback (most recent call last):
+  File "E:\WebApp\Mile-Project\Mile-Knowledge-Base-Go\scripts\perf-gate.py", line 124, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "E:\WebApp\Mile-Project\Mile-Knowledge-Base-Go\scripts\perf-gate.py", line 102, in main
+    with open(args.input, encoding="utf-8") as handle:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'E:\\WebApp\\Mile-Project\\Mile-Knowledge-Base-Go\\.perf-m8-NtOZa8\\metrics.json'

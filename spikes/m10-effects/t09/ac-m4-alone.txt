@@ -1,0 +1,71 @@
+PASS overview
+PASS index
+PASS skills page open
+PASS tools rows
+PASS AC-SKM-2 linked
+PASS AC-SKM-2 broken
+PASS AC-SKM-2 copied
+PASS AC-SKM-2 independent
+PASS AC-SKM-2 builtin
+PASS AC-SKM-2 external
+{"id":1,"result":{"value":true}}
+PASS uninstall dialog
+{"id":1,"result":{"value":true}}
+PASS external removed
+PASS AC-SKM-2 link gone
+PASS AC-SKM-2 external target unchanged
+PASS AC-SKM-1 kiro hidden by default
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-1 kiro chip after expand
+PASS AC-SKM-1 kiro skill visible
+PASS distribute dialog
+PASS AC-SKM-1 kiro not a target
+PASS AC-SKM-3 read through link
+PASS AC-SKM-5 conflict
+PASS AC-SKM-6 overwrite content
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-6 uninstall new
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-6 removed new
+PASS install view
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-6 restore
+PASS AC-SKM-6 restore content
+PASS install dialog closed
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-7 dialog
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-7 removed
+PASS AC-SKM-7 link gone
+PASS AC-SKM-7 kb unchanged
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-8 dialog
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-8 removed
+PASS AC-SKM-8 backed up
+PASS AC-SKM-8 records
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-8 restore
+PASS AC-SKM-8 restored
+PASS AC-SKM-8 records include restore
+PASS AC-SKM-8 install dialog closed
+PASS AC-SKM-9 vault copy
+PASS AC-SKM-9 both tools link
+PASS AC-SKM-9 backups
+PASS AC-SKM-9 linked row
+PASS AC-SKM-10 no uninstall for builtin
+PASS AC-SKM-10 api rejects
+PASS no sidebar import entry
+PASS second overview
+PASS index
+PASS skills page open
+{"id":1,"result":{"value":true}}
+PASS old vue dialog
+{"id":1,"result":{"value":true}}
+PASS old vue removed
+AC-SKM-4 items: {"id":1,"result":{"value":"[{\"targetId\":\"claude-code\",\"toolId\":\"claude-code\",\"result\":\"copied\",\"detail\":\"联接创建失败，已改用拷贝\"}]"}}
+PASS AC-SKM-4 reported copy
+PASS AC-SKM-4 copied files
+PASS AC-SKM-4 sync state
+PASS AC-SKM-4 redistribute action
+RESULT pass=56 fail=0

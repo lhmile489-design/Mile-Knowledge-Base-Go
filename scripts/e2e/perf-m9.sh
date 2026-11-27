@@ -125,7 +125,7 @@ js("window.__mkbApp.getState().showPage('skills'); true")
 wait("document.querySelector('[data-testid=\"skills-page\"]') !== null", 60)
 wait("document.querySelectorAll('[data-testid^=\"kb-card-\"]').length >= 200", 120)
 print("cards:", js("document.querySelectorAll('[data-testid^=\"kb-card-\"]').length"))
-print("glass:", js("document.querySelector('[data-testid=\"skills-page\"]').dataset.glass"))
+print("blur/motion:", js("(() => { const d = document.documentElement.dataset; return (d.blur || '?') + '/' + (d.motion || '?'); })()"))
 
 # ---- drawer: a different skill every time, so the render cache never hits ----
 DRAWER = """

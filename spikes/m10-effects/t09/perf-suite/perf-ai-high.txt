@@ -1,0 +1,18 @@
+effects=high
+engine=ready
+== stream one long answer with probes armed
+probe_mid={"on":true,"frames":96,"lat":15}
+stream_frames={"frames":522,"slow":0,"max":16.7}
+key_latency={"n":87,"p50":7.5,"p90":8,"max":8.1}
+== seed one conversation with 50 long answers from the real one
+seeded 50 turns
+== viewer first frame and virtualization
+viewer_first_frame_ms=63.8
+viewer_rendered_max=9
+RESULT
+engine=ready
+probe_mid={"on":true,"frames":96,"lat":15}
+stream_frames={"frames":522,"slow":0,"max":16.7}
+key_latency={"n":87,"p50":7.5,"p90":8,"max":8.1}
+viewer_first_frame_ms=63.8
+viewer_rendered_max=9

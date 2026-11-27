@@ -1,0 +1,20 @@
+effects=high
+cold_start_typical_ms=925 total_ms=1019
+cold_start_big_ms=715 total_ms=825
+typical_reader_ms=-1
+{"id":1,"result":{"value":"{}"}}
+big_flat_load_ms=215
+{"id":1,"result":{"value":"{\"flat\":5000,\"doms\":36}"}}
+{"id":1,"result":{"value":"{\"n\":0,\"max\":0,\"scrollTop\":24000}"}}
+{"id":1,"result":{"value":"{\"n\":0,\"max\":0}"}}
+big_touch_1000_ms=15740
+WORK=E:/WebApp/Mile-Project/.perf-JfvLp3
+cold_start_typical_ms=925 total_ms=1019
+cold_start_big_ms=715 total_ms=825
+typical_reader_ms=-1
+{"id":1,"result":{"value":"{}"}}
+big_flat_load_ms=215
+{"id":1,"result":{"value":"{\"flat\":5000,\"doms\":36}"}}
+{"id":1,"result":{"value":"{\"n\":0,\"max\":0,\"scrollTop\":24000}"}}
+{"id":1,"result":{"value":"{\"n\":0,\"max\":0}"}}
+big_touch_1000_ms=15740

@@ -83,7 +83,7 @@
 | Go 测试 | 单元测试与静态检查 | `bun run test:go` / `bun run lint:go`；格式另跑 `gofmt -l .` | 已验证（2026-11-24：719 项；vet 与 gofmt 无输出） |
 | 竞态检测 | `go test -race` | `bun run test:go-race` | 未验证（需要 cgo，本机未跑；不在常规门禁内） |
 | 模糊测试 | 路径与渲染（`FuzzValidateRel`、`FuzzRender`） | `bun run test:fuzz`（`scripts/test-fuzz.sh`，每个目标默认 60s，`FUZZ_TIME=3s` 可缩短） | 已验证（2026-11-18：正向通过；故意失败的对照返回非零） |
-| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m10、ac-m2、ac-m3、ac-m35、ac-m4、ac-m5、ac-m6、ac-m7、ac-m8、ac-m9（按文件名排序）；`E2E_SKIP_BUILD=1` 跳过构建，打过正式包后不要用） | 全量 612 项全过（2026-11-27，M10 T08：15/16/82/22/47/37/56/54/47/70/59/107，见 docs/PLAN-M10.md） |
+| 端到端 | e2e 构建 + automation | `bun run test:e2e`（`scripts/test-e2e.sh`：先 `GOFLAGS=-tags=e2e MYGO_INSPECTOR=1 bun run build`，再依次跑 `scripts/e2e/ac-*.sh`，即 ac-m0、ac-m1、ac-m10、ac-m2、ac-m3、ac-m35、ac-m4、ac-m5、ac-m6、ac-m7、ac-m8、ac-m9（按文件名排序）；`E2E_SKIP_BUILD=1` 跳过构建，打过正式包后不要用） | 全量 614 项（2026-11-27，M10 T09 起 ac-m10 为 84 项）；T08 的全量 612 项曾一次全过。T09 当天机器负载很高（599 个进程、可用内存 4.2 GB），多次全量运行中 10/12 个脚本全过，ac-m4 / ac-m9 偶发中途失去自动化响应，两者单独复跑分别 56/56、107/107；详见 docs/PLAN-M10.md 的 T09 账本 |
 | M10 验收 | 全局材质与动效：四档模糊 / 四档动画即时生效与落盘、重启后保持、系统减少动画、真实慢帧自动降级、欢迎页与各类浮层的材质分布（AC-MAT-1/2/3/4/8） | `bash scripts/e2e/ac-m10.sh`（临时 APPDATA / 知识库 / 假 HOME；需要 e2e 构建；对比度、性能分别属 T10、T09） | 已验证 82/82（2026-11-27） |
 | M3.5 验收 | 主题色：全新安装默认橙、选蓝立即生效与重启、自定义色、乱码回落 | `bash scripts/e2e/ac-m35.sh`（内含 `scripts/e2e/accent-contrast.js` 的真实组件对比度） | 已验证 37/37（2026-11-20） |
 | M4 验收 | 技能管理：注册表/扫描/分发/卸载/收编/备份/浮层（AC-SKM-1–11） | `bash scripts/e2e/ac-m4.sh`（假 HOME + 假注册表，不写真实工具目录） | 已验证 60/60（2026-11-20） |
@@ -103,8 +103,10 @@
 | M5 性能 | GitHub 50 MB 读取与 20 组更新检查 | `bash scripts/e2e/perf-m5.sh`（本地假 GitHub） | 已验证：50 MB 读取 p95 204ms、20 组检查 69ms；`perf:gate --kind m5` 通过 |
 | M6 性能 | 10 个项目扫描、登记保存与移除 | `bash scripts/e2e/perf-m6.sh`（假 HOME，10×5×20 个技能） | 已验证：M4 基准 114ms、项目扫描 p95 240ms、保存 22.7ms、移除 17.1ms；`perf:gate --kind m6` 通过 |
 | M7 性能 | 清单预览、清单写入、批量还原 | `bash scripts/e2e/perf-m7.sh`（100 个技能、10 个登记项目、200 项清单） | 已验证：预览 p95 60.8ms、写入净增量 p95 36.0ms、还原 100 项 76.3ms；`perf:gate --kind m7` 通过 |
-| M8 性能 | 技能页进入、200 张毛玻璃卡片滚动、切回工作台 | `bash scripts/e2e/perf-m8.sh`（200 个技能，真窗口） | M9 T07 修正测量方法后（预热轮 + 滚动中位数 R）：三次连续通过，滚动 1.04/1.02/1.02 帧、慢帧 ≤1.42%、进入 92–173ms、切回 43–62ms；M9 T10 复测滚动 1.02 帧/进入 84.2ms/切回 43.8ms（见 docs/PLAN-M9.md） |
+| M8 性能 | 技能页进入、200 张毛玻璃卡片滚动、切回工作台 | `bash scripts/e2e/perf-m8.sh`（200 个技能，真窗口） | M9 T07 修正测量方法后（预热轮 + 滚动中位数 R）：三次连续通过，滚动 1.04/1.02/1.02 帧、慢帧 ≤1.42%、进入 92–173ms、切回 43–62ms；M9 T10 复测滚动 1.02 帧/进入 84.2ms/切回 43.8ms（见 docs/PLAN-M9.md）；M10 T09 按 B-M10-03 把 R 改为「空闲与滚动中位数的较小值 + 33.4ms 绝对上限」后复测：滚动 1.01 帧/慢帧 0/p95 8.4ms、进入 114.5ms、切回 45.7ms（见 docs/PLAN-M10.md） |
 | M9 性能 | 抽屉打开、弹窗首帧、抽屉打开时滚动 | `bash scripts/e2e/perf-m9.sh`（200 个技能，真窗口） | 已验证（2026-11-26）：抽屉打开 p95 62.9ms、弹窗首帧 53.3ms、滚动 1.04 帧/慢帧 1.31%；首次运行抽屉滚动 2.0 帧未过但同进程无抽屉对照组同为 2.0（200Hz 偶发隔帧噪声），重跑全过，门槛未动（见 docs/PLAN-M9.md） |
+| M10 性能 | 档位切换首帧、最小化 300 s 进程 CPU | `bash scripts/e2e/perf-m10.sh`（切换用 e2e 构建、CPU 用生产构建，两份二进制都要保持原文件名；需要临时环境，脚本自理） | 已验证（2026-11-27）：切换 20 次 p95 通过（诊断时 30 次 6.4–25.3ms）；CPU 0.688/0.797 s，基线按当天 1.7.0 重设为 0.812 s（T00 的 0.625 s 当天不可复现，经用户批准，见 docs/PLAN-M10.md） |
+| M10 两档 typical | `std` / `high` 下冷启动、检索、历史首帧、流式慢帧、按键延迟 | `bash scripts/e2e/perf.sh --effects std\|high`、`bash scripts/e2e/perf-ai.sh --effects std\|high`、一次 `perf-m1.sh`；`kind=typical` 门禁 | 已验证（2026-11-27）：std 806/1.9/79.9/0/8.1、high 925/1.9/63.8/0/8.0，两档门禁通过 |
 | 性能门禁 | 指标 JSON 校验（G-PERF，阻断） | `bun run perf:gate --kind typical\|big\|skills\|m5\|m6\|m7\|m8\|m9 --input <json>` | 已接入（阻断，正反对照通过） |
 | 旧版性能基线 | 只读运行旧版 Electron 测冷启动与检索 | `bash scripts/perf-legacy/bench.sh typical\|big` | 已验证（见 docs/PLAN-M3.md §6） |
 | 安装包 | 1.7.0 NSIS 安装包 | `bun run build`（产物 `build/windows-amd64/mile-knowledge-base-setup-1.7.0-amd64.exe`；不要带 `-tags=e2e`） | 本机 1.2.0 → 1.3.0 至 1.6.1 → 1.7.0 各次升级冒烟通过（见 docs/发布清单.md 第 10–17 节） |

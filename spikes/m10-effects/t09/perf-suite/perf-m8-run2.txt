@@ -1,0 +1,19 @@
+fixtures ok
+cards: 200
+blur/motion: std/std
+enter_ms: 173.5 133.7 159.7 140.6 198.2
+refresh_ms: 25
+warm-up round (unscored): {'frames': 707, 'p50': 8.300000000001091, 'p95': 8.5, 'max': 24.899999999999636, 'range': 9449}
+scroll round 1: {'frames': 710, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 16.700000000000728, 'range': 9449}
+scroll round 2: {'frames': 712, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 16.700000000000728, 'range': 9449}
+scroll round 3: {'frames': 715, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 16.900000000001455, 'range': 9449}
+refresh_ms (idle): 25  refresh_ms (scrolling median): 8.3  R used (smaller of the two): 8.3
+legacy method would report scrollP95Frames=0.34 (idle R, warm-up as round 1)
+switch_ms: 24.8 55.1 56.7 67.3 51.6
+B-M10-03 same data: previous R -> scrollP95Frames=1.01 slowFrameRatio=0.0099; new R -> 1.01 / 0.0099
+  control healthy 120 fps                  previous 1.00 (pass)  new 1.00 (pass, p95 8.3 ms)
+  control uniform 30 fps                   previous 1.00 (pass)  new 4.01 (FAIL, p95 33.3 ms)
+  control uniform 45 fps                   previous 1.00 (pass)  new 2.67 (FAIL, p95 22.2 ms)
+  control downclocked idle, 33.5 ms frames previous 1.00 (pass)  new 1.01 (FAIL, p95 33.5 ms)
+metrics: {"enterP95Ms": 198.2, "scrollP95Frames": 1.01, "slowFrameRatio": 0.0099, "switchBackMs": 67.3, "scrollP95Ms": 8.4}
+perf-gate ok (m8): 5 metrics within target

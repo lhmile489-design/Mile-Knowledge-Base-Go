@@ -1,0 +1,1156 @@
+== scripts/e2e/ac-m0.sh
+PASS workbench with vault
+PASS tree has area sections
+PASS expand skills
+PASS skills children visible
+PASS open a document by clicking it
+PASS open È¶ñÈ°µ.md via tree
+PASS reading mode rendered
+PASS switch to source mode
+PASS source editor visible
+PASS edit in store
+PASS dirty dot appears
+PASS save clears dirty
+PASS file on disk updated
+PASS external change adopted
+PASS csp present in built page
+RESULT pass=15 fail=0
+== scripts/e2e/ac-m1.sh
+PASS index ready
+== search and open
+PASS search returns hits
+PASS search hit opens with Enter
+PASS document opened
+== backlinks
+PASS backlinks list ÂØåÊñáÊú¨Ê†∑‰æã
+== create, rename, archive through plan cards
+PASS create plan card
+PASS created file exists
+PASS renamed file exists
+PASS archive plan card
+PASS archived file moved
+== audit and restore
+PASS audit lists the archive
+PASS restore preview opens
+PASS restored file back
+audit lines: 4, documents: {"id":1,"result":{"value":24}}
+== restart: index and audit survive
+PASS index ready after restart
+PASS document count kept
+PASS audit survived restart (4 -> 4)
+RESULT pass=16 fail=0
+== scripts/e2e/ac-m10.sh
+== S1: std/std, light: AC-MAT-1 distribution, AC-MAT-2/3 levels
+PASS boot
+PASS the window is visible, so the material can be measured
+PASS attributes on <html> from the stored pair
+evidence (normal frames while scrolling): {"id":1,"result":{"value":"{\"n\":200,\"median\":8.3,\"p95\":8.4}"}}
+PASS normal scrolling does not degrade the blur
+FAIL doc open :: {"id":1,"result":{"value":false}}
+FAIL AC-MAT-1 title bar and shells are glass without a filter of their own :: {"id":1,"result":{"value":"[[\"header.titlebar\",1,\"none\"],[\"[data-panel=sidebar]\",1,\"none\"],[\"[data-panel=agnes]\",1,\"none\"],[\"[data-panel=editor]\",1,\"none\"]]"}}
+FAIL AC-MAT-1 colour field sits behind everything and drifts :: {"id":1,"result":{"value":"no field"}}
+FAIL a hidden page removes the colour field entirely :: {"id":1,"error":{"code":"failed","message":"mygo: javascript error: Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."}}
+FAIL AC-MAT-1 text-dense regions are opaque sheets :: {"id":1,"result":{"value":"[[\"[data-panel=editor] .editor-body\",-1,\"missing\"]]"}}
+FAIL AC-MAT-1 overview tiles and run parameters are card-tier glass :: {"id":1,"result":{"value":"[[\"[data-testid=overview-skills]\",1,\"none\"],[\".runtime-controls\",1,\"none\"]]"}}
+PASS AC-MAT-1 an empty chat is not a sheet, so the tiles sit on the glass
+-- search panel
+PASS search open
+FAIL AC-MAT-1 search panel is strong glass over an opaque result area :: {"id":1,"result":{"value":"{\"p\":1,\"f\":\"none\",\"b\":1}"}}
+-- route menu
+PASS route menu open
+FAIL AC-MAT-1 menu is strong glass with a 24px blur :: {"id":1,"result":{"value":"{\"a\":1,\"f\":\"none\"}"}}
+-- plan card and health panel
+PASS plan card open
+FAIL AC-MAT-1 plan card is strong glass and its scrim blurs behind it :: {"id":1,"result":{"value":"{\"a\":1,\"f\":\"none\",\"s\":\"blur(0px)\"}"}}
+PASS health open
+FAIL AC-MAT-1 health panel is strong glass over an opaque list :: {"id":1,"result":{"value":"{\"a\":1,\"f\":\"none\",\"b\":1}"}}
+-- switching levels on the workbench does not replay the entrance
+PASS no entrance animation restarts after a blur switch
+-- AC-MAT-2: the four blur levels through the settings rows
+PASS settings open
+PASS blur off reaches <html>
+PASS AC-MAT-2 blur off: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur off: the choice is checked
+FAIL AC-MAT-2 blur off stored :: {"blur": "high", "motion": "std"}
+PASS blur low reaches <html>
+PASS AC-MAT-2 blur low: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur low: the choice is checked
+FAIL AC-MAT-2 blur low stored :: {"blur": "high", "motion": "std"}
+PASS blur std reaches <html>
+PASS AC-MAT-2 blur std: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur std: the choice is checked
+FAIL AC-MAT-2 blur std stored :: {"blur": "high", "motion": "std"}
+PASS blur high reaches <html>
+PASS AC-MAT-2 blur high: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur high: the choice is checked
+PASS AC-MAT-2 blur high stored: {"blur": "high", "motion": "std"}
+-- AC-MAT-3: the four animation levels
+PASS motion off reaches <html>
+PASS AC-MAT-3 motion off: duration, lift and field drift
+FAIL AC-MAT-3 motion off stored :: {"blur": "high", "motion": "std"}
+PASS motion low reaches <html>
+PASS AC-MAT-3 motion low: duration, lift and field drift
+FAIL AC-MAT-3 motion low stored :: {"blur": "high", "motion": "std"}
+PASS motion std reaches <html>
+PASS AC-MAT-3 motion std: duration, lift and field drift
+PASS AC-MAT-3 motion std stored: {"blur": "high", "motion": "std"}
+PASS motion high reaches <html>
+PASS AC-MAT-3 motion high: duration, lift and field drift
+FAIL AC-MAT-3 motion high stored :: {"blur": "high", "motion": "std"}
+FAIL pair saved for the restart :: {"blur": "high", "motion": "std"}
+-- AC-MAT-2: blur off on the workbench is the 1.7.0 look
+PASS workbench back
+PASS AC-MAT-2 blur off: shells, tiles and menus are opaque, no filter, no field
+== S2: restart keeps the pair and the first frame is already painted with it
+FAIL file before restart :: {"blur": "high", "motion": "std"}
+first reachable state: {"id":1,"result":{"value":"{\"blur\":\"high\",\"motion\":\"std\",\"preload\":{\"motion\":\"std\",\"blur\":\"high\"},\"root\":true,\"storeUp\":true,\"settingsLoaded\":true,\"href\":\"/\"}"}}
+FAIL AC-MAT-2 first reachable state :: {"id":1,"result":{"value":"{\"blur\":\"high\",\"motion\":\"std\",\"preload\":{\"motion\":\"std\",\"blur\":\"high\"},\"root\":true,\"storeUp\":true,\"settingsLoaded\":true,\"href\":\"/\"}"}}
+NOTE the settings store had already loaded at that moment; this reading alone is not conclusive about the first frame, the iframe checks below are
+FAIL AC-MAT-2 the preload is the saved pair and theme-init.js runs before the app module :: {"id":1,"result":{"value":"{\"p\":{\"motion\":\"std\",\"blur\":\"high\"},\"order\":[\"theme-init.js\",\"index-Bcr7_eYe.js\"]}"}}
+PASS AC-MAT-2 theme-init.js alone paints the pair onto a clean <html>
+PASS AC-MAT-2 a garbage preload leaves <html> alone
+FAIL AC-MAT-2 the store agrees with the file after the restart :: {"id":1,"result":{"value":false}}
+== S3: AC-MAT-4: the system animation switch is off
+PASS boot
+PASS the media query is on and mirrored into the store
+PASS AC-MAT-4 durations, lift and the field drift behave as animation off
+PASS AC-MAT-4 entrance animations do not run
+PASS AC-MAT-4 the user level is untouched
+PASS settings open
+PASS AC-MAT-4 the note explains it and the choice is still shown and editable
+== S4: AC-MAT-8: really slow frames while scrolling
+PASS boot
+scripts/e2e/ac-m10.sh: line 315: syntax error near unexpected token `'[data-testid=\"overview-grid\"]''
+scripts/e2e/ac-m10.sh: line 315: `wait_match "boot" "document.querySelector('[data-testid=\"overview-grid\"]') !== null" '"value":true' 90'
+== scripts/e2e/ac-m2.sh
+PASS engine ready
+== route and stream
+PASS route preview targets curator
+PASS route line shows ÂèëÁªô Êï¥ÁêÜÂΩíÊ°£
+scripts/e2e/ac-m2.sh: line 105: [: {"id":1,"error":{"code":"failed","message":"mygo: javascript error: Cannot read properties of undefined (reading 'getState')"}}: integer expression expected
+PASS first turn streamed to end
+PASS answer text rendered
+PASS usage receipt shows this turn
+PASS cost is unknown, not zero
+== tool approval
+FAIL approval card appears :: 
+FAIL card names the target file :: 
+FAIL card names the verb :: 
+FAIL file written after allow :: 
+FAIL card removed after the Go frame :: 
+FAIL tool turn finished :: assistants=
+FAIL tool answer rendered :: 
+== history search
+FAIL history rail visible :: 
+FAIL search hits the conversation :: 
+FAIL search hit rendered :: 
+== restart: restore and search survive
+PASS engine ready after restart
+FAIL chat restored after restart :: {"id":1,"result":{"value":false}}
+PASS history rail restored open
+PASS history list survived
+PASS search still hits after restart
+RESULT pass=11 fail=11
+== scripts/e2e/ac-m3.sh
+PASS overview visible
+PASS index ready
+PASS overview recent tile
+PASS overview skills tile has count
+PASS recent list updated
+{"id":1,"result":{"value":true}}
+PASS settings opened
+{"id":1,"result":{"value":true}}
+PASS settings general
+{"id":1,"result":{"value":true}}
+PASS settings model
+{"id":1,"result":{"value":true}}
+PASS settings agents
+{"id":1,"result":{"value":true}}
+PASS settings categories
+{"id":1,"result":{"value":true}}
+PASS settings about
+PASS about shows a version
+{"id":1,"result":{"value":true}}
+PASS general opened
+{"id":1,"result":{"value":true}}
+PASS theme dark applied
+{"id":1,"result":{"value":true}}
+PASS theme light applied
+{"id":1,"result":{"value":true}}
+PASS categories opened
+{"id":1,"result":{"value":true}}
+PASS save bar appears
+{"id":1,"result":{"value":true}}
+PASS save bar cleared
+{"id":1,"result":{"value":true}}
+PASS switch off
+PASS sidebar shows alias
+PASS search settled
+PASS no raws hits while off
+{"id":1,"result":{"value":true}}
+PASS settings reopened
+{"id":1,"result":{"value":true}}
+PASS categories again
+{"id":1,"result":{"value":true}}
+PASS switch on
+PASS search settled again
+PASS raws hits return
+{"id":1,"result":{"value":true}}
+PASS general again
+PASS doc opened for ctrl-s
+{"id":1,"result":{"value":true}}
+PASS agents for ctrl-s
+PASS draft bar
+PASS ctrl-s cleared the bar
+PASS document still dirty
+PASS workbench after ctrl-s
+PASS overview back
+PASS pending tile counts 1
+PASS pending tile warns
+{"id":1,"result":{"value":true}}
+PASS settings for theme
+{"id":1,"result":{"value":true}}
+PASS general for theme
+{"id":1,"result":{"value":true}}
+PASS dark before restart
+PASS restarted overview
+PASS theme persisted
+PASS alias persisted
+FAIL welcome without vault :: 
+FAIL settings without vault :: 
+FAIL no-vault notice :: 
+FAIL no-vault notice copy :: 
+RESULT pass=43 fail=4
+== scripts/e2e/ac-m35.sh
+PASS fresh boot
+PASS AC-ACC-1 store default orange
+PASS AC-ACC-1 html attribute
+PASS AC-ACC-1 tokens and welcome button
+PASS AC-ACC-1 no fault notice
+PASS seeded boot
+PASS doc opened
+PASS tree row selected
+FAIL AC-ACC-2 starts orange :: {"id":1,"result":{"value":false}}
+{"id":1,"result":{"value":true}}
+PASS popover open
+PASS popover swatches
+{"id":1,"result":{"value":true}}
+PASS blue applied at once
+PASS blue stored
+PASS dot label blue
+{"id":1,"result":{"value":true}}
+PASS settings open
+PASS AC-ACC-2 settings row shows blue
+FAIL AC-ACC-2 file stores blue :: null
+FAIL restart with blue :: 
+FAIL AC-ACC-2 blue after restart :: 
+FAIL AC-ACC-2 blue button token after restart :: 
+FAIL doc for contrast :: 
+FAIL tree row for contrast :: 
+contrast eval: retrying once
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+FAIL AC-ACC-3 real-component contrast
+FAIL settings for custom :: 
+FAIL custom hint :: 
+FAIL custom applied :: 
+FAIL AC-ACC-4 store keeps the input value :: 
+FAIL AC-ACC-4 file keeps the input value
+FAIL restart with custom :: 
+FAIL AC-ACC-4 custom after restart :: 
+PASS boot with garbage accent
+PASS AC-ACC-5 falls back to orange
+PASS AC-ACC-5 no fault notice
+PASS settings with garbage accent
+PASS AC-ACC-5 orange checked in settings
+{"id":1,"result":{"value":true}}
+PASS green picked again
+PASS AC-ACC-5 can pick again
+RESULT pass=22 fail=15
+== scripts/e2e/ac-m4.sh
+-- reaping 1 leftover app instance(s) from this repository
+PASS overview
+PASS index
+PASS skills page open
+PASS tools rows
+PASS AC-SKM-2 linked
+FAIL AC-SKM-2 broken :: 
+FAIL AC-SKM-2 copied :: 
+FAIL AC-SKM-2 independent :: 
+FAIL AC-SKM-2 builtin :: 
+FAIL AC-SKM-2 external :: 
+FAIL uninstall dialog :: 
+FAIL external removed :: 
+FAIL AC-SKM-2 link gone
+PASS AC-SKM-2 external target unchanged
+FAIL AC-SKM-1 kiro hidden by default :: 
+FAIL AC-SKM-1 kiro chip after expand :: 
+FAIL AC-SKM-1 kiro skill visible :: 
+FAIL distribute dialog :: 
+FAIL AC-SKM-1 kiro not a target :: 
+grep: /e/WebApp/Mile-Project/Mile-Knowledge-Base-Go/.ac-m4-6mRFhm/home/.claude/skills/vue/SKILL.md: No such file or directory
+FAIL AC-SKM-3 read through link
+FAIL AC-SKM-5 conflict :: 
+FAIL AC-SKM-6 overwrite content
+FAIL AC-SKM-6 uninstall new :: 
+FAIL AC-SKM-6 removed new :: 
+FAIL install view :: 
+FAIL AC-SKM-6 restore :: 
+PASS AC-SKM-6 restore content
+FAIL install dialog closed :: 
+FAIL AC-SKM-7 dialog :: 
+FAIL AC-SKM-7 removed :: 
+FAIL AC-SKM-7 link gone
+PASS AC-SKM-7 kb unchanged
+FAIL AC-SKM-8 dialog :: 
+FAIL AC-SKM-8 removed :: 
+FAIL AC-SKM-8 not removed
+FAIL AC-SKM-8 records :: 
+FAIL AC-SKM-8 restore :: 
+PASS AC-SKM-8 restored
+FAIL AC-SKM-8 records include restore :: 
+FAIL AC-SKM-8 install dialog closed :: 
+grep: /e/WebApp/Mile-Project/Mile-Knowledge-Base-Go/.ac-m4-6mRFhm/vault/skills/ÂàÜÁ±ª/foo/SKILL.md: No such file or directory
+FAIL AC-SKM-9 vault copy
+PASS AC-SKM-9 both tools link
+FAIL AC-SKM-9 backups
+FAIL AC-SKM-9 linked row :: 
+FAIL AC-SKM-10 no uninstall for builtin :: 
+FAIL AC-SKM-10 api rejects :: 
+FAIL no sidebar import entry :: 
+PASS second overview
+PASS index
+PASS skills page open
+AC-SKM-4 items: {"id":1,"result":{"value":"[{\"targetId\":\"claude-code\",\"toolId\":\"claude-code\",\"result\":\"copied\",\"detail\":\"ËÅîÊé•ÂàõÂª∫Â§±Ë¥•ÔºåÂ∑≤ÊîπÁî®Êã∑Ë¥ù\"}]"}}
+PASS AC-SKM-4 reported copy
+PASS AC-SKM-4 copied files
+FAIL AC-SKM-4 sync state :: 
+FAIL AC-SKM-4 redistribute action :: 
+RESULT pass=15 fail=39
+== scripts/e2e/ac-m5.sh
+PASS overview
+PASS index
+PASS skills page open
+PASS install view
+PASS AC-SKM-12 read settled
+AC-SKM-12 read state: {"id":1,"result":{"value":"candidates"}}
+PASS AC-SKM-12 candidates
+PASS AC-SKM-12 both preselected
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-12 installed
+PASS AC-SKM-12 result line
+PASS AC-SKM-12 selected skill written
+PASS AC-SKM-12 unchecked skill skipped
+PASS AC-SKM-12 source record
+PASS AC-SKM-13 read settled
+PASS AC-SKM-13 archive error
+PASS AC-SKM-13 fault text
+PASS AC-SKM-13 offending entry
+PASS AC-SKM-13 vault unchanged
+PASS AC-SKM-13 no stage residue
+Get-Process : ’“≤ªµΩ√˚Œ™°∞Mile Knowledge Base°±µƒΩ¯≥Ã°£«Î—È÷§∏√Ω¯≥Ã√˚≥∆£¨»ª∫Û‘Ÿ¥Œµ˜”√ cmdlet°£
+À˘‘⁄Œª÷√ ––:1 ◊÷∑˚: 2
++ (Get-Process -Name 'Mile Knowledge Base' | Sort-Object StartTime -Des ...
++  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (Mile Knowledge Base:String) [Get-Process], ProcessCommandException
+    + FullyQualifiedErrorId : NoProcessFoundForGivenName,Microsoft.PowerShell.Commands.GetProcessCommand
+ 
+FAIL offline overview :: 
+FAIL index :: 
+FAIL skills page open :: 
+FAIL install view :: 
+FAIL AC-SKM-14 network error :: 
+PASS AC-SKM-14 vault unchanged
+PASS AC-SKM-14 source record unchanged
+PASS AC-SKM-14 no stage residue
+PASS update overview
+PASS index
+PASS skills page open
+PASS scan settles
+PASS check round done
+PASS AC-SKM-15 update pill
+PASS AC-SKM-15 preview
+PASS AC-SKM-15 text row
+PASS AC-SKM-15 binary row
+PASS AC-SKM-15 removed row
+PASS AC-SKM-15 plan card
+PASS AC-SKM-15 plan importFile
+PASS AC-SKM-15 plan trash
+PASS AC-SKM-15 executed
+PASS AC-SKM-15 latest pill
+PASS AC-SKM-15 text updated
+PASS AC-SKM-15 file added
+PASS AC-SKM-15 file removed
+PASS AC-SKM-15 binary updated
+PASS AC-SKM-15 record moved
+PASS AC-SKM-15 recoverable
+PASS AC-SKM-15 transaction has entries
+PASS check round done
+PASS AC-SKM-16 both changed
+PASS AC-SKM-16 no update button
+PASS AC-SKM-16 api refuses
+PASS AC-SKM-16 record unchanged
+PASS AC-SKM-16 no new stage
+RESULT pass=49 fail=5
+WORK kept for diagnosis: /e/WebApp/Mile-Project/Mile-Knowledge-Base-Go/.ac-m5-mfLJRd
+== scripts/e2e/ac-m6.sh
+ABORT: Mile Knowledge Base is already running
+== scripts/e2e/ac-m7.sh
+-- reaping 1 leftover app instance(s) from this repository
+PASS A overview
+PASS index
+PASS skills page open
+{"id":1,"result":{"value":true}}
+PASS A targets view
+{"id":1,"result":{"value":true}}
+PASS A custom form
+{"id":1,"result":{"value":true}}
+PASS A custom picked
+{"id":1,"result":{"value":true}}
+PASS A custom row
+{"id":1,"result":{"value":true}}
+PASS A project form
+{"id":1,"result":{"value":true}}
+PASS A project picked
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS A project row
+{"id":1,"result":{"value":true}}
+PASS A registrations
+PASS A vue card
+PASS distribute dialog
+PASS A link target selected
+PASS A link distributed
+PASS A distribute dialog closed
+PASS distribute dialog
+PASS distributed
+PASS distribute dialog closed
+{"id":1,"result":{"value":true}}
+PASS A install view
+PASS A read settled
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS A tool targets
+{"id":1,"result":{"value":true}}
+PASS A claude target on
+PASS A install result
+A install result: {"id":1,"result":{"value":"pdf ‚Üí Claude CodeÔºöÂ∑≤ÂÆâË£Ö"}}
+PASS A installed
+A manifest: {"version": 1, "count": 4, "items": [{"source": "github", "name": "pdf", "target": {"kind": "builtin", "toolId": "claude-code"}, "mode": null}, {"source": "kb", "name": "vue", "target": {"kind": "builtin", "toolId": "claude-code"}, "mode": "link"}, {"source": "kb", "name": "vue", "target": {"kind": "custom", "name": "Droid"}, "mode": "copy"}, {"source": "kb", "name": "vue", "target": {"kind": "project", "name": "Site", "subdir": ".claude/skills"}, "mode": "copy"}], "raw": "{\n  \"version\": 1,\n  \"updatedAt\": \"2026-11-27T11:06:49Z\",\n  \"items\": [\n    {\n      \"source\": \"github\",\n      \"target\": {\n        \"kind\": \"builtin\",\n        \"toolId\": \"claude-code\"\n      },\n      \"name\": \"pdf\",\n      \"owner\": \"anthropics\",\n      \"repo\": \"skills\",\n      \"ref\": \"main\",\n      \"path\": \"skills/pdf\",\n      \"commit\": \"1111111111111111111111111111111111111111\",\n      \"pathCommit\": \"1111111111111111111111111111111111111111\",\n      \"updatedAt\": \"2026-11-27T11:06:49Z\"\n    },\n    {\n      \"source\": \"kb\",\n      \"target\": {\n        \"kind\": \"builtin\",\n        \"toolId\": \"claude-code\"\n      },\n      \"name\": \"vue\",\n      \"skillPath\": \"skills/«∞∂À/vue\",\n      \"mode\": \"link\",\n      \"updatedAt\": \"2026-11-27T11:06:44Z\"\n    },\n    {\n      \"source\": \"kb\",\n      \"target\": {\n        \"kind\": \"custom\",\n        \"name\": \"Droid\"\n      },\n      \"name\": \"vue\",\n      \"skillPath\": \"skills/«∞∂À/vue\",\n      \"mode\": \"copy\",\n      \"updatedAt\": \"2026-11-27T11:06:46Z\"\n    },\n    {\n      \"source\": \"kb\",\n      \"target\": {\n        \"kind\": \"project\",\n        \"name\": \"Site\",\n        \"subdir\": \".claude/skills\"\n      },\n      \"name\": \"vue\",\n      \"skillPath\": \"skills/«∞∂À/vue\",\n      \"mode\": \"copy\",\n      \"updatedAt\": \"2026-11-27T11:06:46Z\"\n    }\n  ]\n}\n"}
+PASS AC-SKM-20 four manifest items
+PASS AC-SKM-20 project target
+PASS AC-SKM-20 github item
+PASS AC-SKM-20 manifest leaks nothing
+Get-Process : ’“≤ªµΩ√˚Œ™°∞Mile Knowledge Base°±µƒΩ¯≥Ã°£«Î—È÷§∏√Ω¯≥Ã√˚≥∆£¨»ª∫Û‘Ÿ¥Œµ˜”√ cmdlet°£
+À˘‘⁄Œª÷√ ––:1 ◊÷∑˚: 2
++ (Get-Process -Name 'Mile Knowledge Base' | Sort-Object StartTime -Des ...
++  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (Mile Knowledge Base:String) [Get-Process], ProcessCommandException
+    + FullyQualifiedErrorId : NoProcessFoundForGivenName,Microsoft.PowerShell.Commands.GetProcessCommand
+ 
+FAIL B overview :: 
+FAIL index :: 
+FAIL skills page open :: 
+FAIL B targets view :: 
+FAIL B project form :: 
+FAIL B project picked :: 
+FAIL B project row :: 
+FAIL AC-SKM-21 banner :: 
+FAIL restore view :: 
+FAIL AC-SKM-21 groups :: 
+FAIL AC-SKM-21 conflict group :: 
+FAIL AC-SKM-21 skip group :: 
+FAIL AC-SKM-21 selection count :: 
+FAIL AC-SKM-22 conflict stays unchecked :: 
+FAIL AC-SKM-21 result :: 
+FAIL AC-SKM-23 unmatched listed :: 
+FAIL AC-SKM-23 not a failure :: 
+FAIL AC-SKM-21 project copy missing
+FAIL AC-SKM-21 github skill missing
+FAIL AC-SKM-21 log records :: 0 -> 0
+PASS AC-SKM-22 conflict dir untouched
+PASS restore leaves the manifest alone
+FAIL AC-SKM-22 banner one left :: 
+FAIL restore view :: 
+FAIL AC-SKM-22 overwrite result :: 
+FAIL AC-SKM-22 backup noted :: 
+FAIL AC-SKM-22 overwrite content
+FAIL skills page open :: 
+FAIL AC-SKM-24 unreadable banner :: 
+FAIL AC-SKM-24 warn tone :: 
+FAIL restore view :: 
+FAIL AC-SKM-24 restore status :: 
+FAIL AC-SKM-24 confirm :: 
+FAIL AC-SKM-24 rebuilt :: 
+FAIL AC-SKM-24 corrupt copy kept :: 
+FAIL AC-SKM-24 corrupt copy missing
+FAIL AC-SKM-24 manifest not rebuilt
+FAIL AC-SKM-25 pdf row :: 
+FAIL AC-SKM-25 github source pill :: 
+PASS real .claude untouched
+PASS real .agents untouched
+RESULT pass=33 fail=37
+== scripts/e2e/ac-m8.sh
+-- reaping 1 leftover app instance(s) from this repository
+PASS overview
+PASS index ready
+== AC-PAGE-2: switch, subview, Esc, back with focus
+{"id":1,"result":{"value":true}}
+PASS skills page open
+PASS page fills below the title bar
+PASS workbench stays inert under the page
+PASS hidden workbench paints nothing and takes no input
+PASS skills host lets the window colour field through
+PASS update check entry
+{"id":1,"result":{"value":true}}
+PASS manual update check stays usable
+PASS kb cards
+== 1.6.1: the kb view scrolls and list mode keeps one row per skill
+PASS scroll fixtures scanned
+PASS kb content is bounded by the page
+PASS kb content scrolls (grid)
+{"id":1,"result":{"value":true}}
+PASS list mode
+PASS list card is a single row
+PASS list name is not squeezed
+PASS kb content scrolls (list)
+{"id":1,"result":{"value":true}}
+PASS grid mode back
+PASS distribute subview
+PASS first Esc back to the list
+PASS second Esc keeps the page
+{"id":1,"result":{"value":true}}
+PASS workbench back
+PASS focus on the work segment
+PASS no sidebar import entry
+== AC-PAGE-1: stream, draft, doc edits and scroll survive the switch
+PASS stream started
+PASS doc opened
+FAIL skills page visible during the stream :: 
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+FAIL stream stalled (3001 -> )
+FAIL composer draft kept :: 
+FAIL doc stays dirty :: 
+FAIL stream finished after the return :: 
+FAIL long answer rendered :: 
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+FAIL chat scroll  -> 
+== AC-PAGE-3: settings drafts keep the leave guard
+FAIL settings open :: 
+FAIL steering field :: 
+FAIL leave dialog :: 
+FAIL stay keeps settings and the draft :: 
+FAIL leave dialog again :: 
+FAIL skills page after discarding :: 
+== AC-PAGE-5: narrow window keeps the rail and the subviews inside
+FAIL narrow viewport :: 
+FAIL nav collapses to 56px :: 
+FAIL no horizontal scroll :: 
+FAIL kb cards still there :: 
+FAIL distribute subview in the narrow window :: 
+FAIL tool row :: {"id":1,"result":{"value":false}}
+{"id":1,"error":{"code":"failed","message":"mygo: javascript error: missing"}}
+FAIL confirm card complete in the narrow window :: {"id":1,"result":{"value":false}}
+PASS Esc cancels the confirm
+== AC-PAGE-6: reduced motion
+FAIL motion query :: {"id":1,"result":{"value":false}}
+PASS cards visible
+PASS no entrance animation
+PASS field stops drifting
+PASS hover lift disabled by the media rule
+PASS no hover lift now
+== AC-PAGE-4: no vault, tools still usable
+PASS welcome
+{"id":1,"result":{"value":true}}
+PASS skills page without a vault
+PASS kb group explains the empty state
+{"id":1,"result":{"value":true}}
+PASS tool directory works without a vault
+{"id":1,"result":{"value":true}}
+PASS uninstall confirm
+{"id":1,"result":{"value":true}}
+PASS uninstalled without a vault
+RESULT pass=38 fail=21
+== scripts/e2e/ac-m9.sh
+-- reaping 1 leftover app instance(s) from this repository
+PASS overview
+PASS index ready
+PASS skills page open
+PASS scroll fixtures scanned
+PASS other fixtures scanned
+== AC-UX-5: install in a dialog; scroll position and filter survive
+PASS filter narrows the list
+PASS list scrolled to 300 before installing
+PASS install dialog opens
+PASS install is a dialog, not a page
+PASS candidates
+PASS install result in the dialog
+PASS result line
+PASS a finished install can be closed (Esc)
+PASS dialog closed after the result
+FAIL pdf landed in the vault
+PASS filter kept
+PASS scroll position kept (300 -> 300)
+PASS still on the skills page, no full-page install view
+PASS list refreshed with the new skill
+== AC-UX-6: nothing closes the dialog while it installs
+PASS dialog opens again
+PASS candidates again
+AC-UX-6 candidates: [["install-candidate-skills/docx",false,true],["install-candidate-skills/pdf",false,true],["submit-disabled",true,"ÊñáÊ°£"]]
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+KeyError: 'result'
+FAIL busy dialog left early :: 
+FAIL result after the install :: {"id":1,"result":{"value":false}}
+PASS closes once there is a result
+FAIL docx landed in the vault
+PASS docx card
+== AC-UX-7: batch distribute in a dialog
+FAIL card menu :: {"id":1,"result":{"value":false}}
+FAIL batch bar :: {"id":1,"result":{"value":false}}
+FAIL three selected :: {"id":1,"result":{"value":false}}
+FAIL distribute dialog :: {"id":1,"result":{"value":false}}
+FAIL target grid :: {"id":1,"result":{"value":false}}
+FAIL result in the dialog :: {"id":1,"result":{"value":false}}
+FAIL three targets succeeded :: {"id":1,"error":{"code":"failed","message":"mygo: javascript error: Cannot read properties of null (reading 'textContent')"}}
+PASS dialog closed
+PASS batch selection left
+FAIL cards show distributed :: {"id":1,"result":{"value":false}}
+PROBE distributed cards store before the forced scan: {"scanning":false,"cachedAt":"2026-11-27T11:26:54Z","vueDist":0,"kbCount":50,"loading":false,"error":null}
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LHmile\AppData\Local\Programs\Python\Python312\Lib\json\decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting ',' delimiter: line 1 column 157 (char 156)
+PROBE distributed cards store after the forced scan: 
+PROBE distributed cards after a forced scan: False
+FAIL vue is in the tool directory
+FAIL react is in the tool directory
+FAIL mixa is in the tool directory
+== AC-UX-8: overwrite needs a confirmation card
+PASS distribute dialog for go-tips
+PASS preview marks the existing directory
+PASS confirmation card above the dialog
+FAIL card says it backs up first :: {"id":1,"error":{"code":"failed","message":"mygo: javascript error: Cannot read properties of null (reading 'textContent')"}}
+PASS nothing written before the yes
+PASS confirm closed
+PASS overwrite result in the dialog
+FAIL result says it succeeded :: {"id":1,"error":{"code":"failed","message":"mygo: javascript error: Cannot read properties of null (reading 'textContent')"}}
+FAIL target now holds the vault version
+FAIL the old directory was backed up
+PASS overwrite dialog closed
+== AC-UX-1/2/3/4: detail drawer
+PASS drawer ready
+PASS drawer header and path
+PASS source block names the repository
+PASS SKILL.md rendered
+PASS still on the skills page
+PASS list stays scrollable behind the drawer
+PASS drawer switched
+FAIL distribution lists the tool :: {"id":1,"error":{"code":"failed","message":"mygo: javascript error: Cannot read properties of null (reading 'textContent')"}}
+PASS Esc closes the drawer
+PASS focus is back on the second card
+PASS drawer for vue
+PASS workbench shows
+PASS SKILL.md opened
+PASS skills page open
+PASS racer card
+PASS card is still listed while rescans are frozen
+PASS drawer says the file is missing
+PASS missing text and rescan button, no raw error
+FAIL rescan drops the deleted skill from the list :: {"id":1,"result":{"value":false}}
+PASS drawer closed
+== AC-UX-9: nav filter
+PASS filter keeps only matches
+PASS group heads show hits / total
+PASS fewer items while filtering (12 -> 1)
+PASS clearing restores the list
+PASS list restored (12)
+== AC-UX-10: collapse a group, switch tools, keep it across a restart
+PASS knowledge-base group folded
+PASS group head sticks to the top of the list
+FAIL tool view switches while folded :: {"id":1,"result":{"value":false}}
+FAIL setting saved :: {"id":1,"result":{"value":false}}
+FAIL settings.json holds the fold
+== AC-UX-10 (restart) and AC-UX-12: reduced motion
+PASS overview after restart
+PASS skills page open
+PASS nav rendered
+FAIL fold survived the restart :: {"id":1,"result":{"value":false}}
+PASS tools group still open
+FAIL motion query :: {"id":1,"result":{"value":false}}
+FAIL expand again :: {"id":1,"result":{"value":false}}
+FAIL cards after restart :: {"id":1,"result":{"value":false}}
+FAIL drawer opens :: {"id":1,"result":{"value":false}}
+FAIL drawer has no real slide-in :: {"id":1,"error":{"code":"failed","message":"mygo: javascript error: Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."}}
+PASS drawer closed
+PASS install dialog
+FAIL dialog has no real scale-in :: {"id":1,"error":{"code":"failed","message":"mygo: javascript error: Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."}}
+PASS dialog closed
+== AC-UX-11: 744x640
+resize did not take: innerWidth=1427
+FAIL narrow viewport :: {"id":1,"result":{"value":false}}
+width after resize: 1427x894
+FAIL nav is an icon rail :: {"id":1,"result":{"value":false}}
+PASS no horizontal scroll
+width after the fold click: 1427
+PASS folded group still shows its items in the rail
+FAIL drawer fits :: {"id":1,"result":{"value":false}}
+PASS no horizontal scroll with the drawer
+PASS drawer closed
+PASS install dialog fits
+PASS no horizontal scroll with the install dialog
+PASS install dialog closed
+FAIL distribute dialog fits :: {"id":1,"result":{"value":false}}
+PASS no horizontal scroll with the distribute dialog
+PASS distribute dialog closed
+RESULT pass=72 fail=35
+WORK kept for diagnosis: /e/WebApp/Mile-Project/Mile-Knowledge-Base-Go/.ac-m9-6nK8vY
+-- reaping 1 leftover app instance(s) from this repository
+rm: cannot remove '.e2e-local/ac-m10/go-build/0e/0e559adc97fd0458cc53ad0a5e24f648115f3159e9469c43be5beec022ef316c-d/genvault.exe': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/0f': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/17': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/23/23309c3b287f38285997dec7ce384b213f19a8dd6b81bf5546187226fd2af175-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/2c': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/33/335c3ed5a744545c1601bb3e1d6ed95b463a69e7d1ebc39f24d63548961b2d9f-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/34/349e2ffcb85e41eaa1e3ab0d65dad798cd15e183729d0ecce4794b74e5b74c97-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/3b/3b2fd53055ef0a1c4058a3fee465a1e1facc52cd7f8768b32b7d3f5c2ce6ef48-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/3d/3d26b0edafef933654241346ce171f060160adf0a2b650b9ddae1c7b9903f66b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/46': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/48/48874ca74c802d8ad58557fba5e4b5288be2c967f7ce82db0bee2d0494b3ff1a-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/4b/4b717080be053dd10a07abd4c4bec6f33254b796c66bfbfa056deeda8ee615a3-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/4e': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/4f/4f8d3432770abd92589b6c9df0aec290bcb929bb0f2d37330b116c0d98796ee8-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/5a/5aa20c17c6c86a04c7caa53e21a4d2e12366bd066656c4181f0c425130a28043-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/5d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/5e/5e1e7c4bb256ad421cd369951136f3629c2b4731901367734c02b324b570948b-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/6b/6bd210051a5921317aacc60cce733c94cd0ba57dbb406b2363b6bbf8bd127d53-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/7c/7c203d180a72438e5790ba1d0583e156a56d1ee4c807774593d526824442e816-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/7d/7d460266c8899f001c2ddcc64f73a544ec62551c6a8299d3740a2191aca041be-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/81/81c238506f20d8b0460f4262c8cad6bff0378eb1580192fa96b7d4960b81ef43-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/92/923755a76ed85d4133fac1528e30ce75bcb35e2da182e05fdcd681838a6ada3c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/92/928549b77d774fee80d0bd9019e0a54b15828d83b5c0b9d90c6807cce6757d07-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/95/9550a772834b03a9d2697bbb460202af598f4e8894d099c6c2c80922a819d4e9-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/9c/9c59a123fd860217e49e20b8d49e9b826ff6bd88424f3bda954d588b65fa4398-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/a2': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/a3/a3570c1163551ac4f630313ea0ce3b522a9b93ba84326cecec5adfbd86255aec-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/a4/a49b680f90ff27c71b6ba8810ce7f73a7cb5493cde791ee8bcc2fa1cf86cd91d-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/b6/b63b57fdb3382f774d1c1557e04221da85e0fa3612c20124c697d9aa58bdb909-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/be': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/c0/c0b9155ab2fffb61745585ff38b19f63ea75414730329eb9db77004205639c4b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/c2/c2157f6e13cb23411fae422016966bf4fb4687433aeaab0ef86afcb49e81f236-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/c2/c262ee43c6773e66b17adb7b04aa7e30c98c6e58d75a2fdf0f2c5c6de72e97ea-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/d1/d15e04d391e5e628bfdb7cabc7a3d86cd94ce4d9cbec02ced658a4455b69fd4f-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/d4': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/d5/d529456baf430b9100f8d6c3d07da70274fdf71ac13b71b2c78730d8ac1608a4-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/dc/dc7fc6c99b55a47e91b6b5cb88375a351eb46b6183c785adac04546d376a5a79-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/e3/e3e3554f53686364df03d6e8e4186642d411abc75138545bd05989274d7218ed-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/f3': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/f7/f7d38f82340b0b7ab9407691d44a714700cd33696508ba14f8ec3e1d6f8fac3f-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/fd': Permission denied
+rm: cannot remove '.e2e-local/ac-m10/go-build/trim.txt': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/05/05b4a7f332c500eeef8e5994511bf7dbfab411db4d14b06e32b0e2270ae9f5e9-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/0c/0cc2cc22f84064eb02e60792bbfbd7557c9caae9d1cb7509ad6e076657d9f7b8-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/1d/1dae0d0cc06b8bb21320394d4db97561ecbadaa26a37fbc0185961a774dfd1a3-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/2b/2b36a9c1ea6e3e24777b26d679ed29f90dff5cfce92d6f43f7b25ffe13149a53-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/31/31bb45922a98398a7b5acf407905f5f0940da1c2464184d8664eb15bf6e9cdd1-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/34/349e2ffcb85e41eaa1e3ab0d65dad798cd15e183729d0ecce4794b74e5b74c97-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/43/43c4af69dd2bd389aaaaeac1f3b9e24a849a2d0ab7c7f16dfbfad17ddf53d486-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/45/45e1efa8c8147cf033109994dba586213cfc7cadd54cecd17c8491460be0fd67-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/4f/4ff1372535e80305f75e354dd8a0c4e0d17086193bea4c99bee9ff50745d3eba-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/52': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/54/5439796ab509334a8836d840825b65dd301193bc29f9d358852d2e1722343a2b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/55/559706fc28f7e0aca507d12025d64cd1cfdb7cb9bc20291d18fd3fcc653be121-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/69/692402fd715278e47193e445404ae1d0b47bf28c423d6c7f3d8474153f26eb97-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/74/74cb039378c59f8d51d63275a90342dee349c3664bf5d5127c766a8ffe3ea53d-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/7a/7a1c44a11969b2cde317a86d8fd7d7c53d1a5e460fc5c40662561c747e816144-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/82': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/89/89cb22f19f0bd737a1e1603b31f23826dd9878cb321e90e5921838caed3ffb2b-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/8b/8b7a4040b570b5e8e9c674c82a109567cfdf0575e1378f321c072665cd0109d4-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/90/90bdb28d84c8176135a22d814634fad2782c6f48bf27f433b7f56bec3c8dfd1b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/91/912aa433146abab41d873b4c49db0aa2ed8bf388f787cb3e5f2e8c5ab612a0e5-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/98': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/a6/a65917259c3288e8b3ab13d11a92628fcb4117870be365de7b548bbe2ce22617-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/a7/a7130bc1d66776969acb8953eca09c90b4b6648e74fdcd0724a31a5e3aef2f97-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/a7/a747d1336e97d49b6f1246bbb14b1fa7e96f9ca24954b1ea7fdd221c59fba053-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/af/af9024bbbcebdba053308d11c923d9308d2134c9830b93cd39d62e4efb567d30-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/b1/b1fc08fdfd44d7aedaf16857b1e80b787e1301dc01a92699b940a3d3c2746c7b-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/b5': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/b6/b63b57fdb3382f774d1c1557e04221da85e0fa3612c20124c697d9aa58bdb909-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/b9/b9dace46d3ccd3e211908b6ba85191e33a22cc437e25eca57b209f375a3c38f0-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/ba/baa1ad6d265c205547ff016fe9dfd101c3ac7ee1b9b4ae3a23e0d1b71c9d29c2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/c0/c0b9155ab2fffb61745585ff38b19f63ea75414730329eb9db77004205639c4b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/c1/c1939e8525f5d2dbd4737b5ca2f351d04fb401eb9967c94f388b949180dde688-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/c9': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/ca/ca103bc7c6ef744fb475a5c12ce1b9988c2a080dc074d3b8ae3e7c5e189d7141-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/d5/d536f40f866c9dc07def214fa209d8ed612e1cbeb707b47fee4a3d05747aa0ce-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/d5/d53c032574722c9753c8ab999d8c2cf6c74665feb43ae710ab67718b38b623b8-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/e4': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/e5/e5df18c7d595924cde7e2d8dc85ae6e7bb70f748236f9ead40664a7da6b02bce-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/ef/efaee43e42b9b49ae61ac61f2e737b4235757d34b6fbef61556dc4b55de6dde1-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/f1': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/f2': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/f3/f31eb6213f55fba2989aeb164fcc26aeb24861f6579e4cf6e3cdd0b574eb622e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/f5/f5dd9150d25aedc62f0a582e551113bff1a1082d1fba9d5ed75fa122bcc0d5e7-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/f8': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/go-build/fb': Permission denied
+rm: cannot remove '.e2e-local/ac-m2/Mile Knowledge Base/WebView2': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/13/137cdb0df8c66ebc77f6ddb1b50e183c351927432345aeef8f8e1e2d5728dd8a-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/17/1722e39b2eec812fae3b211d6e60f4a433f0d07a5be681d4de36532e00aac03c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/20/203ae9825c75741b02b184fef44058c764eb5694aa1111c1016491f3f832dc79-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/32/324a81998eb22d0a2e7ba4422ed04264c927976de323774b08f14e30e1705b31-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/38': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/39': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/3a/3a2247463477d7161e05902eae24cac571de58aeebaebc346c2861e077ee233c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/3f/3f9b346ef5f7c86270843a7a35df7ac4662ebbf7ae687586ca79a334ffca9528-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/42/42492f32e04e5ccabe7ecef582fd37697d42e419ffec5d65d6ccd8895b444f66-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/49/49ffc6784f4aae7df73bcf0bc3f81c9cff14ed5992bd72172c4ea212e1e6fb97-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/50/5072a98fb09f6208f387d4ffcf1b3e098cf0e9ea8b21661a304cd9465f940136-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/55/5516755736e94cb7b0a7da4c05b4639d5e9000416e2d2dc2738bf876a9b36841-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/55/5567a0da49d85bc8109436198dc7c97fdebd84e0aca6db19e09c48141c2ed90c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/58/5843c0badfe2fe6ec0b4832f5e0b0013a1d22c259f20fa2eef98fd97c9bbc9ac-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/5a/5aa20c17c6c86a04c7caa53e21a4d2e12366bd066656c4181f0c425130a28043-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/60': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/61/612a0b1a6e8209064ba1809f49b51c26afcd0f19f96e426277a737cc4562af35-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/68/686a31ed52da19a34d6d5a74fb6a953241909744dab46d1c6cc1ab22894ff222-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/6a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/70/70f5a5f2434cd330dbb9168dd168c36ee7c8f5aa7c6e31451dbc015c2c000d97-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/75/75ce40f459dee27baac2aa626564bb4da596d59c0e99a84ae8e2bb13c19b4dc2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/7c/7c5738bf4a3aa25aa9e69a4d6c8961717f65bb6ed6901cac1c32444a51829b01-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/7e/7ee19d5c3fb6e95488a3c13fa58a41440024e510e9c3ffb7ebef039a3c688e69-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/87/872af724d853169d4d0ce150f6c5b7e1a2791dbf201da90e994e1e8039bbd445-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/8f/8f75369d2a1260420f76a363042dad8b6b9da1fa930c3d84c08e21b0eb9c215e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/90/901a115bbb89bb5c3042c15bebc8ae38a3ab053486a8bface4a3aff532db432a-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/91/912aa433146abab41d873b4c49db0aa2ed8bf388f787cb3e5f2e8c5ab612a0e5-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/a5/a5d8445a74b65318b15e9fff8094802092b17c5fef764bbf65a716eed574077e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/a9/a933c269fa8b45dd85bc7d2fcb9e0d61947767074122908a91f4d780a5671d67-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/aa/aa4a6b6b579cdd2446d417f49f7fc1efa8ec4e637095344a814ea63905a511f4-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/ae': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/b6/b62b7efdad94ff3aae20d2e6eee47203e9109096c8ea8b74cb8df0710a97052f-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/b7/b76affbef879327ea92b27c9f91ec8b19b3c55eda8ee68051d803aa8fffd4996-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/b8': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/bd/bd913652bbc44dcad0a8494fcf4f3bce07629b23cc1f40885c1ef39aa8e7da06-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/c1/c1116f010fb77d0a499c31a2831ef7678ff13b7cf5ef86f4823d44e16121928c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/c2/c2dfaed94a6d567b66e0c7c3ff4004a711f8d8ee3313ebf471b7dc01bfe3e99e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/c6/c66231060d5d35ceb7acba84f778fdac7288742326a4ebef341f45ec75ff46d6-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/c9/c90f727b3df4d03f1e4cc72163e1ce9d79a10ff77a1ca2b8308ef07120b9920e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/ca/ca103bc7c6ef744fb475a5c12ce1b9988c2a080dc074d3b8ae3e7c5e189d7141-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/cc/cc2dbd356c771e3aef3a670406645d9aa65df0a5690d1331b4044f5e9f66b246-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/d1/d15e04d391e5e628bfdb7cabc7a3d86cd94ce4d9cbec02ced658a4455b69fd4f-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/d7/d79ad48e340b7433a004366dca0e166d23fd2ffdb167c64a7489dbfd7d19dfa4-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/d8/d8a38c13650b860cdc0ce2cc42d762513a6b12b2171a73e702ba25aa0978c56e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/db/db09e63662b9258cb1ba8c52e10bb0e13984d7791e99a7541601c3c77c202408-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/e1/e1485e544fc4e9f25597b5d086036acce927f9970afe7cb95b6af389d4a9c1fa-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/e3': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/e4/e45700e49c439f39acb48181b110054c72f257ed928c7af16606f75e3a3e9cc9-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/e6': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/e8/e85dad11ed41eff5770ab892240d29ed7c75fcd1ede63d31212e56a401dc0f5b-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/f1/f1be29a7566d933c47d8d40ca526df58bca7e619a378b46e1448c513da23a9c8-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/f3': Permission denied
+rm: cannot remove '.e2e-local/ac-m3/go-build/f5/f5f9a14e3af9a3160b94ac106f0cf56e0ffd4bfc548bc605922a5ea84d1e7c1e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/02/025af27fdeb7610a9eabfc102bbd73ff90b8ec5f5ef7882645c01ac26cd16dcb-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/05/05f5e6492430b00f807e4629c6e4a53f3948fc9382f19898d1cc361b3b99ff9b-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/08': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/0c/0ce1b1d60f8a08833d55ed93fc8ee8fb07397702e6958b03f6f4ba7b55cc006d-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/17/178743aa728e2df9b7f23e44c6f7a28a18e337a64f5ff5b88a1440a219fa17cf-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/18': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/19/194bdb542059db90144148ac4f13ad593e05d8e7055cd3842658f721e8b73164-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/21/212b4f272bbcaeb02a688798a9be581597d14b3467324666784eb89d5cdfe29c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/27/27c22540ea5e705f4ca7de0d5f821fd6012d617c6921038a79aff31c3fe4be78-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/28/285a978d88032ef0dc8b9b30cae432127273a838c411ca473e46c94c8b9cb392-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/32/32ded3ee55f2b1961204e2b0a07e3d30f3596bde5e554413a5570b9613df6787-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/3a/3a2247463477d7161e05902eae24cac571de58aeebaebc346c2861e077ee233c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/40': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/43/43c0a4d273b19f4f28585d221c213d50314c1f075797fcde1cdce50b65c351e0-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/44/44598e86caf97bed0ecb8fc613997fbd1b719915c718582cd048a82f48be9e68-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/47/47ca5f743267f9ce20acca61d1cef5a2decb9ca3b17d19f59f01a590b70e8b5c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/52/528b9de30a272f6855f5a688b6e21ce1634e32c75a0960631f5b2790b3753546-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/54/5439796ab509334a8836d840825b65dd301193bc29f9d358852d2e1722343a2b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/55/5567a0da49d85bc8109436198dc7c97fdebd84e0aca6db19e09c48141c2ed90c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/55/559706fc28f7e0aca507d12025d64cd1cfdb7cb9bc20291d18fd3fcc653be121-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/5a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/5b/5bbdfaad09a67a489e1048a0f53c1179020782395f1af7531d567be003d9426a-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/61/618d1945d32d7f0255e6813cec09c88e351f633ee2eb3e3839136106a1f5967c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/69/692402fd715278e47193e445404ae1d0b47bf28c423d6c7f3d8474153f26eb97-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/6d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/86': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/88/88c245a47daff481e503872794cecd30cc9bb40b0ee1b968696fe9071e267afc-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/8a/8a4c6c5462055e929de9b709306191026e8165cab1933676bc28d73567a145b5-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/8b/8b7a4040b570b5e8e9c674c82a109567cfdf0575e1378f321c072665cd0109d4-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/8b/8b861b43e3da4dfe47475c67920ec2f6bc6b08d9943b52a5058217b2d367467b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/8d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/92/928549b77d774fee80d0bd9019e0a54b15828d83b5c0b9d90c6807cce6757d07-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/9f/9fcf3ae2f24fc703395099485a5a61332fbe7fb4174046198ab30d26d70e03fc-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/a1/a1efe1934183d640b088004d56f529208b0759172338f4de880cbc85a9d0e074-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/a6/a65917259c3288e8b3ab13d11a92628fcb4117870be365de7b548bbe2ce22617-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/a9': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/aa': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/ae': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/b4': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/b7': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/c4/c49a46c84079f0bdab8834a0e7f2b947ef0e529460834752852233030e69ee27-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/c9/c90f727b3df4d03f1e4cc72163e1ce9d79a10ff77a1ca2b8308ef07120b9920e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/cb/cb91693fce950b7ec70dbc56eb02ae65e08e65f39ffbc4cbb157286bd9e322a8-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/cf/cf84e9c1cdfd59ce7fbd9d87fe0e5d73bb6a9d33ab787f571085e12e5f13a419-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/d5/d529456baf430b9100f8d6c3d07da70274fdf71ac13b71b2c78730d8ac1608a4-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/d5/d53988f4bdd7d85bb12af0206181fa12d4c86b77d2489d33bd00b22ecc02b264-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/e3/e3c5cfc005a86d23d713e68f6ab95786767028b0cd9a7fac04b8e2a21e371eb1-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/e7/e76981a7a5e658bdfd5c09dfbcdaef8d0c00bb4a22132d6c96e6c9b794124568-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/f3': Permission denied
+rm: cannot remove '.e2e-local/ac-m35/go-build/fb/fbf683cd1314637c28aaf4fb65205d990c459938c32673d6492b0a046c5a2483-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/08/08a70d92b722789f4cf34c1343007339683f4aa3893513a2093f9518976a17f2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/0c/0c304a866e61c1129475c75de461981957239b09aa19a207b1b97ce6e917bd79-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/11/117fa442166bc00b9c891e5eb0821167192001ec018de41841919efc024795bc-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/20': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/21/212b4f272bbcaeb02a688798a9be581597d14b3467324666784eb89d5cdfe29c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/28/2815bc97e48d5bb3c7764f9438e348674f6758929808c5989e55659a1259f36a-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/28/285a978d88032ef0dc8b9b30cae432127273a838c411ca473e46c94c8b9cb392-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/2a/2aac63a68e68f649ed498f4bcb244eee4c513179838d0cb85a4eef62ab2d52ce-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/3a/3a2247463477d7161e05902eae24cac571de58aeebaebc346c2861e077ee233c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/3e/3e89d13b536e676dd0af095ec0451371010cd84cd9c9b9dfe97c78d5f0a3b767-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/3f': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/44/44d463aa712a7cd7bd9068b9c68aa651fe219cfe48335f31b676a23820b8f698-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/57/57c81b10e4a0ae7be1cd33e09a952fd6cd4f9543c5857b5685d85c9409aa20bc-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/5a/5aa20c17c6c86a04c7caa53e21a4d2e12366bd066656c4181f0c425130a28043-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/68/68e8b4aaf254a076edbc5c30d73e5cf46a5e453c11e91f43276ad31fa667e70e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/69/692402fd715278e47193e445404ae1d0b47bf28c423d6c7f3d8474153f26eb97-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/74/74b8cb41a5274b3824a15ae32d62d9226a0993690877306eb6325b3b4e3d6531-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/75/750ef0782c7272ba75f53fa2c8c48a815812218a876697bcaa28f774a4a91f28-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/75/752bc2e24b839556bec6acdac33df516d1cbcc5caf59e23870e59d75c95ea52e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/7c/7c5738bf4a3aa25aa9e69a4d6c8961717f65bb6ed6901cac1c32444a51829b01-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/8b/8b7a4040b570b5e8e9c674c82a109567cfdf0575e1378f321c072665cd0109d4-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/90/90bdb28d84c8176135a22d814634fad2782c6f48bf27f433b7f56bec3c8dfd1b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/99/99c63e990c02f27b6fe836ea3614a09ed162ee97f876a816453824fba9facff9-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/9c/9c59a123fd860217e49e20b8d49e9b826ff6bd88424f3bda954d588b65fa4398-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/a4/a42d6744a83f9a82443ba2094320f6d7d1934de132e96e6f342f4f1ace846fb9-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/a5/a5e809a5e06af3f702617977a6367ff133af14a85b0a2e28062cf95e4e21d007-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/b0': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/b1/b1049a3dd5b75449286f6e724c96ff6462b61e85eaf746c992f19d004895332f-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/ba/ba64dc1097540ebbd1e4a465419ceca49d1cce4e963d53e9824ba1894d7d7348-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/bb/bb9234e806470d6111d214afc58416506709508167299ecd3adb89069d82ae01-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/cb/cb077a1557ebe50a032e70d5f68a8dc385fe3ed0f9b5ce2733103500584b408b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/d2/d29faf3b5e3e9c2ed38e2a5871936ba1f784e2aceb264e737a8cb9cf6ad06b72-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/d5/d5e0a0b678dbf2a855add9aa4319bf3077f4fbfb8d73bb683ffe5c9e81408fff-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/d5/d5f2984c1f9628af6aa92fbf2a36af85f1ecc8cdd97b27f4d90ba05abb3260ad-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/d9/d93352206bc92124f0d9f2ac5dfe24548e892159a5074413a733b962c5432dc9-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/dd/dd97110e7b00ea2b7f7c6e613e34d3b813d10415c8d9b93487180c7e29147fe2-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/ed/ed9c63e9dd021abe851b370d24fcc30aeeea76df8bcbc85f5beee0998da7f604-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/fc/fc1025a2f11544b61e0464d0519b07cc92128396a887a652d327164224f3b557-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/fc/fc40abd0343f9a80c5b3dab549574858d22f9d70262ed2d3a847fdb54e3e303e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/README': Permission denied
+rm: cannot remove '.e2e-local/ac-m4/go-build/trim.txt': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/06/066966c0a73989446e332d163377d987e3c3991a80db2e9445501230a2f9d5f1-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/16/16654fe8a566f83a166366486e0f25e70d4d5a06ea79e558868479d28ea1f055-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/1c/1c08ab99cba0b5d810a80cbe73bfb2e4ef7b67bb440df0b0cd89fb9cefde628c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/28/285a978d88032ef0dc8b9b30cae432127273a838c411ca473e46c94c8b9cb392-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/43/43c0a4d273b19f4f28585d221c213d50314c1f075797fcde1cdce50b65c351e0-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/48/48874ca74c802d8ad58557fba5e4b5288be2c967f7ce82db0bee2d0494b3ff1a-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/58/5843c0badfe2fe6ec0b4832f5e0b0013a1d22c259f20fa2eef98fd97c9bbc9ac-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/60/60b3de9596a08c6a4d53c9dc32a44fd7108c0e83193e32ee34afb8124e954416-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/61/612a0b1a6e8209064ba1809f49b51c26afcd0f19f96e426277a737cc4562af35-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/61/61eeff3c5c1db869688b420b58588d5856258d7bf32707de5885abf917f7e987-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/68/686a31ed52da19a34d6d5a74fb6a953241909744dab46d1c6cc1ab22894ff222-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/68/68e8b4aaf254a076edbc5c30d73e5cf46a5e453c11e91f43276ad31fa667e70e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/6b': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/6c/6cb7dba83f48ba90398e7a6a27646364b4434bb5613af3e84e173bea9894dc5c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/7c/7c6525ba40a4f328344ff6bf3be6a2234d8097cd89ec64da0183f9759fecea7e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/82/82630b504b17f897107ba8c5641a4cea4478f4d842e6cd8a9296ba50373ba76d-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/8f/8f0fe08fbb8eb525f6c89d168981124a9af3722a9e484ab4537bb2b13fab319a-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/a2': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/a4/a42d6744a83f9a82443ba2094320f6d7d1934de132e96e6f342f4f1ace846fb9-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/a7/a7181ce95a1c3d68e8e790da5f45e092fcd0c9ad39ce1742ccfcc786d67939cd-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/ad/ad38f6e2b28ea68354a7072d13501c3861b275a006433ac3ae5602997803feab-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/af/af50c82832ba730cbef87ae614095d1847062828ffa1e700d7c425830be8a8ef-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/b5/b52b1f5a56dd6545b1f7a3f8870cc0239fd8ef3bbb1b166044db8b025ade91fd-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/ba/ba04283aeec0b024da6f41980613a607b0f42cafd70d37b277d415fc2ebc972c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/c2/c2157f6e13cb23411fae422016966bf4fb4687433aeaab0ef86afcb49e81f236-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/c5/c57be060ec648dd4a30517536339520007a04ce752b67b40b55f54a1a7df76b5-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/dc/dc7fc6c99b55a47e91b6b5cb88375a351eb46b6183c785adac04546d376a5a79-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/e5/e5df18c7d595924cde7e2d8dc85ae6e7bb70f748236f9ead40664a7da6b02bce-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/f7/f7d3ffa97d81e6655e83c2af4dcb9f2f8f0c582cb76fa675d82b66dcbd5fe0b3-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/go-build/trim.txt': Permission denied
+rm: cannot remove '.e2e-local/ac-m5/Microsoft/Windows': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/0f': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/12/12ff711668cb5b916347d0a58308dd6e9a1633a63c80dc52292947babf947626-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/13': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/23/23446b7fe0929eafcf3aab1786c53dfb76840f440b877bffe98127556087c416-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/29/29b051b653a394836f379f6d79fca8395d130465de3003fbacf8d3cf9396f976-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/32/324a81998eb22d0a2e7ba4422ed04264c927976de323774b08f14e30e1705b31-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/39/39f0554ea81d2cc5125fb342830938098d284392a38526546fdf7ff032485355-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/3b/3b003cd00c400cd2f57aeead20c935140b495811af63695ca302e825f51cffe8-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/3d/3d26b0edafef933654241346ce171f060160adf0a2b650b9ddae1c7b9903f66b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/4e/4e0331244a33580ee82768704b24cc21332d9110fd28e888902c728829035bd2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/52/52b1e2d25b12aa1b8fb8677cb8574700b2d5bbafb2222e0da473b9192e68b6a2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/57/57c81b10e4a0ae7be1cd33e09a952fd6cd4f9543c5857b5685d85c9409aa20bc-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/68/686a31ed52da19a34d6d5a74fb6a953241909744dab46d1c6cc1ab22894ff222-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/69/692402fd715278e47193e445404ae1d0b47bf28c423d6c7f3d8474153f26eb97-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/6b/6bd724630d89b9b521cdd656a721a685c9b60fb48af039ea2851b408ebda9f0a-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/8f': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/95/95f7c7a4135452f80e2164f75a610347b7096da7f34c8d2685e62daa397ba94b-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/99/99c63e990c02f27b6fe836ea3614a09ed162ee97f876a816453824fba9facff9-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/9e/9e14399bf06da03dba976621f2a5d6331d13903b0c1564a8c69f04a33feb59f5-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/a2/a234ab8b849c3859434841751b23d1a2b45d169d28521a7be1149539ce2b9efb-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/a4/a484ba84ac3e40b6816d5cef21e270aa5f7523bf8985d0293b55dd9b24a1f5a4-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/b1/b1049a3dd5b75449286f6e724c96ff6462b61e85eaf746c992f19d004895332f-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/b2/b2bf8ffa2e09fc90743ea6965eb6f6d4a8343683a9f6c58ddd663f0e83021bc2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/b8/b87b87a3c0f3a97b9674916cccf354697c6e84b01f381ac8584f25383b94f9f5-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/c6/c66231060d5d35ceb7acba84f778fdac7288742326a4ebef341f45ec75ff46d6-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/d0/d0034eeb4d1448112ac11781fe70b9dbe6d3254b3f62c39aede8de86dfb2f53a-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/d0/d01b5369a06668a607a405f1183d9b0f293d77d2c00214cc00645d4843520878-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/e1/e1485e544fc4e9f25597b5d086036acce927f9970afe7cb95b6af389d4a9c1fa-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/eb/eb5c9b545147d98c14eae66940abd05ae7cc980ec3263064f058cd2509a998d6-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/eb/ebe2ed5dd2f3e50bf5d7b55002393ca27ae2ee02f33d936558099912748f3eb4-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/f0/f0ee9d7b8fbb0afac809cb6c46cee7fd3a68befdf643ccdd00533820a8926177-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m6/go-build/fb/fbb9bd00b8b58cdef490d1b04880c8543401d713fdff0cd8778a863965ae79cf-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/06/066966c0a73989446e332d163377d987e3c3991a80db2e9445501230a2f9d5f1-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/16/16654fe8a566f83a166366486e0f25e70d4d5a06ea79e558868479d28ea1f055-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/19/194bdb542059db90144148ac4f13ad593e05d8e7055cd3842658f721e8b73164-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/1c/1ccfd6dbcb8256279594cb367ea234878a53fa5400142f6d56520c5333850bb2-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/20/20f09d91df1cdfe60e92a4b579eba71b67aecb43d012c91b81e135e871d6ef06-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/21/21faa15c5febcadadca5225fffd0292072de38e138bf5fe2ff635cc6450d7c4e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/23/23817130bb20f2cc136224b759e3532c918e5fb181ecd3c321e5375dde0e4413-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/2c': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/31/318b935c1a587ef32b65feecd5d798faf7d42743f7eaea1075cf81a2b808b9d2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/31/31bb45922a98398a7b5acf407905f5f0940da1c2464184d8664eb15bf6e9cdd1-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/32/324d4d1fa07f9bf43249773d80524a58454c9882f87252cc7c0fcd043165dca1-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/32/32ded3ee55f2b1961204e2b0a07e3d30f3596bde5e554413a5570b9613df6787-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/34/34d50ac23191708572d764bd063db6ef1a6f9571179815a6a2221f5f27ce61cd-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/3a/3a2b77cc5d3198ac47fd57db1d0d4d0139d1b74ad47e9ae5fe6b90ef36d3f581-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/3d/3d26b0edafef933654241346ce171f060160adf0a2b650b9ddae1c7b9903f66b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/44/44934dd26e8067e250d7d0c11102a362c440dce6ce7ed5ccbbca1af669213dbe-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/63/63d210abc8f1eb5036fd728aa0c4d2c848e8b4c77118d12f82b439efbb0dfd0c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/69/692402fd715278e47193e445404ae1d0b47bf28c423d6c7f3d8474153f26eb97-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/76/76a113814f7503a07b8ff3caf5f0601f815f0526560ae3884a56a56a21d4f286-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/79': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/7a/7aa9ece855615ba396472db568ea416ec531938811a513cfa542a927f82da1d0-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/7b/7b8b694eeb8efa13e541297aaeff79ccad2a8c6cddc75457cfc387ff912d4b6b-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/7b/7b93f81b8e92cb5740ebc40589238e185a53db853633d02ec1acd8af58d9ebc4-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/95/9580b5cda182c2083312c94e05fe30840226fc56b2032a02bb792956c0ed4186-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/96/9638e288bf8a841f99006c162234c14cc29a473589f48b22aed2ea407e2a0790-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/a3/a3e9f5a53f8bd2b1c5fc12d87ff2216aacf1f2c634e3e4c20a6ba818fb87b793-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/a5/a5e809a5e06af3f702617977a6367ff133af14a85b0a2e28062cf95e4e21d007-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/ae': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/af/af2107d27096c79fa2bfe86730958ca819548046cd61d4f57a280b4a142d5be7-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/b7/b76affbef879327ea92b27c9f91ec8b19b3c55eda8ee68051d803aa8fffd4996-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/b8/b87b87a3c0f3a97b9674916cccf354697c6e84b01f381ac8584f25383b94f9f5-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/c6/c66231060d5d35ceb7acba84f778fdac7288742326a4ebef341f45ec75ff46d6-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/c8/c82f35c311f1a81c59d1fb61454cfdcc053c5dea5bb515e0e57880f301ede46c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/d5/d5f2984c1f9628af6aa92fbf2a36af85f1ecc8cdd97b27f4d90ba05abb3260ad-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/dc/dc7fc6c99b55a47e91b6b5cb88375a351eb46b6183c785adac04546d376a5a79-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/e0/e012d44addf593405b7d554261442c564b19ae77a14efa9e1ffb1c688d652c7e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/e9/e9cc310c11d39ed3be8060d64e1b007a2c0662570b7c5ec123cc83dd41e03722-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/ec/ec8ef5cf1fd74e8b34d499eecba57e65c45ead15695e6e6a011417736256307e-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/f4/f47ffd2880cf80e8d12ef1cc93abd83bf93de2eeae91c5f4ed08611fb93cc0b1-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/fc/fc1025a2f11544b61e0464d0519b07cc92128396a887a652d327164224f3b557-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m7/go-build/README': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/0d/0d8e78a06cffe04777a023c760a9238f77705c1a9c79c0882602aa46fa8cd639-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/3f/3f0c3534776b82e742dacd636f26107ec009601b102774beea2612d5c8c02321-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/48/48dcffd6203ee541a43fb13c5d947b744abd96043f264561e19caefe279967a8-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/54/5472fd03f07fd184aea3b8922f75bcd728621c57f0300fdcf52a763043726434-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/57/57c81b10e4a0ae7be1cd33e09a952fd6cd4f9543c5857b5685d85c9409aa20bc-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/68/68e8b4aaf254a076edbc5c30d73e5cf46a5e453c11e91f43276ad31fa667e70e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/6b/6bd210051a5921317aacc60cce733c94cd0ba57dbb406b2363b6bbf8bd127d53-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/7d/7d460266c8899f001c2ddcc64f73a544ec62551c6a8299d3740a2191aca041be-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/7e/7eeddd607f0321e54940df13fb5b1443c66f7dc731db39efad52363354f68fe8-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/81/81c238506f20d8b0460f4262c8cad6bff0378eb1580192fa96b7d4960b81ef43-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/92/923755a76ed85d4133fac1528e30ce75bcb35e2da182e05fdcd681838a6ada3c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/92/92657d04f7dc6ca1621791a874b071e5d994fe0b259ffbf938512f90f73948e3-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/98/989b774847e76603242cbc71461e8863f5064594c6f3527eecc75c6c3545e9d7-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/a3/a3b10f74a3a08ece084523dc806352cfed9085d99172dc5ce37631fa4872e015-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/a4/a484ba84ac3e40b6816d5cef21e270aa5f7523bf8985d0293b55dd9b24a1f5a4-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/b9/b9d1f5c97110bd01f039b76a7c08458fb6b6f388a65e9f39f9036b911dca4401-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/bb/bb9234e806470d6111d214afc58416506709508167299ecd3adb89069d82ae01-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/c0/c03800a08c0f3bc37d82cdff25b96202c924ccccb418e728fc17436cfde7aa6f-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/c1/c1939e8525f5d2dbd4737b5ca2f351d04fb401eb9967c94f388b949180dde688-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/c5/c507bab36f81d2d8d257c0d5a44a69668e795629d4b548a25ac4e86f418a0db7-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/cb/cb0e3c5817a9e3cc3cb0d994a3f710365bfd1f90929d0ff3a745cca5f7c298e6-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/d0/d0034eeb4d1448112ac11781fe70b9dbe6d3254b3f62c39aede8de86dfb2f53a-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/d5/d529456baf430b9100f8d6c3d07da70274fdf71ac13b71b2c78730d8ac1608a4-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/dd/dd97110e7b00ea2b7f7c6e613e34d3b813d10415c8d9b93487180c7e29147fe2-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/eb/eb5c9b545147d98c14eae66940abd05ae7cc980ec3263064f058cd2509a998d6-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/f0/f0ee9d7b8fbb0afac809cb6c46cee7fd3a68befdf643ccdd00533820a8926177-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m8/go-build/f7': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/02': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/05': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/07/071ea863b17f835f94a62bd0a4f5d0902ef5fe15ef7a13641fd5a1fbbbc33474-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/21/212b4f272bbcaeb02a688798a9be581597d14b3467324666784eb89d5cdfe29c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/28/285a978d88032ef0dc8b9b30cae432127273a838c411ca473e46c94c8b9cb392-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/2b/2b36a9c1ea6e3e24777b26d679ed29f90dff5cfce92d6f43f7b25ffe13149a53-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/2c/2c88e2a95e7a0153aa856b871c1a8cde3ea43076f9232350c6739f12fdbd2ee6-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/32/32ded3ee55f2b1961204e2b0a07e3d30f3596bde5e554413a5570b9613df6787-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/33/335c3ed5a744545c1601bb3e1d6ed95b463a69e7d1ebc39f24d63548961b2d9f-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/41/41e8ae1e9afca2bc9be853daf24f214bd3b88da4a736f41c549aa3722fefb051-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/4c/4c6b9fd640dc7a856d291e1841a359659249f8ee6302395db32535a721706eb3-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/4c/4ca411ddca62c3c8ad95af315063b696eacab13bbdfa0fbbde286baef2a6c982-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/4c/4cd14e29c70e88dfe55586b9e81403461acbdad50e465b54d606acd9ad6895e5-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/4e/4e0331244a33580ee82768704b24cc21332d9110fd28e888902c728829035bd2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/5b/5bbdfaad09a67a489e1048a0f53c1179020782395f1af7531d567be003d9426a-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/61/618d1945d32d7f0255e6813cec09c88e351f633ee2eb3e3839136106a1f5967c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/63/63d210abc8f1eb5036fd728aa0c4d2c848e8b4c77118d12f82b439efbb0dfd0c-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/7d/7d460266c8899f001c2ddcc64f73a544ec62551c6a8299d3740a2191aca041be-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/87/872af724d853169d4d0ce150f6c5b7e1a2791dbf201da90e994e1e8039bbd445-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/87/87e8ac81d9dffddfdc47399eaf752d6664c4522ba158be49c40afbca526a9d72-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/88/88418f51920543e75bfd8c28f107393544c4a97cdd947252d492cba33f8040a7-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/8b/8b7a4040b570b5e8e9c674c82a109567cfdf0575e1378f321c072665cd0109d4-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/8f/8f75369d2a1260420f76a363042dad8b6b9da1fa930c3d84c08e21b0eb9c215e-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/a4/a4f5720298c61d7fa6329157fb5ea9b9609fcb208f8a0def2e758a6a38459c79-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/a5/a5e809a5e06af3f702617977a6367ff133af14a85b0a2e28062cf95e4e21d007-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/b1/b17ad229fcff681d366c32cf2a6fab6612c7e9d9bb39b7e259c414e1766b0391-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/b7/b76affbef879327ea92b27c9f91ec8b19b3c55eda8ee68051d803aa8fffd4996-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/bf/bffc7e37f4520aeb5e9aa8860c7fd4a65dd19a9d0fda0f4f92eff4a6efaa1209-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/c5/c57be060ec648dd4a30517536339520007a04ce752b67b40b55f54a1a7df76b5-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/d3/d33da3a2ddcb154dd009ab61104cf62862423f21f0e55c47c6a1d42db70d66b2-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/d4/d490a3a351a45395bced5ecc7288e47451729bea1f9e66dc38bc66d4572f5e4f-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/d7/d79ad48e340b7433a004366dca0e166d23fd2ffdb167c64a7489dbfd7d19dfa4-a': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/dc/dc2db746c8596f0a31e907ec18b5bc0a59c234b1a4ad4f791c9c900476b7ac1c-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/de/de321ada22f808b4128b76a013da7eda033ceada141bd7e78be88746a13a3ecf-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/e4/e4feb59c82ba6f15b0a5eeea8b691635963356790da60ffe06d4cbca4f69010b-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/eb/eb5c9b545147d98c14eae66940abd05ae7cc980ec3263064f058cd2509a998d6-d': Permission denied
+rm: cannot remove '.e2e-local/ac-m9/go-build/f2/f22c831ff5b82df42230baf1df1fb574ead26f79c9353b5d8634dfca8fa19489-d': Permission denied

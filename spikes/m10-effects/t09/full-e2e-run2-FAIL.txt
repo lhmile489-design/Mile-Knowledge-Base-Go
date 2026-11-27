@@ -1,0 +1,305 @@
+== scripts/e2e/ac-m0.sh
+PASS workbench with vault
+PASS tree has area sections
+PASS expand skills
+PASS skills children visible
+PASS open a document by clicking it
+PASS open 首页.md via tree
+PASS reading mode rendered
+PASS switch to source mode
+PASS source editor visible
+PASS edit in store
+PASS dirty dot appears
+PASS save clears dirty
+PASS file on disk updated
+PASS external change adopted
+PASS csp present in built page
+RESULT pass=15 fail=0
+== scripts/e2e/ac-m1.sh
+PASS index ready
+== search and open
+FAIL search returns hits :: 
+FAIL search hit opens with Enter :: 
+FAIL document opened :: 
+== backlinks
+FAIL backlinks list 富文本样例 :: 
+== create, rename, archive through plan cards
+FAIL create plan card :: 
+FAIL created file exists :: 
+FAIL renamed file exists :: 
+FAIL archive plan card :: 
+FAIL archived file moved :: 
+== audit and restore
+FAIL audit lists the archive :: 
+FAIL restore preview opens :: 
+FAIL restored file back :: 
+scripts/e2e/ac-m1.sh: line 103: /e/WebApp/Mile-Project/Mile-Knowledge-Base-Go/.ac-m1-hRSaVX/app/Mile Knowledge base/audit.jsonl: No such file or directory
+audit lines: 0, documents: 
+== restart: index and audit survive
+PASS index ready after restart
+PASS document count kept
+scripts/e2e/ac-m1.sh: line 113: /e/WebApp/Mile-Project/Mile-Knowledge-Base-Go/.ac-m1-hRSaVX/app/Mile Knowledge base/audit.jsonl: No such file or directory
+FAIL audit survive (0 -> 0)
+RESULT pass=3 fail=13
+== scripts/e2e/ac-m10.sh
+== S1: std/std, light: AC-MAT-1 distribution, AC-MAT-2/3 levels
+PASS boot
+PASS the window is visible, so the material can be measured
+PASS attributes on <html> from the stored pair
+evidence (normal frames while scrolling): {"id":1,"result":{"value":"{\"n\":200,\"median\":8.3,\"p95\":8.4}"}}
+PASS normal scrolling does not degrade the blur
+PASS doc open
+PASS AC-MAT-1 title bar and shells are glass without a filter of their own
+PASS AC-MAT-1 colour field sits behind everything and drifts
+PASS a hidden page removes the colour field entirely
+PASS AC-MAT-1 text-dense regions are opaque sheets
+PASS AC-MAT-1 overview tiles and run parameters are card-tier glass
+PASS AC-MAT-1 an empty chat is not a sheet, so the tiles sit on the glass
+-- search panel
+PASS search open
+PASS AC-MAT-1 search panel is strong glass over an opaque result area
+-- route menu
+PASS route menu open
+PASS AC-MAT-1 menu is strong glass with a 24px blur
+-- plan card and health panel
+PASS plan card open
+PASS AC-MAT-1 plan card is strong glass and its scrim blurs behind it
+PASS health open
+PASS AC-MAT-1 health panel is strong glass over an opaque list
+-- switching levels on the workbench does not replay the entrance
+PASS no entrance animation restarts after a blur switch
+-- AC-MAT-2: the four blur levels through the settings rows
+PASS settings open
+PASS blur off reaches <html>
+PASS AC-MAT-2 blur off: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur off: the choice is checked
+PASS AC-MAT-2 blur off stored: {"blur": "off", "motion": "std"}
+PASS blur low reaches <html>
+PASS AC-MAT-2 blur low: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur low: the choice is checked
+PASS AC-MAT-2 blur low stored: {"blur": "low", "motion": "std"}
+PASS blur std reaches <html>
+PASS AC-MAT-2 blur std: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur std: the choice is checked
+PASS AC-MAT-2 blur std stored: {"blur": "std", "motion": "std"}
+PASS blur high reaches <html>
+PASS AC-MAT-2 blur high: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur high: the choice is checked
+PASS AC-MAT-2 blur high stored: {"blur": "high", "motion": "std"}
+-- AC-MAT-3: the four animation levels
+PASS motion off reaches <html>
+PASS AC-MAT-3 motion off: duration, lift and field drift
+PASS AC-MAT-3 motion off stored: {"blur": "high", "motion": "off"}
+PASS motion low reaches <html>
+PASS AC-MAT-3 motion low: duration, lift and field drift
+PASS AC-MAT-3 motion low stored: {"blur": "high", "motion": "low"}
+PASS motion std reaches <html>
+PASS AC-MAT-3 motion std: duration, lift and field drift
+PASS AC-MAT-3 motion std stored: {"blur": "high", "motion": "std"}
+PASS motion high reaches <html>
+PASS AC-MAT-3 motion high: duration, lift and field drift
+PASS AC-MAT-3 motion high stored: {"blur": "high", "motion": "high"}
+PASS pair saved for the restart: {"blur": "low", "motion": "low"}
+-- AC-MAT-2: blur off on the workbench is the 1.7.0 look
+PASS workbench back
+PASS AC-MAT-2 blur off: shells, tiles and menus are opaque, no filter, no field
+== S2: restart keeps the pair and the first frame is already painted with it
+PASS file before restart: {"blur": "off", "motion": "low"}
+first reachable state: {"id":1,"result":{"value":"{\"blur\":\"off\",\"motion\":\"low\",\"preload\":{\"motion\":\"low\",\"blur\":\"off\"},\"root\":true,\"storeUp\":true,\"settingsLoaded\":true,\"href\":\"/\"}"}}
+PASS AC-MAT-2 first reachable state already has the saved pair
+NOTE the settings store had already loaded at that moment; this reading alone is not conclusive about the first frame, the iframe checks below are
+PASS AC-MAT-2 the preload is the saved pair and theme-init.js runs before the app module
+PASS AC-MAT-2 theme-init.js alone paints the pair onto a clean <html>
+PASS AC-MAT-2 a garbage preload leaves <html> alone
+PASS AC-MAT-2 the store agrees with the file after the restart
+== S3: AC-MAT-4: the system animation switch is off
+PASS boot
+PASS the media query is on and mirrored into the store
+PASS AC-MAT-4 durations, lift and the field drift behave as animation off
+PASS AC-MAT-4 entrance animations do not run
+PASS AC-MAT-4 the user level is untouched
+PASS settings open
+PASS AC-MAT-4 the note explains it and the choice is still shown and editable
+== S4: AC-MAT-8: really slow frames while scrolling
+PASS boot
+PASS AC-MAT-8 the blur switched itself off
+evidence (slow frames while scrolling): {"id":1,"result":{"value":"{\"n\":120,\"median\":58.3,\"p95\":58.4}"}}
+PASS the frames really were slow
+PASS AC-MAT-8 the colour field is gone and the shells are opaque
+PASS AC-MAT-8 the user value is unchanged
+PASS AC-MAT-8 settings.json unchanged: {"blur": "std", "motion": "std"}
+PASS settings open
+PASS AC-MAT-8 the settings page says so and the control stays usable
+PASS AC-MAT-8 choosing another level does not undo the degrade for this run
+-- the degrade is for one run only
+PASS boot again
+PASS AC-MAT-8 a new launch is back to the stored level
+== S5: nothing is judged while the user blur is off
+PASS boot
+PASS no degrade and no note when the user already chose off
+== S6: AC-MAT-1: the welcome page
+PASS welcome
+PASS AC-MAT-1 the colour field shows through the welcome shell
+PASS AC-MAT-1 the welcome card is strong glass
+PASS AC-MAT-1 the title bar is glass here too
+PASS guide open
+PASS AC-MAT-1 the new-vault guide is strong glass over a blurred scrim
+RESULT pass=84 fail=0
+== scripts/e2e/ac-m2.sh
+PASS engine ready
+== route and stream
+PASS route preview targets curator
+PASS route line shows 发给 整理归档
+PASS first turn streamed to end
+PASS answer text rendered
+PASS usage receipt shows this turn
+PASS cost is unknown, not zero
+== tool approval
+PASS approval card appears
+PASS card names the target file
+PASS card names the verb
+PASS file written after allow
+PASS card removed after the Go frame
+PASS tool turn finished
+PASS tool answer rendered
+== history search
+PASS history rail visible
+PASS search hits the conversation
+PASS search hit rendered
+== restart: restore and search survive
+PASS engine ready after restart
+PASS chat restored after restart
+PASS history rail restored open
+PASS history list survived
+PASS search still hits after restart
+RESULT pass=22 fail=0
+== scripts/e2e/ac-m3.sh
+PASS overview visible
+PASS index ready
+PASS overview recent tile
+PASS overview skills tile has count
+PASS recent list updated
+{"id":1,"result":{"value":true}}
+PASS settings opened
+{"id":1,"result":{"value":true}}
+PASS settings general
+{"id":1,"result":{"value":true}}
+PASS settings model
+{"id":1,"result":{"value":true}}
+PASS settings agents
+{"id":1,"result":{"value":true}}
+PASS settings categories
+{"id":1,"result":{"value":true}}
+PASS settings about
+PASS about shows a version
+{"id":1,"result":{"value":true}}
+PASS general opened
+{"id":1,"result":{"value":true}}
+PASS theme dark applied
+{"id":1,"result":{"value":true}}
+PASS theme light applied
+{"id":1,"result":{"value":true}}
+PASS categories opened
+{"id":1,"result":{"value":true}}
+PASS save bar appears
+{"id":1,"result":{"value":true}}
+PASS save bar cleared
+{"id":1,"result":{"value":true}}
+PASS switch off
+PASS sidebar shows alias
+PASS search settled
+PASS no raws hits while off
+{"id":1,"result":{"value":true}}
+PASS settings reopened
+{"id":1,"result":{"value":true}}
+PASS categories again
+{"id":1,"result":{"value":true}}
+PASS switch on
+PASS search settled again
+PASS raws hits return
+{"id":1,"result":{"value":true}}
+PASS general again
+PASS doc opened for ctrl-s
+{"id":1,"result":{"value":true}}
+PASS agents for ctrl-s
+PASS draft bar
+PASS ctrl-s cleared the bar
+PASS document still dirty
+PASS workbench after ctrl-s
+PASS overview back
+PASS pending tile counts 1
+PASS pending tile warns
+{"id":1,"result":{"value":true}}
+PASS settings for theme
+{"id":1,"result":{"value":true}}
+PASS general for theme
+{"id":1,"result":{"value":true}}
+PASS dark before restart
+PASS restarted overview
+PASS theme persisted
+PASS alias persisted
+PASS welcome without vault
+PASS settings without vault
+{"id":1,"result":{"value":true}}
+PASS no-vault notice
+PASS no-vault notice copy
+RESULT pass=47 fail=0
+== scripts/e2e/ac-m35.sh
+PASS fresh boot
+PASS AC-ACC-1 store default orange
+PASS AC-ACC-1 html attribute
+PASS AC-ACC-1 tokens and welcome button
+PASS AC-ACC-1 no fault notice
+PASS seeded boot
+PASS doc opened
+PASS tree row selected
+PASS AC-ACC-2 starts orange
+{"id":1,"result":{"value":true}}
+PASS popover open
+PASS popover swatches
+{"id":1,"result":{"value":true}}
+PASS blue applied at once
+PASS blue stored
+PASS dot label blue
+{"id":1,"result":{"value":true}}
+PASS settings open
+PASS AC-ACC-2 settings row shows blue
+PASS AC-ACC-2 file stores blue
+PASS restart with blue
+PASS AC-ACC-2 blue after restart
+PASS AC-ACC-2 blue button token after restart
+PASS doc for contrast
+PASS tree row for contrast
+contrast samples=72 worst=button:4.51, fill:3.06, text:5.26
+contrast samples=72 worst=button:4.51, fill:3.06, text:5.26
+PASS AC-ACC-3 real-component contrast
+PASS settings for custom
+{"id":1,"result":{"value":true}}
+PASS custom hint
+PASS custom applied
+PASS AC-ACC-4 store keeps the input value
+PASS AC-ACC-4 file keeps the input value
+PASS restart with custom
+PASS AC-ACC-4 custom after restart
+PASS boot with garbage accent
+PASS AC-ACC-5 falls back to orange
+PASS AC-ACC-5 no fault notice
+PASS settings with garbage accent
+PASS AC-ACC-5 orange checked in settings
+{"id":1,"result":{"value":true}}
+PASS green picked again
+PASS AC-ACC-5 can pick again
+RESULT pass=37 fail=0
+== scripts/e2e/ac-m4.sh
+ABORT: Mile Knowledge Base is already running
+== scripts/e2e/ac-m5.sh
+ABORT: Mile Knowledge Base is already running
+== scripts/e2e/ac-m6.sh
+ABORT: Mile Knowledge Base is already running
+== scripts/e2e/ac-m7.sh
+ABORT: 127.0.0.1:18529 is already listening (stale fake GitHub?)
+== scripts/e2e/ac-m8.sh
+ABORT: Mile Knowledge Base is already running
+== scripts/e2e/ac-m9.sh
+ABORT: Mile Knowledge Base is already running
+FULL EXIT 1

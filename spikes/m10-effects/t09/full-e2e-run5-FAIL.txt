@@ -1,0 +1,2 @@
+scripts/test-e2e.sh: line 31: ROOT: unbound variable
+FULL EXIT 1

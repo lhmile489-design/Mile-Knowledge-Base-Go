@@ -1,0 +1,20 @@
+effects=std
+cold_start_typical_ms=806 total_ms=899
+cold_start_big_ms=703 total_ms=831
+typical_reader_ms=-1
+{"id":1,"result":{"value":"{}"}}
+big_flat_load_ms=228
+{"id":1,"result":{"value":"{\"flat\":5000,\"doms\":36}"}}
+{"id":1,"result":{"value":"{\"n\":0,\"max\":0,\"scrollTop\":24000}"}}
+{"id":1,"result":{"value":"{\"n\":0,\"max\":0}"}}
+big_touch_1000_ms=16547
+WORK=E:/WebApp/Mile-Project/.perf-HVEvTK
+cold_start_typical_ms=806 total_ms=899
+cold_start_big_ms=703 total_ms=831
+typical_reader_ms=-1
+{"id":1,"result":{"value":"{}"}}
+big_flat_load_ms=228
+{"id":1,"result":{"value":"{\"flat\":5000,\"doms\":36}"}}
+{"id":1,"result":{"value":"{\"n\":0,\"max\":0,\"scrollTop\":24000}"}}
+{"id":1,"result":{"value":"{\"n\":0,\"max\":0}"}}
+big_touch_1000_ms=16547

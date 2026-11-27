@@ -341,6 +341,12 @@
   animation-play-state: paused;
 }
 
+/* 页面不可见时连图层一起收起来：只暂停动画仍会保留三个 48px 模糊的合成层，
+   最小化 5 分钟的 CPU 门禁（AC-MAT-9）里能测出来（M10 T09）。 */
+[data-field-paused] .background-field {
+  display: none;
+}
+
 [data-blur='off'] .background-field,
 [data-blur-auto='off'] .background-field {
   display: none;

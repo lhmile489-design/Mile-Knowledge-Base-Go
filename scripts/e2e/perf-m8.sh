@@ -8,6 +8,10 @@
 # scroll runs first (round-1 first rasterization of the glass cards), and R is
 # the MEDIAN of the frame gaps sampled during the scored rounds themselves
 # (idle sampling could read 16.7 ms while the window was downclocked).
+# M10 T09 (B-M10-03, 技术设计 21.8): R is now the SMALLER of the idle median
+# and that scrolling median, and p95 must also stay under 33.4 ms absolute.
+# With R taken from the scroll alone, a uniformly downclocked window (30 fps
+# everywhere) scored 1.0 and passed. The contrast is printed below.
 # Boundary of this gate (M9 T09 review): because the warm-up absorbs one-off
 # first rasterization, a regression that re-rasterizes cards on EVERY first
 # pass of each round would no longer trip the gate — warm-up rounds are still
@@ -69,6 +73,21 @@ APPDATA="$(cygpath -w "$APPD")" MYGO_AUTOMATION="tcp:127.0.0.1:$PORT" \
 sleep 7
 APP_PID=$(powershell -NoProfile -Command "(Get-Process -Name 'Mile Knowledge Base' | Sort-Object StartTime -Descending | Select-Object -First 1).Id" | tr -d '\r')
 
+# The scroll metric reads rAF gaps, and a fully occluded WebView2 window
+# stops requesting frames (T09 saw two rounds of 0 frames and then a socket
+# timeout). Bring the window to the front once, like ac-m8's focus checks.
+cat > "$WORK/focus.ps1" <<'PS'
+param([int]$ProcId)
+Add-Type -Namespace Win -Name Fg -MemberDefinition @'
+[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+'@
+$p = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
+if ($p -and $p.MainWindowHandle -ne 0) { [Win.Fg]::SetForegroundWindow($p.MainWindowHandle) | Out-Null }
+try { (New-Object -ComObject WScript.Shell).AppActivate($ProcId) | Out-Null } catch {}
+PS
+powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/focus.ps1")" -ProcId "$APP_PID" >/dev/null 2>&1
+sleep 0.5
+
 python -I - "$PORT" "$(cygpath -w "$WORK/metrics.json")" <<'PY'
 import json, socket, sys, time
 
@@ -106,7 +125,7 @@ js("window.__mkbApp.getState().showPage('skills'); true")
 wait("document.querySelector('[data-testid=\"skills-page\"]') !== null", 60)
 wait("document.querySelectorAll('[data-testid^=\"kb-card-\"]').length >= 200", 120)
 print("cards:", js("document.querySelectorAll('[data-testid^=\"kb-card-\"]').length"))
-print("glass:", js("document.querySelector('[data-testid=\"skills-page\"]').dataset.glass"))
+print("blur/motion:", js("(() => { const d = document.documentElement.dataset; return (d.blur || '?') + '/' + (d.motion || '?'); })()"))
 
 ENTER = """
 (async () => {
@@ -192,11 +211,14 @@ for round_index in range(3):
 if min(round_["range"] for round_ in rounds) <= 0:
     raise SystemExit("FAIL: .kb-content did not scroll (range 0)")
 
-# R is the median frame gap sampled DURING the scored rounds (技术设计 20.7):
-# the idle sample can read 16.7 ms while the window is downclocked.
+# R is the SMALLER of the idle median and the scrolling median (B-M10-03).
+# Before M10 it was the scrolling median alone, which a uniformly downclocked
+# window could satisfy: at 30 fps the ratio is 1.0. Both are printed.
 scored_gaps = sorted(g for round_ in rounds for g in round_["gaps"])
-refresh_scroll = scored_gaps[len(scored_gaps) // 2] if scored_gaps else refresh
-print("refresh_ms (idle):", round(refresh, 2), " refresh_ms (scrolling median):", round(refresh_scroll, 2))
+refresh_scroll_prev = scored_gaps[len(scored_gaps) // 2] if scored_gaps else refresh
+refresh_scroll = min(refresh, refresh_scroll_prev)
+print("refresh_ms (idle):", round(refresh, 2), " refresh_ms (scrolling median):", round(refresh_scroll_prev, 2),
+      " R used (smaller of the two):", round(refresh_scroll, 2))
 
 
 def p95_of(gaps):
@@ -231,12 +253,45 @@ slow_ratio = max(
     len([g for g in round_["gaps"] if g > 2 * refresh_scroll]) / max(1, len(round_["gaps"]))
     for round_ in rounds
 )
+scroll_p95_ms = max(p95_of(round_["gaps"]) for round_ in rounds)
+
+# B-M10-03 negative control: the same measured data under the previous R.
+prev_frames = max(p95_of(round_["gaps"]) / refresh_scroll_prev for round_ in rounds) if refresh_scroll_prev else 0
+prev_slow = max(
+    len([g for g in round_["gaps"] if g > 2 * refresh_scroll_prev]) / max(1, len(round_["gaps"]))
+    for round_ in rounds
+)
+print("B-M10-03 same data: previous R -> scrollP95Frames=%.2f slowFrameRatio=%.4f; new R -> %.2f / %.4f"
+      % (round(prev_frames, 2), prev_slow, scroll_frames, slow_ratio))
+
+# B-M10-03 positive control: the two formulas on synthetic gaps. A uniformly
+# downclocked window (30 fps everywhere, idle also reading 30 fps) passed the
+# previous method and fails the new one; a healthy 120 fps stream passes both;
+# the absolute cap catches a window whose idle sample was downclocked too.
+def synth_metrics(gaps_s, idle_ms):
+    prev_r = sorted(gaps_s)[len(gaps_s) // 2]
+    new_r = min(idle_ms, prev_r)
+    return (p95_of(gaps_s) / prev_r, p95_of(gaps_s) / new_r, p95_of(gaps_s))
+
+for label, gaps_s, idle_ms in (
+    ("healthy 120 fps", [8.3] * 120, 8.3),
+    ("uniform 30 fps", [33.3] * 120, 8.3),
+    ("uniform 45 fps", [22.2] * 120, 8.3),
+    ("downclocked idle, 33.5 ms frames", [33.5] * 120, 33.3),
+):
+    prev_ratio, new_ratio, p95_ms = synth_metrics(gaps_s, idle_ms)
+    # The previous method had no absolute cap; the new one has both rules.
+    prev_ok = prev_ratio <= 1.5
+    new_ok = new_ratio <= 1.5 and p95_ms <= 33.4
+    print("  control %-32s previous %.2f (%s)  new %.2f (%s, p95 %.1f ms)"
+          % (label, prev_ratio, "pass" if prev_ok else "FAIL", new_ratio, "pass" if new_ok else "FAIL", p95_ms))
 
 metrics = {
     "enterP95Ms": round(p95(enter_ms), 1),
     "scrollP95Frames": round(scroll_frames, 2),
     "slowFrameRatio": round(slow_ratio, 4),
     "switchBackMs": round(p95(switch_ms), 1),
+    "scrollP95Ms": round(scroll_p95_ms, 1),
 }
 json.dump(metrics, open(out_path, "w", encoding="utf-8"))
 print("metrics:", json.dumps(metrics))

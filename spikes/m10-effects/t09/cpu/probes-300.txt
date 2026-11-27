@@ -1,0 +1,3 @@
+{"label": "1.7.0 production, 300 s, same day", "seconds": 300.02, "cpuSeconds": 0.812, "cpuPercentOne": 0.271, "processCount": 7, "minimized": true, "window": 300}
+{"label": "current + field hidden when paused, 300 s", "seconds": 300.01, "cpuSeconds": 0.688, "cpuPercentOne": 0.229, "processCount": 7, "minimized": true, "window": 300}
+{"label": "1.7.0 production, 300 s, second sample", "seconds": 300.01, "cpuSeconds": 0.75, "cpuPercentOne": 0.25, "processCount": 7, "minimized": true, "window": 300}

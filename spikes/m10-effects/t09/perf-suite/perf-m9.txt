@@ -1,0 +1,23 @@
+fixtures ok
+cards: 200
+blur/motion: std/std
+drawer_ms: 100.0 108.9 35.0 21.0 22.4 132.4 23.6 21.1 29.1 28.4 29.1 23.2 25.1 25.4 15.4 21.5 21.4 14.7 24.9 23.1 34.1 25.7 21.8 15.0 25.2 20.7 21.4 22.6 24.8 20.3 20.1 23.2 15.0 14.6 21.7 23.2 15.1 21.3 25.5 14.5
+modal_ms: 55.0 39.7 41.7 40.0 41.2 43.2 40.6 40.4 38.8 39.6 39.3 40.5 40.6 42.6 37.3 36.0 38.3 36.2 39.9 38.2
+refresh_ms: 8.3
+scroll without drawer round 1: {'frames': 719, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 16.700000000000728, 'range': 9449}
+scroll without drawer round 2: {'frames': 721, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 8.5, 'range': 9449}
+scroll without drawer round 3: {'frames': 721, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 8.69999999999709, 'range': 9449}
+drawer open: True
+scroll with drawer round 1: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 8.69999999999709, 'range': 9449}
+scroll with drawer round 2: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 17.799999999995634, 'range': 9449}
+scroll with drawer round 3: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 17.849999999998545, 'range': 9449}
+scroll without drawer (warm) round 1: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000008731, 'max': 8.5, 'range': 9449}
+scroll without drawer (warm) round 2: {'frames': 721, 'p50': 8.30000000000291, 'p95': 8.400000000008731, 'max': 8.5, 'range': 9449}
+scroll without drawer (warm) round 3: {'frames': 721, 'p50': 8.30000000000291, 'p95': 8.400000000008731, 'max': 8.69999999999709, 'range': 9449}
+refresh_ms (idle): 8.3  refresh_ms (scrolling median): 8.3
+control (cold, first)  : scrollP95Frames=1.01 slowFrameRatio=0.0014
+control (warm, after)   : scrollP95Frames=1.01 slowFrameRatio=0.0000
+drawer open             : scrollP95Frames=1.01 slowFrameRatio=0.0014
+metrics: {"drawerOpenP95Ms": 100, "modalOpenMs": 43.2, "scrollP95Frames": 1.01, "slowFrameRatio": 0.0014}
+perf-gate ok (m9): 2 metrics within target
+perf-gate ok (m8): 2 metrics within target

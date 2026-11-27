@@ -1,11 +1,26 @@
 #!/usr/bin/env bash
 # T10 performance probe v2.
+# M10 T09: --effects std|high seeds the material tier into the temp settings
+# (AC-MAT-6/7 run this script once per tier).
 set -u
+EFFECTS=std
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --effects) EFFECTS="${2:-}"; shift 2 ;;
+    *) echo "unknown argument: $1 (usage: perf.sh [--effects std|high])"; exit 2 ;;
+  esac
+done
+case "$EFFECTS" in std|high) ;; *) echo "effects must be std or high"; exit 2 ;; esac
+echo "effects=$EFFECTS"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 APP="$ROOT/build/windows-amd64/Mile Knowledge Base.exe"
 WORK=$(mktemp -d "E:/WebApp/Mile-Project/.perf-XXXXXX")
 DRIVE="$WORK/drive.exe"
 (cd "$ROOT/spikes/r4-window/drive" && go build -o "$DRIVE" .) || exit 1
+if tasklist //FI "IMAGENAME eq Mile Knowledge Base.exe" 2>/dev/null | grep -q "Mile Knowledge"; then
+  echo "ABORT: Mile Knowledge Base is already running; close it first (this script stops it by image name)"
+  exit 2
+fi
 OUT="$WORK/result.txt"
 : > "$OUT"
 
@@ -13,11 +28,11 @@ gen() { (cd "$ROOT" && go run ./cmd/genvault -kind "$1" -out "$(cygpath -w "$2")
 
 seed() {
   mkdir -p "$2/Mile Knowledge Base"
-  python -I - "$1" "$2/Mile Knowledge Base" <<'PY'
+  python -I - "$1" "$2/Mile Knowledge Base" "$EFFECTS" <<'PY'
 import hashlib, json, os, sys
-v,out=sys.argv[1],sys.argv[2]
+v,out,effects=sys.argv[1],sys.argv[2],sys.argv[3]
 c=os.path.abspath(v).replace('/',chr(92)).lower(); vid=hashlib.sha256(c.encode()).hexdigest()[:16]
-doc={"version":1,"theme":"light","closeBehavior":"quit","layout":{"sidebarWidth":232,"docWidth":560,"docCollapsed":True,"sidebarCollapsed":False,"agnesControlsCollapsed":False,"agnesHistoryOpen":True,"agnesComposerHeight":96},"recentVaults":[{"id":vid,"root":v,"displayName":os.path.basename(v),"lastOpenedAt":"2026-11-18T09:00:00Z"}],"lastVaultId":vid}
+doc={"version":1,"theme":"light","closeBehavior":"quit","effects":{"motion":"std","blur":effects},"layout":{"sidebarWidth":232,"docWidth":560,"docCollapsed":True,"sidebarCollapsed":False,"agnesControlsCollapsed":False,"agnesHistoryOpen":True,"agnesComposerHeight":96},"recentVaults":[{"id":vid,"root":v,"displayName":os.path.basename(v),"lastOpenedAt":"2026-11-18T09:00:00Z"}],"lastVaultId":vid}
 open(os.path.join(out,"settings.json"),"w",encoding="utf-8").write(json.dumps(doc,ensure_ascii=False,indent=2)+"\n"); print(vid)
 PY
 }

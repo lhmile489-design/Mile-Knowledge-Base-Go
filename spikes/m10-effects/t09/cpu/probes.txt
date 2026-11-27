@@ -1,0 +1,5 @@
+{"label": "e2e build, automation env removed", "seconds": 120.02, "cpuSeconds": 0.406, "cpuPercentOne": 0.338, "processCount": 7, "minimized": true, "window": 120}
+{"label": "production build, current code", "seconds": 120.01, "cpuSeconds": 0.469, "cpuPercentOne": 0.391, "processCount": 7, "minimized": true, "window": 120}
+{"label": "1.7.0 production, same machine today", "seconds": 120.02, "cpuSeconds": 0.312, "cpuPercentOne": 0.26, "processCount": 7, "minimized": true, "window": 120}
+{"label": "production, current code, blur off", "seconds": 120, "cpuSeconds": 0.266, "cpuPercentOne": 0.221, "processCount": 7, "minimized": false, "window": 120}
+{"label": "production, current code, blur std (repeat)", "seconds": 120.01, "cpuSeconds": 0.344, "cpuPercentOne": 0.286, "processCount": 7, "minimized": true, "window": 120}
