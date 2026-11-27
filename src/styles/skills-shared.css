@@ -348,8 +348,8 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   background: color-mix(in srgb, var(--raw-canvas) 40%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(var(--blur-scrim-soft));
+  -webkit-backdrop-filter: blur(var(--blur-scrim-soft));
 }
 
 .skills-subview-body {

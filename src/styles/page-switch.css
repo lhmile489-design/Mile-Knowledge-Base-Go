@@ -1,7 +1,6 @@
 /* 「工作台 / 技能」切换胶囊（M8，UI 稿 11.1 / 11.3）。
-   The 460ms spring and its overshoot mirror the approved prototype
-   (design/r2/skills-page.html) and UI 稿 11.3; the skills-page pilot tokens
-   stay scoped to .skills-page, so the values are literal here. */
+   The slide uses the global motion tokens (effects.css) since M10, so it
+   follows the user's animation level; std matches the approved prototype. */
 .page-switch {
   position: relative;
   display: inline-flex;
@@ -25,8 +24,8 @@
 
 .page-switch-thumb.is-ready {
   transition:
-    transform 460ms cubic-bezier(0.34, 1.36, 0.64, 1),
-    width 460ms cubic-bezier(0.34, 1.36, 0.64, 1);
+    transform var(--dur-slide) var(--ease-spring-soft),
+    width var(--dur-slide) var(--ease-spring-soft);
 }
 
 [data-theme='dark'] .page-switch-thumb {

@@ -1,0 +1,331 @@
+/* R2 全局材质与动效（M10，DESIGN 第 15 节）。
+   档位令牌只在这里定义；其他样式只引用（scripts/check-effect-tokens.mjs）。
+   `std` 的数值等于技能页试点现值（DESIGN 15.2「标准 = 技能页现值」），
+   切换档位由 <html data-blur / data-motion> 驱动，组件不写档位分支。 */
+
+:root {
+  /* 模糊档（std） */
+  --glass-blur: 18px;
+  --glass-sat: 1.5;
+  --glass-blur-strong: 24px;
+  --glass-blur-foot: 22px;
+  --blur-scrim: 8px;
+  --blur-scrim-soft: 6px;
+  --glass-panel: color-mix(in srgb, var(--raw-card) 58%, transparent);
+  --glass-card: color-mix(in srgb, var(--raw-card) 50%, transparent);
+  --glass-card-hover: color-mix(in srgb, var(--raw-card) 66%, transparent);
+  --glass-strong: color-mix(in srgb, var(--raw-card) 78%, transparent);
+  --glass-edge: rgb(255 255 255 / 0.7);
+  --sheet: var(--raw-card);
+  --field-k: 1;
+  /* 色场三团（= 技能页现值 36 / 24 / 16；深色 22 / 20 / 10） */
+  --field-a: color-mix(in srgb, var(--raw-accent) 36%, transparent);
+  --field-b: color-mix(in srgb, var(--info) 24%, transparent);
+  --field-c: color-mix(in srgb, var(--live) 16%, transparent);
+
+  /* 动画档（std） */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring-soft: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --dur-enter: 520ms;
+  --dur-slide: 460ms;
+  --dur-hover: 320ms;
+  --stagger: 38ms;
+  --lift: 3px;
+  --enter-blur: 6px;
+  --enter-y: 14px;
+}
+
+[data-theme='dark'] {
+  --glass-panel: color-mix(in srgb, var(--raw-raised) 54%, transparent);
+  --glass-card: color-mix(in srgb, var(--raw-raised) 46%, transparent);
+  --glass-card-hover: color-mix(in srgb, var(--raw-raised) 62%, transparent);
+  --glass-strong: color-mix(in srgb, var(--raw-raised) 80%, transparent);
+  --glass-edge: rgb(255 255 255 / 0.09);
+  --sheet: var(--raw-panel-editor);
+  --field-a: color-mix(in srgb, var(--raw-accent) 22%, transparent);
+  --field-b: color-mix(in srgb, var(--info) 20%, transparent);
+  --field-c: color-mix(in srgb, var(--live) 10%, transparent);
+}
+
+/* ---------- 模糊档 ---------- */
+
+[data-blur='low'] {
+  --glass-blur: 10px;
+  --glass-sat: 1.25;
+  --glass-blur-strong: 13px;
+  --glass-blur-foot: 12px;
+  --blur-scrim: 4px;
+  --blur-scrim-soft: 3px;
+  --glass-panel: color-mix(in srgb, var(--raw-card) 76%, transparent);
+  --glass-card: color-mix(in srgb, var(--raw-card) 70%, transparent);
+  --glass-card-hover: color-mix(in srgb, var(--raw-card) 82%, transparent);
+  --glass-strong: color-mix(in srgb, var(--raw-card) 86%, transparent);
+  --field-k: 0.6;
+}
+
+[data-theme='dark'][data-blur='low'] {
+  --glass-panel: color-mix(in srgb, var(--raw-raised) 72%, transparent);
+  --glass-card: color-mix(in srgb, var(--raw-raised) 66%, transparent);
+  --glass-card-hover: color-mix(in srgb, var(--raw-raised) 78%, transparent);
+  --glass-strong: color-mix(in srgb, var(--raw-raised) 86%, transparent);
+}
+
+[data-blur='high'] {
+  --glass-blur: 40px;
+  --glass-sat: 2;
+  --glass-blur-strong: 53px;
+  --glass-blur-foot: 49px;
+  --blur-scrim: 18px;
+  --blur-scrim-soft: 13px;
+  --glass-panel: color-mix(in srgb, var(--raw-card) 34%, transparent);
+  --glass-card: color-mix(in srgb, var(--raw-card) 28%, transparent);
+  --glass-card-hover: color-mix(in srgb, var(--raw-card) 44%, transparent);
+  --glass-strong: color-mix(in srgb, var(--raw-card) 70%, transparent);
+  --field-k: 1;
+  /* T00 实测后的候选 E：色块加强，层不透明度仍为 1（DESIGN 15.3） */
+  --field-a: color-mix(in srgb, var(--raw-accent) 60%, transparent);
+  --field-b: color-mix(in srgb, var(--info) 40%, transparent);
+  --field-c: color-mix(in srgb, var(--live) 28%, transparent);
+}
+
+[data-theme='dark'][data-blur='high'] {
+  --glass-panel: color-mix(in srgb, var(--raw-raised) 30%, transparent);
+  --glass-card: color-mix(in srgb, var(--raw-raised) 24%, transparent);
+  --glass-card-hover: color-mix(in srgb, var(--raw-raised) 40%, transparent);
+  --glass-strong: color-mix(in srgb, var(--raw-raised) 68%, transparent);
+  --field-a: color-mix(in srgb, var(--raw-accent) 36%, transparent);
+  --field-b: color-mix(in srgb, var(--info) 32%, transparent);
+  --field-c: color-mix(in srgb, var(--live) 17%, transparent);
+}
+
+[data-blur='off'],
+[data-blur-auto='off'] {
+  --glass-blur: 0px;
+  --glass-sat: 1;
+  --glass-blur-strong: 0px;
+  --glass-blur-foot: 0px;
+  --blur-scrim: 0px;
+  --blur-scrim-soft: 0px;
+  --glass-panel: var(--raw-panel-editor);
+  --glass-card: var(--raw-card);
+  --glass-card-hover: var(--raw-raised);
+  --glass-strong: var(--raw-card);
+  --field-k: 0;
+  --field-a: transparent;
+  --field-b: transparent;
+  --field-c: transparent;
+}
+
+[data-theme='dark'][data-blur='off'],
+[data-theme='dark'][data-blur-auto='off'] {
+  --glass-panel: var(--raw-panel-editor);
+  --glass-card: var(--raw-card);
+  --glass-card-hover: var(--raw-raised);
+  --glass-strong: var(--raw-card);
+}
+
+/* ---------- 动画档 ---------- */
+
+[data-motion='low'] {
+  --ease-spring-soft: var(--ease-out-expo);
+  --dur-enter: 240ms;
+  --dur-slide: 220ms;
+  --dur-hover: 180ms;
+  --stagger: 20ms;
+  --lift: 1px;
+  --enter-blur: 0px;
+  --enter-y: 6px;
+}
+
+[data-motion='high'] {
+  --ease-spring-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-enter: 640ms;
+  --dur-slide: 560ms;
+  --dur-hover: 380ms;
+  --stagger: 46ms;
+  --lift: 4px;
+  --enter-blur: 8px;
+  --enter-y: 18px;
+}
+
+[data-motion='off'] {
+  --dur-enter: 0ms;
+  --dur-slide: 0ms;
+  --dur-hover: 0ms;
+  --stagger: 0ms;
+  --lift: 0px;
+  --enter-blur: 0px;
+  --enter-y: 0px;
+}
+
+/* `off` 下状态直接切换、入场与循环动画停止；进行中转圈表示状态，保留
+   （DESIGN 15.2）。 */
+[data-motion='off'] *:not(.kb-spin):not(.kb-spin *),
+[data-motion='off'] *:not(.kb-spin):not(.kb-spin *)::before,
+[data-motion='off'] *:not(.kb-spin):not(.kb-spin *)::after {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+  animation-iteration-count: 1 !important;
+}
+
+/* 系统关闭动画效果：一律按「关」处理（DESIGN 15.2），用户档位保留。 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-enter: 0ms;
+    --dur-slide: 0ms;
+    --dur-hover: 0ms;
+    --stagger: 0ms;
+    --lift: 0px;
+    --enter-blur: 0px;
+    --enter-y: 0px;
+  }
+
+  *:not(.kb-spin):not(.kb-spin *),
+  *:not(.kb-spin):not(.kb-spin *)::before,
+  *:not(.kb-spin):not(.kb-spin *)::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ---------- 材质工具类（DESIGN 15.1） ---------- */
+
+.glass-panel,
+.glass-card,
+.glass-strong {
+  border: 1px solid color-mix(in srgb, var(--raw-line) 70%, transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  box-shadow: inset 0 1px 0 var(--glass-edge);
+}
+
+.glass-panel {
+  background: var(--glass-panel);
+}
+
+.glass-card {
+  background: var(--glass-card);
+}
+
+.glass-strong {
+  background: var(--glass-strong);
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
+}
+
+.sheet {
+  background: var(--sheet);
+  border: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
+  border-radius: 12px;
+}
+
+[data-blur='off'] .glass-panel,
+[data-blur='off'] .glass-card,
+[data-blur='off'] .glass-strong,
+[data-blur-auto='off'] .glass-panel,
+[data-blur-auto='off'] .glass-card,
+[data-blur-auto='off'] .glass-strong {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+/* ---------- 入场（DESIGN 15.4：同屏最多 24 项错开） ---------- */
+
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, var(--enter-y), 0) scale(0.985);
+  filter: blur(var(--enter-blur));
+  animation: effects-rise var(--dur-enter) var(--ease-out-expo) forwards;
+  animation-delay: calc(var(--i, 0) * var(--stagger) + 80ms);
+}
+
+@keyframes effects-rise {
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+[data-motion='off'] .reveal {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  animation: none;
+}
+
+/* ---------- 窗口级背景色场（DESIGN 15.3；T03 挂到 App 根） ---------- */
+
+.background-field {
+  position: fixed;
+  top: var(--titlebar-h);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--field-k);
+}
+
+.background-field span {
+  position: absolute;
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  filter: blur(48px);
+  will-change: transform;
+}
+
+.background-field span:nth-child(1) {
+  top: -30%;
+  left: 18%;
+  background: radial-gradient(circle, var(--field-a), transparent 68%);
+  animation: field-drift-a 26s ease-in-out infinite alternate;
+}
+
+.background-field span:nth-child(2) {
+  top: 24%;
+  right: -12%;
+  background: radial-gradient(circle, var(--field-b), transparent 68%);
+  animation: field-drift-b 32s ease-in-out infinite alternate;
+}
+
+.background-field span:nth-child(3) {
+  bottom: -36%;
+  left: 2%;
+  background: radial-gradient(circle, var(--field-c), transparent 68%);
+  animation: field-drift-c 28s ease-in-out infinite alternate;
+}
+
+@keyframes field-drift-a {
+  to {
+    transform: translate3d(80px, 60px, 0) scale(1.08);
+  }
+}
+
+@keyframes field-drift-b {
+  to {
+    transform: translate3d(-90px, -40px, 0) scale(0.94);
+  }
+}
+
+@keyframes field-drift-c {
+  to {
+    transform: translate3d(60px, -70px, 0) scale(1.05);
+  }
+}
+
+[data-motion='low'] .background-field span {
+  animation: none;
+}
+
+[data-field-paused] .background-field span {
+  animation-play-state: paused;
+}
+
+[data-blur='off'] .background-field,
+[data-blur-auto='off'] .background-field {
+  display: none;
+}

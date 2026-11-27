@@ -79,7 +79,7 @@
 | 安装依赖 | 安装前端依赖 | `bun install` | 已验证 |
 | 本地启动 | 开发模式 | `bun run dev`（端口 5274，自定义协议 kbimg；AI 功能需先在设置里配置供应商与 key） | 已验证 |
 | 类型检查 | `tsc --noEmit` | `bun run typecheck` | 已验证 |
-| 前端门禁 | 绑定对拍 + 技能令牌检查 + Vitest | `bun run test:web`（依次 `check:bindings`、`check:skill-tokens`、vitest） | 已验证（2026-11-24，M8 T14：Vitest 319 项） |
+| 前端门禁 | 绑定对拍 + 外观令牌检查 + Vitest | `bun run test:web`（依次 `check:bindings`、`check:effect-tokens`、vitest） | 已验证（2026-11-27，M10 T02：Vitest 442 项，令牌检查正反对照） |
 | Go 测试 | 单元测试与静态检查 | `bun run test:go` / `bun run lint:go`；格式另跑 `gofmt -l .` | 已验证（2026-11-24：719 项；vet 与 gofmt 无输出） |
 | 竞态检测 | `go test -race` | `bun run test:go-race` | 未验证（需要 cgo，本机未跑；不在常规门禁内） |
 | 模糊测试 | 路径与渲染（`FuzzValidateRel`、`FuzzRender`） | `bun run test:fuzz`（`scripts/test-fuzz.sh`，每个目标默认 60s，`FUZZ_TIME=3s` 可缩短） | 已验证（2026-11-18：正向通过；故意失败的对照返回非零） |

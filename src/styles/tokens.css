@@ -4394,9 +4394,9 @@ button.overview-tile {
   padding: 6px;
   border: 1px solid var(--raw-line);
   border-radius: var(--radius-card);
-  background: var(--glass, var(--raw-card));
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
+  background: var(--glass-strong, var(--raw-card));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   box-shadow: var(--shadow-float, 0 16px 40px rgb(0 0 0 / 0.18));
 }
 

@@ -1,24 +1,8 @@
 /* R2 技能页（M8）：页面外壳与左侧导航。
-   The pilot tokens below (DESIGN 13.2) live only inside `.skills-page`; the
-   checker in scripts/check-skill-tokens.mjs fails the build if any of them is
-   referenced outside this file or outside a `.skills-page` block. */
+   材质与动效令牌在 M10 提升为全局，定义在 src/styles/effects.css；
+   本文件只引用（scripts/check-effect-tokens.mjs 会拦住重新定义）。 */
 
 .skills-page {
-  --glass-card: color-mix(in srgb, var(--raw-card) 50%, transparent);
-  --glass-card-hover: color-mix(in srgb, var(--raw-card) 66%, transparent);
-  --glass-strong: color-mix(in srgb, var(--raw-card) 78%, transparent);
-  --glass-edge: rgb(255 255 255 / 0.7);
-  --glass-blur: 18px;
-  --field-a: color-mix(in srgb, var(--raw-accent) 36%, transparent);
-  --field-b: color-mix(in srgb, var(--info) 24%, transparent);
-  --field-c: color-mix(in srgb, var(--live) 16%, transparent);
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring-soft: cubic-bezier(0.34, 1.36, 0.64, 1);
-  --dur-enter: 520ms;
-  --dur-slide: 460ms;
-  --dur-hover: 320ms;
-  --stagger: 38ms;
-
   position: relative;
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
@@ -33,16 +17,6 @@
   background: var(--raw-panel-editor);
   overflow: hidden;
   isolation: isolate;
-}
-
-[data-theme='dark'] .skills-page {
-  --glass-card: color-mix(in srgb, var(--raw-raised) 46%, transparent);
-  --glass-card-hover: color-mix(in srgb, var(--raw-raised) 62%, transparent);
-  --glass-strong: color-mix(in srgb, var(--raw-raised) 80%, transparent);
-  --glass-edge: rgb(255 255 255 / 0.09);
-  --field-a: color-mix(in srgb, var(--raw-accent) 22%, transparent);
-  --field-b: color-mix(in srgb, var(--info) 20%, transparent);
-  --field-c: color-mix(in srgb, var(--live) 10%, transparent);
 }
 
 /* ---------- 左侧导航 ---------- */
@@ -1149,8 +1123,8 @@
   display: grid;
   place-items: center;
   background: color-mix(in srgb, var(--raw-canvas) 55%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(var(--blur-scrim-soft));
+  -webkit-backdrop-filter: blur(var(--blur-scrim-soft));
 }
 
 /* ---------- 材质、色场与动效（M8 T08；DESIGN 13.3–13.5） ---------- */
@@ -1225,8 +1199,8 @@
   background: var(--glass-card);
   border-color: color-mix(in srgb, var(--raw-line) 70%, transparent);
   box-shadow: inset 0 1px 0 var(--glass-edge), 0 1px 2px rgb(20 22 28 / 0.04);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
 }
 
 .skills-page .kb-add-card {
@@ -1242,13 +1216,13 @@
   background: var(--glass-strong);
   border-color: color-mix(in srgb, var(--raw-line) 70%, transparent);
   box-shadow: inset 0 1px 0 var(--glass-edge), 0 1px 2px rgb(20 22 28 / 0.04);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
 }
 
 .skills-page .skills-subview-foot {
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
-  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur-foot)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur-foot)) saturate(var(--glass-sat));
 }
 
 /* 卡片入场：每张错开 38ms，最多 24 项。 */
@@ -1323,8 +1297,8 @@
 .skills-page .kb-act {
   transform: translate3d(6px, 0, 0);
   transition:
-    opacity 260ms var(--ease),
-    transform 420ms var(--ease-spring-soft),
+    opacity var(--dur-hover) var(--ease),
+    transform var(--dur-slide) var(--ease-spring-soft),
     background-color 200ms var(--ease);
 }
 
@@ -1544,9 +1518,9 @@
   display: grid;
   place-items: center;
   background: color-mix(in srgb, var(--raw-canvas) 40%, transparent);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  animation: skills-fade 240ms var(--ease-out-expo) both;
+  -webkit-backdrop-filter: blur(var(--blur-scrim));
+  backdrop-filter: blur(var(--blur-scrim));
+  animation: skills-fade var(--dur-enter) var(--ease-out-expo) both;
 }
 
 .skills-page .skills-modal {
@@ -1558,8 +1532,8 @@
   border: 1px solid var(--raw-line-strong);
   border-radius: var(--radius-panel);
   background: var(--glass-strong);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-sat));
   box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
   animation: skills-pop var(--dur-enter) var(--ease-spring-soft) both;
 }
@@ -1746,8 +1720,8 @@
   border: 1px solid var(--raw-line-strong);
   border-radius: 14px;
   background: var(--glass-strong);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-sat));
   box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow-float);
   animation: skills-pop var(--dur-enter) var(--ease-spring-soft) both;
 }
@@ -1857,8 +1831,8 @@
   max-width: calc(100% - 24px);
   border-left: 1px solid color-mix(in srgb, var(--raw-line) 80%, transparent);
   background: var(--glass-strong);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-sat));
   box-shadow: inset 1px 0 0 var(--glass-edge), -18px 0 40px rgb(20 22 28 / 0.1);
   animation: skills-drawer-in var(--dur-slide) var(--ease-out-expo) both;
 }
