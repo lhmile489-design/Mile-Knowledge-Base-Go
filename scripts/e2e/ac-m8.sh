@@ -164,7 +164,11 @@ click '[data-testid="open-skills"]'
 wait_match "skills page open" "document.querySelector('[data-testid=\"skills-page\"]') !== null" '"value":true' 20
 check "page fills below the title bar" "(() => { const r=document.querySelector('[data-testid=\"skills-page\"]').getBoundingClientRect(); return r.top >= 40 && r.width > window.innerWidth - 24; })()" '"value":true'
 check "workbench stays inert under the page" "document.querySelector('[data-testid=\"workbench-host\"]')?.hasAttribute('inert') === true" '"value":true'
-check "page covers the workbench opaquely" "(() => { const host=document.querySelector('[data-testid=\"skills-host\"]'); const hit=document.elementFromPoint(Math.round(window.innerWidth/2), Math.round(window.innerHeight/2)); return getComputedStyle(host).backgroundColor !== 'rgba(0, 0, 0, 0)' && !hit?.closest('[data-testid=\"workbench-host\"]'); })()" '"value":true'
+# M10 T03: the skills host is transparent so the window colour field shows
+# through; the hidden workbench no longer needs an opaque cover because it
+# paints nothing (opacity 0) and takes no pointer input.
+check "hidden workbench paints nothing and takes no input" "(() => { const wb=document.querySelector('[data-testid=\"workbench-host\"]'); const hit=document.elementFromPoint(Math.round(window.innerWidth/2), Math.round(window.innerHeight/2)); const s=getComputedStyle(wb); return s.opacity === '0' && s.pointerEvents === 'none' && !hit?.closest('[data-testid=\"workbench-host\"]'); })()" '"value":true'
+check "skills host lets the window colour field through" "(() => { const host=document.querySelector('[data-testid=\"skills-host\"]'); const field=document.querySelector('[data-testid=\"background-field\"]'); return getComputedStyle(host).backgroundColor === 'rgba(0, 0, 0, 0)' && !!field && getComputedStyle(field).zIndex === '-1' && field.getBoundingClientRect().top >= 40; })()" '"value":true'
 wait_match "update check entry" "!!document.querySelector('[data-testid=\"skills-check-updates\"]')" '"value":true' 20
 click '[data-testid="skills-check-updates"]'
 sleep 0.6
@@ -274,7 +278,7 @@ show_skills
 wait_match "motion query" "matchMedia('(prefers-reduced-motion: reduce)').matches === true" '"value":true' 20
 wait_match "cards visible" "document.querySelector('[data-testid^=\"kb-card-\"]') !== null" '"value":true' 30
 check "no entrance animation" "getComputedStyle(document.querySelector('[data-testid^=\"kb-card-\"]')).animationName === 'none'" '"value":true'
-check "field stops drifting" "getComputedStyle(document.querySelector('.skills-field span')).animationName === 'none'" '"value":true'
+check "field stops drifting" "getComputedStyle(document.querySelector('.background-field span')).animationName === 'none'" '"value":true'
 check "hover lift disabled by the media rule" "[...document.styleSheets].some((sheet) => { try { return [...sheet.cssRules].some((rule) => rule.conditionText?.includes('prefers-reduced-motion') && rule.cssText.includes('.skills-page .kb-card:hover') && rule.cssText.includes('transform: none')); } catch { return false; } })" '"value":true'
 check "no hover lift now" "getComputedStyle(document.querySelector('[data-testid^=\"kb-card-\"]')).transform === 'none'" '"value":true'
 stop_app

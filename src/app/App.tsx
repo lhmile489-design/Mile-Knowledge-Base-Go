@@ -5,7 +5,9 @@ import { WelcomeView } from "../components/WelcomeView";
 import { NoticeStack } from "../components/NoticeStack";
 import { SkillImportWizard } from "../components/SkillImportWizard";
 import { SkillsPage } from "../components/skills/SkillsPage";
+import { BackgroundField } from "../components/BackgroundField";
 import { TitleBar } from "../components/TitleBar";
+import { useEffectsGuard, useSystemReducedMotion } from "../lib/useEffectsGuard";
 import { useAppStore } from "../stores/appStore";
 
 export function App() {
@@ -19,6 +21,9 @@ export function App() {
   useEffect(() => {
     void boot();
   }, [boot]);
+  // M10: one global judgement for the blur, and the system animation preference.
+  useEffectsGuard();
+  useSystemReducedMotion();
 
   if (!booted) {
     return <div className="boot muted">正在启动…</div>;
@@ -42,6 +47,7 @@ export function App() {
   return (
     <>
       <div className="app-shell" style={{ gridTemplateRows: "var(--titlebar-h) minmax(0, 1fr)" }}>
+        <BackgroundField />
         <TitleBar />
         {settingsOpen ? (
           <SettingsPage />

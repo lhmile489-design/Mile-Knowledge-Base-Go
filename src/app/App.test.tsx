@@ -138,3 +138,42 @@ describe("App shell (M8 T01)", () => {
     expect(screen.getByTestId("titlebar-stub")).toBeTruthy();
   });
 });
+
+describe("Global colour field (M10 T03)", () => {
+  it("mounts one field inside the app shell, behind every page", async () => {
+    render(<App />);
+    await screen.findByTestId("workbench-stub");
+    const field = screen.getByTestId("background-field");
+    expect(field.parentElement?.classList.contains("app-shell")).toBe(true);
+    expect(document.querySelectorAll("[data-testid='background-field']")).toHaveLength(1);
+  });
+
+  it("keeps the same single field when the skills page takes over", async () => {
+    render(<App />);
+    await screen.findByTestId("workbench-stub");
+    act(() => useAppStore.getState().showPage("skills"));
+    expect(document.querySelectorAll("[data-testid='background-field']")).toHaveLength(1);
+  });
+
+  it("draws no field once the user turns the blur off", async () => {
+    render(<App />);
+    await screen.findByTestId("workbench-stub");
+    act(() => {
+      const current = useAppStore.getState().settings;
+      if (current) useAppStore.setState({ settings: { ...current, effects: { motion: "std", blur: "off" } } });
+    });
+    expect(screen.queryByTestId("background-field")).toBeNull();
+  });
+
+  it("mirrors the system animation preference into the store", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("prefers-reduced-motion"),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    render(<App />);
+    await screen.findByTestId("workbench-stub");
+    expect(useAppStore.getState().systemReducedMotion).toBe(true);
+  });
+});

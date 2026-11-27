@@ -45,6 +45,9 @@ body {
    (DESIGN.md §4; the legacy Workbench used the same grid). */
 .app-shell {
   position: relative;
+  /* M10: the window colour field sits at z-index -1 inside this stacking
+     context, above the canvas colour and below every page. */
+  isolation: isolate;
   display: grid;
   height: 100%;
   min-width: 0;
@@ -59,10 +62,12 @@ body {
   min-width: 0;
 }
 
-/* Both pages share the content cell. The workbench keeps its full layout and
-   is covered by the opaque skills host instead of being hidden, so scroll
-   offsets and virtual rows survive the trip (M8 T10; display:none and
-   visibility:hidden both reset them). inert keeps it out of the tab order and
+/* Both pages share the content cell. The workbench keeps its full layout while
+   the skills page is up, so scroll offsets and virtual rows survive the trip
+   (M8 T10; display:none and visibility:hidden both reset them). Since M10 the
+   skills host is transparent so the window colour field shows through, which
+   means the hidden workbench must not paint: opacity 0 keeps its layout and
+   scroll state and skips the paint. inert keeps it out of the tab order and
    off the accessibility tree. */
 .app-shell > .page-host {
   grid-row: 2;
@@ -77,12 +82,13 @@ body {
   .page-host[hidden] {
     display: grid !important;
     z-index: 0;
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
 .app-shell > .page-host + .page-host {
   z-index: 1;
-  background: var(--raw-canvas);
 }
 
 .workbench-grid {

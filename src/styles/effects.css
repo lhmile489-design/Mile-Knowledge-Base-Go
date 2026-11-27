@@ -187,6 +187,10 @@
     animation-duration: 0ms !important;
     animation-iteration-count: 1 !important;
   }
+
+  .background-field span {
+    animation: none !important;
+  }
 }
 
 /* ---------- 材质工具类（DESIGN 15.1） ---------- */
@@ -257,13 +261,15 @@
 
 /* ---------- 窗口级背景色场（DESIGN 15.3；T03 挂到 App 根） ---------- */
 
+/* Child of .app-shell (position: relative; isolation: isolate): z-index -1 puts
+   it above the shell's canvas colour and below every page and the title bar. */
 .background-field {
-  position: fixed;
+  position: absolute;
   top: var(--titlebar-h);
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 0;
+  z-index: -1;
   overflow: hidden;
   pointer-events: none;
   opacity: var(--field-k);
@@ -317,7 +323,8 @@
   }
 }
 
-[data-motion='low'] .background-field span {
+[data-motion='low'] .background-field span,
+[data-motion='off'] .background-field span {
   animation: none;
 }
 

@@ -34,12 +34,18 @@ type AppState = {
   skillWizardOpen: boolean;
   /** Bumped when another page asks the panel to open the target manager. */
   targetsRequest: number;
+  /** The blur was switched off for this run after janky scrolling (M10; never persisted). */
+  effectsDegraded: boolean;
+  /** The system "animation effects" preference is off (M10; never persisted). */
+  systemReducedMotion: boolean;
 
   boot: () => Promise<void>;
   refreshVaults: () => Promise<void>;
   setTheme: (mode: ThemeMode) => Promise<void>;
   setAccent: (next: AccentSetting) => Promise<void>;
   setEffects: (patch: Partial<EffectsSetting>) => Promise<void>;
+  setEffectsDegraded: (value: boolean) => void;
+  setSystemReducedMotion: (value: boolean) => void;
   setCloseBehavior: (mode: "ask" | "tray" | "quit") => Promise<void>;
   setLayout: (patch: Partial<AppSettings["layout"]>) => Promise<void>;
   openVault: (id: string) => Promise<void>;
@@ -86,6 +92,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingPage: null,
   skillWizardOpen: false,
   targetsRequest: 0,
+  effectsDegraded: false,
+  systemReducedMotion: false,
   bootError: null,
 
   boot: async () => {
@@ -182,6 +190,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     effectsQueue = next.catch(() => undefined);
     return next;
   },
+
+  setEffectsDegraded: (value) => set({ effectsDegraded: value }),
+
+  setSystemReducedMotion: (value) => set({ systemReducedMotion: value }),
 
   setCloseBehavior: async (mode) => {
     const result = await settingsApi.patch({ closeBehavior: mode });

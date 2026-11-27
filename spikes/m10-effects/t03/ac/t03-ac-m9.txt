@@ -1,0 +1,120 @@
+PASS overview
+PASS index ready
+PASS skills page open
+PASS scroll fixtures scanned
+PASS other fixtures scanned
+== AC-UX-5: install in a dialog; scroll position and filter survive
+PASS filter narrows the list
+PASS list scrolled to 300 before installing
+PASS install dialog opens
+PASS install is a dialog, not a page
+PASS candidates
+PASS install result in the dialog
+PASS result line
+PASS a finished install can be closed (Esc)
+PASS dialog closed after the result
+PASS pdf landed in the vault
+PASS filter kept
+PASS scroll position kept (300 -> 300)
+PASS still on the skills page, no full-page install view
+PASS list refreshed with the new skill
+== AC-UX-6: nothing closes the dialog while it installs
+PASS dialog opens again
+PASS candidates again
+AC-UX-6 candidates: [["install-candidate-skills/docx",true,false],["install-candidate-skills/pdf",false,true],["submit-disabled",false,"文档"]]
+PASS Esc, close and scrim ignored while installing
+PASS result after the install
+PASS closes once there is a result
+PASS docx landed in the vault
+PASS docx card
+== AC-UX-7: batch distribute in a dialog
+PASS card menu
+PASS batch bar
+PASS three selected
+PASS distribute dialog
+PASS target grid
+PASS result in the dialog
+PASS three targets succeeded
+PASS dialog closed
+PASS batch selection left
+PASS cards show distributed
+PASS vue is in the tool directory
+PASS react is in the tool directory
+PASS mixa is in the tool directory
+== AC-UX-8: overwrite needs a confirmation card
+PASS distribute dialog for go-tips
+PASS preview marks the existing directory
+PASS confirmation card above the dialog
+PASS card says it backs up first
+PASS nothing written before the yes
+PASS confirm closed
+PASS overwrite result in the dialog
+PASS result says it succeeded
+PASS target now holds the vault version
+PASS the old directory was backed up
+PASS overwrite dialog closed
+== AC-UX-1/2/3/4: detail drawer
+PASS drawer ready
+PASS drawer header and path
+PASS source block names the repository
+PASS SKILL.md rendered
+PASS still on the skills page
+PASS list stays scrollable behind the drawer
+PASS drawer switched
+PASS distribution lists the tool
+PASS Esc closes the drawer
+PASS focus is back on the second card
+PASS drawer for vue
+PASS workbench shows
+PASS SKILL.md opened
+PASS skills page open
+PASS racer card
+PASS card is still listed while rescans are frozen
+PASS drawer says the file is missing
+PASS missing text and rescan button, no raw error
+PASS rescan drops the deleted skill from the list
+PASS drawer closed
+== AC-UX-9: nav filter
+PASS filter keeps only matches
+PASS group heads show hits / total
+PASS fewer items while filtering (12 -> 1)
+PASS clearing restores the list
+PASS list restored (12)
+== AC-UX-10: collapse a group, switch tools, keep it across a restart
+PASS knowledge-base group folded
+PASS group head sticks to the top of the list
+PASS tool view switches while folded
+PASS setting saved
+PASS settings.json holds the fold
+== AC-UX-10 (restart) and AC-UX-12: reduced motion
+PASS overview after restart
+PASS skills page open
+PASS nav rendered
+PASS fold survived the restart
+PASS tools group still open
+PASS motion query
+PASS expand again
+PASS cards after restart
+PASS drawer opens
+PASS drawer has no real slide-in
+PASS drawer closed
+PASS install dialog
+PASS dialog has no real scale-in
+PASS dialog closed
+== AC-UX-11: 744x640
+PASS narrow viewport
+width after resize: 731x634
+PASS nav is an icon rail
+PASS no horizontal scroll
+width after the fold click: 731
+PASS folded group still shows its items in the rail
+PASS drawer fits
+PASS no horizontal scroll with the drawer
+PASS drawer closed
+PASS install dialog fits
+PASS no horizontal scroll with the install dialog
+PASS install dialog closed
+PASS distribute dialog fits
+PASS no horizontal scroll with the distribute dialog
+PASS distribute dialog closed
+RESULT pass=107 fail=0

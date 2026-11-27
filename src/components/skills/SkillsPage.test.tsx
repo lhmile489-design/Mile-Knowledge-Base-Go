@@ -183,10 +183,14 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
     expect(screen.getByTestId("skills-main").hasAttribute("inert")).toBe(true);
   });
 
-  it("keeps the glass on by default and mounts the colour field", () => {
+  it("leaves the colour field and the degrade decision to the app shell (M10 T03)", () => {
     render(<SkillsPage />);
-    expect(screen.getByTestId("skills-page").getAttribute("data-glass")).toBe("on");
-    expect(document.querySelector(".skills-field")).toBeTruthy();
+    // The page used to draw its own field and judge its own glass; both moved to
+    // the app level (BackgroundField, useEffectsGuard), so the page carries neither.
+    const page = screen.getByTestId("skills-page");
+    expect(page.hasAttribute("data-glass")).toBe(false);
+    expect(page.querySelector(".skills-field")).toBeNull();
+    expect(page.querySelector(".background-field")).toBeNull();
   });
 
   it("offers the manual update check and shows the footer states", async () => {

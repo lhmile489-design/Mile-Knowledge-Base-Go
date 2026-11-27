@@ -12,7 +12,6 @@ import { KbSkillsPage } from "./KbSkillsPage";
 import { RestoreView } from "./RestoreView";
 import { SkillDetailDrawer } from "./SkillDetailDrawer";
 import { SkillsNav, type SkillsSelection } from "./SkillsNav";
-import { useSkillsGlass } from "./useSkillsGlass";
 import { TargetsView } from "./TargetsView";
 import { ToolSkillsPage } from "./ToolSkillsPage";
 import { UpdateView } from "./UpdateView";
@@ -57,7 +56,6 @@ export function SkillsPage() {
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
   const [updateInfo, setUpdateInfo] = useState<SkillUpdateCheckResult | null>(null);
   const shellRef = useRef<HTMLElement | null>(null);
-  const glass = useSkillsGlass(shellRef);
   const pendingPlan = useMutationStore((state) => state.pending);
   const mutationRunning = useMutationStore((state) => state.running);
   const mutationReport = useMutationStore((state) => state.report);
@@ -262,12 +260,7 @@ export function SkillsPage() {
   })();
 
   return (
-    <section className="skills-page" data-glass={glass ? "on" : "off"} data-testid="skills-page" ref={shellRef}>
-      <div className="skills-field" aria-hidden>
-        <span />
-        <span />
-        <span />
-      </div>
+    <section className="skills-page" data-testid="skills-page" ref={shellRef}>
       <SkillsNav
         selection={selection}
         onSelect={(next) => {

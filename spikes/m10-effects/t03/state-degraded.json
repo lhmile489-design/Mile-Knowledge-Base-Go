@@ -1,0 +1,56 @@
+{
+  "attrs": {
+    "theme": "light",
+    "accent": "orange",
+    "motion": "std",
+    "blur": "std",
+    "blurAuto": "off"
+  },
+  "field": {
+    "rect": {
+      "top": 0,
+      "left": 0,
+      "width": 0,
+      "height": 0
+    },
+    "style": {
+      "position": "absolute",
+      "z-index": "-1",
+      "opacity": "0",
+      "display": "none",
+      "pointer-events": "none"
+    },
+    "spanAnim": [
+      "field-drift-a",
+      "field-drift-b",
+      "field-drift-c"
+    ]
+  },
+  "shell": {
+    "isolation": "isolate",
+    "position": "relative"
+  },
+  "skillsHost": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "z-index": "1"
+  },
+  "workbenchHost": {
+    "opacity": "0",
+    "pointer-events": "none",
+    "display": "grid"
+  },
+  "page": {
+    "background-color": "rgb(255, 255, 255)",
+    "backdrop-filter": "none",
+    "box-shadow": "none"
+  },
+  "card": {
+    "background-color": "rgb(255, 255, 255)",
+    "backdrop-filter": "none"
+  },
+  "nav": {
+    "background-color": "color(srgb 0.956863 0.960784 0.968627 / 0.82)",
+    "backdrop-filter": "none"
+  },
+  "centerHit": "kb-card-top"
+}
