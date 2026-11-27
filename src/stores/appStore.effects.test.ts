@@ -4,7 +4,14 @@ import type { AppSettings } from "../lib/transport";
 const patch = vi.fn();
 
 vi.mock("../lib/transport", () => {
-  class TransportError extends Error {}
+  class TransportError extends Error {
+    constructor(
+      readonly code: string,
+      message: string,
+    ) {
+      super(message);
+    }
+  }
   return {
     TransportError,
     settingsApi: { patch: (...args: unknown[]) => patch(...args), get: vi.fn() },
@@ -65,6 +72,15 @@ describe("setEffects", () => {
     expect(document.documentElement.dataset.blur).toBe("std");
     expect(useAppStore.getState().settings?.effects).toEqual({ motion: "std", blur: "std" });
     expect(useAppStore.getState().notices.at(-1)?.text).toBe("外观档位值不合法");
+  });
+
+  it("reverts and reports instead of rejecting when the transport throws", async () => {
+    const { TransportError } = await import("../lib/transport");
+    patch.mockRejectedValue(new TransportError("unavailable", "连接断开"));
+    await expect(useAppStore.getState().setEffects({ motion: "off" })).resolves.toBeUndefined();
+    expect(document.documentElement.dataset.motion).toBe("std");
+    expect(useAppStore.getState().settings?.effects).toEqual({ motion: "std", blur: "std" });
+    expect(useAppStore.getState().notices.at(-1)?.text).toBe("连接断开");
   });
 
   it("serialises two quick changes so the second merges the first", async () => {

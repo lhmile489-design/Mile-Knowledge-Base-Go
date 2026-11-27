@@ -1,0 +1,23 @@
+== default
+html: {"theme":"light","motion":"std","blur":"std","blurAuto":null,"field":true}
+levels: ["关 弱 标准* 强","关 弱 标准* 强"]
+notes: {"motion":null,"blur":null}
+persisted: null
+== click 动画 关
+html: {"theme":"light","motion":"off","blur":"std","blurAuto":null,"field":true}
+levels: ["关* 弱 标准 强","关 弱 标准* 强"]
+persisted: {"motion": "off", "blur": "std"}
+== click 模糊 弱
+html: {"theme":"light","motion":"off","blur":"low","blurAuto":null,"field":true}
+levels: ["关* 弱 标准 强","关 弱* 标准 强"]
+persisted: {"motion": "off", "blur": "low"}
+== click 动画 标准 and 模糊 标准 (back to the default for the shots)
+html: {"theme":"light","motion":"std","blur":"std","blurAuto":null,"field":true}
+persisted: {"motion": "std", "blur": "std"}
+== notes visible
+notes: {"motion":"系统已关闭动画效果，当前按「关」显示","blur":"当前设备滚动掉帧，已自动关闭模糊（本次运行）"}
+levels: ["关 弱 标准* 强","关 弱 标准* 强"]
+== dark
+== blur off removes the field
+html: {"theme":"light","motion":"std","blur":"off","blurAuto":null,"field":false}
+persisted: {"motion": "std", "blur": "off"}

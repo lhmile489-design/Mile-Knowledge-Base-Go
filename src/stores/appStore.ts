@@ -178,13 +178,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       const previous = current.effects;
       const next = { ...previous, ...patch };
       applyEffectsTo(document.documentElement, next);
-      const result = await settingsApi.patch({ effects: next });
-      if (result.failure || !result.settings) {
+      try {
+        const result = await settingsApi.patch({ effects: next });
+        if (result.failure || !result.settings) {
+          applyEffectsTo(document.documentElement, previous);
+          get().pushNotice(result.failure?.message ?? "外观档位保存失败", "fault");
+          return;
+        }
+        set({ settings: result.settings });
+      } catch (error) {
         applyEffectsTo(document.documentElement, previous);
-        get().pushNotice(result.failure?.message ?? "外观档位保存失败", "fault");
-        return;
+        get().pushNotice(error instanceof TransportError ? error.message : String(error), "fault");
       }
-      set({ settings: result.settings });
     };
     const next = effectsQueue.then(run, run);
     effectsQueue = next.catch(() => undefined);

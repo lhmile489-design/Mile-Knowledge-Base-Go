@@ -1,0 +1,45 @@
+PASS fresh boot
+PASS AC-ACC-1 store default orange
+PASS AC-ACC-1 html attribute
+PASS AC-ACC-1 tokens and welcome button
+PASS AC-ACC-1 no fault notice
+PASS seeded boot
+PASS doc opened
+PASS tree row selected
+PASS AC-ACC-2 starts orange
+{"id":1,"result":{"value":true}}
+PASS popover open
+PASS popover swatches
+{"id":1,"result":{"value":true}}
+PASS blue applied at once
+PASS blue stored
+PASS dot label blue
+{"id":1,"result":{"value":true}}
+PASS settings open
+PASS AC-ACC-2 settings row shows blue
+PASS AC-ACC-2 file stores blue
+PASS restart with blue
+PASS AC-ACC-2 blue after restart
+PASS AC-ACC-2 blue button token after restart
+PASS doc for contrast
+PASS tree row for contrast
+contrast samples=72 worst=button:4.51, fill:3.06, text:5.26
+contrast samples=72 worst=button:4.51, fill:3.06, text:5.26
+PASS AC-ACC-3 real-component contrast
+PASS settings for custom
+{"id":1,"result":{"value":true}}
+PASS custom hint
+PASS custom applied
+PASS AC-ACC-4 store keeps the input value
+PASS AC-ACC-4 file keeps the input value
+PASS restart with custom
+PASS AC-ACC-4 custom after restart
+PASS boot with garbage accent
+PASS AC-ACC-5 falls back to orange
+PASS AC-ACC-5 no fault notice
+PASS settings with garbage accent
+PASS AC-ACC-5 orange checked in settings
+{"id":1,"result":{"value":true}}
+PASS green picked again
+PASS AC-ACC-5 can pick again
+RESULT pass=37 fail=0

@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Check, X } from "@phosphor-icons/react";
+import { EFFECT_LEVELS, isEffectLevel, type EffectLevel } from "../../lib/effects";
 import { nextOption } from "../../lib/radioGroup";
 import { useResolvedTheme } from "../../lib/useResolvedTheme";
 import { useAppStore, type ThemeMode } from "../../stores/appStore";
@@ -18,6 +19,78 @@ const CLOSE_HINT: Record<CloseBehavior, string> = {
   tray: "关窗只隐藏窗口，应用继续在后台运行，点托盘图标回来",
   quit: "关窗即结束进程",
 };
+
+const LEVEL_LABEL: Record<EffectLevel, string> = { off: "关", low: "弱", std: "标准", high: "强" };
+
+type EffectKind = "motion" | "blur";
+
+/** One 动画 / 模糊 row: a four-level segmented control that applies at once
+ * (M10 T04). The control is never disabled by a note: a system switch-off or an
+ * automatic blur degrade only explains what is on screen, the stored choice
+ * stays editable. */
+function EffectLevelRow({
+  kind,
+  label,
+  help,
+  note,
+}: {
+  readonly kind: EffectKind;
+  readonly label: string;
+  readonly help: string;
+  readonly note: { readonly text: string; readonly tone: "info" | "warn" } | null;
+}) {
+  const stored = useAppStore((state) => state.settings?.effects?.[kind]);
+  const setEffects = useAppStore((state) => state.setEffects);
+  const level: EffectLevel = isEffectLevel(stored) ? stored : "std";
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const helpId = `effects-${kind}-help`;
+
+  const choose = (next: EffectLevel): void => {
+    if (next === level) return;
+    void setEffects({ [kind]: next });
+  };
+  const move = (event: React.KeyboardEvent): void => {
+    const next = nextOption(EFFECT_LEVELS, level, event.key);
+    if (!next) return;
+    event.preventDefault();
+    choose(next);
+    refs.current[next]?.focus();
+  };
+
+  return (
+    <SettingRow
+      label={label}
+      help={help}
+      helpId={helpId}
+      note={note ? { ...note, testid: `effects-${kind}-note` } : null}
+      testid={`effects-${kind}`}
+      control={
+        <div className="segmented" role="radiogroup" aria-label={label} aria-describedby={helpId} onKeyDown={move}>
+          {EFFECT_LEVELS.map((option) => {
+            const checked = option === level;
+            return (
+              <button
+                key={option}
+                ref={(node) => {
+                  refs.current[option] = node;
+                }}
+                type="button"
+                role="radio"
+                aria-checked={checked}
+                tabIndex={checked ? 0 : -1}
+                className="segmented-item"
+                onClick={() => choose(option)}
+                data-testid={`effects-${kind}-${option}`}
+              >
+                {LEVEL_LABEL[option]}
+              </button>
+            );
+          })}
+        </div>
+      }
+    />
+  );
+}
 
 /** A miniature of the app: canvas, sidebar and a page, coloured by its own theme. */
 function ThemeThumb({ mode }: { readonly mode: ThemeMode }) {
@@ -64,6 +137,8 @@ export function GeneralSection({ onClose }: { readonly onClose: () => void }) {
   const theme = asTheme(settings?.theme);
   const closeBehavior = asClose(settings?.closeBehavior);
   const resolved = useResolvedTheme(theme);
+  const systemReducedMotion = useAppStore((state) => state.systemReducedMotion);
+  const effectsDegraded = useAppStore((state) => state.effectsDegraded);
   const themeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const closeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const sidebar = settings?.layout?.sidebarWidth ?? 232;
@@ -101,7 +176,7 @@ export function GeneralSection({ onClose }: { readonly onClose: () => void }) {
 
       <div className="settings-body scroll-y">
         <div className="settings-stack">
-          <SettingGroup title="外观" description="跟随系统时，系统切换深浅会立即跟着变">
+          <SettingGroup title="外观" description="跟随系统时，系统切换深浅会立即跟着变；动画与模糊改完立即生效，所有页面一起变">
             <SettingRow label="主题" help="改完立即生效，标题栏的切换与这里是同一份设置" stacked>
               <div className="theme-tiles" role="radiogroup" aria-label="主题" onKeyDown={moveTheme}>
                 {THEME_MODES.map((mode) => {
@@ -139,6 +214,22 @@ export function GeneralSection({ onClose }: { readonly onClose: () => void }) {
               label="主题色"
               help="按钮、选中态、链接与焦点环都跟着变；与标题栏的色点是同一份设置"
               control={<AccentOptions variant="inline" testIdPrefix="settings-accent" />}
+            />
+            <EffectLevelRow
+              kind="motion"
+              label="动画"
+              help="面板、卡片、浮层的过渡与入场；「关」时状态直接切换"
+              note={
+                systemReducedMotion ? { text: "系统已关闭动画效果，当前按「关」显示", tone: "info" } : null
+              }
+            />
+            <EffectLevelRow
+              kind="blur"
+              label="模糊"
+              help="面板与浮层的毛玻璃和背景色场；「关」时全部不透明"
+              note={
+                effectsDegraded ? { text: "当前设备滚动掉帧，已自动关闭模糊（本次运行）", tone: "warn" } : null
+              }
             />
           </SettingGroup>
 

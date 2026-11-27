@@ -26,11 +26,13 @@ export function SettingGroup({
   );
 }
 
-/** One row: label + help on the left, the control on the right (or stacked). */
+/** One row: label + help on the left, the control on the right (or stacked).
+ * `note` is a status pill under the help text (M10 T04). */
 export function SettingRow({
   label,
   help,
   helpId,
+  note,
   stacked,
   control,
   testid,
@@ -39,6 +41,7 @@ export function SettingRow({
   readonly label: string;
   readonly help?: string;
   readonly helpId?: string;
+  readonly note?: { readonly text: string; readonly tone: "info" | "warn"; readonly testid: string } | null;
   readonly stacked?: boolean;
   readonly control?: ReactNode;
   readonly testid?: string;
@@ -52,6 +55,11 @@ export function SettingRow({
           <div className="setting-row-help" id={helpId}>
             {help}
           </div>
+        ) : null}
+        {note ? (
+          <span className="pill setting-row-note" data-tone={note.tone} role="status" data-testid={note.testid}>
+            {note.text}
+          </span>
         ) : null}
       </div>
       {stacked ? children : <div className="setting-row-control">{control}</div>}
