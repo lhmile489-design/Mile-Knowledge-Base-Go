@@ -58,6 +58,9 @@ SAMPLES = [
     (".agent-picker-head", "strong", "菜单头（次级）", "text"),
     (".agent-option-name", "strong", "菜单项名", "text"),
     (".agent-option-badge", "strong", "菜单「使用中」（强调）", "text"),
+    # AC-MAT-5 names button text too: the accent-filled send button carries
+    # --on-accent over the accent fill, which is the weakest button case.
+    (".composer-send", "card", "输入区发送按钮（按钮文字）", "button"),
 ]
 
 

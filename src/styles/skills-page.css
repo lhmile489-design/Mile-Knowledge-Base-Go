@@ -1307,15 +1307,17 @@
 
 /* 系统关闭动画效果：内容立即可见，循环动画停止（DESIGN 13.5）。 */
 @media (prefers-reduced-motion: reduce) {
-  .skills-page *,
-  .skills-page *::before,
-  .skills-page *::after {
-    animation-duration: 1ms !important;
+  /* The in-progress spinner keeps turning under "off" (DESIGN 15.2: it shows
+     state, not decoration), so it is excluded here exactly like the global
+     rule in effects.css. The skeleton shimmer does stop. */
+  .skills-page *:not(.kb-spin):not(.kb-spin *),
+  .skills-page *:not(.kb-spin):not(.kb-spin *)::before,
+  .skills-page *:not(.kb-spin):not(.kb-spin *)::after {
+    animation-duration: 0ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+    transition-duration: 0ms !important;
   }
 
-  .skills-page .kb-spin,
   .skills-page .kb-skeleton {
     animation: none !important;
   }

@@ -134,6 +134,21 @@ describe("useEffectsGuard", () => {
     expect(queue.size).toBe(0);
   });
 
+  it("does not start a second trial after a hide and show once it has judged", async () => {
+    const { useAppStore } = await mount("std");
+    frames(IDLE);
+    scroll();
+    frames(Array.from({ length: 120 }, () => 5.1));
+    expect(document.documentElement.dataset.blurAuto).toBeUndefined();
+    setVisibility("hidden");
+    setVisibility("visible");
+    expect(queue.size).toBe(0);
+    scroll();
+    frames(jank(12, 15, 5.1));
+    expect(document.documentElement.dataset.blurAuto).toBeUndefined();
+    expect(useAppStore.getState().effectsDegraded).toBe(false);
+  });
+
   it("is not fooled by a throttled idle sample", async () => {
     const { useAppStore } = await mount("std");
     frames(Array.from({ length: 30 }, () => 25));

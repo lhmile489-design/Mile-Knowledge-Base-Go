@@ -84,6 +84,10 @@ export function useEffectsGuard(): void {
     };
 
     const onVisibility = (): void => {
+      // One judgement per run (21.6): a hide/show after the trial was consumed
+      // must not start a second one, or a later GC hitch could degrade a run
+      // that already passed.
+      if (trialConsumed || degraded) return;
       cancelWork();
       if (document.visibilityState !== "hidden") sampleIdle();
     };

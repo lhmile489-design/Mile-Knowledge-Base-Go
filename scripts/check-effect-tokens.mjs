@@ -101,6 +101,13 @@ export function inspect(rel, rawText) {
     problems.push(`${rel}:${line} hardcoded backdrop blur; use the tier tokens`);
   }
 
+  // React writes the property in camelCase, so an inline style would slip past
+  // the CSS rule above (M10 T11 review, N4).
+  const camelBlur = /backdropFilter\s*:\s*['"`][^'"`]*blur\(\s*[0-9.]+/g;
+  for (const match of text.matchAll(camelBlur)) {
+    problems.push(`${rel}:${lineOf(text, match.index ?? 0)} hardcoded backdrop blur in an inline style; use the tier tokens`);
+  }
+
   // effects.css is where the duration tokens are defined, so its literals are
   // the source of truth and are exempt from the duration rule.
   if (rel !== DEFINITIONS) {
@@ -110,6 +117,17 @@ export function inspect(rel, rawText) {
       const line = lineOf(text, match.index ?? 0);
       problems.push(`${rel}:${line} hardcoded ${match[1]}ms; durations above ${MAX_LITERAL_MS}ms must use --dur-* tokens`);
     }
+    // Seconds were invisible to the rule above (M10 T11 review, N4). Only
+    // transition lines are checked: long loop animations (field drift, skeleton
+    // shimmer) are allowed by DESIGN 15.2 and are written in seconds.
+    const rows = text.split("\n");
+    rows.forEach((row, index) => {
+      if (!/transition/.test(row)) return;
+      for (const match of row.matchAll(/(?:^|[^0-9.])([0-9]*\.?[0-9]+)s\b/g)) {
+        if (Number(match[1]) * 1000 <= MAX_LITERAL_MS) continue;
+        problems.push(`${rel}:${index + 1} hardcoded ${match[1]}s; transitions above ${MAX_LITERAL_MS}ms must use --dur-* tokens`);
+      }
+    });
   }
 
   return { problems, definitions, references };
@@ -120,7 +138,9 @@ function walk(dir) {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) files.push(...walk(path));
-    else if (name.endsWith(".css") || name.endsWith(".tsx")) files.push(path);
+    // Test files are fixtures, not styles: confirmGate.test.ts uses a 600ms
+    // timeout as data. Component and style sources are all scanned.
+    else if (/\.(css|tsx|ts|js|jsx)$/.test(name) && !/\.(test|spec)\./.test(name)) files.push(path);
   }
   return files;
 }
@@ -163,6 +183,11 @@ function selfTest() {
     ["legacy --glass reference", "src/styles/x.css", ".a { background: var(--glass); }", false],
     ["legacy --glass-line reference", "src/styles/x.css", ".a { border-color: var(--glass-line); }", false],
     ["tier tokens are not legacy", "src/styles/x.css", ".a { background: var(--glass-strong); border-color: var(--glass-edge); }", true],
+    ["camelCase inline blur", "src/app/X.tsx", "const s = { backdropFilter: 'blur(18px)' };", false],
+    ["transition in seconds", "src/styles/x.css", ".a { transition: opacity 0.5s; }", false],
+    ["short transition in seconds", "src/styles/x.css", ".a { transition: opacity 0.2s; }", true],
+    ["loop animation in seconds", "src/styles/x.css", ".a { animation: drift 26s infinite alternate; }", true],
+    ["ts file is scanned", "src/lib/x.ts", "export const s = { backdropFilter: 'blur(9px)' };", false],
   ];
   let failed = 0;
   for (const [name, rel, text, ok] of cases) {

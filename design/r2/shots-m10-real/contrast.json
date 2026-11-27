@@ -92,6 +92,17 @@
     {
       "preset": "orange",
       "theme": "light",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "orange",
+      "theme": "light",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -180,6 +191,17 @@
     {
       "preset": "orange",
       "theme": "light",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "orange",
+      "theme": "light",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -264,6 +286,17 @@
       "fg": "rgb(170, 84, 28)",
       "bg": "rgb(255, 255, 255)",
       "ratio": 5.26
+    },
+    {
+      "preset": "orange",
+      "theme": "light",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
     },
     {
       "preset": "orange",
@@ -356,6 +389,17 @@
     {
       "preset": "orange",
       "theme": "dark",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "orange",
+      "theme": "dark",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -444,6 +488,17 @@
     {
       "preset": "orange",
       "theme": "dark",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "orange",
+      "theme": "dark",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -528,6 +583,17 @@
       "fg": "rgb(250, 130, 52)",
       "bg": "rgb(24, 25, 29)",
       "ratio": 6.95
+    },
+    {
+      "preset": "orange",
+      "theme": "dark",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
     },
     {
       "preset": "indigo",
@@ -620,6 +686,17 @@
     {
       "preset": "indigo",
       "theme": "light",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "indigo",
+      "theme": "light",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -704,6 +781,17 @@
       "fg": "rgb(79, 70, 229)",
       "bg": "rgb(255, 255, 255)",
       "ratio": 6.29
+    },
+    {
+      "preset": "indigo",
+      "theme": "light",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
     },
     {
       "preset": "indigo",
@@ -795,6 +883,17 @@
     },
     {
       "preset": "indigo",
+      "theme": "light",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "indigo",
       "theme": "dark",
       "blur": "low",
       "tier": "panel",
@@ -880,6 +979,17 @@
       "fg": "rgb(139, 143, 248)",
       "bg": "rgb(24, 25, 29)",
       "ratio": 6.17
+    },
+    {
+      "preset": "indigo",
+      "theme": "dark",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
     },
     {
       "preset": "indigo",
@@ -972,6 +1082,17 @@
     {
       "preset": "indigo",
       "theme": "dark",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "indigo",
+      "theme": "dark",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -1056,6 +1177,17 @@
       "fg": "rgb(139, 143, 248)",
       "bg": "rgb(24, 25, 29)",
       "ratio": 6.17
+    },
+    {
+      "preset": "indigo",
+      "theme": "dark",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
     },
     {
       "preset": "blue",
@@ -1148,6 +1280,17 @@
     {
       "preset": "blue",
       "theme": "light",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "blue",
+      "theme": "light",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -1236,6 +1379,17 @@
     {
       "preset": "blue",
       "theme": "light",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "blue",
+      "theme": "light",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -1320,6 +1474,17 @@
       "fg": "rgb(36, 97, 230)",
       "bg": "rgb(255, 255, 255)",
       "ratio": 5.35
+    },
+    {
+      "preset": "blue",
+      "theme": "light",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
     },
     {
       "preset": "blue",
@@ -1412,6 +1577,17 @@
     {
       "preset": "blue",
       "theme": "dark",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "blue",
+      "theme": "dark",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -1496,6 +1672,17 @@
       "fg": "rgb(129, 165, 243)",
       "bg": "rgb(24, 25, 29)",
       "ratio": 7.2
+    },
+    {
+      "preset": "blue",
+      "theme": "dark",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
     },
     {
       "preset": "blue",
@@ -1586,6 +1773,17 @@
       "ratio": 7.2
     },
     {
+      "preset": "blue",
+      "theme": "dark",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
       "preset": "green",
       "theme": "light",
       "blur": "low",
@@ -1672,6 +1870,17 @@
       "fg": "rgb(17, 124, 56)",
       "bg": "rgb(255, 255, 255)",
       "ratio": 5.3
+    },
+    {
+      "preset": "green",
+      "theme": "light",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
     },
     {
       "preset": "green",
@@ -1764,6 +1973,17 @@
     {
       "preset": "green",
       "theme": "light",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "green",
+      "theme": "light",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -1848,6 +2068,17 @@
       "fg": "rgb(17, 124, 56)",
       "bg": "rgb(255, 255, 255)",
       "ratio": 5.3
+    },
+    {
+      "preset": "green",
+      "theme": "light",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
     },
     {
       "preset": "green",
@@ -1936,6 +2167,17 @@
       "fg": "rgb(76, 184, 116)",
       "bg": "rgb(24, 25, 29)",
       "ratio": 7.04
+    },
+    {
+      "preset": "green",
+      "theme": "dark",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
     },
     {
       "preset": "green",
@@ -2028,6 +2270,17 @@
     {
       "preset": "green",
       "theme": "dark",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "green",
+      "theme": "dark",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -2112,6 +2365,17 @@
       "fg": "rgb(76, 184, 116)",
       "bg": "rgb(24, 25, 29)",
       "ratio": 7.04
+    },
+    {
+      "preset": "green",
+      "theme": "dark",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
     },
     {
       "preset": "teal",
@@ -2204,6 +2468,17 @@
     {
       "preset": "teal",
       "theme": "light",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "teal",
+      "theme": "light",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -2292,6 +2567,17 @@
     {
       "preset": "teal",
       "theme": "light",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "teal",
+      "theme": "light",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -2376,6 +2662,17 @@
       "fg": "rgb(11, 121, 112)",
       "bg": "rgb(255, 255, 255)",
       "ratio": 5.27
+    },
+    {
+      "preset": "teal",
+      "theme": "light",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
     },
     {
       "preset": "teal",
@@ -2468,6 +2765,17 @@
     {
       "preset": "teal",
       "theme": "dark",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "teal",
+      "theme": "dark",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -2556,6 +2864,17 @@
     {
       "preset": "teal",
       "theme": "dark",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "teal",
+      "theme": "dark",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -2640,6 +2959,17 @@
       "fg": "rgb(86, 180, 172)",
       "bg": "rgb(24, 25, 29)",
       "ratio": 7.13
+    },
+    {
+      "preset": "teal",
+      "theme": "dark",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
     },
     {
       "preset": "violet",
@@ -2732,6 +3062,17 @@
     {
       "preset": "violet",
       "theme": "light",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "violet",
+      "theme": "light",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -2820,6 +3161,17 @@
     {
       "preset": "violet",
       "theme": "light",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
+    },
+    {
+      "preset": "violet",
+      "theme": "light",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -2904,6 +3256,17 @@
       "fg": "rgb(124, 58, 237)",
       "bg": "rgb(255, 255, 255)",
       "ratio": 5.7
+    },
+    {
+      "preset": "violet",
+      "theme": "light",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
     },
     {
       "preset": "violet",
@@ -2996,6 +3359,17 @@
     {
       "preset": "violet",
       "theme": "dark",
+      "blur": "low",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "violet",
+      "theme": "dark",
       "blur": "std",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -3084,6 +3458,17 @@
     {
       "preset": "violet",
       "theme": "dark",
+      "blur": "std",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
+    },
+    {
+      "preset": "violet",
+      "theme": "dark",
       "blur": "high",
       "tier": "panel",
       "label": "标题栏应用名",
@@ -3168,6 +3553,17 @@
       "fg": "rgb(183, 147, 245)",
       "bg": "rgb(24, 25, 29)",
       "ratio": 7.11
+    },
+    {
+      "preset": "violet",
+      "theme": "dark",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(154, 158, 168)",
+      "bg": "rgb(24, 25, 29)",
+      "ratio": 6.55
     }
   ],
   "worst": [
@@ -3258,6 +3654,17 @@
       "fg": "rgb(170, 84, 28)",
       "bg": "rgb(255, 255, 255)",
       "ratio": 5.26
+    },
+    {
+      "preset": "violet",
+      "theme": "light",
+      "blur": "high",
+      "tier": "card",
+      "label": "输入区发送按钮（按钮文字）",
+      "kind": "button",
+      "fg": "rgb(92, 97, 107)",
+      "bg": "rgb(255, 255, 255)",
+      "ratio": 6.22
     }
   ],
   "failures": []
