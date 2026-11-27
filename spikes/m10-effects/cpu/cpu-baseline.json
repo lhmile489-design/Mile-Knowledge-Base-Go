@@ -1,0 +1,47 @@
+{
+    "app":  "E:\\WebApp\\Mile-Project\\Mile-Knowledge-Base-Go\\build\\windows-amd64\\Mile Knowledge Base.exe",
+    "minimized":  true,
+    "settleSeconds":  60,
+    "seconds":  300,
+    "cpuSeconds":  0.594,
+    "cpuPercentOne":  0.198,
+    "processCount":  7,
+    "processes":  [
+                      {
+                          "pid":  31336,
+                          "name":  "Mile Knowledge Base",
+                          "cpuSeconds":  0.375
+                      },
+                      {
+                          "pid":  29896,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  1.422
+                      },
+                      {
+                          "pid":  32216,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.078
+                      },
+                      {
+                          "pid":  32676,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.234
+                      },
+                      {
+                          "pid":  34696,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.25
+                      },
+                      {
+                          "pid":  35836,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.094
+                      },
+                      {
+                          "pid":  26048,
+                          "name":  "msedgewebview2",
+                          "cpuSeconds":  0.531
+                      }
+                  ],
+    "startedAt":  "2026-11-27T11:00:04.8851130+07:00"
+}

@@ -1,0 +1,692 @@
+{
+  "candidates": [
+    {
+      "tag": "candB-menu-dark",
+      "theme": "dark",
+      "state": "menu",
+      "candidate": "B",
+      "madVsStd": 1.55,
+      "pixelsGt8VsStd": 2.22,
+      "samples": [
+        {
+          "name": "strong-accent",
+          "fg": "rgb(250, 130, 52)",
+          "bg": "#4d3426",
+          "ratio": 4.53
+        },
+        {
+          "name": "strong-text",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#25282e",
+          "ratio": 11.95
+        },
+        {
+          "name": "strong-info",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#25282f",
+          "ratio": 11.93
+        }
+      ]
+    },
+    {
+      "tag": "candB-menu-light",
+      "theme": "light",
+      "state": "menu",
+      "candidate": "B",
+      "madVsStd": 2.85,
+      "pixelsGt8VsStd": 8.67,
+      "samples": [
+        {
+          "name": "strong-accent",
+          "fg": "rgb(170, 84, 28)",
+          "bg": "#fceee5",
+          "ratio": 4.63
+        },
+        {
+          "name": "strong-text",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#fbfcfe",
+          "ratio": 14.56
+        },
+        {
+          "name": "strong-info",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#fbfcfe",
+          "ratio": 14.56
+        }
+      ]
+    },
+    {
+      "tag": "candB-work-doc-dark",
+      "theme": "dark",
+      "state": "work-doc",
+      "candidate": "B",
+      "madVsStd": 0.4,
+      "pixelsGt8VsStd": 1.07,
+      "samples": [
+        {
+          "name": "panel-primary",
+          "fg": "rgb(243, 244, 246)",
+          "bg": "#25282f",
+          "ratio": 13.41
+        },
+        {
+          "name": "panel-muted",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#242c30",
+          "ratio": 6.1
+        },
+        {
+          "name": "panel-chat-head",
+          "fg": "rgb(243, 244, 246)",
+          "bg": "#332c2b",
+          "ratio": 12.42
+        },
+        {
+          "name": "card-muted",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#26282f",
+          "ratio": 6.32
+        },
+        {
+          "name": "card-bar",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#26282f",
+          "ratio": 6.32
+        },
+        {
+          "name": "card-accent",
+          "fg": "rgb(250, 130, 52)",
+          "bg": "#1c1e22",
+          "ratio": 6.6
+        },
+        {
+          "name": "sheet-body",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#18191d",
+          "ratio": 14.2
+        },
+        {
+          "name": "sheet-answer",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#18191d",
+          "ratio": 14.2
+        }
+      ]
+    },
+    {
+      "tag": "candB-work-doc-light",
+      "theme": "light",
+      "state": "work-doc",
+      "candidate": "B",
+      "madVsStd": 0.89,
+      "pixelsGt8VsStd": 3.79,
+      "samples": [
+        {
+          "name": "panel-primary",
+          "fg": "rgb(21, 23, 28)",
+          "bg": "#f4f6f9",
+          "ratio": 16.56
+        },
+        {
+          "name": "panel-muted",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#ecf3f2",
+          "ratio": 7.2
+        },
+        {
+          "name": "panel-chat-head",
+          "fg": "rgb(21, 23, 28)",
+          "bg": "#f9eae2",
+          "ratio": 15.28
+        },
+        {
+          "name": "card-muted",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#fbfcfd",
+          "ratio": 7.88
+        },
+        {
+          "name": "card-bar",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#fafcfc",
+          "ratio": 7.86
+        },
+        {
+          "name": "card-accent",
+          "fg": "rgb(170, 84, 28)",
+          "bg": "#ffffff",
+          "ratio": 5.26
+        },
+        {
+          "name": "sheet-body",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#ffffff",
+          "ratio": 14.95
+        },
+        {
+          "name": "sheet-answer",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#ffffff",
+          "ratio": 14.95
+        }
+      ]
+    },
+    {
+      "tag": "candC-menu-dark",
+      "theme": "dark",
+      "state": "menu",
+      "candidate": "C",
+      "madVsStd": 1.67,
+      "pixelsGt8VsStd": 3.7,
+      "samples": [
+        {
+          "name": "strong-accent",
+          "fg": "rgb(250, 130, 52)",
+          "bg": "#4d3426",
+          "ratio": 4.53
+        },
+        {
+          "name": "strong-text",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#252830",
+          "ratio": 11.92
+        },
+        {
+          "name": "strong-info",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#252831",
+          "ratio": 11.91
+        }
+      ]
+    },
+    {
+      "tag": "candC-menu-light",
+      "theme": "light",
+      "state": "menu",
+      "candidate": "C",
+      "madVsStd": 3.54,
+      "pixelsGt8VsStd": 12.4,
+      "samples": [
+        {
+          "name": "strong-accent",
+          "fg": "rgb(170, 84, 28)",
+          "bg": "#fceee5",
+          "ratio": 4.63
+        },
+        {
+          "name": "strong-text",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#fbfcfd",
+          "ratio": 14.55
+        },
+        {
+          "name": "strong-info",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#fafcfe",
+          "ratio": 14.54
+        }
+      ]
+    },
+    {
+      "tag": "candC-work-doc-dark",
+      "theme": "dark",
+      "state": "work-doc",
+      "candidate": "C",
+      "madVsStd": 0.42,
+      "pixelsGt8VsStd": 1.36,
+      "samples": [
+        {
+          "name": "panel-primary",
+          "fg": "rgb(243, 244, 246)",
+          "bg": "#25282f",
+          "ratio": 13.41
+        },
+        {
+          "name": "panel-muted",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#242c30",
+          "ratio": 6.1
+        },
+        {
+          "name": "panel-chat-head",
+          "fg": "rgb(243, 244, 246)",
+          "bg": "#342c2b",
+          "ratio": 12.38
+        },
+        {
+          "name": "card-muted",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#25272e",
+          "ratio": 6.41
+        },
+        {
+          "name": "card-bar",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#24282e",
+          "ratio": 6.36
+        },
+        {
+          "name": "card-accent",
+          "fg": "rgb(250, 130, 52)",
+          "bg": "#1c1e22",
+          "ratio": 6.6
+        },
+        {
+          "name": "sheet-body",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#18191d",
+          "ratio": 14.2
+        },
+        {
+          "name": "sheet-answer",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#18191d",
+          "ratio": 14.2
+        }
+      ]
+    },
+    {
+      "tag": "candC-work-doc-light",
+      "theme": "light",
+      "state": "work-doc",
+      "candidate": "C",
+      "madVsStd": 1.09,
+      "pixelsGt8VsStd": 4.3,
+      "samples": [
+        {
+          "name": "panel-primary",
+          "fg": "rgb(21, 23, 28)",
+          "bg": "#f3f5f8",
+          "ratio": 16.42
+        },
+        {
+          "name": "panel-muted",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#eaf2f1",
+          "ratio": 7.12
+        },
+        {
+          "name": "panel-chat-head",
+          "fg": "rgb(21, 23, 28)",
+          "bg": "#f9e9e0",
+          "ratio": 15.16
+        },
+        {
+          "name": "card-muted",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#fbfbfc",
+          "ratio": 7.83
+        },
+        {
+          "name": "card-bar",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#f9fbfb",
+          "ratio": 7.79
+        },
+        {
+          "name": "card-accent",
+          "fg": "rgb(170, 84, 28)",
+          "bg": "#ffffff",
+          "ratio": 5.26
+        },
+        {
+          "name": "sheet-body",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#ffffff",
+          "ratio": 14.95
+        },
+        {
+          "name": "sheet-answer",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#ffffff",
+          "ratio": 14.95
+        }
+      ]
+    },
+    {
+      "tag": "candD-menu-dark",
+      "theme": "dark",
+      "state": "menu",
+      "candidate": "D",
+      "madVsStd": 3.32,
+      "pixelsGt8VsStd": 15.26,
+      "samples": [
+        {
+          "name": "strong-accent",
+          "fg": "rgb(250, 130, 52)",
+          "bg": "#4d3426",
+          "ratio": 4.53
+        },
+        {
+          "name": "strong-text",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#232832",
+          "ratio": 11.95
+        },
+        {
+          "name": "strong-info",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#232833",
+          "ratio": 11.94
+        }
+      ]
+    },
+    {
+      "tag": "candD-menu-light",
+      "theme": "light",
+      "state": "menu",
+      "candidate": "D",
+      "madVsStd": 5.98,
+      "pixelsGt8VsStd": 25.14,
+      "samples": [
+        {
+          "name": "strong-accent",
+          "fg": "rgb(170, 84, 28)",
+          "bg": "#fceee5",
+          "ratio": 4.63
+        },
+        {
+          "name": "strong-text",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#f9fbfe",
+          "ratio": 14.42
+        },
+        {
+          "name": "strong-info",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#f9faff",
+          "ratio": 14.34
+        }
+      ]
+    },
+    {
+      "tag": "candD-work-doc-dark",
+      "theme": "dark",
+      "state": "work-doc",
+      "candidate": "D",
+      "madVsStd": 0.85,
+      "pixelsGt8VsStd": 3.69,
+      "samples": [
+        {
+          "name": "panel-primary",
+          "fg": "rgb(243, 244, 246)",
+          "bg": "#242831",
+          "ratio": 13.41
+        },
+        {
+          "name": "panel-muted",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#222e32",
+          "ratio": 6.0
+        },
+        {
+          "name": "panel-chat-head",
+          "fg": "rgb(243, 244, 246)",
+          "bg": "#3b2c29",
+          "ratio": 12.09
+        },
+        {
+          "name": "card-muted",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#242830",
+          "ratio": 6.35
+        },
+        {
+          "name": "card-bar",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#242930",
+          "ratio": 6.29
+        },
+        {
+          "name": "card-accent",
+          "fg": "rgb(250, 130, 52)",
+          "bg": "#1c1e22",
+          "ratio": 6.6
+        },
+        {
+          "name": "sheet-body",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#18191d",
+          "ratio": 14.2
+        },
+        {
+          "name": "sheet-answer",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#18191d",
+          "ratio": 14.2
+        }
+      ]
+    },
+    {
+      "tag": "candD-work-doc-light",
+      "theme": "light",
+      "state": "work-doc",
+      "candidate": "D",
+      "madVsStd": 1.82,
+      "pixelsGt8VsStd": 6.15,
+      "samples": [
+        {
+          "name": "panel-primary",
+          "fg": "rgb(21, 23, 28)",
+          "bg": "#f1f4f8",
+          "ratio": 16.25
+        },
+        {
+          "name": "panel-muted",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#e5f0ef",
+          "ratio": 6.95
+        },
+        {
+          "name": "panel-chat-head",
+          "fg": "rgb(21, 23, 28)",
+          "bg": "#fde2d4",
+          "ratio": 14.52
+        },
+        {
+          "name": "card-muted",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#f8fafc",
+          "ratio": 7.74
+        },
+        {
+          "name": "card-bar",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#f6f9fa",
+          "ratio": 7.65
+        },
+        {
+          "name": "card-accent",
+          "fg": "rgb(170, 84, 28)",
+          "bg": "#ffffff",
+          "ratio": 5.26
+        },
+        {
+          "name": "sheet-body",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#ffffff",
+          "ratio": 14.95
+        },
+        {
+          "name": "sheet-answer",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#ffffff",
+          "ratio": 14.95
+        }
+      ]
+    },
+    {
+      "tag": "candE-menu-dark",
+      "theme": "dark",
+      "state": "menu",
+      "candidate": "E",
+      "madVsStd": 3.3,
+      "pixelsGt8VsStd": 15.26,
+      "samples": [
+        {
+          "name": "strong-accent",
+          "fg": "rgb(250, 130, 52)",
+          "bg": "#4d3426",
+          "ratio": 4.53
+        },
+        {
+          "name": "strong-text",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#242832",
+          "ratio": 11.92
+        },
+        {
+          "name": "strong-info",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#252832",
+          "ratio": 11.89
+        }
+      ]
+    },
+    {
+      "tag": "candE-menu-light",
+      "theme": "light",
+      "state": "menu",
+      "candidate": "E",
+      "madVsStd": 5.95,
+      "pixelsGt8VsStd": 25.14,
+      "samples": [
+        {
+          "name": "strong-accent",
+          "fg": "rgb(170, 84, 28)",
+          "bg": "#fceee5",
+          "ratio": 4.63
+        },
+        {
+          "name": "strong-text",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#fafcfe",
+          "ratio": 14.54
+        },
+        {
+          "name": "strong-info",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#fafbff",
+          "ratio": 14.46
+        }
+      ]
+    },
+    {
+      "tag": "candE-work-doc-dark",
+      "theme": "dark",
+      "state": "work-doc",
+      "candidate": "E",
+      "madVsStd": 0.85,
+      "pixelsGt8VsStd": 3.69,
+      "samples": [
+        {
+          "name": "panel-primary",
+          "fg": "rgb(243, 244, 246)",
+          "bg": "#242831",
+          "ratio": 13.41
+        },
+        {
+          "name": "panel-muted",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#222e32",
+          "ratio": 6.0
+        },
+        {
+          "name": "panel-chat-head",
+          "fg": "rgb(243, 244, 246)",
+          "bg": "#3b2c29",
+          "ratio": 12.09
+        },
+        {
+          "name": "card-muted",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#242830",
+          "ratio": 6.35
+        },
+        {
+          "name": "card-bar",
+          "fg": "rgb(166, 170, 179)",
+          "bg": "#242930",
+          "ratio": 6.29
+        },
+        {
+          "name": "card-accent",
+          "fg": "rgb(250, 130, 52)",
+          "bg": "#1c1e22",
+          "ratio": 6.6
+        },
+        {
+          "name": "sheet-body",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#18191d",
+          "ratio": 14.2
+        },
+        {
+          "name": "sheet-answer",
+          "fg": "rgb(230, 231, 234)",
+          "bg": "#18191d",
+          "ratio": 14.2
+        }
+      ]
+    },
+    {
+      "tag": "candE-work-doc-light",
+      "theme": "light",
+      "state": "work-doc",
+      "candidate": "E",
+      "madVsStd": 1.82,
+      "pixelsGt8VsStd": 6.15,
+      "samples": [
+        {
+          "name": "panel-primary",
+          "fg": "rgb(21, 23, 28)",
+          "bg": "#f1f4f8",
+          "ratio": 16.25
+        },
+        {
+          "name": "panel-muted",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#e5f0ef",
+          "ratio": 6.95
+        },
+        {
+          "name": "panel-chat-head",
+          "fg": "rgb(21, 23, 28)",
+          "bg": "#fde2d4",
+          "ratio": 14.52
+        },
+        {
+          "name": "card-muted",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#f8fafc",
+          "ratio": 7.74
+        },
+        {
+          "name": "card-bar",
+          "fg": "rgb(75, 80, 90)",
+          "bg": "#f6f9fa",
+          "ratio": 7.65
+        },
+        {
+          "name": "card-accent",
+          "fg": "rgb(170, 84, 28)",
+          "bg": "#ffffff",
+          "ratio": 5.26
+        },
+        {
+          "name": "sheet-body",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#ffffff",
+          "ratio": 14.95
+        },
+        {
+          "name": "sheet-answer",
+          "fg": "rgb(36, 39, 46)",
+          "bg": "#ffffff",
+          "ratio": 14.95
+        }
+      ]
+    }
+  ]
+}

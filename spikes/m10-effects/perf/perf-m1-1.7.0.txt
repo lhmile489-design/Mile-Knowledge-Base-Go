@@ -1,0 +1,15 @@
+cold_start_typical_ms=801
+index_ready_typical_ms=159
+search_typical={"id":1,"result":{"value":"{\"n\":50,\"p50\":1,\"p95\":1.2,\"max\":1.4}"}}
+cold_start_big_ms=866
+index_ready_big_ms=6187
+search_big={"id":1,"result":{"value":"{\"n\":50,\"p50\":1,\"p95\":48.8,\"max\":51.7}"}}
+external_1000_big={"id":1,"result":{"value":"{\"n\":0,\"max\":0}"}}
+WORK=/e/WebApp/Mile-Project/Mile-Knowledge-Base-Go/.perf-m1-u6HIZW
+cold_start_typical_ms=801
+index_ready_typical_ms=159
+search_typical={"id":1,"result":{"value":"{\"n\":50,\"p50\":1,\"p95\":1.2,\"max\":1.4}"}}
+cold_start_big_ms=866
+index_ready_big_ms=6187
+search_big={"id":1,"result":{"value":"{\"n\":50,\"p50\":1,\"p95\":48.8,\"max\":51.7}"}}
+external_1000_big={"id":1,"result":{"value":"{\"n\":0,\"max\":0}"}}

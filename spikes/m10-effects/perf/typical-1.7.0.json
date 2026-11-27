@@ -1,0 +1,7 @@
+{
+  "coldStartMs": 870,
+  "searchP95Ms": 1.2,
+  "viewerFirstFrameMs": 66.1,
+  "slowFrames": 0,
+  "keyLatencyP90Ms": 8.1
+}
