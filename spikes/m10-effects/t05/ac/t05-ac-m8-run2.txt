@@ -1,0 +1,81 @@
+PASS overview
+PASS index ready
+== AC-PAGE-2: switch, subview, Esc, back with focus
+{"id":1,"result":{"value":true}}
+PASS skills page open
+PASS page fills below the title bar
+PASS workbench stays inert under the page
+PASS hidden workbench paints nothing and takes no input
+PASS skills host lets the window colour field through
+PASS update check entry
+{"id":1,"result":{"value":true}}
+PASS manual update check stays usable
+PASS kb cards
+== 1.6.1: the kb view scrolls and list mode keeps one row per skill
+PASS scroll fixtures scanned
+PASS kb content is bounded by the page
+PASS kb content scrolls (grid)
+{"id":1,"result":{"value":true}}
+PASS list mode
+PASS list card is a single row
+PASS list name is not squeezed
+PASS kb content scrolls (list)
+{"id":1,"result":{"value":true}}
+PASS grid mode back
+PASS distribute subview
+PASS first Esc back to the list
+PASS second Esc keeps the page
+{"id":1,"result":{"value":true}}
+PASS workbench back
+PASS focus on the work segment
+PASS no sidebar import entry
+== AC-PAGE-1: stream, draft, doc edits and scroll survive the switch
+PASS stream started
+PASS doc opened
+PASS skills page visible during the stream
+PASS stream kept growing (3001 -> 10001)
+PASS composer draft kept
+PASS doc stays dirty
+PASS stream finished after the return
+PASS long answer rendered
+PASS chat scroll kept (120)
+== AC-PAGE-3: settings drafts keep the leave guard
+PASS settings open
+{"id":1,"result":{"value":true}}
+PASS steering field
+PASS leave dialog
+{"id":1,"result":{"value":true}}
+PASS stay keeps settings and the draft
+PASS leave dialog again
+{"id":1,"result":{"value":true}}
+PASS skills page after discarding
+== AC-PAGE-5: narrow window keeps the rail and the subviews inside
+PASS narrow viewport
+PASS nav collapses to 56px
+PASS no horizontal scroll
+PASS kb cards still there
+PASS distribute subview in the narrow window
+{"id":1,"result":{"value":true}}
+PASS tool row
+{"id":1,"result":{"value":true}}
+PASS confirm card complete in the narrow window
+PASS Esc cancels the confirm
+== AC-PAGE-6: reduced motion
+PASS motion query
+PASS cards visible
+PASS no entrance animation
+PASS field stops drifting
+PASS hover lift disabled by the media rule
+PASS no hover lift now
+== AC-PAGE-4: no vault, tools still usable
+PASS welcome
+{"id":1,"result":{"value":true}}
+PASS skills page without a vault
+PASS kb group explains the empty state
+{"id":1,"result":{"value":true}}
+PASS tool directory works without a vault
+{"id":1,"result":{"value":true}}
+PASS uninstall confirm
+{"id":1,"result":{"value":true}}
+PASS uninstalled without a vault
+RESULT pass=59 fail=0
