@@ -45,6 +45,7 @@ PRESETS = ["orange", "indigo", "blue", "green", "teal", "violet"]
 TIERS = ["off", "low", "std", "high"]
 THEMES = ["light", "dark"]
 STATES = ["work", "work-doc", "menu", "settings", "settings-notes"]
+STATE_FILTER = None
 CONTRAST_TIERS = ["low", "std", "high"]
 LIMIT = 4.5
 
@@ -210,7 +211,8 @@ def take_shots():
     try:
         vid = seed(work / "app", vault)
         driver.start()
-        for state in STATES:
+        states = STATE_FILTER if STATE_FILTER else STATES
+        for state in states:
             driver.eval(state_script(state, vid))
             time.sleep(1.2)
             if state == "menu":
@@ -485,6 +487,9 @@ def main():
     only = None
     if "--only" in sys.argv:
         only = sys.argv[sys.argv.index("--only") + 1]
+    global STATE_FILTER
+    if "--states" in sys.argv:
+        STATE_FILTER = sys.argv[sys.argv.index("--states") + 1].split(",")
     if only in (None, "shots"):
         take_shots()
     if only == "focus":

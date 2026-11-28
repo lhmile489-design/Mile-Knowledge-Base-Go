@@ -134,6 +134,23 @@ stop_app() {
   APP_PID=""
   sleep 3
 }
+resize_window() { # width height
+  cat > "$WORK/resize.ps1" <<'PS'
+param([int]$ProcId, [int]$Width, [int]$Height)
+Add-Type -Namespace Win -Name Win -MemberDefinition @'
+[DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+'@
+$p = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
+if ($p -and $p.MainWindowHandle -ne 0) { [Win.Win]::SetWindowPos($p.MainWindowHandle, [IntPtr]::Zero, 0, 0, $Width, $Height, 0x0004) | Out-Null }
+PS
+  powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$WORK/resize.ps1")" -ProcId "$APP_PID" -Width "$1" -Height "$2" >/dev/null 2>&1
+  sleep 1
+}
+
+settings_bottom() {
+  ev "(() => { const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gap-panel')) || 8; const nav = document.querySelector('[data-panel=settings-nav]').getBoundingClientRect(); const host = document.querySelector('[data-panel=settings-content]').getBoundingClientRect(); return JSON.stringify({ missNav: Math.round(innerHeight - gap - nav.bottom), missHost: Math.round(innerHeight - gap - host.bottom) }); })()"
+}
+
 export MYGO_AUTOMATION="tcp:127.0.0.1:$PORT"
 
 ev() {
@@ -157,6 +174,10 @@ wait_match() {
   done
   fail=$((fail+1)); echo "FAIL $label :: $out"
 }
+set_value() { # selector value
+  ev "(() => { const el = document.querySelector($(jsq "$1")); if (!el) throw new Error('missing $1'); const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement : HTMLInputElement; Object.getOwnPropertyDescriptor(proto.prototype, 'value').set.call(el, $(jsq "$2")); el.dispatchEvent(new Event('input', { bubbles: true })); return true; })()"
+}
+
 jsq() { python -I -c "import json,sys;print(json.dumps(sys.argv[1]))" "$1"; }
 click() { ev "(() => { const el = document.querySelector($(jsq "$1")); if (!el) throw new Error('missing'); el.click(); return true; })()"; }
 
@@ -250,6 +271,29 @@ sleep 1
 # area minus one panel gap. On 1.8.0 this FAILS because .settings-grid has no
 # height, so the panels stop at the content's end (P01 makes it pass).
 chk "settings panels reach the window bottom minus one gap" 'const gap = parseFloat(root("--gap-panel")) || 8; const nav = q("[data-panel=settings-nav]").getBoundingClientRect(); const host = q("[data-panel=settings-content]").getBoundingClientRect(); const miss = [Math.round(innerHeight - gap - nav.bottom), Math.round(innerHeight - gap - host.bottom)]; return (Math.abs(miss[0]) <= 1 && Math.abs(miss[1]) <= 1) || JSON.stringify({ miss, innerHeight, gap, navBottom: nav.bottom, hostBottom: host.bottom });'
+# P01: the same at a taller and a narrower window.
+resize_window 1440 1100
+chk "P01 panels reach the bottom at 1440x1100" 'const gap = parseFloat(root("--gap-panel")) || 8; const nav = q("[data-panel=settings-nav]").getBoundingClientRect(); const host = q("[data-panel=settings-content]").getBoundingClientRect(); const miss = [Math.round(innerHeight - gap - nav.bottom), Math.round(innerHeight - gap - host.bottom)]; return (Math.abs(miss[0]) <= 1 && Math.abs(miss[1]) <= 1) || JSON.stringify({ miss, innerHeight });'
+resize_window 960 720
+chk "P01 panels reach the bottom at 960x720" 'const gap = parseFloat(root("--gap-panel")) || 8; const nav = q("[data-panel=settings-nav]").getBoundingClientRect(); const host = q("[data-panel=settings-content]").getBoundingClientRect(); const miss = [Math.round(innerHeight - gap - nav.bottom), Math.round(innerHeight - gap - host.bottom)]; return (Math.abs(miss[0]) <= 1 && Math.abs(miss[1]) <= 1) || JSON.stringify({ miss, innerHeight });'
+# P01: the long-content section scrolls inside .settings-body, the last item
+# becomes visible at the bottom, and a dirty draft keeps the save bar pinned to
+# the content host bottom (minus its 12px inset). Runs at 960x720.
+click '[data-testid="settings-nav-model"]' >/dev/null
+wait_match "model service open" "document.querySelector('.settings-body') !== null" '"value":true' 20
+chk "P01 model-service content bottom is reachable inside its own scroll area" 'const body = q(".settings-body"); if (!body) return "no settings-body"; body.scrollTop = body.scrollHeight; const gap = body.scrollHeight - body.clientHeight - body.scrollTop; const last = [...body.querySelectorAll("*")].filter((e) => e.children.length === 0 && e.offsetHeight > 0).pop(); const br = last ? last.getBoundingClientRect() : null; const bbr = body.getBoundingClientRect(); return (gap <= 1 && (!br || br.bottom <= bbr.bottom + 1)) || JSON.stringify({ sh: body.scrollHeight, ch: body.clientHeight, st: body.scrollTop, gap, lastBottom: br && br.bottom, bodyBottom: bbr.bottom });'
+chk "P01 nav panel bottom is also the grid bottom" 'const gap = parseFloat(root("--gap-panel")) || 8; const nav = q("[data-panel=settings-nav]").getBoundingClientRect(); const miss = Math.round(innerHeight - gap - nav.bottom); return Math.abs(miss) <= 1 || JSON.stringify({ miss, innerHeight });'
+click '[data-testid="settings-nav-categories"]' >/dev/null
+wait_match "categories open" "document.querySelector('[data-testid=\"category-alias-projects\"]') !== null" '"value":true' 30
+set_value '[data-testid="category-alias-projects"]' "项目库" >/dev/null
+wait_match "P01 save bar appears" "document.querySelector('[data-testid=\"settings-savebar\"]') !== null" '"value":true' 20
+chk "P01 save bar bottom is the host bottom minus inset" 'const bar = q(".settings-savebar"); if (!bar) return "no savebar"; const host = q("[data-panel=settings-content]").getBoundingClientRect(); const gap = host.bottom - bar.getBoundingClientRect().bottom; return Math.abs(gap - 12) <= 1.5 || JSON.stringify({ gap, hostBottom: host.bottom, barBottom: bar.getBoundingClientRect().bottom });'
+ev "(() => { const b = [...document.querySelectorAll('.settings-savebar-actions button')].find((x) => !x.matches('[data-testid=settings-savebar-save]')); if (b) b.click(); return !!b; })()" >/dev/null
+sleep 0.4
+click '[data-testid="settings-nav-general"]' >/dev/null
+wait_match "back to general" "document.querySelector('[data-testid=\"effects-blur\"]') !== null" '"value":true' 20
+sleep 0.5
+resize_window 1440 900
 BLUR_TPL='const p = +al("[data-panel=settings-content]").toFixed(2), c = +al(".setting-card").toFixed(2); const f = q(".background-field"); const fo = f ? +getComputedStyle(f).opacity : -1; const ok = p === @P@ && c === @C@ && root("--glass-blur") === "@B@" && px("header.titlebar") === 0 && ((@F@ === 0 && f === null) || (@F@ === 1 && !!f && Math.abs(fo - @O@) < 0.01)); return ok || JSON.stringify({p, c, fo, hasField: !!f, blur: root("--glass-blur")});'
 # blur_case <level> <panel alpha> <card alpha> <field 0|1> <field opacity> <--glass-blur>
 blur_case() {

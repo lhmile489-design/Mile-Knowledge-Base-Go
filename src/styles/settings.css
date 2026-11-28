@@ -6,8 +6,13 @@
 
 .settings-grid {
   display: grid;
+  /* M10.1 P01: the grid itself fills the shell's row (its own auto height used
+     to stop at the content), and the single row takes the remaining space, so
+     both panels reach the bottom edge of the window minus the panel gap. */
+  grid-template-rows: minmax(0, 1fr);
   grid-template-columns: 232px minmax(0, 1fr);
   gap: var(--gap-panel);
+  height: 100%;
   min-height: 0;
   padding: 0 var(--gap-panel) var(--gap-panel);
 }
