@@ -1172,8 +1172,9 @@
   backdrop-filter: blur(var(--glass-blur-foot)) saturate(var(--glass-sat));
 }
 
-/* 卡片入场：每张错开 38ms，最多 24 项。 */
-.skills-page .kb-card {
+/* 卡片入场：每张错开 38ms，最多前 24 项（DESIGN 15.4；M10.1 P02 起按扁平
+   顺序只给带 [data-enter] 的卡片播，后面的直接显示，不再一起延迟播放）。 */
+.skills-page .kb-card[data-enter] {
   animation: skills-rise var(--dur-enter) var(--ease-out-expo) backwards;
   animation-delay: calc(min(var(--i, 0), 24) * var(--stagger));
 }
@@ -1326,7 +1327,9 @@
     opacity: 1;
     filter: none;
     transform: none;
-    animation: none;
+    /* !important because the [data-enter] entrance rule is more specific
+       than this media block's plain .kb-card selector (M10.1 P02). */
+    animation: none !important;
   }
 
   .skills-page .kb-card:hover,

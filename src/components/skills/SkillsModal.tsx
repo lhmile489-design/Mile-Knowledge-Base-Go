@@ -93,10 +93,11 @@ export function SkillsModal({
   }, [hasOverlay]);
 
   // The key handler is bound once; it reads the latest props through here.
+  // Assigned during render, not in a passive effect: a fast Escape right after
+  // a step change must see the current step's handlers (an effect may not have
+  // run yet, which intermittently dropped the stage discard in tests).
   const latest = useRef({ busy, onClose, onBack });
-  useEffect(() => {
-    latest.current = { busy, onClose, onBack };
-  });
+  latest.current = { busy, onClose, onBack };
 
   useEffect(() => {
     const scrim = scrimRef.current;

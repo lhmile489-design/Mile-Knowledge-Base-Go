@@ -68,6 +68,19 @@ export function KbSkillsPage({
     [filtered],
   );
 
+  // Entrance staggering is limited to the first 24 cards in FLAT order across
+  // groups (DESIGN 15.4); before M10.1 the index restarted per group and every
+  // card animated, so entry cost grew with the vault size (PLAN-M10.1 R1).
+  const groupOffsets = useMemo(() => {
+    const offsets = new Map<string, number>();
+    let flat = 0;
+    for (const group of filtered) {
+      offsets.set(group.category, flat);
+      flat += group.skills.length;
+    }
+    return offsets;
+  }, [filtered]);
+
   // Ctrl/Cmd+K focuses the search field from anywhere on the page.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -205,7 +218,8 @@ export function KbSkillsPage({
                     {group.skills.map((skill, cardIndex) => (
                       <KbSkillCard
                         key={skill.path}
-                        index={cardIndex}
+                        index={(groupOffsets.get(group.category) ?? 0) + cardIndex}
+                        enters={((groupOffsets.get(group.category) ?? 0) + cardIndex) < 24}
                         skill={skill}
                         tools={tools}
                         selecting={selecting}
@@ -261,6 +275,7 @@ export function KbSkillsPage({
 
 function KbSkillCard({
   index,
+  enters,
   skill,
   tools,
   selecting,
@@ -275,6 +290,7 @@ function KbSkillCard({
   onUpdate,
 }: {
   readonly index: number;
+  readonly enters: boolean;
   readonly skill: KbSkill;
   readonly tools: SkillTool[];
   readonly selecting: boolean;
@@ -321,7 +337,8 @@ function KbSkillCard({
       onClick={onCardClick}
       onKeyDown={onCardKey}
       data-testid={`kb-card-${skill.name}`}
-      style={{ "--i": Math.min(index, 24) } as CSSProperties}
+      data-enter={enters ? true : undefined}
+      style={{ "--i": enters ? index : undefined } as CSSProperties}
       onPointerMove={(event) => {
         const rect = event.currentTarget.getBoundingClientRect();
         event.currentTarget.style.setProperty("--mx", `${event.clientX - rect.left}px`);

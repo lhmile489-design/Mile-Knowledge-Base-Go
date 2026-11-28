@@ -276,3 +276,40 @@ describe("KbSkillsPage detail entry (M9 T04)", () => {
     expect(screen.getByTestId("kb-card-go").getAttribute("data-active")).toBe("true");
   });
 });
+
+
+describe("KbSkillsPage entrance staggering (M10.1 P02)", () => {
+  const makeSkills = (count: number): KbSkill[] =>
+    Array.from({ length: count }, (_, index) => ({
+      name: "s-" + String(index).padStart(2, "0"),
+      description: "sample " + index,
+      path: "skills/sample/s-" + index,
+      category: "样例",
+      distributed: [],
+    }));
+
+  function renderGroups(sizes: number[]) {
+    return render(
+      <KbSkillsPage
+        groups={sizes.map((size, gi) => ({ category: "cat-" + gi, skills: makeSkills(size).map((s, si) => ({ ...s, name: "g" + gi + "-" + s.name, path: "skills/cat" + gi + "/s-" + si })) }))}
+        tools={tools}
+        onOpenSkill={noop}
+        onLocate={noop}
+        onDistribute={noop}
+        onInstall={noop}
+        onUpdate={noop}
+        onOpenDetail={noop}
+      />,
+    );
+  }
+
+  it("staggers only the first 24 cards in flat order and shows the rest directly", () => {
+    renderGroups([18, 12]);
+    const entering = document.querySelectorAll(".kb-card[data-enter]");
+    expect(entering.length).toBe(24);
+    expect(screen.getByTestId("kb-card-g0-s-17").hasAttribute("data-enter")).toBe(true);
+    expect(screen.getByTestId("kb-card-g1-s-05").hasAttribute("data-enter")).toBe(true);
+    expect(screen.getByTestId("kb-card-g1-s-06").hasAttribute("data-enter")).toBe(false);
+    expect(screen.getByTestId("kb-card-g1-s-11").hasAttribute("data-enter")).toBe(false);
+  });
+});

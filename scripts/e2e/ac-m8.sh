@@ -177,6 +177,8 @@ wait_match "kb cards" "document.querySelector('[data-testid^=\"kb-card-\"]') !==
 
 echo "== 1.6.1: the kb view scrolls and list mode keeps one row per skill"
 wait_match "scroll fixtures scanned" "document.querySelectorAll('[data-testid^=\"kb-card-scroll-\"]').length >= 40" '"value":true' 40
+check "entrance only on the first 24 cards (P02)" "(() => { const first=document.querySelector('[data-testid=\"kb-card-scroll-00\"]'); const extra=document.querySelector('[data-testid=\"kb-card-scroll-25\"]'); if (!first || !extra) return 'missing'; const a=getComputedStyle(first).animationName, b=getComputedStyle(extra).animationName; return (a === 'skills-rise' && b === 'none') || JSON.stringify({ first: a, extra: b }); })()" '"value":true'
+
 check "kb content is bounded by the page" "(() => { const page=document.querySelector('[data-testid=\"skills-page\"]').getBoundingClientRect(); const r=document.querySelector('.skills-page .kb-content').getBoundingClientRect(); return r.bottom <= page.bottom + 1; })()" '"value":true'
 check "kb content scrolls (grid)" "(() => { const el=document.querySelector('.skills-page .kb-content'); el.scrollTop=0; el.scrollTop=300; const moved=el.scrollTop > 0; el.scrollTop=0; return el.scrollHeight > el.clientHeight && moved; })()" '"value":true'
 click '.skills-page .kb-view-toggle [aria-label="列表"]'
