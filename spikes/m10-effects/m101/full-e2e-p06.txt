@@ -1,0 +1,855 @@
+== build (e2e tags)
+$ mygo build
+
+  MyGo!!!!! v0.10.0  build
+
+  ○ Generating the TypeScript client
+  ✓ src/mygo.ts is up to date  9.9s
+  ○ Building the frontend
+  web │ $ tsc --noEmit && vite build
+  web │ [36mvite v8.3.8 [32mbuilding client environment for production...[36m[39m
+  web │ transforming...
+  web │ ✓ 4743 modules transformed.
+  web │ rendering chunks...
+  web │ computing gzip size...
+  web │ dist/index.html                                0.84 kB │ gzip:   0.46 kB
+  web │ dist/assets/deepseek-harness-Ba7vhT0a.svg      4.97 kB │ gzip:   2.40 kB
+  web │ dist/assets/qoder-CCjsVbDP.svg                 6.19 kB │ gzip:   2.74 kB
+  web │ dist/assets/antigravity-DgAQAdn3.svg           7.63 kB │ gzip:   1.74 kB
+  web │ dist/assets/hermes-DUfTwIy7.svg               19.78 kB │ gzip:   8.69 kB
+  web │ dist/assets/icon-M2MsZezd.png                221.75 kB
+  web │ dist/assets/index-Cyyh29XK.css               222.52 kB │ gzip:  33.75 kB
+  web │ dist/assets/index-CbTwlTab.js              1,370.27 kB │ gzip: 416.44 kB
+  web │
+  web │ [33m[plugin builtin:vite-reporter] 
+  web │ (!) Some chunks are larger than 500 kB after minification. Consider:
+  web │ - Using dynamic import() to code-split the application
+  web │ - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+  web │ - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+  web │ [33m[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/lib/transport.ts is dynamically imported by src/components/ReaderView.tsx, src/stores/appStore.ts but also statically imported by src/components/AuditPanel.tsx, src/components/BacklinksPanel.tsx, src/components/EditorPane.tsx, src/components/HealthPanel.tsx, src/components/MutationPlanCard.tsx, ..., dynamic import will not move module into another chunk.
+  web │ [39m
+  web │ [32m✓ built in 845ms[39m
+  ✓ Built the frontend  3.0s
+  • Keeping the inspector of native UI (MYGO_INSPECTOR=1)
+  ○ Compiling windows/amd64
+  ✓ Compiled windows/amd64  2.4s
+  ○ Creating mile-knowledge-base-setup-1.8.1-amd64.exe
+  ✓ Created mile-knowledge-base-setup-1.8.1-amd64.exe  11.3s
+  • Copied 2 resources next to the executable
+
+  ✓ Built Mile Knowledge Base 1.8.1 in 28.1s
+
+    build/windows-amd64/
+      Mile Knowledge Base.exe                      20.7 MB
+      mile-knowledge-base-setup-1.8.1-amd64.exe     7.0 MB
+
+== scripts/e2e/ac-m0.sh
+PASS workbench with vault
+PASS tree has area sections
+PASS expand skills
+PASS skills children visible
+PASS open a document by clicking it
+PASS open 首页.md via tree
+PASS reading mode rendered
+PASS switch to source mode
+PASS source editor visible
+PASS edit in store
+PASS dirty dot appears
+PASS save clears dirty
+PASS file on disk updated
+PASS external change adopted
+PASS csp present in built page
+RESULT pass=15 fail=0
+== scripts/e2e/ac-m1.sh
+PASS index ready
+== search and open
+PASS search returns hits
+PASS search hit opens with Enter
+PASS document opened
+== backlinks
+PASS backlinks list 富文本样例
+== create, rename, archive through plan cards
+PASS create plan card
+PASS created file exists
+PASS renamed file exists
+PASS archive plan card
+PASS archived file moved
+== audit and restore
+PASS audit lists the archive
+PASS restore preview opens
+PASS restored file back
+audit lines: 4, documents: {"id":1,"result":{"value":24}}
+== restart: index and audit survive
+PASS index ready after restart
+PASS document count kept
+PASS audit survived restart (4 -> 4)
+RESULT pass=16 fail=0
+== scripts/e2e/ac-m10.sh
+== S1: std/std, light: AC-MAT-1 distribution, AC-MAT-2/3 levels
+PASS boot
+PASS the window is visible, so the material can be measured
+PASS attributes on <html> from the stored pair
+evidence (normal frames while scrolling): {"id":1,"result":{"value":"{\"n\":200,\"median\":8.3,\"p95\":8.4}"}}
+PASS normal scrolling does not degrade the blur
+PASS doc open
+PASS AC-MAT-1 title bar and shells are glass without a filter of their own
+PASS AC-MAT-1 colour field sits behind everything and drifts
+PASS a hidden page removes the colour field entirely
+PASS AC-MAT-1 text-dense regions are opaque sheets
+PASS AC-MAT-1 overview tiles and run parameters are card-tier glass
+PASS AC-MAT-1 an empty chat is not a sheet, so the tiles sit on the glass
+-- search panel
+PASS search open
+PASS AC-MAT-1 search panel is strong glass over an opaque result area
+-- route menu
+PASS route menu open
+PASS AC-MAT-1 menu is strong glass with a 24px blur
+-- plan card and health panel
+PASS plan card open
+PASS AC-MAT-1 plan card is strong glass and its scrim blurs behind it
+PASS health open
+PASS AC-MAT-1 health panel is strong glass over an opaque list
+-- switching levels on the workbench does not replay the entrance
+PASS no entrance animation restarts after a blur switch
+-- AC-MAT-2: the four blur levels through the settings rows
+PASS settings open
+PASS settings panels reach the window bottom minus one gap
+PASS P01 panels reach the bottom at 1440x1100
+PASS P01 panels reach the bottom at 960x720
+PASS model service open
+PASS P01 model-service content bottom is reachable inside its own scroll area
+PASS P01 nav panel bottom is also the grid bottom
+PASS categories open
+PASS P01 save bar appears
+PASS P01 save bar bottom is the host bottom minus inset
+PASS back to general
+PASS blur off reaches <html>
+PASS AC-MAT-2 blur off: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur off: the choice is checked
+PASS AC-MAT-2 blur off stored: {"blur": "off", "motion": "std"}
+PASS blur low reaches <html>
+PASS AC-MAT-2 blur low: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur low: the choice is checked
+PASS AC-MAT-2 blur low stored: {"blur": "low", "motion": "std"}
+PASS blur std reaches <html>
+PASS AC-MAT-2 blur std: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur std: the choice is checked
+PASS AC-MAT-2 blur std stored: {"blur": "std", "motion": "std"}
+PASS blur high reaches <html>
+PASS AC-MAT-2 blur high: panel alpha, card alpha, --glass-blur and the field
+PASS AC-MAT-2 blur high: the choice is checked
+PASS AC-MAT-2 blur high stored: {"blur": "high", "motion": "std"}
+-- AC-MAT-3: the four animation levels
+PASS motion off reaches <html>
+PASS AC-MAT-3 motion off: duration, lift and field drift
+PASS AC-MAT-3 motion off stored: {"blur": "high", "motion": "off"}
+PASS motion low reaches <html>
+PASS AC-MAT-3 motion low: duration, lift and field drift
+PASS AC-MAT-3 motion low stored: {"blur": "high", "motion": "low"}
+PASS motion std reaches <html>
+PASS AC-MAT-3 motion std: duration, lift and field drift
+PASS AC-MAT-3 motion std stored: {"blur": "high", "motion": "std"}
+PASS motion high reaches <html>
+PASS AC-MAT-3 motion high: duration, lift and field drift
+PASS AC-MAT-3 motion high stored: {"blur": "high", "motion": "high"}
+PASS pair saved for the restart: {"blur": "low", "motion": "low"}
+-- AC-MAT-2: blur off on the workbench is the 1.7.0 look
+PASS workbench back
+PASS AC-MAT-2 blur off: shells, tiles and menus are opaque, no filter, no field
+== S2: restart keeps the pair and the first frame is already painted with it
+PASS file before restart: {"blur": "off", "motion": "low"}
+first reachable state: {"id":1,"result":{"value":"{\"blur\":\"off\",\"motion\":\"low\",\"preload\":{\"motion\":\"low\",\"blur\":\"off\"},\"root\":true,\"storeUp\":true,\"settingsLoaded\":true,\"href\":\"/\"}"}}
+PASS AC-MAT-2 first reachable state already has the saved pair
+NOTE the settings store had already loaded at that moment; this reading alone is not conclusive about the first frame, the iframe checks below are
+PASS AC-MAT-2 the preload is the saved pair and theme-init.js runs before the app module
+PASS AC-MAT-2 theme-init.js alone paints the pair onto a clean <html>
+PASS AC-MAT-2 a garbage preload leaves <html> alone
+PASS AC-MAT-2 the store agrees with the file after the restart
+== S3: AC-MAT-4: the system animation switch is off
+PASS boot
+PASS the media query is on and mirrored into the store
+PASS AC-MAT-4 durations, lift and the field drift behave as animation off
+PASS AC-MAT-4 entrance animations do not run
+PASS AC-MAT-4 the user level is untouched
+PASS settings open
+PASS AC-MAT-4 the note explains it and the choice is still shown and editable
+== S4: AC-MAT-8: really slow frames while scrolling
+PASS boot
+PASS AC-MAT-8 the blur switched itself off
+evidence (slow frames while scrolling): {"id":1,"result":{"value":"{\"n\":120,\"median\":58.3,\"p95\":58.4}"}}
+PASS the frames really were slow
+PASS AC-MAT-8 the colour field is gone and the shells are opaque
+PASS AC-MAT-8 the user value is unchanged
+PASS AC-MAT-8 settings.json unchanged: {"blur": "std", "motion": "std"}
+PASS settings open
+PASS AC-MAT-8 the settings page says so and the control stays usable
+PASS AC-MAT-8 choosing another level does not undo the degrade for this run
+-- the degrade is for one run only
+PASS boot again
+PASS AC-MAT-8 a new launch is back to the stored level
+== S5: nothing is judged while the user blur is off
+PASS boot
+PASS no degrade and no note when the user already chose off
+== S6: AC-MAT-1: the welcome page
+PASS welcome
+PASS AC-MAT-1 the colour field shows through the welcome shell
+PASS AC-MAT-1 the welcome card is strong glass
+PASS AC-MAT-1 the title bar is glass here too
+PASS guide open
+PASS AC-MAT-1 the new-vault guide is strong glass over a blurred scrim
+RESULT pass=94 fail=0
+== scripts/e2e/ac-m2.sh
+PASS engine ready
+== route and stream
+PASS route preview targets curator
+PASS route line shows 发给 整理归档
+PASS first turn streamed to end
+PASS answer text rendered
+PASS usage receipt shows this turn
+PASS cost is unknown, not zero
+== tool approval
+PASS approval card appears
+PASS card names the target file
+PASS card names the verb
+PASS file written after allow
+PASS card removed after the Go frame
+PASS tool turn finished
+PASS tool answer rendered
+== history search
+PASS history rail visible
+PASS search hits the conversation
+PASS search hit rendered
+== restart: restore and search survive
+PASS engine ready after restart
+PASS chat restored after restart
+PASS history rail restored open
+PASS history list survived
+PASS search still hits after restart
+RESULT pass=22 fail=0
+== scripts/e2e/ac-m3.sh
+PASS overview visible
+PASS index ready
+PASS overview recent tile
+PASS overview skills tile has count
+PASS recent list updated
+{"id":1,"result":{"value":true}}
+PASS settings opened
+{"id":1,"result":{"value":true}}
+PASS settings general
+{"id":1,"result":{"value":true}}
+PASS settings model
+{"id":1,"result":{"value":true}}
+PASS settings agents
+{"id":1,"result":{"value":true}}
+PASS settings categories
+{"id":1,"result":{"value":true}}
+PASS settings about
+PASS about shows a version
+{"id":1,"result":{"value":true}}
+PASS general opened
+{"id":1,"result":{"value":true}}
+PASS theme dark applied
+{"id":1,"result":{"value":true}}
+PASS theme light applied
+{"id":1,"result":{"value":true}}
+PASS categories opened
+{"id":1,"result":{"value":true}}
+PASS save bar appears
+{"id":1,"result":{"value":true}}
+PASS save bar cleared
+{"id":1,"result":{"value":true}}
+PASS switch off
+PASS sidebar shows alias
+PASS search settled
+PASS no raws hits while off
+{"id":1,"result":{"value":true}}
+PASS settings reopened
+{"id":1,"result":{"value":true}}
+PASS categories again
+{"id":1,"result":{"value":true}}
+PASS switch on
+PASS search settled again
+PASS raws hits return
+{"id":1,"result":{"value":true}}
+PASS general again
+PASS doc opened for ctrl-s
+{"id":1,"result":{"value":true}}
+PASS agents for ctrl-s
+PASS draft bar
+PASS ctrl-s cleared the bar
+PASS document still dirty
+PASS workbench after ctrl-s
+PASS overview back
+PASS pending tile counts 1
+PASS pending tile warns
+{"id":1,"result":{"value":true}}
+PASS settings for theme
+{"id":1,"result":{"value":true}}
+PASS general for theme
+{"id":1,"result":{"value":true}}
+PASS dark before restart
+PASS restarted overview
+PASS theme persisted
+PASS alias persisted
+PASS welcome without vault
+PASS settings without vault
+{"id":1,"result":{"value":true}}
+PASS no-vault notice
+PASS no-vault notice copy
+RESULT pass=47 fail=0
+== scripts/e2e/ac-m35.sh
+PASS fresh boot
+PASS AC-ACC-1 store default orange
+PASS AC-ACC-1 html attribute
+PASS AC-ACC-1 tokens and welcome button
+PASS AC-ACC-1 no fault notice
+PASS seeded boot
+PASS doc opened
+PASS tree row selected
+PASS AC-ACC-2 starts orange
+{"id":1,"result":{"value":true}}
+PASS popover open
+PASS popover swatches
+{"id":1,"result":{"value":true}}
+PASS blue applied at once
+PASS blue stored
+PASS dot label blue
+{"id":1,"result":{"value":true}}
+PASS settings open
+PASS AC-ACC-2 settings row shows blue
+PASS AC-ACC-2 file stores blue
+PASS restart with blue
+PASS AC-ACC-2 blue after restart
+PASS AC-ACC-2 blue button token after restart
+PASS doc for contrast
+PASS tree row for contrast
+contrast samples=72 worst=button:4.51, fill:3.06, text:5.26
+contrast samples=72 worst=button:4.51, fill:3.06, text:5.26
+PASS AC-ACC-3 real-component contrast
+PASS settings for custom
+{"id":1,"result":{"value":true}}
+PASS custom hint
+PASS custom applied
+PASS AC-ACC-4 store keeps the input value
+PASS AC-ACC-4 file keeps the input value
+PASS restart with custom
+PASS AC-ACC-4 custom after restart
+PASS boot with garbage accent
+PASS AC-ACC-5 falls back to orange
+PASS AC-ACC-5 no fault notice
+PASS settings with garbage accent
+PASS AC-ACC-5 orange checked in settings
+{"id":1,"result":{"value":true}}
+PASS green picked again
+PASS AC-ACC-5 can pick again
+RESULT pass=37 fail=0
+== scripts/e2e/ac-m4.sh
+PASS overview
+PASS index
+PASS skills page open
+PASS tools rows
+PASS AC-SKM-2 linked
+PASS AC-SKM-2 broken
+PASS AC-SKM-2 copied
+PASS AC-SKM-2 independent
+PASS AC-SKM-2 builtin
+PASS AC-SKM-2 external
+{"id":1,"result":{"value":true}}
+PASS uninstall dialog
+{"id":1,"result":{"value":true}}
+PASS external removed
+PASS AC-SKM-2 link gone
+PASS AC-SKM-2 external target unchanged
+PASS AC-SKM-1 kiro hidden by default
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-1 kiro chip after expand
+PASS AC-SKM-1 kiro skill visible
+PASS distribute dialog
+PASS AC-SKM-1 kiro not a target
+PASS AC-SKM-3 read through link
+PASS AC-SKM-5 conflict
+PASS AC-SKM-6 overwrite content
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-6 uninstall new
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-6 removed new
+PASS install view
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-6 restore
+PASS AC-SKM-6 restore content
+PASS install dialog closed
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-7 dialog
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-7 removed
+PASS AC-SKM-7 link gone
+PASS AC-SKM-7 kb unchanged
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-8 dialog
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-8 removed
+PASS AC-SKM-8 backed up
+PASS AC-SKM-8 records
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-8 restore
+PASS AC-SKM-8 restored
+PASS AC-SKM-8 records include restore
+PASS AC-SKM-8 install dialog closed
+PASS AC-SKM-9 vault copy
+PASS AC-SKM-9 both tools link
+PASS AC-SKM-9 backups
+PASS AC-SKM-9 linked row
+PASS AC-SKM-10 no uninstall for builtin
+PASS AC-SKM-10 api rejects
+PASS no sidebar import entry
+PASS second overview
+PASS index
+PASS skills page open
+{"id":1,"result":{"value":true}}
+PASS old vue dialog
+{"id":1,"result":{"value":true}}
+PASS old vue removed
+AC-SKM-4 items: {"id":1,"result":{"value":"[{\"targetId\":\"claude-code\",\"toolId\":\"claude-code\",\"result\":\"copied\",\"detail\":\"联接创建失败，已改用拷贝\"}]"}}
+PASS AC-SKM-4 reported copy
+PASS AC-SKM-4 copied files
+PASS AC-SKM-4 sync state
+PASS AC-SKM-4 redistribute action
+RESULT pass=56 fail=0
+== scripts/e2e/ac-m5.sh
+PASS overview
+PASS index
+PASS skills page open
+PASS install view
+PASS AC-SKM-12 read settled
+AC-SKM-12 read state: {"id":1,"result":{"value":"candidates"}}
+PASS AC-SKM-12 candidates
+PASS AC-SKM-12 both preselected
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-12 installed
+PASS AC-SKM-12 result line
+PASS AC-SKM-12 selected skill written
+PASS AC-SKM-12 unchecked skill skipped
+PASS AC-SKM-12 source record
+PASS AC-SKM-13 read settled
+PASS AC-SKM-13 archive error
+PASS AC-SKM-13 fault text
+PASS AC-SKM-13 offending entry
+PASS AC-SKM-13 vault unchanged
+PASS AC-SKM-13 no stage residue
+PASS offline overview
+PASS index
+PASS skills page open
+PASS install view
+PASS AC-SKM-14 network error
+PASS AC-SKM-14 vault unchanged
+PASS AC-SKM-14 source record unchanged
+PASS AC-SKM-14 no stage residue
+PASS update overview
+PASS index
+PASS skills page open
+PASS scan settles
+PASS check round done
+PASS AC-SKM-15 update pill
+PASS AC-SKM-15 preview
+PASS AC-SKM-15 text row
+PASS AC-SKM-15 binary row
+PASS AC-SKM-15 removed row
+PASS AC-SKM-15 plan card
+PASS AC-SKM-15 plan importFile
+PASS AC-SKM-15 plan trash
+PASS AC-SKM-15 executed
+PASS AC-SKM-15 latest pill
+PASS AC-SKM-15 text updated
+PASS AC-SKM-15 file added
+PASS AC-SKM-15 file removed
+PASS AC-SKM-15 binary updated
+PASS AC-SKM-15 record moved
+PASS AC-SKM-15 recoverable
+PASS AC-SKM-15 transaction has entries
+PASS check round done
+PASS AC-SKM-16 both changed
+PASS AC-SKM-16 no update button
+PASS AC-SKM-16 api refuses
+PASS AC-SKM-16 record unchanged
+PASS AC-SKM-16 no new stage
+RESULT pass=54 fail=0
+== scripts/e2e/ac-m6.sh
+PASS overview
+PASS index
+PASS skills page open
+{"id":1,"result":{"value":true}}
+PASS targets view
+{"id":1,"result":{"value":true}}
+PASS custom form
+{"id":1,"result":{"value":true}}
+PASS custom picked
+{"id":1,"result":{"value":true}}
+PASS custom row
+PASS custom id t-074758bbf410
+PASS custom path masked
+{"id":1,"result":{"value":true}}
+PASS project form
+{"id":1,"result":{"value":true}}
+PASS project dirs
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS project row
+PASS project id t-6320c4f48991
+PASS targets count line
+PASS project path masked
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS bad picked
+{"id":1,"result":{"value":true}}
+PASS vault rejected
+PASS vault form kept open
+{"id":1,"result":{"value":true}}
+PASS back to list
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS twin picked
+{"id":1,"result":{"value":true}}
+PASS overlap rejected
+{"id":1,"result":{"value":true}}
+PASS list again
+{"id":1,"result":{"value":true}}
+PASS custom chip
+PASS project chip
+{"id":1,"result":{"value":true}}
+PASS project row x
+PASS project row y
+PASS project row attribution
+PASS project row path masked
+PASS kb vue card
+PASS distribute dialog
+PASS two targets selected
+{"id":1,"result":{"value":true}}
+PASS distributed
+PASS distribute dialog closed
+PASS custom link written
+PASS project link written
+PASS read through custom link
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS targets view 2
+{"id":1,"result":{"value":true}}
+PASS remove dialog
+PASS remove dialog keeps files
+{"id":1,"result":{"value":true}}
+PASS removed banner
+PASS registration removal kept files
+PASS kb edit visible
+{"id":1,"result":{"value":true}}
+PASS custom chip gone
+PASS project chip remains
+PASS manager via settings entry
+PASS real .claude untouched
+PASS real .agents untouched
+RESULT pass=47 fail=0
+== scripts/e2e/ac-m7.sh
+PASS A overview
+PASS index
+PASS skills page open
+{"id":1,"result":{"value":true}}
+PASS A targets view
+{"id":1,"result":{"value":true}}
+PASS A custom form
+{"id":1,"result":{"value":true}}
+PASS A custom picked
+{"id":1,"result":{"value":true}}
+PASS A custom row
+{"id":1,"result":{"value":true}}
+PASS A project form
+{"id":1,"result":{"value":true}}
+PASS A project picked
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS A project row
+{"id":1,"result":{"value":true}}
+PASS A registrations
+PASS A vue card
+PASS distribute dialog
+PASS A link target selected
+PASS A link distributed
+PASS A distribute dialog closed
+PASS distribute dialog
+PASS distributed
+PASS distribute dialog closed
+{"id":1,"result":{"value":true}}
+PASS A install view
+PASS A read settled
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS A tool targets
+{"id":1,"result":{"value":true}}
+PASS A claude target on
+PASS A install result
+A install result: {"id":1,"result":{"value":"pdf → Claude Code：已安装"}}
+PASS A installed
+A manifest: {"version": 1, "count": 4, "items": [{"source": "github", "name": "pdf", "target": {"kind": "builtin", "toolId": "claude-code"}, "mode": null}, {"source": "kb", "name": "vue", "target": {"kind": "builtin", "toolId": "claude-code"}, "mode": "link"}, {"source": "kb", "name": "vue", "target": {"kind": "custom", "name": "Droid"}, "mode": "copy"}, {"source": "kb", "name": "vue", "target": {"kind": "project", "name": "Site", "subdir": ".claude/skills"}, "mode": "copy"}], "raw": "{\n  \"version\": 1,\n  \"updatedAt\": \"2026-11-28T08:25:01Z\",\n  \"items\": [\n    {\n      \"source\": \"github\",\n      \"target\": {\n        \"kind\": \"builtin\",\n        \"toolId\": \"claude-code\"\n      },\n      \"name\": \"pdf\",\n      \"owner\": \"anthropics\",\n      \"repo\": \"skills\",\n      \"ref\": \"main\",\n      \"path\": \"skills/pdf\",\n      \"commit\": \"1111111111111111111111111111111111111111\",\n      \"pathCommit\": \"1111111111111111111111111111111111111111\",\n      \"updatedAt\": \"2026-11-28T08:25:01Z\"\n    },\n    {\n      \"source\": \"kb\",\n      \"target\": {\n        \"kind\": \"builtin\",\n        \"toolId\": \"claude-code\"\n      },\n      \"name\": \"vue\",\n      \"skillPath\": \"skills/ǰ��/vue\",\n      \"mode\": \"link\",\n      \"updatedAt\": \"2026-11-28T08:24:55Z\"\n    },\n    {\n      \"source\": \"kb\",\n      \"target\": {\n        \"kind\": \"custom\",\n        \"name\": \"Droid\"\n      },\n      \"name\": \"vue\",\n      \"skillPath\": \"skills/ǰ��/vue\",\n      \"mode\": \"copy\",\n      \"updatedAt\": \"2026-11-28T08:24:57Z\"\n    },\n    {\n      \"source\": \"kb\",\n      \"target\": {\n        \"kind\": \"project\",\n        \"name\": \"Site\",\n        \"subdir\": \".claude/skills\"\n      },\n      \"name\": \"vue\",\n      \"skillPath\": \"skills/ǰ��/vue\",\n      \"mode\": \"copy\",\n      \"updatedAt\": \"2026-11-28T08:24:57Z\"\n    }\n  ]\n}\n"}
+PASS AC-SKM-20 four manifest items
+PASS AC-SKM-20 project target
+PASS AC-SKM-20 github item
+PASS AC-SKM-20 manifest leaks nothing
+PASS B overview
+PASS index
+PASS skills page open
+{"id":1,"result":{"value":true}}
+PASS B targets view
+{"id":1,"result":{"value":true}}
+PASS B project form
+{"id":1,"result":{"value":true}}
+PASS B project picked
+{"id":1,"result":{"value":true}}
+{"id":1,"result":{"value":true}}
+PASS B project row
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-21 banner
+{"id":1,"result":{"value":true}}
+PASS restore view
+PASS AC-SKM-21 groups
+PASS AC-SKM-21 conflict group
+PASS AC-SKM-21 skip group
+PASS AC-SKM-21 selection count
+PASS AC-SKM-22 conflict stays unchecked
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-21 result
+PASS AC-SKM-23 unmatched listed
+PASS AC-SKM-23 not a failure
+PASS AC-SKM-21 project copy restored
+PASS AC-SKM-21 github skill restored
+PASS AC-SKM-21 two log records
+PASS AC-SKM-22 conflict dir untouched
+PASS restore leaves the manifest alone
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-22 banner one left
+{"id":1,"result":{"value":true}}
+PASS restore view
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-22 overwrite result
+PASS AC-SKM-22 backup noted
+PASS AC-SKM-22 overwrite wrote the vault copy
+{"id":1,"result":{"value":true}}
+PASS skills page open
+PASS AC-SKM-24 unreadable banner
+PASS AC-SKM-24 warn tone
+{"id":1,"result":{"value":true}}
+PASS restore view
+PASS AC-SKM-24 restore status
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-24 confirm
+{"id":1,"result":{"value":true}}
+PASS AC-SKM-24 rebuilt
+PASS AC-SKM-24 corrupt copy kept
+PASS AC-SKM-24 corrupt copy on disk
+PASS AC-SKM-24 manifest readable again
+PASS AC-SKM-25 pdf row
+PASS AC-SKM-25 github source pill
+PASS real .claude untouched
+PASS real .agents untouched
+RESULT pass=70 fail=0
+== scripts/e2e/ac-m8.sh
+PASS overview
+PASS index ready
+== AC-PAGE-2: switch, subview, Esc, back with focus
+{"id":1,"result":{"value":true}}
+PASS skills page open
+PASS page fills below the title bar
+PASS workbench stays inert under the page
+PASS hidden workbench paints nothing and takes no input
+PASS skills host lets the window colour field through
+PASS update check entry
+{"id":1,"result":{"value":true}}
+PASS manual update check stays usable
+PASS kb cards
+== 1.6.1: the kb view scrolls and list mode keeps one row per skill
+PASS scroll fixtures scanned
+PASS entrance only on the first 24 cards (P02)
+PASS kb content is bounded by the page
+PASS kb content scrolls (grid)
+{"id":1,"result":{"value":true}}
+PASS list mode
+PASS list card is a single row
+PASS list name is not squeezed
+PASS kb content scrolls (list)
+{"id":1,"result":{"value":true}}
+PASS grid mode back
+PASS distribute subview
+PASS first Esc back to the list
+PASS second Esc keeps the page
+{"id":1,"result":{"value":true}}
+PASS workbench back
+PASS focus on the work segment
+PASS no sidebar import entry
+== AC-PAGE-1: stream, draft, doc edits and scroll survive the switch
+PASS stream started
+PASS doc opened
+PASS skills page visible during the stream
+PASS stream kept growing (3001 -> 10001)
+PASS composer draft kept
+PASS doc stays dirty
+PASS stream finished after the return
+PASS long answer rendered
+PASS chat scroll kept (120)
+== AC-PAGE-3: settings drafts keep the leave guard
+PASS settings open
+{"id":1,"result":{"value":true}}
+PASS steering field
+PASS leave dialog
+{"id":1,"result":{"value":true}}
+PASS stay keeps settings and the draft
+PASS leave dialog again
+{"id":1,"result":{"value":true}}
+PASS skills page after discarding
+== AC-PAGE-5: narrow window keeps the rail and the subviews inside
+PASS narrow viewport
+PASS nav collapses to 56px
+PASS no horizontal scroll
+PASS kb cards still there
+PASS distribute subview in the narrow window
+{"id":1,"result":{"value":true}}
+PASS tool row
+{"id":1,"result":{"value":true}}
+PASS confirm card complete in the narrow window
+PASS Esc cancels the confirm
+== AC-PAGE-6: reduced motion
+PASS motion query
+PASS cards visible
+PASS no entrance animation
+PASS field stops drifting
+PASS hover lift disabled by the media rule
+PASS no hover lift now
+== AC-PAGE-4: no vault, tools still usable
+PASS welcome
+{"id":1,"result":{"value":true}}
+PASS skills page without a vault
+PASS kb group explains the empty state
+{"id":1,"result":{"value":true}}
+PASS tool directory works without a vault
+{"id":1,"result":{"value":true}}
+PASS uninstall confirm
+{"id":1,"result":{"value":true}}
+PASS uninstalled without a vault
+RESULT pass=60 fail=0
+== scripts/e2e/ac-m9.sh
+PASS overview
+PASS index ready
+PASS skills page open
+PASS scroll fixtures scanned
+PASS other fixtures scanned
+== AC-UX-5: install in a dialog; scroll position and filter survive
+PASS filter narrows the list
+PASS list scrolled to 300 before installing
+PASS install dialog opens
+PASS install is a dialog, not a page
+PASS candidates
+PASS install result in the dialog
+PASS result line
+PASS a finished install can be closed (Esc)
+PASS dialog closed after the result
+PASS pdf landed in the vault
+PASS filter kept
+PASS scroll position kept (300 -> 300)
+PASS still on the skills page, no full-page install view
+PASS list refreshed with the new skill
+== AC-UX-6: nothing closes the dialog while it installs
+PASS dialog opens again
+PASS candidates again
+AC-UX-6 candidates: [["install-candidate-skills/docx",true,false],["install-candidate-skills/pdf",false,true],["submit-disabled",false,"文档"]]
+PASS Esc, close and scrim ignored while installing
+PASS result after the install
+PASS closes once there is a result
+PASS docx landed in the vault
+PASS docx card
+== AC-UX-7: batch distribute in a dialog
+PASS card menu
+PASS batch bar
+PASS three selected
+PASS distribute dialog
+PASS target grid
+PASS result in the dialog
+PASS three targets succeeded
+PASS dialog closed
+PASS batch selection left
+PASS cards show distributed
+PASS vue is in the tool directory
+PASS react is in the tool directory
+PASS mixa is in the tool directory
+== AC-UX-8: overwrite needs a confirmation card
+PASS distribute dialog for go-tips
+PASS preview marks the existing directory
+PASS confirmation card above the dialog
+PASS card says it backs up first
+PASS nothing written before the yes
+PASS confirm closed
+PASS overwrite result in the dialog
+PASS result says it succeeded
+PASS target now holds the vault version
+PASS the old directory was backed up
+PASS overwrite dialog closed
+== AC-UX-1/2/3/4: detail drawer
+PASS drawer ready
+PASS drawer header and path
+PASS source block names the repository
+PASS SKILL.md rendered
+PASS still on the skills page
+PASS list stays scrollable behind the drawer
+PASS drawer switched
+PASS distribution lists the tool
+PASS Esc closes the drawer
+PASS focus is back on the second card
+PASS drawer for vue
+PASS workbench shows
+PASS SKILL.md opened
+PASS skills page open
+PASS racer card
+PASS card is still listed while rescans are frozen
+PASS drawer says the file is missing
+PASS missing text and rescan button, no raw error
+PASS rescan drops the deleted skill from the list
+PASS drawer closed
+== AC-UX-9: nav filter
+PASS filter keeps only matches
+PASS group heads show hits / total
+PASS fewer items while filtering (12 -> 1)
+PASS clearing restores the list
+PASS list restored (12)
+== AC-UX-10: collapse a group, switch tools, keep it across a restart
+PASS knowledge-base group folded
+PASS group head sticks to the top of the list
+PASS tool view switches while folded
+PASS setting saved
+PASS settings.json holds the fold
+== AC-UX-10 (restart) and AC-UX-12: reduced motion
+PASS overview after restart
+PASS skills page open
+PASS nav rendered
+PASS fold survived the restart
+PASS tools group still open
+PASS motion query
+PASS expand again
+PASS cards after restart
+PASS drawer opens
+PASS drawer has no real slide-in
+PASS drawer closed
+PASS install dialog
+PASS dialog has no real scale-in
+PASS dialog closed
+== AC-UX-11: 744x640
+PASS narrow viewport
+width after resize: 731x634
+PASS nav is an icon rail
+PASS no horizontal scroll
+width after the fold click: 731
+PASS folded group still shows its items in the rail
+PASS drawer fits
+PASS no horizontal scroll with the drawer
+PASS drawer closed
+PASS install dialog fits
+PASS no horizontal scroll with the install dialog
+PASS install dialog closed
+PASS distribute dialog fits
+PASS no horizontal scroll with the distribute dialog
+PASS distribute dialog closed
+RESULT pass=107 fail=0
+EXIT=0
