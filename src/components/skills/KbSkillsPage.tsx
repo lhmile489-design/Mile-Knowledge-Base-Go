@@ -327,6 +327,29 @@ const KbSkillCard = memo(function KbSkillCard({
     activate();
   };
 
+  // Pointer follow is batched per animation frame (M10.1 P04, PLAN-M10.1
+  // R4): moving over one card used to call getBoundingClientRect and write two
+  // custom properties on every single pointermove, dozens of times per frame.
+  const pointerFrame = useRef(0);
+  const pointerAt = useRef({ x: 0, y: 0 });
+  useEffect(
+    () => () => {
+      if (pointerFrame.current) cancelAnimationFrame(pointerFrame.current);
+    },
+    [],
+  );
+  const onPointerFollow = (event: ReactMouseEvent<HTMLElement>) => {
+    const el = event.currentTarget;
+    pointerAt.current = { x: event.clientX, y: event.clientY };
+    if (pointerFrame.current) return;
+    pointerFrame.current = requestAnimationFrame(() => {
+      pointerFrame.current = 0;
+      const rect = el.getBoundingClientRect();
+      el.style.setProperty("--mx", `${pointerAt.current.x - rect.left}px`);
+      el.style.setProperty("--my", `${pointerAt.current.y - rect.top}px`);
+    });
+  };
+
   return (
     <article
       className="kb-card"
@@ -339,11 +362,7 @@ const KbSkillCard = memo(function KbSkillCard({
       data-testid={`kb-card-${skill.name}`}
       data-enter={enters ? true : undefined}
       style={{ "--i": enters ? index : undefined } as CSSProperties}
-      onPointerMove={(event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        event.currentTarget.style.setProperty("--mx", `${event.clientX - rect.left}px`);
-        event.currentTarget.style.setProperty("--my", `${event.clientY - rect.top}px`);
-      }}
+      onPointerMove={onPointerFollow}
     >
       {selecting ? (
         <button

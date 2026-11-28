@@ -313,3 +313,30 @@ describe("KbSkillsPage entrance staggering (M10.1 P02)", () => {
     expect(screen.getByTestId("kb-card-g1-s-11").hasAttribute("data-enter")).toBe(false);
   });
 });
+
+
+describe("KbSkillsPage pointer follow (M10.1 P04)", () => {
+  it("coalesces pointer-follow rect reads and writes into one per frame", async () => {
+    renderPage();
+    const card = screen.getByTestId("kb-card-vue");
+    let calls = 0;
+    const original = card.getBoundingClientRect.bind(card);
+    card.getBoundingClientRect = () => {
+      calls += 1;
+      return original();
+    };
+    fireEvent.pointerMove(card, { clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(card, { clientX: 20, clientY: 20 });
+    fireEvent.pointerMove(card, { clientX: 30, clientY: 30 });
+    // The writes happen on the next animation frame; give it room to fire.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    });
+    // Three moves in the same frame must cost one rect read, not three.
+    expect(calls).toBe(1);
+    const mx = card.style.getPropertyValue("--mx");
+    const my = card.style.getPropertyValue("--my");
+    expect(mx).not.toBe("");
+    expect(my).not.toBe("");
+  });
+});
