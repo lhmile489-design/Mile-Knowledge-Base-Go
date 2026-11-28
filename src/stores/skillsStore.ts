@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { mergeScan } from "../lib/scanMerge";
 import { skillsApi, TransportError, type SkillScan, type SkillTool } from "../lib/transport";
 
 /** The skill panel's read side (M4 T04): registry + scan payloads. Write
@@ -55,7 +56,7 @@ function afterScan(vaultId: string, scanning: boolean): void {
   else stopScanPoll();
 }
 
-export const useSkillsStore = create<SkillsState>((set) => ({
+export const useSkillsStore = create<SkillsState>((set, get) => ({
   tools: [],
   scan: null,
   loading: false,
@@ -78,7 +79,7 @@ export const useSkillsStore = create<SkillsState>((set) => ({
       const result = await skillsApi.scan(vaultId);
       // A newer request won; drop this response.
       if (seq !== scanSeq) return;
-      set({ scan: result.scan, error: null });
+      set({ scan: mergeScan(get().scan, result.scan), error: null });
       afterScan(vaultId, result.scan.scanning);
     } catch (error) {
       if (seq !== scanSeq) return;
@@ -91,7 +92,7 @@ export const useSkillsStore = create<SkillsState>((set) => ({
     set({ loading: true });
     try {
       const [registry, result] = await Promise.all([skillsApi.registry(), skillsApi.scan(vaultId)]);
-      set({ tools: registry.tools, scan: result.scan, error: null });
+      set({ tools: registry.tools, scan: mergeScan(get().scan, result.scan), error: null });
       afterScan(vaultId, result.scan.scanning);
     } catch (error) {
       set({ error: message(error) });
@@ -100,7 +101,7 @@ export const useSkillsStore = create<SkillsState>((set) => ({
     }
   },
 
-  applyScan: (scan) => set({ scan }),
+  applyScan: (scan) => set({ scan: mergeScan(get().scan, scan) }),
 }));
 
 // E2E hook: the same store the panel uses.

@@ -168,7 +168,7 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
       preview: { ...emptyPreview.preview, pending: 2 },
     });
     render(<SkillsPage />);
-    await waitFor(() => expect(screen.getByTestId("restore-banner")).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId("restore-banner")).toBeTruthy(), { timeout: 3500 });
     expect(screen.getByTestId("restore-banner").textContent).toContain("2 项尚未在本机还原");
     expect(screen.getByTestId("skills-main").contains(screen.getByTestId("restore-banner"))).toBe(true);
   });
@@ -195,7 +195,7 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
 
   it("offers the manual update check and shows the footer states", async () => {
     render(<SkillsPage />);
-    await waitFor(() => expect(checkUpdates).toHaveBeenCalledWith("v1", false));
+    await waitFor(() => expect(checkUpdates).toHaveBeenCalledWith("v1", false), { timeout: 3500 });
     checkUpdates.mockResolvedValueOnce({
       checkedAt: new Date().toISOString(),
       checking: false,
@@ -204,7 +204,7 @@ describe("skills page (M8 T03 shell / T04 knowledge-base view)", () => {
       rateLimitResetAt: new Date(Date.now() + 60000).toISOString(),
     });
     fireEvent.click(screen.getByTestId("skills-check-updates"));
-    await waitFor(() => expect(checkUpdates).toHaveBeenLastCalledWith("v1", true));
+    await waitFor(() => expect(checkUpdates).toHaveBeenLastCalledWith("v1", true), { timeout: 3500 });
     await waitFor(() => expect(screen.getByTestId("skills-unchecked").textContent).toContain("2 个来源"));
     expect(screen.getByTestId("skills-rate-limit").textContent).toContain("额度用完");
     expect(screen.getByTestId("skills-checked").textContent).toContain("刚刚检查过");

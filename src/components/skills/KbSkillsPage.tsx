@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { Check, DotsThree, FolderSimple, GithubLogo, ListBullets, Plus, SquaresFour } from "@phosphor-icons/react";
 import type { KbSkill, SkillCategory, SkillTool } from "../../lib/transport";
 import { remotePill, sourceOf } from "../../lib/skillRemote";
@@ -273,7 +273,7 @@ export function KbSkillsPage({
   );
 }
 
-function KbSkillCard({
+const KbSkillCard = memo(function KbSkillCard({
   index,
   enters,
   skill,
@@ -296,13 +296,13 @@ function KbSkillCard({
   readonly selecting: boolean;
   readonly selected: boolean;
   readonly active: boolean;
-  readonly onOpenDetail: () => void;
-  readonly onToggle: () => void;
+  readonly onOpenDetail: (path: string) => void;
+  readonly onToggle: (path: string) => void;
   readonly onStartSelecting: () => void;
-  readonly onOpen: () => void;
-  readonly onLocate: () => void;
-  readonly onDistribute: () => void;
-  readonly onUpdate: () => void;
+  readonly onOpen: (path: string) => void;
+  readonly onLocate: (path: string) => void;
+  readonly onDistribute: (paths: string[], onFinished?: () => void) => void;
+  readonly onUpdate: (skill: KbSkill) => void;
 }) {
   const [menu, setMenu] = useState(false);
   const status = skillStatus(skill);
@@ -314,7 +314,7 @@ function KbSkillCard({
   // The card is the hit target; its own buttons, links, the ⋯ menu and the
   // overwrite-style inputs keep their own behaviour. While selecting, the card
   // toggles the selection instead of opening the drawer.
-  const activate = () => (selecting ? onToggle() : onOpenDetail());
+  const activate = () => (selecting ? onToggle(skill.path) : onOpenDetail(skill.path));
   const onCardClick = (event: ReactMouseEvent<HTMLElement>) => {
     const target = event.target as HTMLElement | null;
     if (target?.closest("button, a, input, label, [role='menu']")) return;
@@ -352,7 +352,7 @@ function KbSkillCard({
           role="checkbox"
           aria-checked={selected}
           aria-label={`选择 ${skill.name}`}
-          onClick={onToggle}
+          onClick={() => onToggle(skill.path)}
         >
           {selected ? <Check size={12} weight="bold" aria-hidden /> : null}
         </button>
@@ -370,10 +370,10 @@ function KbSkillCard({
           </button>
           {menu ? (
             <span className="popover kb-menu" role="menu">
-              <button type="button" role="menuitem" onClick={() => { setMenu(false); onOpen(); }}>
+              <button type="button" role="menuitem" onClick={() => { setMenu(false); onOpen(skill.path); }}>
                 打开 SKILL.md
               </button>
-              <button type="button" role="menuitem" onClick={() => { setMenu(false); onLocate(); }}>
+              <button type="button" role="menuitem" onClick={() => { setMenu(false); onLocate(skill.path); }}>
                 在侧栏定位
               </button>
               <button
@@ -385,7 +385,7 @@ function KbSkillCard({
                 批量选择
               </button>
               {updatable ? (
-                <button type="button" role="menuitem" onClick={() => { setMenu(false); onUpdate(); }}>
+                <button type="button" role="menuitem" onClick={() => { setMenu(false); onUpdate(skill); }}>
                   更新…
                 </button>
               ) : null}
@@ -451,13 +451,13 @@ function KbSkillCard({
             <button
               type="button"
               className="kb-act"
-              onClick={onUpdate}
+              onClick={() => onUpdate(skill)}
               data-testid={`kb-update-${skill.name}`}
             >
               更新
             </button>
           ) : (
-            <button type="button" className="kb-act" onClick={onDistribute}>
+            <button type="button" className="kb-act" onClick={() => onDistribute([skill.path])}>
               分发
             </button>
           )
@@ -465,4 +465,4 @@ function KbSkillCard({
       </span>
     </article>
   );
-}
+});

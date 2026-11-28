@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { events } from "../../mygo";
 import { skillsApi, type KbSkill, type SkillRestorePreview, type SkillUpdateCheckResult } from "../../lib/transport";
 import { useAppStore } from "../../stores/appStore";
@@ -17,6 +17,10 @@ import { ToolSkillsPage } from "./ToolSkillsPage";
 import { UpdateView } from "./UpdateView";
 
 type PendingUpdate = { vaultId: string; stageId: string; planId: string; name: string };
+
+// The entrance animation is ~1.2 s for 24 staggered cards (520ms + 24 × 38ms
+// plus a small settle margin); non-scan requests wait for it (PLAN-M10.1 R2).
+const ENTER_SETTLE_MS = 1500;
 
 function subscribeSkillsChanged(listener: () => void): () => void {
   try {
@@ -77,8 +81,14 @@ export function SkillsPage() {
 
   useEffect(() => {
     refreshScan();
-    void refreshUpdates(false);
     setDetailPath(null);
+    // The entrance animation comes first: the update check and the restore
+    // preview are deferred so their extra renders cannot interrupt it
+    // (PLAN-M10.1 R2). The scan itself starts at once, it is needed to paint.
+    const defer = window.setTimeout(() => {
+      void refreshUpdates(false);
+      setRestoreEnter(true);
+    }, ENTER_SETTLE_MS);
     // A vault switch can drop the selected category or tool; fall back to all.
     setSelection((current) =>
       current.kind === "kb" && current.category ? { kind: "kb", category: null } : current,
@@ -112,9 +122,13 @@ export function SkillsPage() {
     });
   }, [scan]);
 
+  const [restoreEnter, setRestoreEnter] = useState(false);
   // Manifest banner (M7; UI 稿 11.2 puts it at the top of the page content).
+  // Fires only after the entrance settled, and reloads only when the scan
+  // payload itself changes identity (the merge in skillsStore keeps it stable
+  // for unchanged scans, so the entrance is no longer re-interrupted).
   useEffect(() => {
-    if (!vaultId) {
+    if (!vaultId || !restoreEnter) {
       setRestore(null);
       return;
     }
@@ -130,7 +144,8 @@ export function SkillsPage() {
     return () => {
       alive = false;
     };
-  }, [vaultId, scan?.cachedAt]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vaultId, restoreEnter, scan]);
 
   // After the plan card runs, M95 moves the source record only when the tree
   // matches the staged version; closing the card drops the stage instead.
@@ -215,15 +230,21 @@ export function SkillsPage() {
     ? (scan?.kb ?? []).filter((group) => group.category === selection.category)
     : (scan?.kb ?? []);
 
-  const openSkill = (path: string) => {
-    showPage("work");
-    if (vaultId) void useDocStore.getState().open(vaultId, `${path}/SKILL.md`);
-  };
+  const openSkill = useCallback(
+    (path: string) => {
+      showPage("work");
+      if (vaultId) void useDocStore.getState().open(vaultId, `${path}/SKILL.md`);
+    },
+    [showPage, vaultId],
+  );
 
-  const locateSkill = (path: string) => {
-    showPage("work");
-    void useTreeStore.getState().reveal(path);
-  };
+  const locateSkill = useCallback(
+    (path: string) => {
+      showPage("work");
+      void useTreeStore.getState().reveal(path);
+    },
+    [showPage],
+  );
 
   const restoreBanner = (() => {
     if (!restore) return null;
