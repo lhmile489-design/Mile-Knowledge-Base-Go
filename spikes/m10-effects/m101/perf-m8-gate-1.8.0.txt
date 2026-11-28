@@ -1,0 +1,24 @@
+cards requested: 200
+fixtures ok
+cards: 200
+blur/motion: std/std
+enter_ms: 107.6 86.6 87.4 93.0 73.8
+refresh_ms: 8.4
+warm-up round (unscored): {'frames': 649, 'p50': 8.300000000001091, 'p95': 16.69999999999891, 'max': 58.20000000000073, 'range': 9449}
+scroll round 1: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 17.799999999999272, 'range': 9449}
+scroll round 2: {'frames': 721, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 8.600000000002183, 'range': 9449}
+scroll round 3: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 16.599999999998545, 'range': 9449}
+legacy method would report scrollP95Frames=1.99 (idle R, warm-up as round 1)
+refresh_ms (idle): 8.4  refresh_ms (scrolling median): 8.3  R used (smaller of the two): 8.3
+enter frame round 1: {'frames': 145, 'p50': 8.400000000001455, 'p95': 16.700000000004366, 'max': 25.200000000004366}
+enter frame round 2: {'frames': 135, 'p50': 8.400000000001455, 'p95': 25, 'max': 33.299999999995634}
+enter frame round 3: {'frames': 109, 'p50': 8.400000000001455, 'p95': 41.5, 'max': 41.80000000000291}
+enter gaps p95 ms: per-round worst 41.5, overall 25.0; R (min idle 8.4, scroll 8.3) 8.3; ratio 5.00; over 33.4: True
+switch_ms: 11.1 20.2 32.4 38.8 21.5
+B-M10-03 same data: previous R -> scrollP95Frames=1.01 slowFrameRatio=0.0014; new R -> 1.01 / 0.0014
+  control healthy 120 fps                  previous 1.00 (pass)  new 1.00 (pass, p95 8.3 ms)
+  control uniform 30 fps                   previous 1.00 (pass)  new 4.01 (FAIL, p95 33.3 ms)
+  control uniform 45 fps                   previous 1.00 (pass)  new 2.67 (FAIL, p95 22.2 ms)
+  control downclocked idle, 33.5 ms frames previous 1.00 (pass)  new 1.01 (FAIL, p95 33.5 ms)
+metrics: {"enterP95Ms": 107.6, "scrollP95Frames": 1.01, "slowFrameRatio": 0.0014, "switchBackMs": 38.8, "scrollP95Ms": 8.4, "enterFrameP95Ms": 41.5, "enterFrameP95AllMs": 25, "enterFrameRatio": 5.0, "enterFrameR": 8.3}
+perf-gate FAILED (m8): 进入技能页 1.5s 帧间隔 p95 ms（绝对上限）: 41.5 > 33.4; 进入技能页 p95 / R（R = min(空闲, 滚动中位数)）: 5.0 > 2.0

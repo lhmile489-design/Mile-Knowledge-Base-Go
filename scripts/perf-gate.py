@@ -48,6 +48,11 @@ TARGETS = {
         # B-M10-03: the absolute cap from 技术设计 21.6/21.8, so a uniformly
         # slow window cannot pass on the ratio alone.
         "scrollP95Ms": 33.4,
+        # M10.1 B-1 (user 2026-11-28 confirmed): the entrance after the page
+        # switch must keep p95 within 2R and 33.4 ms, the same rule as the
+        # degrade guard. The ratio key carries the machine's own R.
+        "enterFrameP95Ms": 33.4,
+        "enterFrameRatio": 2.0,
     },
     # M9 (技术设计 20.7). The scroll keys reuse the M8 names and limits: perf-m9
     # measures the same scroll with the detail drawer open.
@@ -89,6 +94,8 @@ LABELS = {
     "drawerOpenP95Ms": "打开抽屉到预览可见 p95 ms（渲染缓存未命中）",
     "modalOpenMs": "弹窗打开到第一帧 p95 ms",
     "scrollP95Ms": "卡片滚动 p95 帧间隔 ms（绝对上限）",
+    "enterFrameP95Ms": "进入技能页 1.5s 帧间隔 p95 ms（绝对上限）",
+    "enterFrameRatio": "进入技能页 p95 / R（R = min(空闲, 滚动中位数)）",
     "effectsSwitchMs": "切换外观档位到生效第一帧 p95 ms",
     "idleCpuRatio": "最小化 300 s 进程 CPU 相对 1.7.0 基线（0.625 s）的倍数",
 }
