@@ -1,0 +1,24 @@
+cards requested: 200
+fixtures ok
+cards: 200
+blur/motion: std/std
+enter_ms: 67.3 57.1 58.9 62.1 67.8
+refresh_ms: 8.3
+warm-up round (unscored): {'frames': 716, 'p50': 8.300000000001091, 'p95': 8.400000000001455, 'max': 16.69999999999891, 'range': 9449}
+scroll round 1: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 8.700000000000728, 'range': 9449}
+scroll round 2: {'frames': 720, 'p50': 8.299999999999272, 'p95': 8.400000000001455, 'max': 8.599999999998545, 'range': 9449}
+scroll round 3: {'frames': 720, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 8.599999999998545, 'range': 9449}
+legacy method would report scrollP95Frames=1.01 (idle R, warm-up as round 1)
+refresh_ms (idle): 8.3  refresh_ms (scrolling median): 8.3  R used (smaller of the two): 8.3
+enter frame round 1: {'frames': 184, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 24.900000000001455}
+enter frame round 2: {'frames': 184, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 25}
+enter frame round 3: {'frames': 184, 'p50': 8.30000000000291, 'p95': 8.400000000001455, 'max': 16.60000000000582}
+enter gaps p95 ms: per-round worst 8.4, overall 8.4; R (min idle 8.3, scroll 8.3) 8.3; ratio 1.01; over 33.4: False
+switch_ms: 12.2 13.3 12.8 12.4 12.8
+B-M10-03 same data: previous R -> scrollP95Frames=1.01 slowFrameRatio=0.0000; new R -> 1.01 / 0.0000
+  control healthy 120 fps                  previous 1.00 (pass)  new 1.00 (pass, p95 8.3 ms)
+  control uniform 30 fps                   previous 1.00 (pass)  new 4.01 (FAIL, p95 33.3 ms)
+  control uniform 45 fps                   previous 1.00 (pass)  new 2.67 (FAIL, p95 22.2 ms)
+  control downclocked idle, 33.5 ms frames previous 1.00 (pass)  new 1.01 (FAIL, p95 33.5 ms)
+metrics: {"enterP95Ms": 67.8, "scrollP95Frames": 1.01, "slowFrameRatio": 0.0, "switchBackMs": 13.3, "scrollP95Ms": 8.4, "enterFrameP95Ms": 8.4, "enterFrameP95AllMs": 8.4, "enterFrameRatio": 1.01, "enterFrameR": 8.3}
+perf-gate ok (m8): 7 metrics within target
